@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="3.0" 
-xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-xmlns:js="http://www.w3.org/2005/xpath-functions">
- <xsl:variable name="main" select="/"/>
- <xsl:variable name="template" select="document('../../Sources/ansible/restructure.xml')"/>
-
- <xsl:output method="xml" indent="yes"/>
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:variable name="main" select="/"/>
+<xsl:output method="xml" indent="yes"/>
 
 <xsl:template match="/">
     <xsl:element name="document">
@@ -19,56 +16,66 @@ xmlns:js="http://www.w3.org/2005/xpath-functions">
   </xsl:variable>
   <xsl:variable name="filename" select="tokenize(document-uri($main), '/')[count(tokenize(document-uri($main), '/'))]"/>
   <xsl:variable name="docid" select="tokenize($filename, '.psml')[1]"/>
-      <xsl:choose>
-        <xsl:when test="$fragment = 'ansible_devices'">
-          <xsl:for-each select="child::*[contains(@name, 'uuid')]">
-            <xsl:variable name="name" select="tokenize(@name, ';')[10]" />
-            <xsl:message select='$name' />
-            <xsl:variable name="newfrag" select="concat($fragment, '_', $name)"/>
-            <xsl:result-document href="{$docid};{$newfrag};.psml">
-              <xsl:element name="properties-fragment">
-                <xsl:attribute name="id" select="$fragment"/>
-                <xsl:apply-templates select="../*[contains(@name, concat(';', $name, ';'))]">
-                  <xsl:with-param name="fragment" select="$fragment"/>
-                </xsl:apply-templates>
-              </xsl:element>
-            </xsl:result-document>
-          </xsl:for-each>
-        </xsl:when>
-        <xsl:when test="$fragment = 'ansible_mounts'">
-          <xsl:for-each select="child::*[contains(@name, 'uuid')]">
-            <xsl:variable name="id" select="tokenize(@title, ' ')[1]"/>
-            <xsl:variable name="uuid" select="@value"/>
-            <xsl:variable name="mountname">
+  <xsl:choose>
+    <xsl:when test="$fragment = 'ansible_devices'">
+      <xsl:for-each select="child::*[contains(@name, 'uuid')]">
+      <!-- group by uuid -->
+        <xsl:variable name="name" select="tokenize(@name, ';')[10]" />
+        <xsl:variable name="newfrag" select="concat($fragment, '_', $name)"/>
+        <xsl:result-document href="{$docid};{$newfrag};.psml">
+          <xsl:element name="properties-fragment">
+            <!-- new fragment for each device with a uuid -->
+            <!-- this purposefully groups partitions as most devices only have one uuid -->
+            <xsl:attribute name="id" select="$fragment"/>
+            <xsl:apply-templates select="../*[contains(@name, concat(';', $name, ';'))]">
+              <xsl:with-param name="fragment" select="$fragment"/>
+            </xsl:apply-templates>
+          </xsl:element>
+        </xsl:result-document>
+      </xsl:for-each>
+    </xsl:when>
+    <xsl:when test="$fragment = 'ansible_mounts'">
+      <xsl:for-each select="child::*[contains(@name, 'uuid')]">
+        <xsl:variable name="id" select="tokenize(@title, ' ')[1]"/>
+        <xsl:variable name="uuid" select="@value"/>
+        <xsl:variable name="mountname">
+          <xsl:choose>
+            <xsl:when test="string-length($uuid) > 4">
               <xsl:choose>
-                <xsl:when test="string-length($uuid) > 4">
-                  <xsl:value-of select="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[10]" />
+                <xsl:when test="contains($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, 'partitions')">
+                  <xsl:value-of select="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[14]" />
                 </xsl:when>
+                <!-- match on device with same uuid -->
                 <xsl:otherwise>
-                  <xsl:value-of select="$id" />
+                  <xsl:value-of select="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[10]" />
                 </xsl:otherwise>
               </xsl:choose>
-            </xsl:variable>
-            <xsl:variable name="newfrag" select="concat($fragment, '_', $mountname)"/>
-            <xsl:result-document href="{$docid};{$newfrag};.psml">
-              <xsl:element name="properties-fragment">
-                <xsl:attribute name="id" select="$fragment"/>
-                <xsl:apply-templates select="parent::*/child::*[contains(@name, $id)]">
-                  <xsl:with-param name="fragment" select="$fragment"/>
-                </xsl:apply-templates>
-              </xsl:element>
-            </xsl:result-document>
-          </xsl:for-each>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:result-document href="{$docid};{$fragment};.psml">
-            <xsl:element name="properties-fragment">
-              <xsl:attribute name="id" select="$fragment"/>
-              <xsl:apply-templates select="child::*"/>
-            </xsl:element>
-          </xsl:result-document>
-        </xsl:otherwise>
-      </xsl:choose>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="$id" />
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <xsl:variable name="newfrag" select="concat($fragment, '_', $mountname)"/>
+        <xsl:result-document href="{$docid};{$newfrag};.psml">
+          <xsl:element name="properties-fragment">
+            <xsl:attribute name="id" select="$fragment"/>
+            <xsl:apply-templates select="parent::*/child::*[contains(@name, $id)]">
+              <xsl:with-param name="fragment" select="$fragment"/>
+            </xsl:apply-templates>
+          </xsl:element>
+        </xsl:result-document>
+      </xsl:for-each>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:result-document href="{$docid};{$fragment};.psml">
+        <xsl:element name="properties-fragment">
+          <xsl:attribute name="id" select="$fragment"/>
+          <xsl:apply-templates select="child::*"/>
+        </xsl:element>
+      </xsl:result-document>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 <xsl:template match="property">
@@ -80,24 +87,5 @@ xmlns:js="http://www.w3.org/2005/xpath-functions">
     <xsl:attribute name="title" select="$title"/>
   </xsl:copy>
 </xsl:template>
-
-<!-- <xsl:template match="property">
-  <xsl:param name="fragment" />
-  <xsl:variable name="hierarchy" select="@name"/>
-  <xsl:choose>
-    <xsl:when test="$fragment = 'ansible_devices'">
-      <xsl:copy>
-        <xsl:copy-of select="@*"/>
-        <xsl:attribute name="name" select="tokenize($hierarchy, ';')[count(tokenize($hierarchy, ';')) - 1]"/>
-      </xsl:copy>
-    </xsl:when>
-    <xsl:when test="$fragment = 'ansible_mounts'">
-      <xsl:copy>
-        <xsl:copy-of select="@*"/>
-        <xsl:attribute name="name" select="tokenize($hierarchy, ';')[count(tokenize($hierarchy, ';')) - 1]"/>
-      </xsl:copy>
-    </xsl:when>
-  </xsl:choose>
-</xsl:template> -->
 
 </xsl:stylesheet>

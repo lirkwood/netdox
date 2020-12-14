@@ -2,7 +2,15 @@ import requests
 from bs4 import BeautifulSoup
 
 
-def push(path, section, docid='unset', fragment='unset'):
+def put(path, section, docid='unset', fragment='unset'):
+    return main('put', path, section, docid, fragment)
+
+
+def post(path, section, docid='unset', fragment='unset'):
+    return main('post', path, section, docid, fragment)
+
+
+def main(method, path, section, docid='unset', fragment='unset'):
 
     jsession = '1D06B42BF47D1CDE208CB8BFE119087B'
     if '\\' in path:
@@ -34,10 +42,18 @@ def push(path, section, docid='unset', fragment='unset'):
         'section': section,
         'content': content
     }
-    service = 'members/~{0}/groups/~{1}/uris/~{2}/fragments/{3}'.format(member, group, docid, fragment)
+    if method == 'put':
+        service = 'members/~{0}/groups/~{1}/uris/~{2}/fragments/{3}'.format(member, group, docid, fragment)
+    elif method == 'post':
+        service = 'members/~{0}/groups/~{1}/uris/~{2}/fragments'.format(member, group, docid)
+    
     url = prefix + service
 
-    r = requests.put(url, headers=header, params=params)
+    if method == 'put':
+        r = requests.put(url, headers=header, params=params)
+    elif method == 'post':
+        r = requests.post(url, headers=header, params=params)
+
     response = r.text
 
     with open('Logs/log.xml', 'w') as log:
@@ -47,8 +63,8 @@ def push(path, section, docid='unset', fragment='unset'):
 
 
 if __name__ == '__main__':
-    path = 'kube/_nd_allette_com_au;kube_pods;.psml'
+    path = 'kube/outgoing/_nd_allette_com_au;kube_pods;.psml'
     docid = '_nd_testhost'
     section = 'appman'
-    fragment = 'kube_pods'
-    r = push(path, section, docid, fragment)
+    fragment = 'testfrag'
+    r = post(path, section, docid, fragment)

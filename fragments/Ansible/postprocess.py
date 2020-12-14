@@ -3,7 +3,10 @@ import os
 
 def main():
     for file in os.scandir('outgoing'):
-        prettify(file)
+        if ';' in file.name:
+            prettify(file)
+        else:
+            os.remove(file)
         
 def prettify(f):
             stream = open(f, 'r')
