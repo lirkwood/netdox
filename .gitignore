@@ -2,6 +2,8 @@
 Hosts/
 IPs/
 Ports/
+Analytics/
+TemplateSum/
 **/Logs
 **/outgoing
 **/json
