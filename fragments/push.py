@@ -6,8 +6,8 @@ def put(path, section, docid='unset', fragment='unset'):
     return main('put', path, section, docid, fragment)
 
 
-def post(path, section, docid='unset', fragment='unset'):
-    return main('post', path, section, docid, fragment)
+def post(path, section, docid='unset'):
+    return main('post', path, section, docid)
 
 
 def main(method, path, section, docid='unset', fragment='unset'):
@@ -63,8 +63,7 @@ def main(method, path, section, docid='unset', fragment='unset'):
 
 
 if __name__ == '__main__':
-    path = 'kube/outgoing/_nd_allette_com_au;kube_pods;.psml'
+    path = 'ansible/outgoing/_nd_alto_allette_com_au;ansible_mounts_xvda1;.psml'
     docid = '_nd_testhost'
-    section = 'appman'
-    fragment = 'testfrag'
-    r = post(path, section, docid, fragment)
+    section = 'ansible'
+    r = post(path, section, docid)

@@ -24,9 +24,14 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
         <xsl:variable name="newfrag" select="concat($fragment, '_', $name)"/>
         <xsl:result-document href="{$docid};{$newfrag};.psml">
           <xsl:element name="properties-fragment">
+            <xsl:attribute name="id" select="$fragment"/>
+            <xsl:element name="property" >
+              <xsl:attribute name="name" select="'device_name'"/>
+              <xsl:attribute name="title" select="'Device Name'"/>
+              <xsl:attribute name="value" select="$name"/>
+            </xsl:element>
             <!-- new fragment for each device with a uuid -->
             <!-- this purposefully groups partitions as most devices only have one uuid -->
-            <xsl:attribute name="id" select="$fragment"/>
             <xsl:apply-templates select="../*[contains(@name, concat(';', $name, ';'))]">
               <xsl:with-param name="fragment" select="$fragment"/>
             </xsl:apply-templates>
@@ -60,6 +65,11 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
         <xsl:result-document href="{$docid};{$newfrag};.psml">
           <xsl:element name="properties-fragment">
             <xsl:attribute name="id" select="$fragment"/>
+            <xsl:element name="property" >
+              <xsl:attribute name="name" select="'mount_name'"/>
+              <xsl:attribute name="title" select="'Mount Name'"/>
+              <xsl:attribute name="value" select="$mountname"/>
+            </xsl:element>
             <xsl:apply-templates select="parent::*/child::*[contains(@name, $id)]">
               <xsl:with-param name="fragment" select="$fragment"/>
             </xsl:apply-templates>
@@ -71,6 +81,11 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
       <xsl:result-document href="{$docid};{$fragment};.psml">
         <xsl:element name="properties-fragment">
           <xsl:attribute name="id" select="$fragment"/>
+          <xsl:element name="property" >
+            <xsl:attribute name="name" select="'fragment_name'"/>
+            <xsl:attribute name="title" select="'Fragment Name'"/>
+            <xsl:attribute name="value" select="$fragment"/>
+          </xsl:element>
           <xsl:apply-templates select="child::*"/>
         </xsl:element>
       </xsl:result-document>
