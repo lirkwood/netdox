@@ -1,3 +1,4 @@
+import auth
 import requests
 from bs4 import BeautifulSoup
 
@@ -12,7 +13,7 @@ def post(script, path, section, docid='unset'):
 
 def main(method, script, path, section, docid='unset', fragment='unset'):
 
-    jsession = 'FB00C026C59FFC5C6EA4C089A4BF8095'
+    token = auth.token()
     if '\\' in path:
         filename = path.split('\\')[-1]
     else:
@@ -36,7 +37,7 @@ def main(method, script, path, section, docid='unset', fragment='unset'):
     member = 'lkirkwood'
     group = 'network-documentation'
     header = {
-        'Cookie': 'JSESSIONID={0}'.format(jsession)
+        'authorization': 'Bearer {0}'.format(token)
     }
     params = {
         'section': section,
@@ -68,4 +69,4 @@ if __name__ == '__main__':
     docid = '_nd_testhost'
     section = 'ansible'
     script = 'manual execution'
-    r = post(path, section, docid)
+    r = post(script, path, section, docid)

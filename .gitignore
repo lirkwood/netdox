@@ -16,3 +16,4 @@ Sources/
 !Sources/template-ip.psml
 !Sources/template-ports.psml
 **/editnote.py
+**/auth_last.txt
