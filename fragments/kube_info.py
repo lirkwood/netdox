@@ -6,13 +6,10 @@ import editnote
 def main():
     path = 'Kube/outgoing'
     section = 'appman'
+    script = 'kube_info.py'
     for file in os.scandir(path):
         filepath = path + '/' + os.path.basename(file)
-        docid = os.path.basename(file).split(';')[0]
-        fragment = os.path.basename(file).split(';')[1]
-        push.put(filepath, section)
-        self = os.path.basename(__file__)
-        editnote.post(section, docid, fragment, self)
+        push.put(script, filepath, section)
 
 
 if __name__ == '__main__':

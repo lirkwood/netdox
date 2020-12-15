@@ -25,9 +25,9 @@ reversedns.get_ptr.main()
 
 print('Pushing Ansible fragments...')
 ansible_info.main()
-# print('Pushing Kubernetes fragments...')
-# kube_info.main()
-# print('Pushing reverse dns record fragments...')
-# ptr_info.main()
+print('Pushing Kubernetes fragments...')
+kube_info.main()
+print('Pushing reverse dns record fragments...')
+ptr_info.main()
 
 print('Done.')

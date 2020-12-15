@@ -2,15 +2,15 @@ import requests
 from bs4 import BeautifulSoup
 
 
-def put(path, section, docid='unset', fragment='unset'):
-    return main('put', path, section, docid, fragment)
+def put(script, path, section, docid='unset', fragment='unset'):
+    return main('put', script, path, section, docid, fragment)
 
 
-def post(path, section, docid='unset'):
-    return main('post', path, section, docid)
+def post(script, path, section, docid='unset'):
+    return main('post', script, path, section, docid)
 
 
-def main(method, path, section, docid='unset', fragment='unset'):
+def main(method, script, path, section, docid='unset', fragment='unset'):
 
     jsession = 'FB00C026C59FFC5C6EA4C089A4BF8095'
     if '\\' in path:
@@ -40,7 +40,8 @@ def main(method, path, section, docid='unset', fragment='unset'):
     }
     params = {
         'section': section,
-        'content': content
+        'content': content,
+        'note': 'Automated edit sent by ' + script + ' on fragment ' + fragment
     }
     if method == 'put':
         service = 'members/~{0}/groups/~{1}/uris/~{2}/fragments/{3}'.format(member, group, docid, fragment)
@@ -66,4 +67,5 @@ if __name__ == '__main__':
     path = 'ansible/outgoing/_nd_alto_allette_com_au;ansible_mounts_xvda1;.psml'
     docid = '_nd_testhost'
     section = 'ansible'
+    script = 'manual execution'
     r = post(path, section, docid)
