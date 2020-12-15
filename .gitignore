@@ -3,7 +3,7 @@ Hosts/
 IPs/
 Ports/
 Analytics/
-TemplateSum/
+Documentation/
 **/Logs
 **/outgoing
 **/json
