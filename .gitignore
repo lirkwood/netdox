@@ -1,0 +1,16 @@
+**/__pycache__
+Hosts/
+IPs/
+Ports/
+**/Logs
+**/outgoing
+**/json
+**/raw
+Sources/
+!Sources/ad.xml
+!Sources/kube_pods-frag-template.xml
+!Sources/kube_worker-frag-template.xml
+!Sources/note.xml
+!Sources/template-domain.psml
+!Sources/template-ip.psml
+!Sources/template-ports.psml
