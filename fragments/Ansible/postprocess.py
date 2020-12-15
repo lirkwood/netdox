@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup, Tag
 import os
 
 def main():
-    for file in os.scandir('outgoing'):
+    for file in os.scandir('ansible/outgoing'):
         if ';' in file.name:
             prettify(file)
         else:

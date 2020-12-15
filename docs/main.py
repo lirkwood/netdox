@@ -73,24 +73,25 @@ for d in temp:
 def ips(l, soup, s):
     iplist = list(dict.fromkeys(l))
     if s == 'internal':
-        ipfrag = soup.find(id='ad_ips')
+        ipfrag = soup.find(id='ad_ipv4')
     else:
-        ipfrag = soup.find(id='ips')
+        ipfrag = soup.find(id='ipv4')
     for ip in iplist:
         p = soup.new_tag('property')
         p['datatype'] = 'xref'
         
         if ip.startswith('192.168') or ip.startswith('172') or ip.startswith('10.'):
-            p['name'] = 'intip'
+            p['name'] = 'int_ipv4'
             p['title'] = 'Internal IP'
         else:
-            p['name'] = 'extip'
+            p['name'] = 'ext_ipv4'
             p['title'] = 'External IP'
         ipfrag.append(p)
         
         xref = soup.new_tag('xref')
         xref['frag'] = 'default'
         xref['docid'] = '_nd_' + ip.replace('.', '_')
+        xref['config'] = 'default'
         p.append(xref)
 
 
@@ -133,6 +134,7 @@ for d in domains:
                         x = soup.new_tag('xref')
                         x['frag'] = 'default'
                         x['docid'] = pdomain
+                        x['config'] = 'default'
                         x.string = pdomainraw
                         p.append(x)
                     else:
@@ -162,10 +164,10 @@ for d in domains:
 
 print('Host documents done')
 
-# import ipdocs
-# ipdocs.read()
+import ipdocs
+ipdocs.read()
 
-# print('IP documents done')
+print('IP documents done')
 
 with open('../Sources/doc_domains.json', 'w') as output:
     output.write(json.dumps(domains, indent=4))

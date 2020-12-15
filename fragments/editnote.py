@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 def post(section, docid, fragment, script=os.path.basename(__file__)):
 
-    jsession = '1D06B42BF47D1CDE208CB8BFE119087B'
+    jsession = 'FB00C026C59FFC5C6EA4C089A4BF8095'
 
     title = 'Automated edit'
     content = 'Automated edit sent by ' + script + ' on fragment ' + fragment
@@ -37,7 +37,7 @@ def post(section, docid, fragment, script=os.path.basename(__file__)):
         getresponse = requests.post(prefix + post, headers=header, params=params)
         log(getresponse.text)
     except UnboundLocalError:
-        print(docid + ' failed. No edit ids recieved: likely cannot find document.')
+        print(docid + ' failed. No edit notes posted.')
 
 def log(s):
     logsoup = BeautifulSoup(s, features='xml')

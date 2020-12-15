@@ -8,7 +8,7 @@ import os
 def ingress():
     ##### UNCOMMMENT BELOW to get new ingress data #####
     # os.system('pwsh.exe ../Docs/get-ingress.ps1')
-    with open('../../Sources/ingress.json', 'r') as stream:
+    with open('../Sources/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
         for c in jsondata:  #context either sandbox or production cluster
@@ -35,7 +35,7 @@ def service(sdict):
     ndict = {} #new dictionary
     noingress = {}
     links = {}
-    with open('../../Sources/services.json', 'r') as stream:
+    with open('../Sources/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             ndict[c] = {}
@@ -77,7 +77,7 @@ def pods(sdict):
     global workers
     workers = []
     pdict = {}
-    with open('../../Sources/pods.json', 'r') as stream:
+    with open('../Sources/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             pdict[c] = {}
@@ -146,7 +146,7 @@ def podsfrag(d):    #construct kube fragment for posting to rest api
 
         for dom in d[context]:
             domain = d[context][dom]
-            with open('../../Sources/kube_pods-frag-template.xml', 'r') as stream:
+            with open('../Sources/kube_pods-frag-template.xml', 'r') as stream:
                 soup = BeautifulSoup(stream, features='xml')    #get all properties as soup objs for multiple uses if necessary
                 outsoup = BeautifulSoup('', features='xml')
                 frag = outsoup.new_tag('properties-fragment')
@@ -170,7 +170,7 @@ def podsfrag(d):    #construct kube fragment for posting to rest api
 
                 docid = '_nd_' + dom.replace('.', '_')
                 filename = docid + ';kube_pods;' #encode fragment name in filename for easier reading
-                with open('outgoing/{0}.psml'.format(filename), 'w') as o:
+                with open('kube/outgoing/{0}.psml'.format(filename), 'w') as o:
                     o.write(outsoup.prettify())
 
 
@@ -180,7 +180,7 @@ def workerfrag(master):
     for context in master:
         for dom in master[context]:
             domain = master[context][dom]
-            with open('../../Sources/kube_worker-frag-template.xml') as stream:
+            with open('../Sources/kube_worker-frag-template.xml') as stream:
                 soup = BeautifulSoup(stream, features='xml')
                 soup.find(title='Worker Name')['value'] = domain['nodename']
                 for xref in soup.find_all('xref'):
@@ -191,7 +191,7 @@ def workerfrag(master):
 
                 docid = '_nd_' + dom.replace('.', '_')
                 filename = docid + ';kube_worker;'
-                with open('outgoing/{0}.psml'.format(filename), 'w') as o:
+                with open('kube/outgoing/{0}.psml'.format(filename), 'w') as o:
                     o.write(soup.prettify())
 
 
@@ -199,7 +199,7 @@ def workerfrag(master):
 def getworkers():
     global workers
     temp = {}
-    with open('../../Sources/domains.csv', 'r') as stream:
+    with open('../Sources/domains.csv', 'r') as stream:
         for row in csv.reader(stream):
             if row[0] != 'Kubernetes':
                 for worker in workers:
@@ -214,7 +214,7 @@ def main():
     sdict = service(idict)
     pdict = pods(sdict)
     master = pivot(pdict)
-    with open('../Logs/log.json', 'w') as out:
+    with open('Logs/log.json', 'w') as out:
         out.write(json.dumps(master, indent=4))
     podsfrag(master)
     getworkers()

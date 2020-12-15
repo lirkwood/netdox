@@ -10,8 +10,6 @@ def main():
         docid = os.path.basename(file).split(';')[0]
         fragment = os.path.basename(file).split(';')[1]
         push.post(filepath, section)
-        self = os.path.basename(__file__)
-        editnote.post(section, docid, fragment, self)
 
 if __name__ == '__main__':
     main()

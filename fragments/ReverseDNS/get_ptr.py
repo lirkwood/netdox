@@ -6,7 +6,7 @@ import os
 
 def dnsme():
     dns_dict = {}
-    with open('../../Sources/records.xml', 'r') as stream:
+    with open('../Sources/records.xml', 'r') as stream:
         soup = BeautifulSoup(stream, 'lxml')
         ipbase = '103.127.18.'
         for record in soup.find_all('data'):
@@ -21,7 +21,7 @@ def dnsme():
 
 def ad():
     ad_dict = {}
-    for file in os.scandir('../../Sources/records'):
+    for file in os.scandir('../Sources/records'):
         if 'ptr' in file.name:
             ipbase = '192.168.'
             subnet = file.name.split('-')[0] + '.'
@@ -67,7 +67,7 @@ def main():
             xref['docid'] = '_nd_' + domain.replace('.', '_')
             prop.append(xref)
         
-        with open('outgoing/{0};reversedns;.psml'.format(docid), 'w') as o:
+        with open('reversedns/outgoing/{0};reversedns;.psml'.format(docid), 'w') as o:
             o.write(soup.prettify())
 
 

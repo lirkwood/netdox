@@ -2,7 +2,7 @@ import json
 import pprint
 
 def clean():
-    with open('../../Sources/ansible/ansible.txt', 'r') as stream:
+    with open('../Sources/ansible/ansible.txt', 'r') as stream:
         master = {}
         first = True
         for line in stream:
@@ -36,10 +36,10 @@ def dictfromlist(obj):
 def main():
     master = clean()
     master = dictfromlist(master)
-    with open('../../sources/ansible/ansible.json', 'w') as o:
+    with open('../sources/ansible/ansible.json', 'w') as o:
         o.write(json.dumps(master, indent=4))
 
-    with open('../../sources/ansible/report_json.xml', 'w') as o:
+    with open('../sources/ansible/report_json.xml', 'w') as o:
         o.write('<data>')
         o.write(json.dumps(master, indent=4))
         o.write('</data>')
@@ -49,11 +49,11 @@ def main():
         master[host]['ansible_facts'].pop('ansible_mounts')
         docid = '_nd_' + host.replace('.', '_')
         json_docid = docid + '_json'
-        with open('json/{0}.psml'.format(json_docid), 'w') as o:
+        with open('ansible/json/{0}.psml'.format(json_docid), 'w') as o:
             o.write('<document level="portable"><documentinfo><uri docid="{0}"/></documentinfo><section id="main"><fragment id="json"><preformat role="lang-json">'.format(json_docid))
             o.write(json.dumps(master[host], indent=4))
             o.write('</preformat></fragment></section></document>')
-        with open("outgoing/{0};json;.psml".format(docid), 'w') as o:
+        with open("ansible/outgoing/{0};json;.psml".format(docid), 'w') as o:
             o.write('<fragment id="json"><blockxref type="transclude" frag="default" docid="{0}"/></fragment>'.format(json_docid))
 
 if __name__ == '__main__':

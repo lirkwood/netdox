@@ -39,7 +39,7 @@ def write(l):
                     elif p['name'] == 'subnet':
                         p['value'] = subnet
                     elif p['name'] == 'ip':
-                        p['value'] = addr
+                        p['value'] = ip
                     elif p['name'] == 'source':
                         p['value'] = l[ip]
 
@@ -121,7 +121,7 @@ def writeDead(network, subnet, addr):
             elif p['name'] == 'subnet':
                 p['value'] = subnet
             elif p['name'] == 'ip':
-                p['value'] = addr
+                p['value'] = ip
             elif p['name'] == 'source':
                 p['value'] = 'Generated'
 

@@ -10,7 +10,7 @@ def main():
         filepath = path + '/' + os.path.basename(file)
         docid = os.path.basename(file).split(';')[0]
         fragment = os.path.basename(file).split(';')[1]
-        push.post(filepath, section)
+        push.put(filepath, section)
         self = os.path.basename(__file__)
         editnote.post(section, docid, fragment, self)
 

@@ -12,7 +12,7 @@ def post(path, section, docid='unset', fragment='unset'):
 
 def main(method, path, section, docid='unset', fragment='unset'):
 
-    jsession = '1D06B42BF47D1CDE208CB8BFE119087B'
+    jsession = 'FB00C026C59FFC5C6EA4C089A4BF8095'
     if '\\' in path:
         filename = path.split('\\')[-1]
     else:
