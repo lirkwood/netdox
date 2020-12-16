@@ -35,9 +35,9 @@ def write(l):
                 allprops = soup.find_all('property')   #find all properties
                 for p in allprops:
                     if p['name'] == 'network':  #populate properties
-                        p['value'] = network
+                        p['value'] = '{0}.0.0/16'.format(network)
                     elif p['name'] == 'subnet':
-                        p['value'] = subnet
+                        p['value'] = '192.168.{0}.0/24'.format(subnet)
                     elif p['name'] == 'ip':
                         p['value'] = ip
                     elif p['name'] == 'source':
@@ -117,9 +117,9 @@ def writeDead(network, subnet, addr):
         allprops = soup.find_all('property')   #find all properties
         for p in allprops:
             if p['name'] == 'network':  #populate properties
-                p['value'] = network
+                p['value'] = '{0}.0.0/16'.format(network)
             elif p['name'] == 'subnet':
-                p['value'] = subnet
+                p['value'] = '192.168.{0}.0/24'.format(subnet)
             elif p['name'] == 'ip':
                 p['value'] = ip
             elif p['name'] == 'source':
