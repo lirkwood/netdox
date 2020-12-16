@@ -37,7 +37,7 @@ def write(l):
                     if p['name'] == 'network':  #populate properties
                         p['value'] = '{0}.0.0/16'.format(network)
                     elif p['name'] == 'subnet':
-                        p['value'] = '192.168.{0}.0/24'.format(subnet)
+                        p['value'] = '{0}.{1}.0/24'.format(network, subnet)
                     elif p['name'] == 'ip':
                         p['value'] = ip
                     elif p['name'] == 'source':
@@ -119,7 +119,7 @@ def writeDead(network, subnet, addr):
             if p['name'] == 'network':  #populate properties
                 p['value'] = '{0}.0.0/16'.format(network)
             elif p['name'] == 'subnet':
-                p['value'] = '192.168.{0}.0/24'.format(subnet)
+                p['value'] = '{0}.{1}.0/24'.format(network, subnet)
             elif p['name'] == 'ip':
                 p['value'] = ip
             elif p['name'] == 'source':
