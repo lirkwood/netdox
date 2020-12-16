@@ -91,7 +91,7 @@ def ips(l, soup, s):
         xref = soup.new_tag('xref')
         xref['frag'] = 'default'
         xref['docid'] = '_nd_' + ip.replace('.', '_')
-        xref['config'] = 'default'
+        xref['reversetitle'] = p['title'] + ' in fragment ' +  ipfrag['id']
         p.append(xref)
 
 
@@ -134,7 +134,7 @@ for d in domains:
                         x = soup.new_tag('xref')
                         x['frag'] = 'default'
                         x['docid'] = pdomain
-                        x['config'] = 'default'
+                        x['reversetitle'] = p['title'] + ' in fragment ' +  p.parent['id']
                         x.string = pdomainraw
                         p.append(x)
                     else:
