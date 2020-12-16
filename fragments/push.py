@@ -4,14 +4,14 @@ from bs4 import BeautifulSoup
 
 
 def put(script, path, section, docid='unset', fragment='unset'):
-    return main('put', script, path, section, docid, fragment)
+    return main('put', script, path, section, docid, fragment=fragment)
 
 
-def post(script, path, section, docid='unset'):
-    return main('post', script, path, section, docid)
+def post(script, path, section, docid='unset', prefix='unset'):
+    return main('post', script, path, section, docid, prefix=prefix)
 
 
-def main(method, script, path, section, docid='unset', fragment='unset'):
+def main(method, script, path, section, docid, fragment='unset', prefix='unset'):
 
     token = auth.token()
     if '\\' in path:
