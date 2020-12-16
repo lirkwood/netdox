@@ -19,3 +19,4 @@ Sources/
 !Sources/template-ports.psml
 **/editnote.py
 **/auth_last.txt
+**/push_old.py
