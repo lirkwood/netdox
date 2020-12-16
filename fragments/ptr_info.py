@@ -5,7 +5,7 @@ import editnote
 
 def main():
     path = 'ReverseDNS/outgoing'
-    section = 'details'
+    section = 'reversedns'
     script = 'ptr_info.py'
     for file in os.scandir(path):
         filepath = path + '/' + os.path.basename(file)

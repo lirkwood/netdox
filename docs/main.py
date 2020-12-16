@@ -164,10 +164,10 @@ for d in domains:
 
 print('Host documents done')
 
-# import ipdocs
-# ipdocs.read()
+import ipdocs
+ipdocs.read()
 
-# print('IP documents done')
+print('IP documents done')
 
-# with open('../Sources/doc_domains.json', 'w') as output:
-#     output.write(json.dumps(domains, indent=4))
+with open('../Sources/doc_domains.json', 'w') as output:
+    output.write(json.dumps(domains, indent=4))
