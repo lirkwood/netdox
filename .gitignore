@@ -20,5 +20,9 @@ Sources/
 !Sources/template-ports.psml
 **/editnote.py
 **/auth_last.txt
+<<<<<<< HEAD
 **/push_old.py
 **/update.py
+=======
+**/push_old.py
+>>>>>>> parent of 32a0e21 (added graylog blocklist script and editdns.sh script)
