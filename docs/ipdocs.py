@@ -44,7 +44,7 @@ def write(l):
                         p['value'] = l[ip]
 
                 soup.uri['docid'] = docid
-                soup.uri['title'] = network + '.' + subnet + '.' + addr
+                soup.uri['title'] = ip
                 soup.heading.string = ip
 
                 if network == '192.168':
