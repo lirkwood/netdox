@@ -39,7 +39,7 @@ def write(l):
                     elif p['name'] == 'subnet':
                         p['value'] = '{0}.{1}.0/24'.format(network, subnet)
                     elif p['name'] == 'ip':
-                        p['value'] = ip
+                        p['value'] = ip + '/32'
                     elif p['name'] == 'source':
                         p['value'] = l[ip]
 
