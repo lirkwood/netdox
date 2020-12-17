@@ -21,4 +21,6 @@ Sources/
 **/editnote.py
 **/auth_last.txt
 **/push_old.py
-**/new.txt
+Graylog/new.txt
+Graylog/ip.csv
+Graylog/response.json
