@@ -4,6 +4,7 @@ IPs/
 Ports/
 Analytics/
 Documentation/
+dnsme/
 **/Logs
 **/outgoing
 **/json
@@ -20,5 +21,4 @@ Sources/
 **/editnote.py
 **/auth_last.txt
 **/push_old.py
-**/dnsme.txt
 **/update.py
