@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+    
+<properties-fragment id='kube_worker'>
+    <property name="worker_name" title="Worker Name" value="" />
+    <property name="worker_host" title="Worker Hostname" datatype='xref'>
+        <xref frag='default' docid='' />
+    </property>
+    <property name="worker_ip"  title="Worker IP"  datatype='xref' >
+        <xref frag='default' docid='' />
+    </property>
+  </properties-fragment>

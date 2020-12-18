@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+    
+<properties-fragment id="kube_pods">
+    <property name="pod"  title='Pod'  value='' />
+    <property name="pod_link"  title="Pod on Rancher" value="" />
+    <property name="container" title="Container" value="" />
+    <property name="image" title="Image ID" value=""/>
+  </properties-fragment>

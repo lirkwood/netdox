@@ -1,0 +1,49 @@
+<document type="host" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+    <documentinfo>
+      <uri docid="" title=""/>
+    </documentinfo>
+
+    <metadata>
+        <properties>
+            <property name="template_version"     title="Template version"   value="2.7" />
+        </properties>
+    </metadata>
+
+    <section id="title">
+        <fragment id="title">
+            <heading level="1"></heading>
+        </fragment>
+    </section>
+
+    <section id="details" title="details">
+
+        <properties-fragment id="host">
+            <property name="host"         title="Host"          value="" />
+            <property name="root"        title="Root"      value="" />
+            <property name="source"        title="Source"      value="" />
+        </properties-fragment>
+
+        <properties-fragment id="ipv4"/>
+
+        <properties-fragment id="subnets"/>
+        
+    </section>
+
+    <section id='ad_info' title='Active Directory details'>
+
+        <properties-fragment id='ad_host'>
+            <property name="ad_host"        title="Active Directory Host"  value="" />
+        </properties-fragment>
+
+        <properties-fragment id="ad_ipv4"/>
+
+    </section>
+
+    <section id="assoc" title="Associated Hosts" />
+  
+    <section id="appman" title="Application Manager" />
+    
+    <section id="ansible" title="Ansible" />
+
+</document>

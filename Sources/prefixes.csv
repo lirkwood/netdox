@@ -1,0 +1,24 @@
+103.127.18.0/26,,Allette,SY4,,,Active,,TRUE,
+103.127.18.64/26,,Department of Health,SY4,,1000,Active,,TRUE,
+103.127.18.128/25,,,,,,Active,,TRUE,Multi-tenant
+192.168.2.0/25,,Allette,ASO,,10,Active,Workstations,,
+192.168.2.128/26,,Allette,ASO,,11,Active,Guest,,Guest Network
+192.168.2.192/27,,Allette,ASO,,,Active,VPN,,Allette Developers VPN Tunnel
+192.168.2.224/28,,Allette,ASO,,12,Active,Surveillance,,Surveillance
+192.168.2.240/30,,Infrastructure,SY4,,,Active,VPN,,SY4 IPSec tunnel 1
+192.168.2.244/30,,Infrastructure,SY4,,,Active,VPN,,SY4 IPSec tunnel 2
+192.168.2.252/30,,,SY4,,,Active,VPN,,SY4 - IV IPSec Tunnel
+192.168.4.0/25,,Allette,ASO,,20,Active,Management,,OOB Management
+192.168.4.128/26,,Allette,ASO,,21,Active,Management,,IB Management
+192.168.5.0/24,,Allette,ASO,,,Active,Phones,,
+192.168.6.0/24,,Allette,SY4,,,Active,Management,,SY4 OOB Management
+192.168.7.0/24,,Allette,SY4,,,Active,Management,,In-band Management
+192.168.8.0/23,,,ASO,,30,Active,Production,,
+192.168.10.0/23,,Infrastructure,SY4,,,Active,Storage,,SY4 Storage – Dell Powervault 4024
+192.168.10.0/24,,Infrastructure,SY4,,,Active,Storage,,SY4 Storage A
+192.168.11.0/24,,Infrastructure,SY4,,,Active,Storage,,SY4 Storage B
+192.168.12.0/24,,Department of Health,SY4,,1000,Active,Production,,
+192.168.12.0/24,,Department of Health,SY4,,,Active,,TRUE,Health
+192.168.13.0/24,,,SY4,,1001,Active,Production,,SY4 mixed tenants
+192.168.14.0/23,,Infrastructure,SY4,,201,Active,Production,,
+192.168.200.0/24,,Allette,ASO,,1,Active,Workstations,,Default
