@@ -72,6 +72,7 @@ for d in temp:
 
 def ips(l, soup, s):
     iplist = list(dict.fromkeys(l))
+    subnetlist = []
     if s == 'internal':
         ipfrag = soup.find(id='ad_ipv4')
     else:
@@ -87,13 +88,27 @@ def ips(l, soup, s):
             p['name'] = 'ext_ipv4'
             p['title'] = 'External IP'
         ipfrag.append(p)
+
+        subnetlist.append('.'.join(ip.split('.')[:3]) + '.0/24')
         
         xref = soup.new_tag('xref')
         xref['frag'] = 'default'
         xref['docid'] = '_nd_' + ip.replace('.', '_')
         xref['reversetitle'] = p['title'] + ' in fragment ' +  ipfrag['id']
         p.append(xref)
+        
+    subnets(subnetlist)
 
+
+def subnets(l):
+    l = list(dict.fromkeys(l))
+    subnetfrag = soup.find(id='subnets')
+    for subnet in l:
+        p = soup.new_tag('property')
+        p['name'] = 'subnet'
+        p['title'] = 'Subnet'
+        p['value'] = subnet
+        subnetfrag.append(p)
 
 
 print('Removing duplicates')
@@ -105,12 +120,10 @@ for d in domains:
 
             for i in pdomains:
                 if d.endswith(i) and d != i:
-                    pdomain = '_nd_' + i.replace('.', '_')
-                    pdomainraw = i
+                    pdomain = i
                     sdomain = d.replace(i, '').strip('.')
                     break
                 else:
-                    pdomainraw = None
                     pdomain = None
                     sdomain = None
 
@@ -131,12 +144,7 @@ for d in domains:
                         p['value'] = domains[d]['internal'][ad_host]['source']
                 elif p['name'] == 'root':
                     if pdomain:
-                        x = soup.new_tag('xref')
-                        x['frag'] = 'default'
-                        x['docid'] = pdomain
-                        x['reversetitle'] = p['title'] + ' in fragment ' +  p.parent['id']
-                        x.string = pdomainraw
-                        p.append(x)
+                        p['value'] = pdomain
                     else:
                         p.decompose()
                 elif p['name'] == 'subdomain':
@@ -164,10 +172,10 @@ for d in domains:
 
 print('Host documents done')
 
-import ipdocs
-ipdocs.read()
+# import ipdocs
+# ipdocs.read()
 
-print('IP documents done')
+# print('IP documents done')
 
-with open('../Sources/doc_domains.json', 'w') as output:
-    output.write(json.dumps(domains, indent=4))
+# with open('../Sources/doc_domains.json', 'w') as output:
+#     output.write(json.dumps(domains, indent=4))
