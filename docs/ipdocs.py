@@ -126,17 +126,6 @@ def writeDead(network, subnet, addr):
             elif p['name'] == 'source':
                 p['value'] = 'Generated'
 
-        # status = soup.new_tag('property')
-        # status['name'] = 'status'
-        # status['title'] = 'Status'
-        # status['value'] = 'Address unused.'
-
-        # portfrag = soup.find(id='ports')
-        # portfrag.append(status)
-
-        if network != '192.168':
-            soup.find(title='Subnet')['value'] = '—'
-
         labels(network, soup, 'unused')
         output = open('../IPs/{0}.psml'.format(docid), 'w', encoding='utf-8')
         output.write(str(soup))
@@ -148,8 +137,6 @@ def labels(network, soup, status):
         label.string = 'private'
     else:
         label.string = 'public'
-        subntag = soup.find(title='Subnet')
-        subntag['value'] = '—'
     if status == 'unused':
         label.string += ',unused'
     else:
