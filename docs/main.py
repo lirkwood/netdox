@@ -69,8 +69,6 @@ for d in temp:
         domains[extdomain]['internal'][d] = temp[d]
         domains.pop(d, None)
 
-subndict = binary.netbox_prefixes()
-
 def ips(l, soup, s):
     iplist = list(dict.fromkeys(l))
     subnetlist = []
@@ -90,16 +88,7 @@ def ips(l, soup, s):
             p['title'] = 'External IP'
         ipfrag.append(p)
 
-        bin_ip = int(binary.binaryip(ip), 2)
-        sorted = False
-        for prefix in subndict:
-            if bin_ip > int(subndict[prefix]['lower'], 2) and bin_ip < int(subndict[prefix]['upper'], 2):
-                sorted = True
-                subnetlist.append(prefix)
-        
-        if not sorted:
-            print('No prefix match for ip {0}. Sorted using default method...'.format(ip))
-            subnetlist.append('.'.join(ip.split('.')[:3]) + '.0/24')
+        subnetlist.append(binary.netbox_sort(ip))
 
         xref = soup.new_tag('xref')
         xref['frag'] = 'default'

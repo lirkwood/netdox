@@ -27,6 +27,19 @@ def netbox_prefixes():
                 prefixes[row[0]] = subn_bounds(row[0])
     return prefixes
 
+def netbox_sort(ip):
+    bin_ip = int(binaryip(ip), 2)
+    sorted = False
+    subndict = netbox_prefixes()
+    for prefix in subndict:
+        if bin_ip > int(subndict[prefix]['lower'], 2) and bin_ip < int(subndict[prefix]['upper'], 2):
+            sorted = True
+            return prefix
+    
+    if not sorted:
+        print('No prefix match for ip {0}. Sorted using default method...'.format(ip))
+        return '.'.join(ip.split('.')[:3]) + '.0/24'
+
 def binaryip(ip):
     bin_ip = ''
     for octet in ip.split('.'):
