@@ -90,17 +90,24 @@ def ips(l, soup, s):
             p['title'] = 'External IP'
         ipfrag.append(p)
 
-        bin_ip = binary.binaryip(ip)
+        bin_ip = int(binary.binaryip(ip), 2)
+        sorted = False
         for prefix in subndict:
-            if bin_ip > subndict[prefix]['lower'] and bin_ip < subndict[prefix]['upper']:
+            if bin_ip > int(subndict[prefix]['lower'], 2) and bin_ip < int(subndict[prefix]['upper'], 2):
+                sorted = True
                 subnetlist.append(prefix)
-                break
         
+        if not sorted:
+            print('No prefix match for ip {0}. Sorted using default method...'.format(ip))
+            subnetlist.append('.'.join(ip.split('.')[:3]) + '.0/24')
+
         xref = soup.new_tag('xref')
         xref['frag'] = 'default'
         xref['docid'] = '_nd_' + ip.replace('.', '_')
         xref['reversetitle'] = p['title'] + ' in fragment ' +  ipfrag['id']
         p.append(xref)
+    
+    subnets(subnetlist)
 
 
 

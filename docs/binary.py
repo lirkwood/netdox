@@ -15,7 +15,7 @@ def subn_bounds(subnet):
     for i in range(32 - mask):
         i = i   #stop vscode showing a warning for unused var
         upper += '1'    #set all bits out of mask range
-    bounds['upper'] = int(upper, 10)
+    bounds['upper'] = upper
 
     return bounds
 
@@ -32,7 +32,7 @@ def binaryip(ip):
     for octet in ip.split('.'):
         bin_ip += bin(int(octet))[2:].zfill(8) 
        #strip 0b prefix and pad to size with 0s
-    return int(bin_ip, 10)
+    return bin_ip
 
 # if __name__ == '__main__':
 #     pprint.pprint(netbox_prefixes())
