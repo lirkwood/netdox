@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
-import csv
+import binary
 import pprint
+import csv
 
 def read():
     live = {}
@@ -37,9 +38,9 @@ def write(l):
                     if p['name'] == 'network':  #populate properties
                         p['value'] = '{0}.0.0/16'.format(network)
                     elif p['name'] == 'subnet':
-                        p['value'] = '{0}.{1}.0/24'.format(network, subnet)
+                        p['value'] = binary.netbox_sort(ip)
                     elif p['name'] == 'ip':
-                        p['value'] = ip + '/32'
+                        p['value'] = ip
                     elif p['name'] == 'source':
                         p['value'] = l[ip]
 
@@ -119,7 +120,7 @@ def writeDead(network, subnet, addr):
             if p['name'] == 'network':  #populate properties
                 p['value'] = '{0}.0.0/16'.format(network)
             elif p['name'] == 'subnet':
-                p['value'] = '{0}.{1}.0/24'.format(network, subnet)
+                p['value'] = binary.netbox_sort(ip)
             elif p['name'] == 'ip':
                 p['value'] = ip
             elif p['name'] == 'source':
