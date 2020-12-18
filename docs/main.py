@@ -7,6 +7,7 @@ import ad_domains
 import dnsme_domains
 import kube_domains
 import subdomains
+import binary
 
 
 # To refresh DNSMadeEasy data, uncomment below #
@@ -68,7 +69,7 @@ for d in temp:
         domains[extdomain]['internal'][d] = temp[d]
         domains.pop(d, None)
 
-
+subndict = binary.netbox_prefixes()
 
 def ips(l, soup, s):
     iplist = list(dict.fromkeys(l))
@@ -89,15 +90,18 @@ def ips(l, soup, s):
             p['title'] = 'External IP'
         ipfrag.append(p)
 
-        subnetlist.append('.'.join(ip.split('.')[:3]) + '.0/24')
+        bin_ip = binary.binaryip(ip)
+        for prefix in subndict:
+            if bin_ip > subndict[prefix]['lower'] and bin_ip < subndict[prefix]['upper']:
+                subnetlist.append(prefix)
+                break
         
         xref = soup.new_tag('xref')
         xref['frag'] = 'default'
         xref['docid'] = '_nd_' + ip.replace('.', '_')
         xref['reversetitle'] = p['title'] + ' in fragment ' +  ipfrag['id']
         p.append(xref)
-        
-    subnets(subnetlist)
+
 
 
 def subnets(l):
