@@ -37,7 +37,7 @@ def netbox_sort(ip):
             return prefix
     
     if not sorted:
-        print('No prefix match for ip {0}. Sorted using default method...'.format(ip))
+        # print('No prefix match for ip {0}. Sorted using default method...'.format(ip))
         return '.'.join(ip.split('.')[:3]) + '.0/24'
 
 def binaryip(ip):
