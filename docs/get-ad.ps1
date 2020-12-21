@@ -1,14 +1,10 @@
-$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding($False)
-$source = "../Sources/records"
-$destination = "../Sources/records"
-
-foreach ($i in Get-ChildItem -Recurse -Force) {
+foreach ($i in Get-ChildItem "../Sources/records" -Recurse -Force) {
     if ($i.PSIsContainer) {
         continue
     }
 
-    $path = $i.DirectoryName -replace $source, $destination
-    $name = $i.Fullname -replace $source, $destination
+    $path = $i.DirectoryName
+    $name = $i.Fullname
 
     if ( !(Test-Path $path) ) {
         New-Item -Path $path -ItemType directory
@@ -18,7 +14,7 @@ foreach ($i in Get-ChildItem -Recurse -Force) {
 
     if (  $null -ne $content ) {
 
-        [System.IO.File]::WriteAllLines($name, $content, $Utf8NoBomEncoding)
+        [System.IO.File]::WriteAllLines($name, $content)
     } else {
         Write-Host "No content from: $i"   
     }
