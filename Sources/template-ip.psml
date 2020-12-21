@@ -6,7 +6,7 @@
 
   <metadata>
     <properties>
-      <property name="template_version"     title="Template version"   value="1.2" />
+      <property name="template_version"     title="Template version"   value="1.3" />
     </properties>
   </metadata>
 
@@ -21,7 +21,7 @@
     <properties-fragment id="addresses">
       <property name="network"               title="Network"          value="" />
       <property name="subnet"               title="Subnet"          value="" />
-      <property name="ip"               title="IP"          value="" /> 
+      <property name="ipv4"               title="IP"          value="" /> 
     </properties-fragment>
   
     <properties-fragment id="ports" />
