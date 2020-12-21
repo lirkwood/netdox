@@ -46,6 +46,3 @@ def binaryip(ip):
         bin_ip += bin(int(octet))[2:].zfill(8) 
        #strip 0b prefix and pad to size with 0s
     return bin_ip
-
-# if __name__ == '__main__':
-#     pprint.pprint(netbox_prefixes())
