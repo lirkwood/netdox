@@ -24,18 +24,21 @@ def main():
             for i in range(256):
                 ip = subnet + '.' + str(i)
                 if ip not in subndict[subnet]:
-                    dead[ip] = 'Generated'
+                    dead[ip] = {'source': 'Generated'}
     
     ipdict = dead | live
-
+    with open('../sources/nmap.xml', 'r') as stream:
+        soup = BeautifulSoup(stream, features='xml')
+        for port in soup.find_all('port'):
+            ip = port.parent.parent.address['addr']
+            if 'ports' not in ipdict[ip]:
+                ipdict[ip]['ports'] = {}
+                ipdict[ip]['ports'][port['portid']] = port.service['name']
     
     with open('../Sources/template-ip.psml', 'r') as template:
-        with open('../sources/nmap.xml', 'r') as nstream:
-            nmap = BeautifulSoup(nstream, features='xml')
-            soup = BeautifulSoup(template, features='xml')     #open template as soup
-            for ip in ipdict:
-                print(ip)
-                write(ip, ipdict[ip], nmap, soup)
+        soup = BeautifulSoup(template, features='xml')     #open template as soup
+        for ip in ipdict:
+            write(ip, ipdict[ip], soup)
         
 
 def read():
@@ -47,15 +50,17 @@ def read():
             for p in ports:
                 addrtag = p.parent.find('address', addrtype='ipv4')
                 ip = addrtag['addr']
-                live[ip] = 'nmap'
+                live[ip] = {}
+                live[ip]['source'] = 'nmap'
             for row in csv.reader(stream):
                 for ip in row[2:]:
-                    live[ip] = row[0]
+                    live[ip] = {}
+                    live[ip]['source'] = row[0]
 
     return live
     
 
-def write(ip, source, nmap, soup):
+def write(ip, info, soup):
     docid = '_nd_' + ip.replace('.', '_')
     network = '.'.join(ip.split('.')[:2]) #split it into components
 
@@ -68,36 +73,27 @@ def write(ip, source, nmap, soup):
         elif p['name'] == 'ipv4':
             p['value'] = ip
         elif p['name'] == 'source':
-            p['value'] = source
+            p['value'] = info['source']
 
     soup.uri['docid'] = docid
     soup.uri['title'] = ip
     soup.heading.string = ip
 
-    if network == '192.168':
-        portfrag = soup.find(id='ports') #find xref fragment
-        atags = nmap.find_all(addr=ip) #find all host blocks with matching ips
-        for t in atags:
-            h = t.parent
-            ports = h.find('ports')
-            if ports:    #if host block has ports
-                for port in ports.find_all('port'):
-                    services = port.find_all('service')
-                    if services:
-                        service = services[0]['name']
-                    else:
-                        service = 'nothing'
-                    p = soup.new_tag('property')
-                    p['name'] = 'port'
-                    p['title'] = service + ' port'
-                    p['datatype'] = 'xref'
-                    portfrag.append(p)
-                    
-                    x = soup.new_tag('xref')
-                    x['frag'] = 'default'
-                    x['docid'] = '_nd_port_' + port['portid']
-                    x.string = 'Port ' + port['portid']
-                    p.append(x)
+    if 'ports' in ip:
+        portfrag = soup.find(id='ports')
+        for port in info['ports']:
+            service = info['ports'][port]
+            p = soup.new_tag('property')
+            p['name'] = 'port'
+            p['title'] = service + ' port'
+            p['datatype'] = 'xref'
+            portfrag.append(p)
+            
+            x = soup.new_tag('xref')
+            x['frag'] = 'default'
+            x['docid'] = '_nd_port_' + port
+            x.string = 'Port ' + port
+            p.append(x)
 
     labels(soup)
     output = open('../IPs/{0}.psml'.format(docid), 'w', encoding='utf-8')
