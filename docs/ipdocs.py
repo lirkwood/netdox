@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import binary
 import pprint
 import csv
+import os
 
 def read():
     live = {}
@@ -16,7 +17,9 @@ def read():
             for row in csv.reader(stream):
                 for ip in row[2:]:
                     live[ip] = row[0]
-        
+    
+    if not os.path.exists('../IPs'):
+        os.mkdir('../IPs')
     write(live)
 
 def write(l):
