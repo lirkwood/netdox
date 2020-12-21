@@ -32,7 +32,7 @@ def netbox_sort(ip):
     sorted = False
     subndict = netbox_prefixes()
     for prefix in subndict:
-        if bin_ip > int(subndict[prefix]['lower'], 2) and bin_ip < int(subndict[prefix]['upper'], 2):
+        if bin_ip >= int(subndict[prefix]['lower'], 2) and bin_ip <= int(subndict[prefix]['upper'], 2):
             sorted = True
             return prefix
     
