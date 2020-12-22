@@ -15,7 +15,7 @@ def set(folder):
         'name': date
     }
 
-    uri = urimap[folder]
+    uri = urimap[folder.lower()]
     url = 'https://ps-doc.allette.com.au/ps/service/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(uri)
 
     r = post(url, headers=header, params=params)
@@ -25,11 +25,11 @@ def set(folder):
 
 
 urimap = {
-    'Hosts': '32280',
-    'IPs': '32879',
-    'Ports': '19040',
-    'AnsibleJson': '24577',
-    'Documents': '5471'
+    'hosts': '32280',
+    'ips': '32879',
+    'ports': '19040',
+    'ansiblejson': '24577',
+    'documents': '5471'
 }
 
 if __name__ == "__main__":
