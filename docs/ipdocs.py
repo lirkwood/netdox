@@ -38,7 +38,7 @@ def main():
     with open('../Sources/template-ip.psml', 'r') as template:
         soup = BeautifulSoup(template, features='xml')     #open template as soup
         for ip in ipdict:
-            write(ip, ipdict[ip], soup)
+            write(ip, ipdict[ip], copy.copy(soup))
         
 
 def read():
