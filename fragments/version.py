@@ -2,6 +2,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from requests import post
 import auth
+import sys
 
 def set(folder):
     token = auth.token()
@@ -32,4 +33,5 @@ urimap = {
 }
 
 if __name__ == "__main__":
-    set('Hosts')
+    folder = sys.argv[1]
+    set(folder)
