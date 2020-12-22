@@ -79,12 +79,11 @@ def ips(l, soup, s):
     for ip in iplist:
         p = soup.new_tag('property')
         p['datatype'] = 'xref'
+        p['name'] = 'ipv4'
         
         if ip.startswith('192.168') or ip.startswith('172') or ip.startswith('10.'):
-            p['name'] = 'int_ipv4'
             p['title'] = 'Internal IP'
         else:
-            p['name'] = 'ext_ipv4'
             p['title'] = 'External IP'
         ipfrag.append(p)
 
@@ -176,7 +175,7 @@ for d in domains:
 print('Host documents done')
 
 import ipdocs
-ipdocs.read()
+ipdocs.main()
 
 print('IP documents done')
 
