@@ -27,7 +27,7 @@ def request():
 
     r = requests.post(url, params=header)
     token = json.loads(r.text)['access_token']
-    with open('auth_last.txt', 'w') as o:
+    with open('../Sources/auth_last.txt', 'w') as o:
         o.write(token + '\n' + str(int(time.time())))
 
     return token
