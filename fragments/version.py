@@ -25,8 +25,8 @@ def set(folder):
 
 
 urimap = {
-    'hosts': '32280',
-    'ips': '32879',
+    'hosts': '36057',
+    'ips': '36058',
     'ports': '19040',
     'ansiblejson': '24577',
     'documents': '5471'
