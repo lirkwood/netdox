@@ -5,6 +5,7 @@ Ports/
 Analytics/
 Documentation/
 dnsme/
+validate/
 **/Logs
 **/outgoing
 **/json
