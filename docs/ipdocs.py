@@ -31,8 +31,9 @@ def main():
         soup = BeautifulSoup(stream, features='xml')
         for port in soup.find_all('port'):
             ip = port.parent.parent.address['addr']
-            if 'ports' not in ipdict[ip]:
-                ipdict[ip]['ports'] = {}
+            if port.service:
+                if 'ports' not in ipdict[ip]:
+                    ipdict[ip]['ports'] = {}
                 ipdict[ip]['ports'][port['portid']] = port.service['name']
     
     with open('../Sources/template-ip.psml', 'r') as template:
