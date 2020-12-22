@@ -79,7 +79,7 @@ def write(ip, info, soup):
     soup.uri['title'] = ip
     soup.heading.string = ip
 
-    if 'ports' in ip:
+    if 'ports' in info:
         portfrag = soup.find(id='ports')
         for port in info['ports']:
             service = info['ports'][port]
