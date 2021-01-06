@@ -13,7 +13,6 @@ import binary
 args = list(sys.argv)
 
 if len(args) > 1:
-
     if 'all' in args:
         args = ['dnsme', 'ad', 'kube']
     else:
@@ -44,26 +43,6 @@ if len(args) > 1:
     for f in os.scandir('../IPs'):
         os.remove(f)
     print('Done.')
-
-# To refresh DNSMadeEasy data, uncomment below #
-################################################
-# import datetime
-# import urllib.request
-# import hmac
-# import hashlib
-# import dnsmereq
-# dnsmereq.main()
-# print('DNSMadeEasy domains retrieved')
-
-# To refresh ActiveDirectory data, uncomment below #
-####################################################
-# os.system('pwsh.exe ./get-ad.ps1')
-# print('Active Directory domains retrieved')
-
-# To refresh Kubernetes data, uncomment below #
-###############################################
-# os.system('pwsh.exe ./get-ingress.ps1')
-# print('Kubernetes domains retrieved')
 
 dnsme_domains.main()
 print('DNSMadeEasy domains processed')
