@@ -1,4 +1,5 @@
 import os
+import sys
 import csv
 import json
 from bs4 import BeautifulSoup
@@ -9,6 +10,40 @@ import kube_domains
 import subdomains
 import binary
 
+args = list(sys.argv)
+
+if len(args) > 1:
+
+    if 'all' in args:
+        args = ['dnsme', 'ad', 'kube']
+    else:
+        args.pop(0)
+
+    for arg in args:
+        if arg == 'dnsme':
+            import datetime
+            import urllib.request
+            import hmac
+            import hashlib
+            import dnsmereq
+            dnsmereq.main()
+            print('DNSMadeEasy domains retrieved')
+        elif arg == 'ad':
+            os.system('pwsh.exe ./get-ad.ps1')
+            print('Active Directory domains retrieved')
+        elif arg == 'kube':
+            os.system('pwsh.exe ./get-ingress.ps1')
+            print('Kubernetes domains retrieved')
+        else:
+            print('Invalid argument given. Valid arguments are: dnsme | ad | kube | all')
+            exit()
+    
+    print('Removing old documents...')
+    for f in os.scandir('../Hosts'):
+        os.remove(f)
+    for f in os.scandir('../IPs'):
+        os.remove(f)
+    print('Done.')
 
 # To refresh DNSMadeEasy data, uncomment below #
 ################################################
