@@ -28,7 +28,9 @@ if len(args) > 1:
             dnsmereq.main()
             print('DNSMadeEasy domains retrieved')
         elif arg == 'ad':
+            import ad_format
             os.system('pwsh.exe ./get-ad.ps1')
+            ad_format.toJson()
             print('Active Directory domains retrieved')
         elif arg == 'kube':
             os.system('pwsh.exe ./get-ingress.ps1')
