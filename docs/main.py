@@ -86,23 +86,22 @@ for d in temp:
         domains[extdomain]['internal'][d] = temp[d]
         domains.pop(d, None)
 
-def ips(l, soup, s):
+def ips(l, soup, s=None):
     iplist = list(dict.fromkeys(l))
     subnetlist = []
+    intProp = soup.find(title='Internal IP')
+    extProp = soup.find(title='External IP')
+
     if s == 'internal':
         ipfrag = soup.find(id='ad_ipv4')
     else:
         ipfrag = soup.find(id='ipv4')
     for ip in iplist:
-        p = soup.new_tag('property')
-        p['datatype'] = 'xref'
-        p['name'] = 'ipv4'
-        
         if ip.startswith('192.168') or ip.startswith('172') or ip.startswith('10.'):
-            p['title'] = 'Internal IP'
+            clone = copy.copy(intProp)
         else:
-            p['title'] = 'External IP'
-        ipfrag.append(p)
+            clone = copy.copy(extProp)
+        ipfrag.append(clone)
 
         subnetlist.append(binary.netbox_sort(ip))
 
@@ -112,6 +111,8 @@ def ips(l, soup, s):
         xref['reversetitle'] = p['title'] + ' in fragment ' +  ipfrag['id']
         p.append(xref)
     
+    intProp.decompose()
+    extProp.decompose()
     subnets(subnetlist)
 
 def aliases(hostname):
@@ -129,13 +130,12 @@ def aliases(hostname):
 
 def subnets(l):
     l = list(dict.fromkeys(l))
-    subnetfrag = soup.find(id='subnets')
+    subnetProp = soup.find(title='Subnet')
     for subnet in l:
-        p = soup.new_tag('property')
-        p['name'] = 'subnet'
-        p['title'] = 'Subnet'
-        p['value'] = subnet
-        subnetfrag.append(p)
+        clone = copy.copy(subnetProp)
+        clone['value'] = subnet
+        soup.find(id='subnets').append(clone)
+    subnetProp.decompose()
 
 if not os.path.exists('../Hosts'):
     os.mkdir('../Hosts')
@@ -189,7 +189,7 @@ for d in domains:
                         p.decompose()
                 
             if 'ips' in domains[d]:
-                ips(domains[d]['ips'], soup, 'external')
+                ips(domains[d]['ips'], soup)
             if 'internal' in domains[d]:
                 ips(domains[d]['internal'][ad_host]['ips'], soup, 'internal')
 
