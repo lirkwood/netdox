@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import json
+import copy
 from bs4 import BeautifulSoup
 
 import ad_domains
@@ -113,7 +114,18 @@ def ips(l, soup, s):
     
     subnets(subnetlist)
 
-
+def aliases(hostname):
+    aliasProp = soup.find(title='Alias')
+    with open('../Sources/cnames.json') as stream:
+        aliasDict = json.load(stream)
+        try:
+            for alias in aliasDict[hostname]:
+                clone = copy.copy(aliasProp)
+                clone['value'] = alias
+                soup.find(id='aliases').append(clone)
+        except KeyError:
+            pass
+    aliasProp.decompose()
 
 def subnets(l):
     l = list(dict.fromkeys(l))
@@ -185,8 +197,10 @@ for d in domains:
             soup.uri['title'] = d
             soup.heading.string = d
 
+            aliases(d)
+
             stream.write(str(soup))
-        
+
 
 print('Host documents done')
 
@@ -195,5 +209,5 @@ ipdocs.main()
 
 print('IP documents done')
 
-with open('../Sources/doc_domains.json', 'w') as output:
+with open('../Sources/domains.json', 'w') as output:
     output.write(json.dumps(domains, indent=4))
