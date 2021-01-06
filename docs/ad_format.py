@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 
 def toJson():
     list = extract()
+    aliases(list)
 
     with open('../Sources/ad.xml', 'w') as stream:
         soup = BeautifulSoup('', features='xml')
@@ -39,19 +40,6 @@ def extract():
         jsondata = json.load(source)    #load json file
 
         for record in jsondata:
-            # if record['RecordType'] == 'PTR':
-            #     hostname = record['RecordData']['CimInstanceProperties'].split('"')[1].strip('.')
-            #     ipbase = record['DistinguishedName'].split('DC=')[2].split('.')
-            #     iptail = record['DistinguishedName'].split('DC=')[1]
-            #     ip = '.'.join([ipbase[2], ipbase[1], ipbase[0], iptail]).strip(',')
-            #     network = '.'.join(ip.split('.')[:2])
-            #     subnet = ip.split('.')[2]
-            #     address = ip.split('.')[3]
-
-            #     hostname = hostname.strip('*.')
-            #     hostname = hostname.strip('www.')
-            #     list.append([hostname, network, subnet, address])
-                
             if record['RecordType'] == 'A': 
                 hostnamestr = record['DistinguishedName'].split(',')    #get hostname
                 subdomain = hostnamestr[0].replace('DC=', '') #extract subdomain
@@ -65,7 +53,7 @@ def extract():
 
                 for item in record['RecordData']['CimInstanceProperties']:
                     if item['Name'] == "IPv4Address":
-                        ip = item['Value']
+                        ip = item['Value'].strip('.')
 
                 network = '.'.join(ip.split('.')[:2])
                 subnet = ip.split('.')[2]
@@ -73,11 +61,10 @@ def extract():
 
                 hostname = hostname.replace('www.', '')
                 list.append([hostname, network, subnet, address])
-    return aliases(list)
+    return list
 
 def aliases(list):
-    new = []
-
+    cnames = {}
     for file in os.scandir("../Sources/records"):
         source = open(file)
         jsondata = json.load(source)
@@ -96,13 +83,17 @@ def aliases(list):
                 
                 alias = ''
                 for item in record['RecordData']['CimInstanceProperties']:
-                    if item['Name'] == "IPv4Address":
-                        alias = item['Value']
+                    if item['Name'] == "HostNameAlias":
+                        alias = item['Value'].strip('.')
 
                 for item in list:
                     if item[0] == alias:
-                        new.append([hostname, item[1], item[2], item[3]])
-    return list + new
+                        if alias not in cnames:
+                            cnames[alias] = []
+                        if hostname not in cnames[alias]:
+                            cnames[alias].append(hostname)
+    with open('../sources/cnames.json', 'w') as stream:
+        stream.write(json.dumps(cnames, indent=4))
 
 if __name__ == '__main__':
     toJson()
