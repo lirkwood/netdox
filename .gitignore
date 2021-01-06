@@ -27,3 +27,4 @@ Graylog/ip.csv
 Graylog/response.json
 docs/ipdocs_old.py
 docs/template.py
+docs/encode.ps1
