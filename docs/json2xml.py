@@ -63,7 +63,10 @@ def extract():
                 else:
                     hostname = subdomain + '.' + domain #assemble full domain name
 
-                ip = record['RecordData']['CimInstanceProperties'].split('"')[1]    #grab ip
+                for item in record['RecordData']['CimInstanceProperties']:
+                    if item['Name'] == "IPv4Address":
+                        ip = item['Value']
+
                 network = '.'.join(ip.split('.')[:2])
                 subnet = ip.split('.')[2]
                 address = ip.split('.')[3]
@@ -91,7 +94,10 @@ def aliases(list):
                 else:
                     hostname = subdomain + '.' + domain #assemble full domain name
                 
-                alias = record['RecordData']['CimInstanceProperties'].split('"')[1].strip('.')
+                alias = ''
+                for item in record['RecordData']['CimInstanceProperties']:
+                    if item['Name'] == "IPv4Address":
+                        alias = item['Value']
 
                 for item in list:
                     if item[0] == alias:
