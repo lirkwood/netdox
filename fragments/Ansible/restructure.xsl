@@ -48,11 +48,25 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
             <xsl:when test="string-length($uuid) > 4">
               <xsl:choose>
                 <xsl:when test="contains($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, 'partitions')">
-                  <xsl:value-of select="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[14]" />
+                  <xsl:choose>
+                    <xsl:when test="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[14]">
+                      <xsl:value-of select="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[14]" />
+                    </xsl:when>
+                    <xsl:otherwise>
+                      <xsl:value-of select="$id" />
+                    </xsl:otherwise>
+                  </xsl:choose>
                 </xsl:when>
                 <!-- match on device with same uuid -->
                 <xsl:otherwise>
-                  <xsl:value-of select="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[10]" />
+                  <xsl:choose>
+                    <xsl:when test="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[10]">
+                      <xsl:value-of select="tokenize($main//*[@id = 'ansible_devices']/*[@value = $uuid]/@name, ';')[10]" />
+                    </xsl:when>
+                    <xsl:otherwise>
+                      <xsl:value-of select="$id" />
+                    </xsl:otherwise>
+                  </xsl:choose>
                 </xsl:otherwise>
               </xsl:choose>
             </xsl:when>

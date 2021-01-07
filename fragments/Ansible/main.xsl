@@ -23,7 +23,7 @@ xmlns:js="http://www.w3.org/2005/xpath-functions">
             </xsl:choose>
         </xsl:variable>
         <!-- removing the .internal and formatting the hostname to be docid compliant -->
-        <xsl:result-document href="raw/{$docid}.psml">
+        <xsl:result-document href="ansible/raw/{$docid}.psml">
             <xsl:element name="document">
                 <xsl:for-each select="$json/*/*">
                 <!-- for every parent listed in desired.json -->
