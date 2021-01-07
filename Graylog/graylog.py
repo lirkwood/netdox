@@ -21,6 +21,9 @@ def request():
 
         response = requests.post(url, headers=headers, data=json.dumps(payload))
 
+        with open('log.json', 'w') as o:
+            o.write(response.text)
+
         rtext = json.loads(response.text)
         return rtext
     
