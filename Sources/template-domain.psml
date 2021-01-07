@@ -1,12 +1,8 @@
 <document type="host" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
-    <documentinfo>
-      <uri docid="" title=""/>
-    </documentinfo>
-
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="2.7" />
+            <property name="template_version"     title="Template version"   value="2.8" />
         </properties>
     </metadata>
 
@@ -24,10 +20,28 @@
             <property name="source"        title="Source"      value="" />
         </properties-fragment>
 
-        <properties-fragment id="ipv4"/>
-
-        <properties-fragment id="subnets"/>
+        <properties-fragment id="ipv4">
+          <property name="ipv4" title="Internal IP" datatype="xref"/>
+          <property name="ipv4" title="External IP" datatype="xref" />
+        </properties-fragment>
         
+        <properties-fragment id="subnets">
+          <property name="subnet" title="Subnet" value="" />
+        </properties-fragment>
+      
+        <properties-fragment id="aliases">
+          <property name="alias" title="Alias" value="" />
+        </properties-fragment>
+        
+    </section>
+  
+    <section id="assoc" title="Associated Hosts">
+      
+      <properties-fragment id="1">
+        <property name="assoc_host" title="Associcated Host" value="" />
+        <property name="relationship" title="Relative Role" value="" />
+      </properties-fragment>
+      
     </section>
 
     <section id='ad_info' title='Active Directory details'>
@@ -36,14 +50,29 @@
             <property name="ad_host"        title="Active Directory Host"  value="" />
         </properties-fragment>
 
-        <properties-fragment id="ad_ipv4"/>
+        <properties-fragment id="ad_ipv4">
+          <property name="ipv4" title="Internal IP" datatype="xref"/>
+        </properties-fragment>
 
     </section>
-
-    <section id="assoc" title="Associated Hosts" />
   
-    <section id="appman" title="Application Manager" />
+    <section id="appman" title="Application Manager">
     
-    <section id="ansible" title="Ansible" />
-
+      <properties-fragment id="kube_pods">
+        <property name="pod"  title='Pod'  value='' />
+        <property name="pod_link"  title="Pod on Rancher" datatype="xref" />
+        <property name="container" title="Container" value=""/>
+        <property name="image" title="Image ID" value=""/>
+      </properties-fragment>
+      
+      <properties-fragment id='kube_worker'>
+        <property name="worker_name" title="Worker Name" value="" />
+        <property name="worker_host" title="Worker Hostname" datatype="xref" />
+        <property name="worker_ipv4"  title="Worker IP" datatype="xref" />
+      </properties-fragment>
+      
+    </section>
+    
+    <section id="ansible" title="Ansible"/>
+  
 </document>
