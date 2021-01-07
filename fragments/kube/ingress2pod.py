@@ -210,6 +210,8 @@ def getworkers():
 
 
 def main():
+    if not os.path.exists('kube/outgoing'):
+        os.mkdir('kube/outgoing')
     idict = ingress()
     sdict = service(idict)
     pdict = pods(sdict)

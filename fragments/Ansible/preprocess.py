@@ -1,3 +1,4 @@
+import os
 import json
 import pprint
 
@@ -34,6 +35,10 @@ def dictfromlist(obj):
     return temp
 
 def main():
+    if not os.path.exists('ansible/outgoing'):
+        os.mkdir('ansible/outgoing')
+    if not os.path.exists('ansible/json'):
+        os.mkdir('ansible/json')
     master = clean()
     master = dictfromlist(master)
     with open('../sources/ansible/ansible.json', 'w') as o:

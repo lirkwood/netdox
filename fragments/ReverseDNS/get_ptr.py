@@ -67,6 +67,8 @@ def main():
             xref['docid'] = '_nd_' + domain.replace('.', '_')
             prop.append(xref)
         
+        if not os.path.exists('reversedns/outgoing'):
+            os.mkdir('reversedns/outgoing')
         with open('reversedns/outgoing/{0};reversedns;.psml'.format(docid), 'w') as o:
             o.write(soup.prettify())
 
