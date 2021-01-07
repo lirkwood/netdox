@@ -89,13 +89,15 @@ for d in temp:
 def ips(l, soup, s=None):
     iplist = list(dict.fromkeys(l))
     subnetlist = []
-    intProp = soup.find(title='Internal IP')
-    extProp = soup.find(title='External IP')
 
     if s == 'internal':
         ipfrag = soup.find(id='ad_ipv4')
     else:
         ipfrag = soup.find(id='ipv4')
+        extProp = ipfrag.find(title='External IP')
+
+    intProp = ipfrag.find(title='Internal IP')
+
     for ip in iplist:
         if ip.startswith('192.168') or ip.startswith('172') or ip.startswith('10.'):
             clone = copy.copy(intProp)
@@ -108,11 +110,14 @@ def ips(l, soup, s=None):
         xref = soup.new_tag('xref')
         xref['frag'] = 'default'
         xref['docid'] = '_nd_' + ip.replace('.', '_')
-        xref['reversetitle'] = p['title'] + ' in fragment ' +  ipfrag['id']
-        p.append(xref)
+        xref['reversetitle'] = clone['title'] + ' in fragment ' +  ipfrag['id']
+        clone.append(xref)
     
     intProp.decompose()
-    extProp.decompose()
+    try:
+        extProp.decompose()
+    except UnboundLocalError:
+        pass
     subnets(subnetlist)
 
 def aliases(hostname):
@@ -136,6 +141,18 @@ def subnets(l):
         clone['value'] = subnet
         soup.find(id='subnets').append(clone)
     subnetProp.decompose()
+
+def clean():
+    for property in soup.find_all('property'):
+        if property.has_attr('value') and property['value'] == '':
+            property.decompose()
+        elif property.has_attr('datatype') and property['datatype'] == 'xref':
+            if not property.find('xref'):
+                property.decompose()
+    for frag in soup.find_all('properties-fragment'):
+        if not frag.find_all('property'):
+            frag.decompose()
+
 
 if not os.path.exists('../Hosts'):
     os.mkdir('../Hosts')
@@ -193,11 +210,14 @@ for d in domains:
             if 'internal' in domains[d]:
                 ips(domains[d]['internal'][ad_host]['ips'], soup, 'internal')
 
-            soup.uri['docid'] = docid
-            soup.uri['title'] = d
+            docinf = soup.new_tag('documentinfo')
+            uri = soup.new_tag('uri')
+            uri['docid'] = docid
+            uri['title'] = d
             soup.heading.string = d
 
             aliases(d)
+            clean()
 
             stream.write(str(soup))
 
