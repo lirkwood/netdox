@@ -4,7 +4,7 @@
             "id": "bbd5228d-dbad-4efa-a19e-bacb73b7530f",
             "timerange": {
                 "type": "relative",
-                "range": 432000
+                "range": 604800
             },
             "query": {
                 "type": "elasticsearch",
