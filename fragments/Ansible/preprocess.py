@@ -3,7 +3,7 @@ import json
 import pprint
 
 def clean():
-    with open('../Sources/ansible/ansible.txt', 'r') as stream:
+    with open('../Sources/ansible/facts.txt', 'r') as stream:
         master = {}
         first = True
         for line in stream:
@@ -39,6 +39,8 @@ def main():
         os.mkdir('ansible/outgoing')
     if not os.path.exists('ansible/json'):
         os.mkdir('ansible/json')
+    if not os.path.exists('ansible/raw'):
+        os.mkdir('ansible/raw')
     master = clean()
     master = dictfromlist(master)
     with open('../sources/ansible/ansible.json', 'w') as o:
