@@ -7,7 +7,7 @@ import os
 
 def ingress():
     ##### UNCOMMMENT BELOW to get new ingress data #####
-    # os.system('pwsh.exe ../Docs/get-ingress.ps1')
+    os.system('pwsh.exe ../Docs/get-ingress.ps1')
     with open('../Sources/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
@@ -30,7 +30,7 @@ def ingress():
 
 def service(sdict):
     ##### UNCOMMMENT BELOW to get new service data #####
-    # os.system('pwsh.exe ./get-services.ps1')
+    os.system('pwsh.exe ./get-services.ps1')
     global links
     ndict = {} #new dictionary
     noingress = {}
@@ -73,7 +73,7 @@ def service(sdict):
 
 def pods(sdict):
     ##### UNCOMMMENT BELOW to get new pod data #####
-    # os.system('pwsh.exe ./get-pods.ps1')
+    os.system('pwsh.exe ./get-pods.ps1')
     global workers
     workers = []
     pdict = {}
