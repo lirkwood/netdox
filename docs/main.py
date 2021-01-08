@@ -15,12 +15,17 @@ args = list(sys.argv)
 
 if len(args) > 1:
     if 'all' in args:
-        args = ['dnsme', 'ad', 'kube']
+        args = ['ad', 'dnsme', 'kube']
     else:
         args.pop(0)
 
     for arg in args:
-        if arg == 'dnsme':
+        if arg == 'ad':
+            import ad_format
+            os.system('pwsh.exe ./get-ad.ps1')
+            ad_format.toJson()
+            print('Active Directory domains retrieved')
+        elif arg == 'dnsme':
             import datetime
             import urllib.request
             import hmac
@@ -28,11 +33,6 @@ if len(args) > 1:
             import dnsmereq
             dnsmereq.main()
             print('DNSMadeEasy domains retrieved')
-        elif arg == 'ad':
-            import ad_format
-            os.system('pwsh.exe ./get-ad.ps1')
-            ad_format.toJson()
-            print('Active Directory domains retrieved')
         elif arg == 'kube':
             os.system('pwsh.exe ./get-ingress.ps1')
             print('Kubernetes domains retrieved')
@@ -47,10 +47,10 @@ if len(args) > 1:
         os.remove(f)
     print('Done.')
 
-dnsme_domains.main()
-print('DNSMadeEasy domains processed')
 ad_domains.main()
 print('Active Directory domains processed')
+dnsme_domains.main()
+print('DNSMadeEasy domains processed')
 kube_domains.main()
 print('Kubernetes domains processed')
 subdomains.main()
@@ -138,7 +138,10 @@ def subnets(l):
     subnetProp = soup.find(title='Subnet')
     for subnet in l:
         clone = copy.copy(subnetProp)
-        clone['value'] = subnet
+        try:
+            clone['value'] = subnet
+        except TypeError:
+            pass
         soup.find(id='subnets').append(clone)
     subnetProp.decompose()
 
@@ -204,9 +207,12 @@ for d in domains:
                         p['value'] = ad_host
                     else:
                         p.decompose()
-                
-            if 'ips' in domains[d]:
-                ips(domains[d]['ips'], soup)
+            
+            try:
+                if len(domains[d]['ips']) > 0:
+                    ips(domains[d]['ips'], soup)
+            except KeyError:
+                pass
             if 'internal' in domains[d]:
                 ips(domains[d]['internal'][ad_host]['ips'], soup, 'internal')
 
