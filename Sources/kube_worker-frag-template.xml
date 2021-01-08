@@ -5,7 +5,7 @@
     <property name="worker_host" title="Worker Hostname" datatype='xref'>
         <xref frag='default' docid='' />
     </property>
-    <property name="worker_ip"  title="Worker IP"  datatype='xref' >
+    <property name="ipv4"  title="Worker IP"  datatype='xref' >
         <xref frag='default' docid='' />
     </property>
   </properties-fragment>

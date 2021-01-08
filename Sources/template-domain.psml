@@ -69,7 +69,7 @@
       <properties-fragment id='kube_worker'>
         <property name="worker_name" title="Worker Name" value="" />
         <property name="worker_host" title="Worker Hostname" datatype="xref" />
-        <property name="worker_ipv4"  title="Worker IP" datatype="xref" />
+        <property name="ipv4"  title="Worker IP" datatype="xref" />
       </properties-fragment>
       
     </section>
