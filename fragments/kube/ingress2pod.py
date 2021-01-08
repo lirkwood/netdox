@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import copy
 import json
 import csv
 import os
@@ -114,6 +115,7 @@ def pods(sdict):
                             
                     except KeyError:
                         print('Discovered pod with no service {0}. Ignoring...'.format(appname))
+    
     return pdict
 
 
@@ -136,41 +138,53 @@ def pivot(pdict):   #rearrange dict so domains are the keys and deployments are 
 
 
 def podsfrag(d):    #construct kube fragment for posting to rest api
-    for context in d:
+    with open('../Sources/kube_pods-frag-template.xml', 'r') as stream:
+        source = BeautifulSoup(stream, features='xml')
+        for context in d:
+            if context == 'sandbox':
+                podlinkbase = 'https://rancher.allette.com.au/p/c-4c8qc:p-dtg8s/workloads/default:'
+            elif context == 'production':
+                podlinkbase = 'https://rancher-sy4.allette.com.au/p/c-57mj6:p-b8h5z/workloads/default:'
 
-        if context == 'sandbox':
-            podlinkbase = 'https://rancher.allette.com.au/p/c-4c8qc:p-dtg8s/workloads/default:'
-        elif context == 'production':
-            podlinkbase = 'https://rancher-sy4.allette.com.au/p/c-57mj6:p-b8h5z/workloads/default:'
-
-        for dom in d[context]:
-            domain = d[context][dom]
-            with open('../Sources/kube_pods-frag-template.xml', 'r') as stream:
-                soup = BeautifulSoup(stream, features='xml')    #get all properties as soup objs for multiple uses if necessary
-                outsoup = BeautifulSoup('', features='xml')
-                frag = outsoup.new_tag('properties-fragment')
-                frag['id'] = 'kube_pods'
-                outsoup.append(frag)
+            for dom in d[context]:
+                domain = d[context][dom]
+                soup = copy.copy(source)
+                podsrc = soup.find(title='Pod')
+                podlinksrc = soup.find(title='Pod on Rancher')
+                contsrc = soup.find(title='Container')
+                gitsrc = soup.find(title='Project on GitLab')
+                imgsrc = soup.find(title='Image ID')
+                frag = soup.find('properties-fragment')
                 for pod in domain['pods']:
-                    podsoup = BeautifulSoup(str(soup.find(title='Pod')), features='xml')
-                    podlinksoup = BeautifulSoup(str(soup.find(title='Pod on Rancher')), features='xml')
+                    podsoup = copy.copy(podsrc)
+                    podlinksoup = copy.copy(podlinksrc)
+                    podsoup['value'] = pod
+                    podlinksoup['value'] = podlinkbase + pod
                     frag.append(podsoup)
-                    frag.property['value'] = pod
                     frag.append(podlinksoup)
-                    frag.find(title='Pod on Rancher')['value'] = podlinkbase + pod
                     _pod = domain['pods'][pod]
                     for container in domain['pods'][pod]['containers']:
-                        contsoup = BeautifulSoup(str(soup.find(title='Container')), features='xml')
-                        imgsoup = BeautifulSoup(str(soup.find(title='Image ID')), features='xml')
+                        image = _pod['containers'][container]
+                        contsoup = copy.copy(contsrc)
+                        imgsoup = copy.copy(imgsrc)
+                        contsoup['value'] = container
+                        imgsoup['value'] = image
+                        if 'registry-gitlab.allette.com.au' in image:
+                            gitsoup = copy.copy(gitsrc)
+                            gitsoup['value'] = image.split('-')[1].split(':')[0]
+                            frag.append(gitsoup)
                         frag.append(contsoup)
-                        frag.append(imgsoup)
-                        frag.find(title='Container')['value'] = container
-                        frag.find(title='Image ID')['value'] = _pod['containers'][container]   
+                        frag.append(imgsoup)  
 
+                podsrc.decompose()
+                podlinksrc.decompose()
+                contsrc.decompose()
+                gitsrc.decompose()
+                imgsrc.decompose()
                 docid = '_nd_' + dom.replace('.', '_')
                 filename = docid + ';kube_pods;' #encode fragment name in filename for easier reading
                 with open('kube/outgoing/{0}.psml'.format(filename), 'w') as o:
-                    o.write(outsoup.prettify())
+                    o.write(soup.prettify())
 
 
 
