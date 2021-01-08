@@ -16,7 +16,7 @@ def main():
 
         for record in context['items']: #navigating to each record
             for i in record['spec']['rules']:   #get list of all domains
-                domains[c].append(i['host'].strip('www.'))
+                domains[c].append(i['host'].replace('www.', ''))
 
             # domains[c] = list(dict.fromkeys(domains[c]))  #remove duplicates
 
