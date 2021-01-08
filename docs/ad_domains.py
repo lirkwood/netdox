@@ -25,7 +25,7 @@ import csv
 #         writer.writerow(['Active Directory', k, dict[k]])
         
 def main():
-    output = open('../Sources/domains.csv', 'a', newline='')
+    output = open('../Sources/domains.csv', 'w', newline='')
     writer = csv.writer(output)
 
     stream = open('../Sources/ad.xml', 'r')
