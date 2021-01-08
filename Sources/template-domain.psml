@@ -2,7 +2,7 @@
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="2.8" />
+            <property name="template_version"     title="Template version"   value="2.9" />
         </properties>
     </metadata>
 
@@ -60,9 +60,10 @@
     
       <properties-fragment id="kube_pods">
         <property name="pod"  title='Pod'  value='' />
-        <property name="pod_link"  title="Pod on Rancher" datatype="xref" />
-        <property name="container" title="Container" value=""/>
+        <property name="pod_link"  title="Pod on Rancher" value="" />
+        <property name="container" title="Container" value="" />
         <property name="image" title="Image ID" value=""/>
+        <property name="gitlab" title="Project on GitLab" value=""/>
       </properties-fragment>
       
       <properties-fragment id='kube_worker'>

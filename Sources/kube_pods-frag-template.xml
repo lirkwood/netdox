@@ -5,4 +5,5 @@
     <property name="pod_link"  title="Pod on Rancher" value="" />
     <property name="container" title="Container" value="" />
     <property name="image" title="Image ID" value=""/>
-  </properties-fragment>
+    <property name="gitlab" title="Project on GitLab" value=""/>
+</properties-fragment>
