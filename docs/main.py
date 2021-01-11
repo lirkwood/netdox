@@ -47,6 +47,10 @@ if len(args) > 1:
         os.remove(f)
     print('Done.')
 
+os.remove('../Sources/domains.csv')
+f = open('../Sources/domains.csv', 'w')
+f.close()
+
 ad_domains.main()
 print('Active Directory domains processed')
 dnsme_domains.main()
