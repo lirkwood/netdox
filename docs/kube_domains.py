@@ -18,7 +18,6 @@ def main():
             for i in record['spec']['rules']:   #get list of all domains
                 domains[c].append(i['host'].replace('www.', ''))
 
-            # domains[c] = list(dict.fromkeys(domains[c]))  #remove duplicates
 
     write(domains, ip)
         
