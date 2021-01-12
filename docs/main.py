@@ -222,9 +222,11 @@ for d in domains:
 
             docinf = soup.new_tag('documentinfo')
             uri = soup.new_tag('uri')
+            docinf.append(uri)
             uri['docid'] = docid
             uri['title'] = d
             soup.heading.string = d
+            soup.document.insert(0, docinf)
 
             aliases(d)
             clean()
