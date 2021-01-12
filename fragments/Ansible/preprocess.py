@@ -57,7 +57,7 @@ def main():
         docid = '_nd_' + host.replace('.', '_')
         json_docid = docid + '_json'
         with open('ansible/json/{0}.psml'.format(json_docid), 'w') as o:
-            o.write('<document level="portable"><documentinfo><uri docid="{0}"/></documentinfo><section id="main"><fragment id="json"><preformat role="lang-json">'.format(json_docid))
+            o.write('<document level="portable"><documentinfo><uri title="{0}" docid="{1}"/></documentinfo><section id="main"><fragment id="json"><preformat role="lang-json">'.format(host + ' ansible json', json_docid))
             o.write(json.dumps(master[host], indent=4))
             o.write('</preformat></fragment></section></document>')
         with open("ansible/outgoing/{0};json;.psml".format(docid), 'w') as o:
