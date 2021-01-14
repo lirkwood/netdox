@@ -15,7 +15,7 @@ Sources/*
 !Sources/kube_worker-frag-template.xml
 !Sources/note.xml
 !Sources/nmap.xml
-!Sources/template-domain.psml
+!Sources/template-dns.psml
 !Sources/template-ip.psml
 !Sources/template-ports.psml
 !Sources/prefixes.csv
