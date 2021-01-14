@@ -79,7 +79,7 @@ def write(ip, info, soup):
     docinf = soup.new_tag('documentinfo')
     uri = soup.new_tag('uri')
     docinf.append(uri)
-    soup.insert(0, docinf)
+    soup.document.insert(0, docinf)
     uri['docid'] = docid
     uri['title'] = ip
     soup.heading.string = ip
