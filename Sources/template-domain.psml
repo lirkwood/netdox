@@ -1,8 +1,8 @@
-<document type="host" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+<document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="2.9" />
+            <property name="template_version"     title="Template version"   value="3.0" />
         </properties>
     </metadata>
 
