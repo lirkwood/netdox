@@ -76,9 +76,14 @@ def write(ip, info, soup):
         elif p['name'] == 'source':
             p['value'] = info['source']
 
-    soup.uri['docid'] = docid
-    soup.uri['title'] = ip
+    docinf = soup.new_tag('documentinfo')
+    uri = soup.new_tag('uri')
+    docinf.append(uri)
+    soup.insert(0, docinf)
+    uri['docid'] = docid
+    uri['title'] = ip
     soup.heading.string = ip
+    labels(soup)
 
     if 'ports' in info:
         portfrag = soup.find(id='ports')
@@ -96,7 +101,6 @@ def write(ip, info, soup):
             x.string = 'Port ' + port
             p.append(x)
 
-    labels(soup)
     output = open('../IPs/{0}.psml'.format(docid), 'w', encoding='utf-8')
     output.write(str(soup))
 

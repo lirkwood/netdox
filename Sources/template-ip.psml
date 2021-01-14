@@ -1,9 +1,5 @@
 <document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
-  <documentinfo>
-    <uri docid="" title=""/>
-  </documentinfo>
-
   <metadata>
     <properties>
       <property name="template_version"     title="Template version"   value="1.3" />
