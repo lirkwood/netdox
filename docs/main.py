@@ -226,6 +226,9 @@ for d in domains:
             uri['docid'] = docid
             uri['title'] = d
             soup.heading.string = d
+            labels = soup.new_tag('labels')
+            labels.string = 'show-reversexrefs'
+            uri.append(labels)
             soup.document.insert(0, docinf)
 
             aliases(d)

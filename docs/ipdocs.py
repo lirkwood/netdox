@@ -113,6 +113,7 @@ def labels(soup):
         label.string += ',unused'
     else:
         label.string += ',active'
+    label.string += ',show-reversexrefs'
     soup.uri.append(label)
 
 
