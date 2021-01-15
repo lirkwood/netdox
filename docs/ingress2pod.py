@@ -17,7 +17,7 @@ def ingress():
                 name = service['metadata']['name']
                 hosts = []
                 for h in service['spec']['rules']:
-                    host = h['host'].replace('www.', '')
+                    host = h['host'].replace('www.', '').replace('.internal', '')
                     hosts.append(host)
 
                 hosts = list(dict.fromkeys(hosts))  #make unique
@@ -165,6 +165,19 @@ def refresh():
         exit()
 
 
+def podlink(master):
+    for context in master:
+        for deployment in master[context]:
+            dep = master[context][deployment]
+            if context == 'sandbox':
+                podlinkbase = 'https://rancher.allette.com.au/p/c-4c8qc:p-dtg8s/workloads/default:'
+            elif context == 'production':
+                podlinkbase = 'https://rancher-sy4.allette.com.au/p/c-57mj6:p-b8h5z/workloads/default:'
+            for pod in dep['pods']:
+                dep['pods'][pod]['rancher'] = podlinkbase + pod
+
+    return master
+
 
 
 def main():
@@ -173,6 +186,7 @@ def main():
     sdict = service(idict)
     pdict = pods(sdict)
     master = mapworkers(pdict)
+    master = podlink(master)
     with open('../Sources/kube.xml', 'w') as out:
         out.write('<root>')
         out.write(json.dumps(master, indent=4))
