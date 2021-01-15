@@ -21,10 +21,10 @@ def subn_bounds(subnet):
 
 def netbox_prefixes():
     prefixes = {}
-    with open('../sources/prefixes.csv') as stream:
-        for row in csv.reader(stream):
-            if row[0] not in prefixes:
-                prefixes[row[0]] = subn_bounds(row[0])
+    with open('../sources/prefixes.txt') as stream:
+        for line in stream.read().splitlines():
+            if line not in prefixes:
+                prefixes[line] = subn_bounds(line)
     return prefixes
 
 def netbox_sort(ip):
@@ -46,3 +46,6 @@ def binaryip(ip):
         bin_ip += bin(int(octet))[2:].zfill(8) 
        #strip 0b prefix and pad to size with 0s
     return bin_ip
+
+#usage: call netbox_sort() to sort an IPv4 address into subnets defined in prefixes.txt
+#       call binaryip() for a binary representation of an IPv4 address.
