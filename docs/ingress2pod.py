@@ -115,24 +115,24 @@ def pods(sdict):
 
 
 
-def pivot(pdict):   #rearrange dict so domains are the keys and deployments are values
-    temp = {}
-    for context in pdict:
-        temp[context] = {}
-        for d in pdict[context]:
-            deployment = pdict[context][d]
-            try:
-                for domain in deployment['domains']:
-                    domain = domain.replace('.internal', '')
-                    temp[context][domain] = deployment
-                    temp[context][domain].pop('domains', None)
-            except KeyError:
-                pass
-    return temp
+# def pivot(pdict):   #rearrange dict so domains are the keys and deployments are values
+#     temp = {}
+#     for context in pdict:
+#         temp[context] = {}
+#         for d in pdict[context]:
+#             deployment = pdict[context][d]
+#             try:
+#                 for domain in deployment['domains']:
+#                     domain = domain.replace('.internal', '')
+#                     temp[context][domain] = deployment
+#                     temp[context][domain].pop('domains', None)
+#             except KeyError:
+#                 pass
+#     return temp
 
 
 
-def mapworkers(dmndict):
+def mapworkers(pdict):
     global workers
     tmp = {}
     with open('../Sources/domains.csv', 'r') as stream:
@@ -143,16 +143,11 @@ def mapworkers(dmndict):
                         tmp[worker] = row[1]
     workers = dict(tmp)
 
-    for context in dmndict:
-        for domain in dmndict[context]:
-            dmndict[context][domain]['worker'] = workers[dmndict[context][domain]['nodename']]
+    for context in pdict:
+        for domain in pdict[context]:
+            pdict[context][domain]['worker'] = workers[pdict[context][domain]['nodename']]
     
-    for c in dmndict:
-        for d in dmndict[c]:
-            if 'nodename' in dmndict[c][d].keys():
-                dmndict[c][d].pop('nodename')
-    
-    return dmndict
+    return pdict
 
 
 
@@ -177,11 +172,13 @@ def main():
     idict = ingress()
     sdict = service(idict)
     pdict = pods(sdict)
-    dmndict = pivot(pdict)
-    master = mapworkers(dmndict)
-    with open('../Sources/kube.json', 'w') as out:
+    master = mapworkers(pdict)
+    with open('../Sources/kube.xml', 'w') as out:
+        out.write('<root>')
         out.write(json.dumps(master, indent=4))
-    
+        out.write('</root>')
+    return master
+
 
 
 if __name__ == '__main__':
