@@ -41,9 +41,9 @@ if len(args) > 1:
             exit()
     
     print('Removing old documents...')
-    for f in os.scandir('../Hosts'):
+    for f in os.scandir('../outgoing/DNS'):
         os.remove(f)
-    for f in os.scandir('../IPs'):
+    for f in os.scandir('../outgoing/IPs'):
         os.remove(f)
     print('Done.')
 
@@ -161,15 +161,15 @@ def clean():
             frag.decompose()
 
 
-if not os.path.exists('../Hosts'):
-    os.mkdir('../Hosts')
+if not os.path.exists('../outgoing/DNS'):
+    os.mkdir('../outgoing/DNS')
 
 
 print('Removing duplicates')
 for d in domains:
     docid = '_nd_' + d.replace('.', '_')
-    with open('../Hosts/{0}.psml'.format(docid), 'w') as stream:
-        with open('../Sources/template-domain.psml', 'r') as template:
+    with open('../outgoing/DNS/{0}.psml'.format(docid), 'w') as stream:
+        with open('../Sources/template-dns.psml', 'r') as template:
             soup = BeautifulSoup(template, features='xml')
 
             for i in pdomains:
@@ -237,7 +237,7 @@ for d in domains:
             stream.write(str(soup))
 
 
-print('Host documents done')
+print('DNS documents done')
 
 import ipdocs
 ipdocs.main()

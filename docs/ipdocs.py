@@ -7,8 +7,8 @@ import os
 
 
 def main():
-    if not os.path.exists('../IPs'):
-        os.mkdir('../IPs')
+    if not os.path.exists('../outgoing/IPs'):
+        os.mkdir('../outgoing/IPs')
 
     live = read()
     subndict = {}
@@ -101,7 +101,7 @@ def write(ip, info, soup):
             x.string = 'Port ' + port
             p.append(x)
 
-    output = open('../IPs/{0}.psml'.format(docid), 'w', encoding='utf-8')
+    output = open('../outgoing/IPs/{0}.psml'.format(docid), 'w', encoding='utf-8')
     output.write(str(soup))
 
 def labels(soup):
