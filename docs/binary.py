@@ -1,6 +1,3 @@
-import csv
-import pprint
-
 def subn_bounds(subnet):
     bounds = {}
 
