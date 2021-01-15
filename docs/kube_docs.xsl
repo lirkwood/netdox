@@ -15,7 +15,7 @@
 
 <xsl:template match="xpf:map">
     <xsl:param name="context"/>
-    <xsl:result-document href="outgoing/{@key}.psml">
+    <xsl:result-document href="../outgoing/deployments/{@key}.psml">
         <document level="portable" type="deployment">
 
             <documentinfo>
