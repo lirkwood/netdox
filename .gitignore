@@ -18,7 +18,7 @@ Sources/*
 !Sources/template-dns.psml
 !Sources/template-ip.psml
 !Sources/template-ports.psml
-!Sources/prefixes.csv
+!Sources/prefixes.txt
 **/editnote.py
 **/auth_last.txt
 **/push_old.py
