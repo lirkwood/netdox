@@ -41,7 +41,8 @@ def forti_addips(list, file):
     return list
 
 def test(list):
-    for item in list:
+    for i in range(len(list)):
+        item = list[i]
         bad = False
         for octet in item.split('.'):
             if len(octet) > 3 or len(octet) < 1:
@@ -58,8 +59,13 @@ def test(list):
         if not bad:
             if binary.test(item, '192.168.0.0/16') or binary.test(item, '10.0.0.0/8') or binary.test(item, '172.16.0.0/12'):
                 print('Private IP address {0} found.'.format(item))
+                bad = True
             elif binary.test(item, '103.127.18.0/24') or binary.test(item, '119.63.219.0/24'): #check this is the right subnet
                 print('Managed IP address {0} found.'.format(item))
+                bad = True
+
+        if bad:
+            list.pop(i)
 
 if __name__ == "__main__":
     main()
