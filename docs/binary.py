@@ -44,7 +44,7 @@ def binaryip(ip):
        #strip 0b prefix and pad to size with 0s
     return bin_ip
 
-def test(ip, subnet, verbose=False):
+def in_subnet(ip, subnet, verbose=False):
     bin_ip = int(binaryip(ip), base=2)
     bounds = subn_bounds(subnet)
     if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):

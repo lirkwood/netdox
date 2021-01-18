@@ -69,10 +69,10 @@ def test(list):
             bad = True
 
         if not bad:
-            if binary.test(item, '192.168.0.0/16') or binary.test(item, '10.0.0.0/8') or binary.test(item, '172.16.0.0/12'):
+            if binary.in_subnet(item, '192.168.0.0/16') or binary.in_subnet(item, '10.0.0.0/8') or binary.in_subnet(item, '172.16.0.0/12'):
                 print('Private IP address {0} found.'.format(item))
                 bad = True
-            elif binary.test(item, '103.127.18.0/24') or binary.test(item, '119.63.219.0/24'): #check this is the right subnet
+            elif binary.in_subnet(item, '103.127.18.0/24') or binary.in_subnet(item, '119.63.219.0/24'): #check this is the right subnet
                 print('Managed IP address {0} found.'.format(item))
                 bad = True
 
