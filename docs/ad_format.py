@@ -96,5 +96,5 @@ def aliases(list):
         stream.write(json.dumps(cnames, indent=4))
 
 if __name__ == '__main__':
-    toJson()
+    toXML()
     
