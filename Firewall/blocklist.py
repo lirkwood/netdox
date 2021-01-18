@@ -1,5 +1,6 @@
 import re, os
 import binary
+import requests
 
 def main():
     master = []
@@ -35,6 +36,8 @@ def main():
     with open('log.txt', 'w') as log:
         for line in master:
             log.write(line + '\n')
+    
+    update()
 
 def addips(list, file):
     with open(file, 'r') as stream:
@@ -76,6 +79,14 @@ def test(list):
         if bad:
             list.pop(i)
             rejects.append(item)
+
+def update():
+    url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/test.txt'
+    header = {'content-type': 'application/x-www-form-urlencoded'}
+    with open('log.txt','rb') as payload:
+        r = requests.put(url, data=payload, headers=header)
+        print(r.text)
+
 
 if __name__ == "__main__":
     main()
