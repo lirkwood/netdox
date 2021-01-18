@@ -2,7 +2,7 @@ import os
 import json
 from bs4 import BeautifulSoup
 
-def toJson():
+def toXML():
     list = extract()
     aliases(list)
 

@@ -24,7 +24,7 @@ if len(args) > 1:
         if arg == 'ad':
             import ad_format
             os.system('pwsh.exe ./get-ad.ps1')
-            ad_format.toJson()
+            ad_format.toXML()
             print('Active Directory domains retrieved')
         elif arg == 'dnsme':
             import datetime
