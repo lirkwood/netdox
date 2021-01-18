@@ -1,4 +1,5 @@
 import re
+from binary import in_subnet
 
 def valid_ip(string):
     rawstring = bytes(string, 'utf-8')
@@ -19,3 +20,13 @@ def valid_ip(string):
         return False
 
     return True
+
+def foreign_ip(ip):
+    if in_subnet(ip, '192.168.0.0/16') or in_subnet(ip, '10.0.0.0/8') or ip.in_subnet(ip, '172.16.0.0/12'):
+        print('Private IP address {0} found.'.format(ip))
+        return False
+    elif in_subnet(ip, '103.127.18.0/24') or in_subnet(ip, '119.63.219.0/24'): #check this is the right subnet
+        print('Managed IP address {0} found.'.format(ip))
+        return False
+    else:
+        return True

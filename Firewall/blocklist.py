@@ -31,6 +31,9 @@ def main():
         if not test.valid_ip(ip):
             rejects.append(ip)
             master.pop(i)
+        elif not test.foreign_ip(ip):
+            rejects.append(ip)
+            master.pop(i)
 
     master.insert(0, '#Block_IPs')
     master.insert(1, '#New IPs taken from: {0} and {1}'.format(fq_latest.path, br_latest.path))
@@ -55,7 +58,6 @@ def addips(list, file):
                 else:
                     list.append(cleanip)
     return list
-
 
 def update():
     url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/test.txt'
