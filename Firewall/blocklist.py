@@ -3,6 +3,8 @@ import binary
 
 def main():
     master = []
+    global rejects
+    rejects = []
     with open('J:/atemp/wellington/block_ips.txt', 'r') as stream:
         for line in stream.readlines():
             if not line.startswith('#'):
@@ -19,25 +21,32 @@ def main():
         elif 'block-range' in file.name and file.stat().st_mtime > br_mtime:
             br_latest = file
             br_mtime = file.stat().st_mtime
-    master = forti_addips(master, fq_latest)
-    master = forti_addips(master, br_latest)
+    master = addips(master, fq_latest)
+    master = addips(master, br_latest)
 
     master = list(dict.fromkeys(master))
     test(master)
 
-    with open('log.txt', 'w') as log:
-        for ip in master:
-            log.write(ip + '\n')
+    master.insert(0, '#Block_IPs')
+    master.insert(1, '#New IPs taken from: {0} and {1}'.format(fq_latest.path, br_latest.path))
+    for item in rejects:
+        master.insert(2, '#Rejected ip: ' + item)
 
-def forti_addips(list, file):
+    with open('log.txt', 'w') as log:
+        for line in master:
+            log.write(line + '\n')
+
+def addips(list, file):
     with open(file, 'r') as stream:
         for line in stream.readlines():
             if len(line) >= 7 and line.count('.') >= 3 and len(re.findall(r'[0-9]',line)) >= 4:
                 ip = line.split()[0]
                 cleanip = re.sub(r'[^0-9.]','',ip)
                 if ip != cleanip:
-                    print('Unexpected chars in string: "{0}"'.format(bytes(ip, 'utf-8')))
-                list.append(cleanip)
+                    print('Unexpected chars in string: "{0}". Skipping...'.format(bytes(ip, 'utf-8')))
+                    rejects.append(ip)
+                else:
+                    list.append(cleanip)
     return list
 
 def test(list):
@@ -66,6 +75,7 @@ def test(list):
 
         if bad:
             list.pop(i)
+            rejects.append(item)
 
 if __name__ == "__main__":
     main()
