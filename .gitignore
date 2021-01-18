@@ -30,4 +30,4 @@ docs/template.py
 docs/encode.ps1
 fragments/xen/*
 *.zip
-log.*
+**/log.*
