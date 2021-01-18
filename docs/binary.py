@@ -44,5 +44,17 @@ def binaryip(ip):
        #strip 0b prefix and pad to size with 0s
     return bin_ip
 
+def test(ip, subnet, silent=False):
+    bin_ip = int(binaryip(ip), base=2)
+    bounds = subn_bounds(subnet)
+    if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
+        if not silent:
+            print('IP Address {0} is within subnet {1}.'.format(ip, subnet))
+        return True
+    else:
+        if not silent:
+            print('IP Address {0} is outside subnet {1}.'.format(ip, subnet))
+        return False
+
 #usage: call netbox_sort() to sort an IPv4 address into subnets defined in prefixes.txt
 #       call binaryip() for a binary representation of an IPv4 address.
