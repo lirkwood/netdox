@@ -1,5 +1,5 @@
 import re, os
-import binary
+import binary, test
 import requests
 
 def main():
@@ -26,14 +26,18 @@ def main():
     master = addips(master, br_latest)
 
     master = list(dict.fromkeys(master))
-    test(master)
+    for i in range(len(master)):
+        ip = master[i]
+        if not test.valid_ip(ip):
+            rejects.append(ip)
+            master.pop(i)
 
     master.insert(0, '#Block_IPs')
     master.insert(1, '#New IPs taken from: {0} and {1}'.format(fq_latest.path, br_latest.path))
     for item in rejects:
         master.insert(2, '#Rejected ip: ' + item)
 
-    with open('log.txt', 'w') as log:
+    with open('block_ips.txt', 'w') as log:
         for line in master:
             log.write(line + '\n')
     
@@ -52,40 +56,14 @@ def addips(list, file):
                     list.append(cleanip)
     return list
 
-def test(list):
-    for i in range(len(list)):
-        item = list[i]
-        bad = False
-        for octet in item.split('.'):
-            if len(octet) > 3 or len(octet) < 1:
-                print('Bad octet in ip: "{0}"'.format(bytes(item, 'utf-8')))
-                bad = True
-            elif int(octet) > 255 or int(octet) < 0:
-                print('Bad octet in ip: "{0}"'.format(bytes(item, 'utf-8')))
-                bad = True
-
-        if item.count('.') != 3:
-            print('Too many octets in ip: "{0}"'.format(bytes(item, 'utf-8')))
-            bad = True
-
-        if not bad:
-            if binary.in_subnet(item, '192.168.0.0/16') or binary.in_subnet(item, '10.0.0.0/8') or binary.in_subnet(item, '172.16.0.0/12'):
-                print('Private IP address {0} found.'.format(item))
-                bad = True
-            elif binary.in_subnet(item, '103.127.18.0/24') or binary.in_subnet(item, '119.63.219.0/24'): #check this is the right subnet
-                print('Managed IP address {0} found.'.format(item))
-                bad = True
-
-        if bad:
-            list.pop(i)
-            rejects.append(item)
 
 def update():
     url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/test.txt'
     header = {'content-type': 'application/x-www-form-urlencoded'}
-    with open('log.txt','rb') as payload:
+    with open('block_ips.txt','rb') as payload:
         r = requests.put(url, data=payload, headers=header)
-        print(r.text)
+        with open('log.txt','w') as log:
+            log.write(r.text)
 
 
 if __name__ == "__main__":

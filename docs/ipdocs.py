@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import binary
 import pprint
 import copy
+import test
 import csv
 import os
 
@@ -39,7 +40,8 @@ def main():
     with open('../Sources/template-ip.psml', 'r') as template:
         soup = BeautifulSoup(template, features='xml')     #open template as soup
         for ip in ipdict:
-            write(ip, ipdict[ip], copy.copy(soup))
+            if test.valid_ip(ip):
+                write(ip, ipdict[ip], copy.copy(soup))
         
 
 def read():

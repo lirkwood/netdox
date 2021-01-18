@@ -10,6 +10,7 @@ import dnsme_domains
 import kube_domains
 import subdomains
 import binary
+import test
 
 args = list(sys.argv)
 
@@ -69,7 +70,8 @@ with open('../sources/domains.csv', 'r') as stream:
             domains[d]['ips'] = []
             domains[d]['source'] = row[0]
         for ip in row[2:]:
-            domains[d]['ips'].append(ip)
+            if test.valid_ip(ip):
+                domains[d]['ips'].append(ip)
 
 
 
