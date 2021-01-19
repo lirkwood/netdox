@@ -3,8 +3,7 @@ import dnsme_domains
 import binary
 import test
 
-import json
-import os
+import subprocess, json, os
     
 print('Removing old documents...')
 if not os.path.exists('../outgoing/DNS'):
@@ -37,7 +36,7 @@ for domain in dnsme:
     else:
         master[domain] = dnsme[domain]
 
-
+iplist = {}
 for domain in master:   #adding subnets
     master[domain]['ips'] = list(dict.fromkeys(master[domain]['ips']))
     master[domain]['aliases'] = list(dict.fromkeys(master[domain]['aliases']))
@@ -46,17 +45,23 @@ for domain in master:   #adding subnets
         ip = master[domain]['ips'][i]
         if test.valid_ip(ip):
             master[domain]['subnets'].append(binary.netbox_sort(ip))
+            iplist[ip] = master[domain]['source']
         else:
             master[domain]['ips'].pop(i)
             print('Removed invalid ip: '+ ip)
+    for i in range(len(master[domain]['aliases'])):
+        alias = master[domain]['aliases'][i]
+        if '_wildcard_' in alias:
+            alias = alias.replace('_wildcard_','*')
     
 with open('../Sources/domains.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:../Sources/domains.xml')
 
 print('DNS documents done')
 
 import ipdocs
-ipdocs.main()
+ipdocs.main(iplist)
 
 print('IP documents done')
