@@ -115,23 +115,6 @@ def pods(sdict):
 
 
 
-# def pivot(pdict):   #rearrange dict so domains are the keys and deployments are values
-#     temp = {}
-#     for context in pdict:
-#         temp[context] = {}
-#         for d in pdict[context]:
-#             deployment = pdict[context][d]
-#             try:
-#                 for domain in deployment['domains']:
-#                     domain = domain.replace('.internal', '')
-#                     temp[context][domain] = deployment
-#                     temp[context][domain].pop('domains', None)
-#             except KeyError:
-#                 pass
-#     return temp
-
-
-
 def mapworkers(pdict):
     global workers
     tmp = {}
@@ -163,6 +146,8 @@ def refresh():
     elif len(sys.argv) > 2:
         print('Too many arguments. Accepted flags are: [-r]')
         exit()
+    else:
+        return
 
 
 def podlink(master):
