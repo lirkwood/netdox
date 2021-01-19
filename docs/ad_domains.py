@@ -1,54 +1,72 @@
+import os
+import json
 from bs4 import BeautifulSoup
-import csv
 
-# def main():
-#     output = open('../Sources/domains.csv', 'a', newline='')
-#     writer = csv.writer(output)
-
-#     stream = open('../Sources/ad.xml', 'r')
-#     soup = BeautifulSoup(stream, 'lxml')
-
-#     dict = {}
-#     records = soup.find_all('record')
-#     for record in records:
-#         hostname = record.hostname.string
-#         network = record.network.string
-#         subnet = record.subnet.string
-#         addr = record.addr.string
-
-#         if '*' not in hostname:
-#             hostname = hostname.replace('www.', '')
-#             dict[hostname] = network +'.'+ subnet +'.'+ addr
-#     #####################################################
-    
-#     for k in dict:
-#         writer.writerow(['Active Directory', k, dict[k]])
-        
 def main():
-    output = open('../Sources/domains.csv', 'a', newline='')
-    writer = csv.writer(output)
+    path = "../Sources/records"
+    master = extract(path)
+    aliases(master, path)
+    return master
 
-    stream = open('../Sources/ad.xml', 'r')
-    soup = BeautifulSoup(stream, 'lxml')
 
-    outlist = []
-    records = soup.find_all('record')
-    for record in records:
-        hostname = record.hostname.string
-        network = record.network.string
-        subnet = record.subnet.string
-        addr = record.addr.string
+def extract(path):
+    master = {}
+    for file in os.scandir(path):
+        source = open(file, 'r')
+        jsondata = json.load(source)    #load json file
+        for record in jsondata:
+            if record['RecordType'] == 'A': 
+                hostnamestr = record['DistinguishedName'].split(',')    #get hostname
+                subdomain = hostnamestr[0].replace('DC=', '') #extract subdomain
+                domain = hostnamestr[1].replace('DC=', '')    #extract top level domain
+                if subdomain == '@':
+                    hostname = domain
+                elif subdomain == '*.':
+                    hostname = '_wildcard_.'+ domain
+                else:
+                    hostname = subdomain + '.' + domain
 
-        hostname = hostname.replace('www.', '')
-        hostname = hostname.replace('*.', '')
-        ip = network +'.'+ subnet +'.'+ addr
-        outlist.append(['Active Directory', hostname, ip]) 
-    #####################################################
-    
-    for i in outlist:
-        writer.writerow(i)
-    
+                for item in record['RecordData']['CimInstanceProperties']:
+                    if item['Name'] == "IPv4Address":
+                        ip = item['Value'].strip('.')
 
+                if hostname not in master:
+                    master[hostname] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'ActiveDirectory'}
+                master[hostname]['ips'].append(ip)
+    return master
+
+def aliases(master, path):
+    for file in os.scandir(path):
+        source = open(file)
+        jsondata = json.load(source)
+
+        for record in jsondata:
+            if record['RecordType'] == 'CNAME':
+                domain = record['DistinguishedName'].split(',')[1].strip('DC=')
+                subdomain = record['DistinguishedName'].split(',')[0].strip('DC=')
+                
+                if subdomain == '@':
+                    alias = domain
+                elif subdomain == '*.':
+                    alias = '_wildcard_.'+ domain
+                else:
+                    alias = subdomain +'.'+ domain
+                
+                dest = ''
+                for item in record['RecordData']['CimInstanceProperties']:
+                    if item['Name'] == "HostNameAlias":
+                        dest = item['Value']
+                        if not dest.endswith('.'):
+                            dest += '.'+ domain
+                        else:
+                            dest = dest.strip('.')
+            
+                if dest not in master:
+                    master[dest] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'ActiveDirectory'}
+                master[dest]['aliases'].append(alias)
+
+                
 
 if __name__ == '__main__':
     main()
+    
