@@ -1,69 +1,77 @@
-from bs4 import BeautifulSoup
+from requests import get
+import hmac, hashlib
+import datetime
 import json
-import csv
 
-##########################################################################################################
-# takes all domains and their associated records and compiles a list of all domains and their subdomains #
-##########################################################################################################
+##################################################################################
+# requests all domains from dnsme, and then all of their associated dns records. #
+##################################################################################
+
 def main():
-    cnames = {}
-    with open('../Sources/cnames.json', 'r') as stream:
-        cnames = json.load(stream)
-    with open("../Sources/domains.xml", "r") as domains:
-        with open("../Sources/records.xml", "r") as records:
-            with open("../sources/domains.csv", "a", newline='') as output:
-                writer = csv.writer(output)
+	master = {}
 
-                rsoup = BeautifulSoup(records, features='xml')
-                dsoup = BeautifulSoup(domains, features='xml')
+	header = genheader()
+	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
+	response = json.loads(r.text)
+	domains = {}
+	for record in response['data']:
+		if record['id'] not in domains:
+			domains[record['id']] = record['name']
+	
+	for id in domains:
+		domain = domains[id]
 
-                type = rsoup.type   #grab all type tags
-                value = rsoup.value #all subdomain url tags
+		header = genheader()
+		r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=header)
+		records = json.loads(r.text)
 
-                dmndict = {}
-                rcddict = {}
+		for record in records['data']:
+			if record['type'] == 'A':
+				name = record['name']
+				name = name.replace('*.','_wildcard_.')
 
-                for domain in dsoup.find_all('data'):
-                    dmndict[domain.id.string] = domain.find('name').string    #skip dupes and make lists for subdomains
-                
-                for record in rsoup.find_all('data'):
-                    type = record.type.string
-                    value = record.value.string
-                    sourceid = record.sourceId.string
-                    parent = dmndict[sourceid]
-                    name = record.find('name').string
-                    if type == 'A':
-                        ip = value
-                        if name:
-                            domain = name + '.' + parent
-                        else:
-                            domain = dmndict[sourceid]
-                        
-                        domain = domain.replace('*.', '')
-                        domain = domain.replace('www.', '')
-                        if domain in rcddict:
-                            rcddict[domain].append(ip)
-                        else:
-                            rcddict[domain] = [ip]
-                    elif type == 'CNAME':
-                        if value and value.endswith('.'):
-                            dest = value.strip('.')
-                        else:
-                            dest = dmndict[sourceid]
-                            if value:
-                                dest = value +'.'+ dest
+				if len(name) == 0:
+					name = domain
+				elif not name.endswith('.'):
+					name += '.'+ domain
+				if name not in master:
+					master[name] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'DNSMadeEasy'}
+				master[name]['ips'].append(record['value'])
 
-                        if dest not in cnames:
-                            cnames[dest] = []
-                        cnames[dest].append(name +'.'+ parent)
+			elif record['type'] == 'CNAME':
+				name = record['name'] +'.'+ domain
+				value = record['value']
+				name = name.replace('*.','_wildcard_.')
 
-                for d in rcddict:
-                    for ip in rcddict[d]:
-                        writer.writerow(['DNSMadeEasy', d, ip])
-    with open('../Sources/cnames.json', 'w') as stream:
-        for i in cnames:
-            cnames[i] = list(dict.fromkeys(cnames[i]))
-        stream.write(json.dumps(cnames, indent=4))
-             
+				if len(value) == 0:
+					value = domain
+				elif value.endswith('.'):
+					value = value.strip('.')
+				else:
+					value += '.'+ domain
+				if value not in master:
+					master[value] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'DNSMadeEasy'}
+				master[value]['aliases'].append(name)
+				
+	return master
+
+
+def genheader():
+	with open('../Sources/dnsme.txt','r') as keys:
+		api = keys.readline().split()[-1]
+		secret = keys.readline().split()[-1]
+		time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
+		hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+		
+		header = {	#populate header
+		"x-dnsme-apiKey" : api,
+		"x-dnsme-requestDate" : time,
+		"x-dnsme-hmac" : hash,
+		"accept" : 'application/json'
+		}
+		
+		return header
+	#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
+
 if __name__ == '__main__':
-    main()
+	main()
