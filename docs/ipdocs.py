@@ -7,11 +7,11 @@ import csv
 import os
 
 
-def main():
+def main(iplist):
     if not os.path.exists('../outgoing/IPs'):
         os.mkdir('../outgoing/IPs')
 
-    live = read()
+    live = read(iplist)
     subndict = {}
     for ip in live:
         subnet = '.'.join(ip.split('.')[:3])
@@ -44,21 +44,20 @@ def main():
                 write(ip, ipdict[ip], copy.copy(soup))
         
 
-def read():
+def read(iplist):
     live = {}
-    with open('../Sources/domains.csv', 'r') as stream:
-        with open('../sources/nmap.xml', 'r') as n:
-            soup = BeautifulSoup(n, 'lxml')
-            ports = soup.find_all('ports') #find hosts that were checked for ports => live
-            for p in ports:
-                addrtag = p.parent.find('address', addrtype='ipv4')
-                ip = addrtag['addr']
-                live[ip] = {}
-                live[ip]['source'] = 'nmap'
-            for row in csv.reader(stream):
-                for ip in row[2:]:
-                    live[ip] = {}
-                    live[ip]['source'] = row[0]
+    with open('../sources/nmap.xml', 'r') as n:
+        soup = BeautifulSoup(n, 'lxml')
+        ports = soup.find_all('ports') #find hosts that were checked for ports => live
+        for p in ports:
+            addrtag = p.parent.find('address', addrtype='ipv4')
+            ip = addrtag['addr']
+            live[ip] = {}
+            live[ip]['source'] = 'nmap'
+
+    for ip in iplist:
+        if ip not in live:
+            live[ip] = {'source': iplist[ip]}
 
     return live
     
@@ -121,7 +120,3 @@ def labels(soup):
         label.string += ',active'
     label.string += ',show-reversexrefs'
     soup.uri.append(label)
-
-
-if __name__ == '__main__':
-    main()
