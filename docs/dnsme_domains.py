@@ -28,17 +28,21 @@ def main():
 		for record in records['data']:
 			if record['type'] == 'A':
 				name = record['name']
-				name = name.replace('*.','_wildcard_.')
 
 				if len(name) == 0:
 					name = domain
+				elif domain in name:
+					pass
 				elif not name.endswith('.'):
 					name += '.'+ domain
+
+				name = name.replace('*.','_wildcard_.')
 				if name not in master:
 					master[name] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'DNSMadeEasy'}
 				master[name]['ips'].append(record['value'])
 
-			elif record['type'] == 'CNAME':
+		for record in records['data']:
+			if record['type'] == 'CNAME':
 				name = record['name'] +'.'+ domain
 				value = record['value']
 				name = name.replace('*.','_wildcard_.')
@@ -49,9 +53,10 @@ def main():
 					value = value.strip('.')
 				else:
 					value += '.'+ domain
-				if value not in master:
-					master[value] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'DNSMadeEasy'}
-				master[value]['aliases'].append(name)
+				if value in master:
+					master[value]['aliases'].append(name)
+				else:
+					print('CNAME with no A record: '+ name)
 				
 	return master
 
