@@ -21,6 +21,7 @@ else:
         os.remove(f)
 print('Done.')
 
+subprocess.run('pwsh.exe ./get-ad.ps1')
 ad = ad_domains.main()
 print('Active Directory domains processed.')
 dnsme = dnsme_domains.main()
@@ -67,3 +68,9 @@ import ipdocs
 ipdocs.main(iplist)
 
 print('IP documents done')
+
+import ingress2pod
+ingress2pod.main()
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:deployments.xsl -s:../Sources/kube.xml')
+
+print('Kubernetes documents done')
