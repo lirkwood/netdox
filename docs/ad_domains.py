@@ -21,10 +21,12 @@ def extract(path):
                 domain = hostnamestr[1].replace('DC=', '')    #extract top level domain
                 if subdomain == '@':
                     hostname = domain
-                elif subdomain == '*.':
-                    hostname = '_wildcard_.'+ domain
+                elif domain in subdomain:
+                    hostname = subdomain
                 else:
                     hostname = subdomain + '.' + domain
+
+                hostname = hostname.replace('*.','_wildcard_')
 
                 for item in record['RecordData']['CimInstanceProperties']:
                     if item['Name'] == "IPv4Address":
