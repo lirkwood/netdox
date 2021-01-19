@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
-import binary
-import pprint
+import netdoc
 import copy
 import test
 import csv
@@ -28,7 +27,7 @@ def main(iplist):
                     dead[ip] = {'source': 'Generated'}
     
     ipdict = dead | live
-    with open('../sources/nmap.xml', 'r') as stream:
+    with open('Sources/nmap.xml', 'r') as stream:
         soup = BeautifulSoup(stream, features='xml')
         for port in soup.find_all('port'):
             ip = port.parent.parent.address['addr']
@@ -37,16 +36,16 @@ def main(iplist):
                     ipdict[ip]['ports'] = {}
                 ipdict[ip]['ports'][port['portid']] = port.service['name']
     
-    with open('../Sources/template-ip.psml', 'r') as template:
+    with open('Sources/template-ip.psml', 'r') as template:
         soup = BeautifulSoup(template, features='xml')     #open template as soup
         for ip in ipdict:
-            if test.valid_ip(ip):
+            if netdoc.valid_ip(ip):
                 write(ip, ipdict[ip], copy.copy(soup))
         
 
 def read(iplist):
     live = {}
-    with open('../sources/nmap.xml', 'r') as n:
+    with open('Sources/nmap.xml', 'r') as n:
         soup = BeautifulSoup(n, 'lxml')
         ports = soup.find_all('ports') #find hosts that were checked for ports => live
         for p in ports:
@@ -71,7 +70,7 @@ def write(ip, info, soup):
         if p['name'] == 'network':  #populate properties
             p['value'] = '{0}.0.0/16'.format(network)
         elif p['name'] == 'subnet':
-            p['value'] = binary.netbox_sort(ip)
+            p['value'] = netdoc.netbox_sort(ip)
         elif p['name'] == 'ipv4':
             p['value'] = ip
         elif p['name'] == 'source':

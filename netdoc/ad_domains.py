@@ -3,7 +3,7 @@ import json
 from bs4 import BeautifulSoup
 
 def main():
-    path = "../Sources/records"
+    path = "Sources/records"
     master = extract(path)
     aliases(master, path)
     return master

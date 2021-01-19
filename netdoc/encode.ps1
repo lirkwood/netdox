@@ -1,4 +1,4 @@
-foreach ($i in Get-ChildItem "../Sources/records" -Recurse -Force) {
+foreach ($i in Get-ChildItem "Sources/records" -Recurse -Force) {
     if ($i.PSIsContainer) {
         continue
     }

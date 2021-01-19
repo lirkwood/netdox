@@ -6,4 +6,4 @@ $production = kubectl get nodes --selector=node-role.kubernetes.io/worker -o jso
 $dict = @{}
 $dict['sandbox'] = $sandbox
 $dict['production'] = $production
-$dict | ConvertTo-Json -depth 100 | Out-File ../Sources/workers.json
+$dict | ConvertTo-Json -depth 100 | Out-File Sources/workers.json

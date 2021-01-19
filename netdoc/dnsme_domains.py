@@ -62,7 +62,7 @@ def main():
 
 
 def genheader():
-	with open('../Sources/dnsme.txt','r') as keys:
+	with open('Sources/dnsme.txt','r') as keys:
 		api = keys.readline().split()[-1]
 		secret = keys.readline().split()[-1]
 		time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")

@@ -1,5 +1,4 @@
-import netdoc.ad_domains
-import netdoc.dnsme_domains
+import netdoc
 
 import subprocess
 import json
@@ -55,10 +54,10 @@ for domain in master:   #adding subnets
         if '_wildcard_' in alias:
             alias = alias.replace('_wildcard_','*')
     
-with open('../Sources/domains.json','w') as stream:
+with open('Sources/domains.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:../Sources/domains.xml')
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:Sources/domains.xml')
 
 print('DNS documents done')
 
@@ -69,6 +68,6 @@ print('IP documents done')
 
 import ingress2pod
 ingress2pod.main()
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:deployments.xsl -s:../Sources/kube.xml')
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:deployments.xsl -s:Sources/kube.xml')
 
 print('Kubernetes documents done')

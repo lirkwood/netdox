@@ -7,7 +7,7 @@ import os
 
 
 def ingress():
-    with open('../Sources/ingress.json', 'r') as stream:
+    with open('Sources/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
         for c in jsondata:  #context either sandbox or production cluster
@@ -32,7 +32,7 @@ def service(sdict):
     ndict = {} #new dictionary
     noingress = {}
     links = {}
-    with open('../Sources/services.json', 'r') as stream:
+    with open('Sources/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             ndict[c] = {}
@@ -72,7 +72,7 @@ def pods(sdict):
     global workers
     workers = []
     pdict = {}
-    with open('../Sources/pods.json', 'r') as stream:
+    with open('Sources/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             pdict[c] = {}
@@ -118,7 +118,7 @@ def pods(sdict):
 def mapworkers(pdict):
     global workers
     tmp = {}
-    with open('../Sources/domains.csv', 'r') as stream:
+    with open('Sources/domains.csv', 'r') as stream:
         for row in csv.reader(stream):
             if row[0] != 'Kubernetes':
                 for worker in workers:
@@ -172,7 +172,7 @@ def main():
     pdict = pods(sdict)
     master = mapworkers(pdict)
     master = podlink(master)
-    with open('../Sources/kube.xml', 'w') as out:
+    with open('Sources/kube.xml', 'w') as out:
         out.write('<root>')
         out.write(json.dumps(master, indent=4))
         out.write('</root>')

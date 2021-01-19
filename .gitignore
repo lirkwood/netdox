@@ -10,7 +10,7 @@ validate/
 **/outgoing
 **/json
 **/raw
-Sources/*
+netdoc/Sources/*
 !Sources/kube_pods-frag-template.xml
 !Sources/kube_worker-frag-template.xml
 !Sources/note.xml

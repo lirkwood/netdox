@@ -42,7 +42,7 @@ def subn_bounds(subnet):
 
 def netbox_prefixes():
     prefixes = {}
-    with open('../sources/prefixes.txt') as stream:
+    with open('Sources/prefixes.txt') as stream:
         for line in stream.read().splitlines():
             if line not in prefixes:
                 prefixes[line] = subn_bounds(line)
