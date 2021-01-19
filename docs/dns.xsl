@@ -15,15 +15,15 @@
     <xsl:result-document href="../outgoing/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
         <document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
+            <documentinfo>
+                <uri docid="_nd_{translate($name,'.','_')}" title="{$name}"><labels>show-reversexrefs</labels></uri>
+            </documentinfo>
+
             <metadata>
                 <properties>
                     <property name="template_version"     title="Template version"   value="3.1" />
                 </properties>
             </metadata>
-
-            <documentinfo>
-                <uri docid="_nd_{translate($name,'.','_')}" title="{$name}" />
-            </documentinfo>
 
             <section id="title">
                 <fragment id="title">

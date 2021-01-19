@@ -3,7 +3,9 @@ import dnsme_domains
 import binary
 import test
 
-import subprocess, json, os
+import subprocess
+import json
+import os
     
 print('Removing old documents...')
 if not os.path.exists('../outgoing/DNS'):
