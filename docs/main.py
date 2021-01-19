@@ -18,15 +18,16 @@ if not os.path.exists('../outgoing/IPs'):
 else:
     for f in os.scandir('../outgoing/IPs'):
         os.remove(f)
-os.remove('../Sources/domains.json')
 print('Done.')
 
 ad = ad_domains.main()
-print('Active Directory domains processed')
+print('Active Directory domains processed.')
 dnsme = dnsme_domains.main()
-print('DNSMadeEasy domains processed')
+print('DNSMadeEasy domains processed.')
 
-master = dict(ad)
+master = {}
+for domain in ad:
+    master[domain.lower()] = ad[domain]
 for domain in dnsme:
     if domain in master:
         for ip in dnsme[domain]['ips']:
@@ -40,11 +41,11 @@ for domain in dnsme:
 for domain in master:   #adding subnets
     master[domain]['ips'] = list(dict.fromkeys(master[domain]['ips']))
     master[domain]['aliases'] = list(dict.fromkeys(master[domain]['aliases']))
-    master[domain]['subnet'] = []
+    master[domain]['subnets'] = []
     for i in range(len(master[domain]['ips'])):
         ip = master[domain]['ips'][i]
         if test.valid_ip(ip):
-            master[domain]['subnet'].append(binary.netbox_sort(ip))
+            master[domain]['subnets'].append(binary.netbox_sort(ip))
         else:
             master[domain]['ips'].pop(i)
             print('Removed invalid ip: '+ ip)
