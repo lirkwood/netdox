@@ -32,3 +32,4 @@ docs/encode.ps1
 fragments/xen/*
 *.zip
 **/log.*
+isolated_cnames.txt
