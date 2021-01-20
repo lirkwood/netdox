@@ -1,4 +1,6 @@
-import netdoc
+import ad_domains
+import dnsme_domains
+import iptools
 
 import subprocess
 import json
@@ -19,9 +21,9 @@ else:
 print('Done.')
 
 subprocess.run('pwsh.exe ./get-ad.ps1')
-ad = netdoc.ad_domains.main()
+ad = ad_domains.main()
 print('Active Directory domains processed.')
-dnsme = netdoc.dnsme_domains.main()
+dnsme = dnsme_domains.main()
 print('DNSMadeEasy domains processed.')
 
 master = {}
@@ -42,9 +44,9 @@ for domain in master:   #adding subnets
     master[domain]['aliases'] = list(dict.fromkeys(master[domain]['aliases']))
     master[domain]['subnets'] = []
     for i in range(len(master[domain]['ips'])):
-        ip = master[domain]['ips'][i]
-        if netdoc.valid_ip(ip):
-            master[domain]['subnets'].append(netdoc.netbox_sort(ip))
+        ip = iptools.parsed_ip(master[domain]['ips'][i])
+        if ip.valid:
+            master[domain]['subnets'].append(ip.subnet)
             iplist[ip] = master[domain]['source']
         else:
             master[domain]['ips'].pop(i)
