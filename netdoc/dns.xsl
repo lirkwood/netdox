@@ -21,7 +21,7 @@
 
             <metadata>
                 <properties>
-                    <property name="template_version"     title="Template version"   value="3.1" />
+                    <property name="template_version"     title="Template version"   value="3.3" />
                 </properties>
             </metadata>
 
@@ -40,8 +40,13 @@
                 </properties-fragment>
 
                 <properties-fragment id="ipv4">
-                <xsl:for-each select="xpf:array[@key = 'ips']/xpf:string">
-                    <property name="ipv4" title="IP Address" datatype="xref">
+                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'private']">
+                    <property name="ipv4" title="Private IP" datatype="xref">
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                    </property>
+                </xsl:for-each>
+                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'public']">
+                    <property name="ipv4" title="Public IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
                 </xsl:for-each>
