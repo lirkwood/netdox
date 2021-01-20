@@ -27,7 +27,7 @@ dnsme = dnsme_domains.main()
 print('DNSMadeEasy domains processed.')
 
 master = {}
-for domain in ad:
+for domain in ad:   #combining dicts
     master[domain.lower()] = ad[domain]
 for domain in dnsme:
     if domain in master:
@@ -43,19 +43,33 @@ for domain in master:   #adding subnets
     master[domain]['ips'] = list(dict.fromkeys(master[domain]['ips']))
     master[domain]['aliases'] = list(dict.fromkeys(master[domain]['aliases']))
     master[domain]['subnets'] = []
+
+    tmp = []
     for i in range(len(master[domain]['ips'])):
         ip = iptools.parsed_ip(master[domain]['ips'][i])
         if ip.valid:
             master[domain]['subnets'].append(ip.subnet)
-            iplist[ip] = master[domain]['source']
+            iplist[ip.ipv4] = master[domain]['source']
+            tmp.append(ip)
         else:
             master[domain]['ips'].pop(i)
-            print('Removed invalid ip: '+ ip)
-    for i in range(len(master[domain]['aliases'])):
+            print('Removed invalid ip: '+ ip.ipv4)
+    master[domain]['ips'] = {'private': [], 'public': []}
+    for ip in tmp:
+        if ip.public:
+            master[domain]['ips']['public'].append(ip.ipv4)
+        else:
+            master[domain]['ips']['private'].append(ip.ipv4)
+
+
+    for i in range(len(master[domain]['aliases'])): #adding cnames
         alias = master[domain]['aliases'][i]
         if '_wildcard_' in alias:
-            alias = alias.replace('_wildcard_','*')
+            master[domain]['aliases'][i] = alias.replace('_wildcard_','*')
+        else:
+            master[domain]['aliases'][i] = 'https://'+ alias
     
+
 with open('Sources/domains.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
