@@ -6,6 +6,12 @@ Analytics/
 Documentation/
 dnsme/
 validate/
+Firewall/
+!Firewall/blocklist.py
+!Firewall/graylog.py
+!Firewall/iptools.py
+!Firewall/query.json
+!Firewall/block_ips.txt
 **/Logs
 **/outgoing
 **/json
@@ -17,9 +23,6 @@ netdoc/Sources/*
 **/editnote.py
 **/auth_last.txt
 **/push_old.py
-Graylog/new.txt
-Graylog/ip.csv
-Graylog/response.json
 docs/ipdocs_old.py
 docs/template.py
 docs/encode.ps1
