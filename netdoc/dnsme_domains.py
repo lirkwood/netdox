@@ -56,7 +56,8 @@ def main():
 				if value in master:
 					master[value]['aliases'].append(name)
 				else:
-					print('CNAME with no A record: '+ name)
+					# print('CNAME with no A record: '+ name)
+					pass
 				
 	return master
 
