@@ -70,9 +70,11 @@ class parsed_ip:
             return False    
 
     def is_public(self):
-        if in_subnet(self.ipv4, '192.168.0.0/16') or in_subnet(self.ipv4, '10.0.0.0/8') or in_subnet(self.ipv4, '172.16.0.0/12'):
+        if in_subnet(self.ipv4, '192.168.0.0/16'):
             return False
-        elif in_subnet(self.ipv4, '103.127.18.0/24') or in_subnet(self.ipv4, '119.63.219.0/24'): #check this is the right subnet
+        elif in_subnet(self.ipv4, '10.0.0.0/8'):
+            return False
+        elif in_subnet(self.ipv4, '172.16.0.0/12'):
             return False
         else:
             return True
