@@ -71,10 +71,8 @@ class parsed_ip:
 
     def is_public(self):
         if in_subnet(self.ipv4, '192.168.0.0/16') or in_subnet(self.ipv4, '10.0.0.0/8') or in_subnet(self.ipv4, '172.16.0.0/12'):
-            print('Private IP address {0} found.'.format(self.ipv4))
             return False
         elif in_subnet(self.ipv4, '103.127.18.0/24') or in_subnet(self.ipv4, '119.63.219.0/24'): #check this is the right subnet
-            print('Managed IP address {0} found.'.format(self.ipv4))
             return False
         else:
             return True
