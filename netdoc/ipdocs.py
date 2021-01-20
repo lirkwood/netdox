@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-import netdoc
+import iptools
 import copy
 import test
 import csv
@@ -38,9 +38,10 @@ def main(iplist):
     
     with open('Sources/template-ip.psml', 'r') as template:
         soup = BeautifulSoup(template, features='xml')     #open template as soup
-        for ip in ipdict:
-            if netdoc.valid_ip(ip):
-                write(ip, ipdict[ip], copy.copy(soup))
+        for item in ipdict:
+            ip = iptools.parsed_ip(item)
+            if ip.valid:
+                write(ip, ipdict[ip.ipv4], copy.copy(soup))
         
 
 def read(iplist):
@@ -62,17 +63,17 @@ def read(iplist):
     
 
 def write(ip, info, soup):
-    docid = '_nd_' + ip.replace('.', '_')
-    network = '.'.join(ip.split('.')[:2]) #split it into components
+    docid = '_nd_' + ip.ipv4.replace('.', '_')
+    network = '.'.join(ip.ipv4.split('.')[:2]) #split it into components
 
     allprops = soup.find_all('property')   #find all properties
     for p in allprops:
         if p['name'] == 'network':  #populate properties
             p['value'] = '{0}.0.0/16'.format(network)
         elif p['name'] == 'subnet':
-            p['value'] = netdoc.netbox_sort(ip)
+            p['value'] = ip.subnet
         elif p['name'] == 'ipv4':
-            p['value'] = ip
+            p['value'] = ip.ipv4
         elif p['name'] == 'source':
             p['value'] = info['source']
 
@@ -81,8 +82,8 @@ def write(ip, info, soup):
     docinf.append(uri)
     soup.document.insert(0, docinf)
     uri['docid'] = docid
-    uri['title'] = ip
-    soup.heading.string = ip
+    uri['title'] = ip.ipv4
+    soup.heading.string = ip.ipv4
     labels(soup)
 
     if 'ports' in info:
