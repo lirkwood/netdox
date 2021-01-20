@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import copy
 import json
 import sys
-import csv
 import os
 
 
@@ -118,12 +117,12 @@ def pods(sdict):
 def mapworkers(pdict):
     global workers
     tmp = {}
-    with open('Sources/domains.csv', 'r') as stream:
-        for row in csv.reader(stream):
-            if row[0] != 'Kubernetes':
-                for worker in workers:
-                    if worker in row[1]:
-                        tmp[worker] = row[1]
+    with open('Sources/domains.json','r') as stream:
+        jsondata = json.load(stream)
+        for worker in workers:
+            for domain in jsondata:
+                if worker in domain:
+                    tmp[worker] = domain
     workers = dict(tmp)
 
     for context in pdict:
