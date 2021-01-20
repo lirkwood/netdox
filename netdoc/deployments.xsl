@@ -24,7 +24,7 @@
 
             <metadata>
                 <properties>
-                    <property name="template_version" title="Template version" value="1.0" />
+                    <property name="template_version" title="Template version" value="1.1" />
                 </properties>
             </metadata>
   
@@ -60,9 +60,9 @@
                     </property>
                 </properties-fragment>
                 
-                <properties-fragment id="hosts">
+                <properties-fragment id="domains">
                     <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
-                        <property name="host" title="Host" datatype="xref">
+                        <property name="domain" title="Domain" datatype="xref">
                             <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                         </property>
                     </xsl:for-each>
