@@ -6,7 +6,7 @@ def main():
     master = []
     global rejects
     rejects = []
-    with open('J:/atemp/wellington/block_ips-19-Jan.txt', 'r') as stream:
+    with open('J:/atemp/wellington/block_ips.txt', 'r') as stream:
         for line in stream.readlines():
             if not line.startswith('#'):
                 cleanline = re.sub(r'[^0-9.]','',line)
@@ -22,8 +22,9 @@ def main():
     #     elif 'block-range' in file.name and file.stat().st_mtime > br_mtime:
     #         br_latest = file
     #         br_mtime = file.stat().st_mtime
-    master = addips(master, 'J:/atemp/wellington/block-range-19-Jan.txt')
-    master = addips(master, 'J:/atemp/wellington/forti-quarantine-20-Jan.txt')
+    master = addips(master, 'J:/atemp/wellington/block-range-21-Jan.txt')
+    master = addips(master, 'J:/atemp/wellington/forti-quarantine-21-Jan.txt')
+    master = addips(master, 'talos.txt')
 
     seen = []
     dupes = []
@@ -57,7 +58,7 @@ def main():
         for line in master:
             log.write(line + '\n')
     
-    # update()
+    update()
 
 def addips(list, file):
     with open(file, 'r') as stream:
