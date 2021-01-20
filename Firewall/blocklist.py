@@ -1,42 +1,55 @@
 import re, os
-import binary, test
 import requests
+import iptools
 
 def main():
     master = []
     global rejects
     rejects = []
-    with open('J:/atemp/wellington/block_ips.txt', 'r') as stream:
+    with open('J:/atemp/wellington/block_ips-19-Jan.txt', 'r') as stream:
         for line in stream.readlines():
             if not line.startswith('#'):
                 cleanline = re.sub(r'[^0-9.]','',line)
                 if line.strip('\n \t') != cleanline:
                     print('Unexpected chars in line: "{0}"'.format(bytes(line, 'utf-8')))
                 master.append(cleanline)
-    fq_mtime = 0
-    br_mtime = 0
-    for file in os.scandir('J:/atemp/wellington'):
-        if 'forti-quarantine' in file.name and file.stat().st_mtime > fq_mtime:
-            fq_latest = file
-            fq_mtime = file.stat().st_mtime
-        elif 'block-range' in file.name and file.stat().st_mtime > br_mtime:
-            br_latest = file
-            br_mtime = file.stat().st_mtime
-    master = addips(master, fq_latest)
-    master = addips(master, br_latest)
+    # fq_mtime = 0
+    # br_mtime = 0
+    # for file in os.scandir('J:/atemp/wellington'):
+    #     if 'forti-quarantine' in file.name and file.stat().st_mtime > fq_mtime:
+    #         fq_latest = file
+    #         fq_mtime = file.stat().st_mtime
+    #     elif 'block-range' in file.name and file.stat().st_mtime > br_mtime:
+    #         br_latest = file
+    #         br_mtime = file.stat().st_mtime
+    master = addips(master, 'J:/atemp/wellington/block-range-19-Jan.txt')
+    master = addips(master, 'J:/atemp/wellington/forti-quarantine-20-Jan.txt')
+
+    seen = []
+    dupes = []
+    for ip in master:
+        if ip not in seen:
+            seen.append(ip)
+        else:
+            dupes.append(ip)
+    
+    with open('dupes.txt','w') as log:
+        for ip in dupes:
+            log.write(ip +'\n')
 
     master = list(dict.fromkeys(master))
+
     for i in range(len(master)):
-        ip = master[i]
-        if not test.valid_ip(ip):
+        ip = iptools.parsed_ip(master[i])
+        if not ip.valid:
             rejects.append(ip)
             master.pop(i)
-        elif not test.foreign_ip(ip):
+        elif not ip.foreign:
             rejects.append(ip)
             master.pop(i)
 
     master.insert(0, '#Block_IPs')
-    master.insert(1, '#New IPs taken from: {0} and {1}'.format(fq_latest.path, br_latest.path))
+    # master.insert(1, '#New IPs taken from: {0} and {1}'.format(fq_latest.path, br_latest.path))
     for item in rejects:
         master.insert(2, '#Rejected ip: ' + item)
 
@@ -44,7 +57,7 @@ def main():
         for line in master:
             log.write(line + '\n')
     
-    update()
+    # update()
 
 def addips(list, file):
     with open(file, 'r') as stream:
@@ -60,7 +73,7 @@ def addips(list, file):
     return list
 
 def update():
-    url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/test.txt'
+    url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/block_ips.txt'
     header = {'content-type': 'application/x-www-form-urlencoded'}
     with open('block_ips.txt','rb') as payload:
         r = requests.put(url, data=payload, headers=header)
