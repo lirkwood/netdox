@@ -16,7 +16,7 @@
         <document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <documentinfo>
-                <uri docid="_nd_{translate($name,'.','_')}" title="{$name}"><labels>show-reversexrefs</labels></uri>
+                <uri docid="_nd_{translate($name,'.','_')}" title="dns: {$name}"><labels>show-reversexrefs</labels></uri>
             </documentinfo>
 
             <metadata>
@@ -27,7 +27,7 @@
 
             <section id="title">
                 <fragment id="title">
-                    <heading level="1">DNS: <xsl:value-of select="$name"/></heading>
+                    <heading level="1">dns: <xsl:value-of select="$name"/></heading>
                 </fragment>
             </section>
 
