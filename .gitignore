@@ -30,3 +30,4 @@ fragments/xen/*
 *.zip
 **/log.*
 isolated_cnames.txt
+testing/
