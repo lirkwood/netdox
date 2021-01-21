@@ -4,7 +4,7 @@ import time
 
 def token():
     try:
-        stream = open('Sources/auth_last.txt', 'r')
+        stream = open('../Sources/auth_last.txt', 'r')
         token = stream.readline().strip('\n')
         last = int(stream.readline())
         stream.close()
@@ -27,7 +27,7 @@ def request():
 
     r = requests.post(url, params=header)
     token = json.loads(r.text)['access_token']
-    with open('Sources/auth_last.txt', 'w') as o:
+    with open('../Sources/auth_last.txt', 'w') as o:
         o.write(token + '\n' + str(int(time.time())))
 
     return token
