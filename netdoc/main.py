@@ -7,16 +7,18 @@ import json
 import os
     
 print('Removing old documents...')
-if not os.path.exists('../outgoing/DNS'):
-    os.mkdir('../outgoing/DNS')
+if not os.path.exists('outgoing'):
+    os.mkdir('outgoing')
+if not os.path.exists('outgoing/DNS'):
+    os.mkdir('outgoing/DNS')
 else: 
-    for f in os.scandir('../outgoing/DNS'):
+    for f in os.scandir('outgoing/DNS'):
         os.remove(f)
         
-if not os.path.exists('../outgoing/IPs'):
-    os.mkdir('../outgoing/IPs')
+if not os.path.exists('outgoing/IPs'):
+    os.mkdir('outgoing/IPs')
 else:
-    for f in os.scandir('../outgoing/IPs'):
+    for f in os.scandir('outgoing/IPs'):
         os.remove(f)
 print('Done.')
 

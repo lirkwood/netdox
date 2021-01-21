@@ -12,7 +12,7 @@
 
 <xsl:template match="xpf:map">
     <xsl:variable name="name" select="@key"/>
-    <xsl:result-document href="../outgoing/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="outgoing/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
         <document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <documentinfo>
@@ -40,12 +40,12 @@
                 </properties-fragment>
 
                 <properties-fragment id="ipv4">
-                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'private']">
+                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'private']/xpf:string">
                     <property name="ipv4" title="Private IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
                 </xsl:for-each>
-                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'public']">
+                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'public']/xpf:string">
                     <property name="ipv4" title="Public IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
