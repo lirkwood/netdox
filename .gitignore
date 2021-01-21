@@ -23,9 +23,7 @@ netdoc/Sources/*
 **/editnote.py
 **/auth_last.txt
 **/push_old.py
-docs/ipdocs_old.py
-docs/template.py
-docs/encode.ps1
+**/encode.ps1
 fragments/xen/*
 *.zip
 **/log.*
