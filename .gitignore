@@ -16,6 +16,7 @@ Firewall/
 **/outgoing
 **/json
 **/raw
+**/node_modules
 netdoc/Sources/*
 !netdoc/Sources/nmap.xml
 !netdoc/Sources/template-ip.psml
