@@ -6,6 +6,7 @@ import os
 
 
 def ingress():
+    os.system('pwsh.exe ./get-ingress.ps1')
     with open('Sources/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
@@ -31,6 +32,7 @@ def service(sdict):
     ndict = {} #new dictionary
     noingress = {}
     links = {}
+    os.system('pwsh.exe ./get-services.ps1')
     with open('Sources/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -71,6 +73,7 @@ def pods(sdict):
     global workers
     workers = []
     pdict = {}
+    os.system('pwsh.exe ./get-pods.ps1')
     with open('Sources/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -133,20 +136,17 @@ def mapworkers(pdict):
 
 
 
-def refresh():
-    if len(sys.argv) == 2:
-        if sys.argv[1] == '-r':
-            os.system('pwsh.exe ./get-ingress.ps1')
-            os.system('pwsh.exe ./get-services.ps1')
-            os.system('pwsh.exe ./get-pods.ps1')
-        else:
-            print('Invalid argument. Accepted flags are: [-r]')
-            exit()
-    elif len(sys.argv) > 2:
-        print('Too many arguments. Accepted flags are: [-r]')
-        exit()
-    else:
-        return
+# def refresh():
+#     if len(sys.argv) == 2:
+#         if sys.argv[1] == '-r':
+#         else:
+#             print('Invalid argument. Accepted flags are: [-r]')
+#             exit()
+#     elif len(sys.argv) > 2:
+#         print('Too many arguments. Accepted flags are: [-r]')
+#         exit()
+#     else:
+#         return
 
 
 def podlink(master):
@@ -165,7 +165,6 @@ def podlink(master):
 
 
 def main():
-    refresh()
     idict = ingress()
     sdict = service(idict)
     pdict = pods(sdict)
