@@ -21,7 +21,7 @@
 
             <metadata>
                 <properties>
-                    <property name="template_version"     title="Template version"   value="3.3" />
+                    <property name="template_version"     title="Template version"   value="3.4" />
                 </properties>
             </metadata>
 
@@ -33,10 +33,11 @@
 
             <section id="details" title="details">
 
-                <properties-fragment id="host">
-                    <property name="host"         title="Host"          value="{$name}" />
-                    <property name="root"        title="Root"      value="{xpf:string[@key = 'root']}" />
-                    <property name="source"        title="Source"      value="{xpf:string[@key = 'source']}" />
+                <properties-fragment id="info">
+                    <property name="domain"       title="Domain"        value="{$name}" />
+                    <property name="root"       title="Root"        value="{xpf:string[@key = 'root']}" />
+                    <property name="source"     title="Source"      value="{xpf:string[@key = 'source']}" />
+                    <property name="client"     title="Client"      value="" />
                 </properties-fragment>
 
                 <properties-fragment id="dest">
@@ -51,9 +52,16 @@
                     </property>
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:array[@key = 'domains']/xpf:string">
+                    <xsl:choose>
+                        <xsl:when test="not(string-length(.) > 75)">
                     <property name="alias" title="Alias to" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
+                        </xsl:when>
+                        <xsl:otherwise>
+                    <property name="alias" title="Alias to" value="{.}" />
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </xsl:for-each>
                 </properties-fragment>
                 
