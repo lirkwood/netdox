@@ -1,10 +1,4 @@
 *__pycache__*
-Hosts/
-IPs/
-Ports/
-Analytics/
-Documentation/
-dnsme/
 validate/
 Firewall/
 !Firewall/blocklist.py
@@ -30,3 +24,9 @@ fragments/xen/*
 **/log.*
 isolated_cnames.txt
 testing/
+netdoc/linktest/
+!netdoc/linktest/auth.py
+!netdoc/linktest/linktools.py
+!netdoc/linktest/screenshot.js
+!netdoc/linktest/package.json
+!netdoc/linktest/package-lock.json
