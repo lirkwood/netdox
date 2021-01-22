@@ -1,6 +1,7 @@
 from requests import get
 import hmac, hashlib
 import datetime
+import iptools
 import json
 
 ##################################################################################
@@ -8,8 +9,9 @@ import json
 ##################################################################################
 
 def main():
-	master = {}
-
+	master = {'forward': {}, 'reverse': {}}
+	forward = master['forward']
+	reverse = master['reverse']
 	header = genheader()
 	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
 	response = json.loads(r.text)
@@ -37,12 +39,11 @@ def main():
 					name += '.'+ domain
 
 				name = name.replace('*.','_wildcard_.')
-				if name not in master:
-					master[name] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'DNSMadeEasy'}
-				master[name]['ips'].append(record['value'])
-
-		for record in records['data']:
-			if record['type'] == 'CNAME':
+				if name not in forward:
+					forward[name] = {'dest': {'ips': [], 'domains': []}, 'root': domain, 'source': 'DNSMadeEasy'}
+				forward[name]['dest']['ips'].append(record['value'])
+			
+			elif record['type'] == 'CNAME':
 				name = record['name'] +'.'+ domain
 				value = record['value']
 				name = name.replace('*.','_wildcard_.')
@@ -53,12 +54,20 @@ def main():
 					value = value.strip('.')
 				else:
 					value += '.'+ domain
-				if value in master:
-					master[value]['aliases'].append(name)
-				else:
-					# print('CNAME with no A record: '+ name)
-					pass
+				if name not in forward:
+					forward[name] = {'dest': {'ips': [], 'domains': []}, 'root': domain, 'source': 'DNSMadeEasy'}
+				forward[name]['dest']['domains'].append(value)
+
+			elif record['type'] == 'PTR':
+				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])
+				ip = iptools.parsed_ip(subnet +'.'+ record['name'])
+				value = record['value'].strip('.')
 				
+				if ip.valid:
+					if ip.ipv4 not in reverse:
+						reverse[ip.ipv4] = []
+					reverse[ip.ipv4].append(value)
+
 	return master
 
 

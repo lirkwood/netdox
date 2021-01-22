@@ -24,55 +24,69 @@ print('Done.')
 
 subprocess.run('pwsh.exe ./get-ad.ps1')
 ad = ad_domains.main()
+ad_f = ad['forward']
+ad_r = ad['reverse']
 print('Active Directory domains processed.')
 dnsme = dnsme_domains.main()
+dnsme_f = dnsme['forward']
+dnsme_r = dnsme['reverse']
 print('DNSMadeEasy domains processed.')
 
 master = {}
-for domain in ad:   #combining dicts
-    master[domain.lower()] = ad[domain]
-for domain in dnsme:
+for domain in ad_f:   #combining dicts
+    master[domain.lower()] = ad_f[domain]
+for domain in dnsme_f:
     if domain in master:
-        for ip in dnsme[domain]['ips']:
-            master[domain]['ips'].append(ip)
-        for alias in dnsme[domain]['aliases']:
-            master[domain]['aliases'].append(alias)
+        for ip in dnsme_f[domain]['dest']['ips']:
+            master[domain]['dest']['ips'].append(ip)
+        for alias in dnsme_f[domain]['dest']['domains']:
+            master[domain]['dest']['domains'].append(alias)
     else:
-        master[domain] = dnsme[domain]
+        master[domain] = dnsme_f[domain]
+
+ptr = {}    #gathering ptr records
+for ip in ad_r:
+    ptr[ip] = ad_r[ip]
+for ip in dnsme_r:
+    if ip in ptr:
+        ptr[ip].append(dnsme_r[ip])
+    else:
+        ptr[ip] = dnsme_r[ip]
+
 
 iplist = {}
-for domain in master:   #adding subnets
-    master[domain]['ips'] = list(dict.fromkeys(master[domain]['ips']))
-    master[domain]['aliases'] = list(dict.fromkeys(master[domain]['aliases']))
+for domain in master:   #adding subnets and sorting public/private ips
+    master[domain]['dest']['ips'] = list(dict.fromkeys(master[domain]['dest']['ips']))
+    master[domain]['dest']['domains'] = list(dict.fromkeys(master[domain]['dest']['domains']))
     master[domain]['subnets'] = []
 
     tmp = []
-    for i in range(len(master[domain]['ips'])):
-        ip = iptools.parsed_ip(master[domain]['ips'][i])
+    for i in range(len(master[domain]['dest']['ips'])):
+        ip = iptools.parsed_ip(master[domain]['dest']['ips'][i])
         if ip.valid:
             master[domain]['subnets'].append(ip.subnet)
             iplist[ip.ipv4] = master[domain]['source']
             tmp.append(ip)
         else:
-            master[domain]['ips'].pop(i)
+            master[domain]['dest']['ips'].pop(i)
             print('Removed invalid ip: '+ ip.ipv4)
-    master[domain]['ips'] = {'private': [], 'public': []}
+    master[domain]['dest']['ips'] = {'private': [], 'public': []}
     for ip in tmp:
         if ip.public:
-            master[domain]['ips']['public'].append(ip.ipv4)
+            master[domain]['dest']['ips']['public'].append(ip.ipv4)
         else:
-            master[domain]['ips']['private'].append(ip.ipv4)
+            master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
 
-    for i in range(len(master[domain]['aliases'])): #adding cnames
-        alias = master[domain]['aliases'][i]
-        if '_wildcard_' in alias:
-            master[domain]['aliases'][i] = alias.replace('_wildcard_','*')
-        else:
-            master[domain]['aliases'][i] = 'https://'+ alias
+    # for i in range(len(master[domain]['dest']['domains'])): #adding cnames
+    #     alias = master[domain]['dest']['domains'][i]
+    #     if '_wildcard_' in alias:
+    #         master[domain]['dest']['domains'][i] = alias.replace('_wildcard_','*')
+    #     else:
+    #         master[domain]['dest']['domains'][i] = 'https://'+ alias
     
 
-with open('Sources/domains.json','w') as stream:
+with open('Sources/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
 subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:Sources/domains.xml')
@@ -80,7 +94,7 @@ subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:Sources/dom
 print('DNS documents done')
 
 import ipdocs
-ipdocs.main(iplist)
+ipdocs.main(iplist, ptr)
 
 print('IP documents done')
 

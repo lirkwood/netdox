@@ -1,16 +1,18 @@
 import os
 import json
+import iptools
 from bs4 import BeautifulSoup
 
 def main():
     path = "Sources/records"
     master = extract(path)
-    aliases(master, path)
     return master
 
 
 def extract(path):
-    master = {}
+    master = {'forward': {}, 'reverse': {}}
+    forward = master['forward']
+    reverse = master['reverse']
     for file in os.scandir(path):
         source = open(file, 'r')
         jsondata = json.load(source)    #load json file
@@ -32,27 +34,20 @@ def extract(path):
                     if item['Name'] == "IPv4Address":
                         ip = item['Value'].strip('.')
 
-                if hostname not in master:
-                    master[hostname] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'ActiveDirectory'}
-                master[hostname]['ips'].append(ip)
-    return master
+                if hostname not in forward:
+                    forward[hostname] = {'dest': {'ips': [], 'domains': []}, 'root': domain, 'source': 'ActiveDirectory'}
+                forward[hostname]['dest']['ips'].append(ip)
 
-def aliases(master, path):
-    for file in os.scandir(path):
-        source = open(file)
-        jsondata = json.load(source)
-
-        for record in jsondata:
-            if record['RecordType'] == 'CNAME':
+            elif record['RecordType'] == 'CNAME':
                 domain = record['DistinguishedName'].split(',')[1].strip('DC=')
                 subdomain = record['DistinguishedName'].split(',')[0].strip('DC=')
                 
                 if subdomain == '@':
-                    alias = domain
+                    hostname = domain
                 elif subdomain == '*.':
-                    alias = '_wildcard_.'+ domain
+                    hostname = '_wildcard_.'+ domain
                 else:
-                    alias = subdomain +'.'+ domain
+                    hostname = subdomain +'.'+ domain
                 
                 dest = ''
                 for item in record['RecordData']['CimInstanceProperties']:
@@ -63,11 +58,28 @@ def aliases(master, path):
                         else:
                             dest = dest.strip('.')
             
-                if dest not in master:
-                    master[dest] = {'aliases': [], 'ips': [], 'root': domain, 'source': 'ActiveDirectory'}
-                master[dest]['aliases'].append(alias)
+                if hostname not in forward:
+                    forward[hostname] = {'dest': {'ips': [], 'domains': []}, 'root': domain, 'source': 'ActiveDirectory'}
+                forward[hostname]['dest']['domains'].append(dest)
+            
+            elif record['RecordType'] == 'PTR':
+                zone = record['DistinguishedName'].split(',')[1].strip('DC=')
+                subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and fix...
+                address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
+                ip = iptools.parsed_ip(subnet +'.'+ address)
 
-                
+                for item in record['RecordData']['CimInstanceProperties']:
+                    if item['Name'] == 'PtrDomainName':
+                        dest = item['Value'].strip('.')
+
+                if ip.valid:
+                    if ip.ipv4 not in reverse:
+                        reverse[ip.ipv4] = []
+                    reverse[ip.ipv4].append(dest)
+
+
+    return master
+
 
 if __name__ == '__main__':
     main()

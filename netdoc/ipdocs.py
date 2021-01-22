@@ -6,7 +6,7 @@ import csv
 import os
 
 
-def main(iplist):
+def main(iplist, ptr):
 
     live = read(iplist)
     subndict = {}
@@ -39,7 +39,7 @@ def main(iplist):
         for item in ipdict:
             ip = iptools.parsed_ip(item)
             if ip.valid:
-                write(ip, ipdict[ip.ipv4], copy.copy(soup))
+                write(ip, ipdict[ip.ipv4], copy.copy(soup), ptr)
         
 
 def read(iplist):
@@ -60,7 +60,7 @@ def read(iplist):
     return live
     
 
-def write(ip, info, soup):
+def write(ip, info, soup, ptr):
     docid = '_nd_' + ip.ipv4.replace('.', '_')
     network = '.'.join(ip.ipv4.split('.')[:2]) #split it into components
 
@@ -99,6 +99,24 @@ def write(ip, info, soup):
             x['docid'] = '_nd_port_' + port
             x.string = 'Port ' + port
             p.append(x)
+    
+    if ip.ipv4 in ptr:
+        ptrsection = soup.find(id='reversedns')
+        ptrsection['title'] = 'Reverse DNS'
+        ptrfrag = soup.new_tag('properties-fragment')
+        ptrfrag['id'] = 'ptr'
+        ptrsection.append(ptrfrag)
+        for domain in ptr[ip.ipv4]:
+            p = soup.new_tag('property')
+            p['name'] = 'domain'
+            p['title'] = 'Domain'
+            p['datatype'] = 'xref'
+
+            x = soup.new_tag('xref')
+            x['frag'] = 'default'
+            x['docid'] = '_nd_'+ domain.replace('.','_')
+            p.append(x)
+            ptrfrag.append(p)
 
     output = open('outgoing/IPs/{0}.psml'.format(docid), 'w', encoding='utf-8')
     output.write(str(soup))

@@ -39,14 +39,19 @@
                     <property name="source"        title="Source"      value="{xpf:string[@key = 'source']}" />
                 </properties-fragment>
 
-                <properties-fragment id="ipv4">
-                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'private']/xpf:string">
+                <properties-fragment id="dest">
+                <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array[@key = 'private']/xpf:string">
                     <property name="ipv4" title="Private IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
                 </xsl:for-each>
-                <xsl:for-each select="xpf:map[@key = 'ips']/xpf:array[@key = 'public']/xpf:string">
+                <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array[@key = 'public']/xpf:string">
                     <property name="ipv4" title="Public IP" datatype="xref">
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                    </property>
+                </xsl:for-each>
+                <xsl:for-each select="xpf:map/xpf:array[@key = 'domains']/xpf:string">
+                    <property name="alias" title="Alias to" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
                 </xsl:for-each>
@@ -55,12 +60,6 @@
                 <properties-fragment id="subnets">
                 <xsl:for-each select="xpf:array[@key = 'subnets']/xpf:string">
                     <property name="subnet" title="Subnet" value="{.}" />
-                </xsl:for-each>
-                </properties-fragment>
-            
-                <properties-fragment id="aliases">
-                <xsl:for-each select="xpf:array[@key = 'aliases']/xpf:string">
-                    <property name="alias" title="Alias" value="{.}" />
                 </xsl:for-each>
                 </properties-fragment>
                 
