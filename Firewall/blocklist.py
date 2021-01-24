@@ -74,7 +74,7 @@ def main():
     
     update()
 
-def addips(list, file):
+def addips(iplist, file):
     with open(file, 'r') as stream:
         for line in stream.readlines():
             if len(line) >= 7 and line.count('.') >= 3 and len(re.findall(r'[0-9]',line)) >= 4:
@@ -84,8 +84,8 @@ def addips(list, file):
                     print('Unexpected chars in string: "{0}". Skipping...'.format(bytes(ip, 'utf-8')))
                     rejects.append(ip)
                 else:
-                    list.append(cleanip)
-    return list
+                    iplist.append(cleanip)
+    return list(dict.fromkeys(iplist))
 
 def update():
     url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/block_ips.txt'

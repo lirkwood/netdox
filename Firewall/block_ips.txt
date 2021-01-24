@@ -1,9 +1,9 @@
 #Block_IPs
-#Processed at time 2021-01-24 23:28:22.958804 +1100 UTC
+#Processed at time 2021-01-24 23:41:04.525387 +1100 UTC
 #14337 ips from previous block_ips.txt
-#821 ips from J:/atemp/wellington/block-range-22-Jan.txt
-#48 ips from J:/atemp/wellington/forti-quarantine-25-Jan.txt
-#290 ips from Talos.
+#477 ips from J:/atemp/wellington/block-range-22-Jan.txt
+#27 ips from J:/atemp/wellington/forti-quarantine-25-Jan.txt
+#47 ips from Talos.
 1.124.111.76
 1.129.110.197
 1.136.111.55
