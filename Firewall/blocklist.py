@@ -1,11 +1,17 @@
 import re, os
 import requests
+import datetime
 import iptools
+import talos
 
 def main():
     master = []
+    count = {}
     global rejects
     rejects = []
+
+    blockrange = 'J:/atemp/wellington/block-range-22-Jan.txt'
+    quarantine = 'J:/atemp/wellington/forti-quarantine-25-Jan.txt'
     with open('J:/atemp/wellington/block_ips.txt', 'r') as stream:
         for line in stream.readlines():
             if not line.startswith('#'):
@@ -22,9 +28,13 @@ def main():
     #     elif 'block-range' in file.name and file.stat().st_mtime > br_mtime:
     #         br_latest = file
     #         br_mtime = file.stat().st_mtime
-    master = addips(master, 'J:/atemp/wellington/block-range-21-Jan.txt')
-    master = addips(master, 'J:/atemp/wellington/forti-quarantine-21-Jan.txt')
-    master = addips(master, 'talos.txt')
+    count['old'] = len(master)
+    master = addips(master, blockrange)
+    count['blockrange'] = len(master) - count['old']
+    master = addips(master, quarantine)
+    count['quarantine'] = len(master) - ( count['old'] + count['blockrange'] )
+    master = addips(master, 'talos_clean.txt')
+    count['talos'] = len(master) - ( count['old'] + count['blockrange'] + count['quarantine'] )
 
     seen = []
     dupes = []
@@ -50,7 +60,11 @@ def main():
             master.pop(i)
 
     master.insert(0, '#Block_IPs')
-    # master.insert(1, '#New IPs taken from: {0} and {1}'.format(fq_latest.path, br_latest.path))
+    master.insert(1, '#Processed at time '+ str(datetime.datetime.utcnow()) +' +1100 UTC')
+    master.insert(2, '#{0} ips from previous block_ips.txt'.format(count['old']))
+    master.insert(3, '#{0} ips from {1}'.format(count['blockrange'], blockrange))
+    master.insert(4, '#{0} ips from {1}'.format(count['quarantine'], quarantine))
+    master.insert(5, '#{0} ips from Talos.'.format(count['talos']))
     for item in rejects:
         master.insert(2, '#Rejected ip: ' + item)
 
