@@ -21,7 +21,7 @@
 
             <metadata>
                 <properties>
-                    <property name="template_version"     title="Template version"   value="3.4" />
+                    <property name="template_version"     title="Template version"   value="3.6" />
                 </properties>
             </metadata>
 
@@ -70,6 +70,8 @@
                     <property name="subnet" title="Subnet" value="{.}" />
                 </xsl:for-each>
                 </properties-fragment>
+
+                <fragment id="screenshot" />
                 
             </section>
             
