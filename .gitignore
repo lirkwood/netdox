@@ -6,6 +6,8 @@ Firewall/
 !Firewall/iptools.py
 !Firewall/query.json
 !Firewall/block_ips.txt
+!Firewall/talos.py
+!**/iptools.py
 **/Logs
 **/outgoing
 **/json
