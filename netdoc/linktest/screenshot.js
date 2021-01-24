@@ -14,7 +14,7 @@ const urlList = require('./live.json');
     console.log(url.concat(' screenshot saved.'))
     try{
       await page.goto(url);
-      await page.screenshot({path: 'outgoing/'.concat(path)});
+      await page.screenshot({path: 'outgoing/_nd_img_'.concat(path)});
     } catch (error) {
       console.log(`Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`)
     }
