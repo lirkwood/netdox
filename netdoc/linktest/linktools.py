@@ -26,6 +26,8 @@ count = 0
 live = []      #no. of successful responses to a basic GET
 dead = {}       #key = url, value = error code
 
+
+
 def main(folder):
     get_uris(folder)
 
@@ -48,8 +50,11 @@ def main(folder):
     subprocess.run('node screenshot.js')    #get screenshots of all urls in live
 
     for file in os.scandir('outgoing'):
-        docid = '_nd_'+ file.name.split('.')[0]
-        print(docid)
+        docid = file.name.split('.')[0].replace('_nd_img_', '_nd_')
+        fragment = "<fragment><image src='/ps/network/documentation/website/screenshots/{0}'/></fragment>".format(file.name)
+        service = '/members/~lkirkwood/groups/~network-documentation/uris/~{0}/fragments/screenshot'.format(docid)
+        r = requests.put(base+service,headers=header,data=fragment)
+        with open('log.xml','w') as log: soup=BeautifulSoup(r.text,'lxml');log.write(soup.prettify())
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
