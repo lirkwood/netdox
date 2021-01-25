@@ -74,7 +74,7 @@
             </document>
         </xsl:result-document>
         <xsl:catch>
-            <xsl:message>Error thrown: <xsl:value-of select="err:description" /></xsl:message>
+            <xsl:message>Error thrown during document creation.</xsl:message>
         </xsl:catch>
     </xsl:try>
 </xsl:template>
