@@ -34,16 +34,22 @@ def main(folder):
     for file in os.scandir('../outgoing/'+ folder):
         outgoing.append('_nd_'+ file.name.replace('.psml',''))
 
-    for docid in docids:
+    for docid in docids:    #archive docs not generated in last batch
         if docid not in outgoing:
             archive(docid)
     
     service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(urimap[folder])
     version = requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})
     with open('versionlog.xml','w') as l: l.write(BeautifulSoup(version.text,'lxml').prettify())
+    #version all docs that are not archived => current
+    
+    urls, docids = get_uris(folder)
 
-    for url in urls:
-        test(url)
+    with open('exclusions.txt','r') as stream:
+        exclusions = stream.read().splitlines()
+        for url in urls:
+            if url not in exclusions:
+                test(url)
 
     with open('log.txt','w') as log:
         log.write('Out of {0} tested urls, {1} failed.\n'.format(count, len(dead)))
@@ -51,21 +57,34 @@ def main(folder):
             log.write('URL: {0} Code: {1}\n\n'.format(url, dead[url]))
     with open('live.json','w') as out:
         out.write(json.dumps(live, indent=2))
+    #write results to files
     
-    if not os.path.exists('outgoing'):
-        os.mkdir('outgoing')
-    else:
-        for file in os.scandir('outgoing'):
-            os.remove(file)
+    for folder in ('new', 'review'):
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+        else:
+            for file in os.scandir(folder):
+                os.remove(file)
+    #clean screenshot dirs
             
     subprocess.run('node screenshot.js')    #get screenshots of all urls in live
 
-    for file in os.scandir('outgoing'):
+    with open('imgdiff_log.txt','w') as stream:
+        for file in os.scandir('new'): #test if current screenshot = known screenshot
+            stream.write(file.name)
+            result = subprocess.run('imgdiff base/{0} new/{0}'.format(file.name), stdout=stream)
+            if result.returncode == 0:
+                os.remove('new/'+ file.name)
+            else:
+                os.rename('new/'+ file.name, 'review/'+ file.name)
+            stream.write('\n\n')
+
+    for file in os.scandir('outgoing'):     #post image fragment to documents we have screenshots for
         docid = file.name.split('.')[0].replace('_nd_img_', '_nd_')
         fragment = "<fragment><image src='/ps/network/documentation/website/screenshots/{0}'/></fragment>".format(file.name)
         service = '/members/~lkirkwood/groups/~network-documentation/uris/~{0}/fragments/screenshot'.format(docid)
         r = requests.put(base+service,headers=header,data=fragment)
-        with open('log.xml','w') as log: soup=BeautifulSoup(r.text,'lxml');log.write(soup.prettify())
+        with open('log.xml','w') as log: log.write(BeautifulSoup(r.text,'lxml').prettify())
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
@@ -81,7 +100,6 @@ def get_uris(folder): #returns list of uris of all documents in a folder, define
     
     return urls, docids
     
-        
 
 def test(url):
     global count
@@ -104,7 +122,7 @@ def test(url):
 
 
 def alive(url):
-    r = requests.get(url, timeout=3)
+    r = requests.get(url, timeout=1)
     if r.status_code > 400 and r.status_code < 600:
         print('Bad response code {0} from url {1}\n\n'.format(r.status_code, url))
         dead[url] = r.status_code
