@@ -32,3 +32,4 @@ netdoc/linktest/
 !netdoc/linktest/screenshot.js
 !netdoc/linktest/package.json
 !netdoc/linktest/package-lock.json
+!netdoc/linktest/exclusions.txt
