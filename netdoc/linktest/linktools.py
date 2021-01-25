@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import subprocess
+from datetime import datetime
 import requests
 import json
 import auth
@@ -19,8 +20,6 @@ urimap = {
     'xo': '42183'
 }
 
-urls = []   #list of urls to be tested
-
 global count    #no. of urls tested
 count = 0  
 live = []      #no. of successful responses to a basic GET
@@ -29,7 +28,19 @@ dead = {}       #key = url, value = error code
 
 
 def main(folder):
-    get_uris(folder)
+    urls, docids = get_uris(folder)
+
+    outgoing = []
+    for file in os.scandir('../outgoing/'+ folder):
+        outgoing.append('_nd_'+ file.name.replace('.psml',''))
+
+    for docid in docids:
+        if docid not in outgoing:
+            archive(docid)
+    
+    service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(urimap[folder])
+    version = requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})
+    with open('versionlog.xml','w') as l: l.write(BeautifulSoup(version.text,'lxml').prettify())
 
     for url in urls:
         test(url)
@@ -58,12 +69,17 @@ def main(folder):
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
+    urls = []
+    docids = []
     service = '/groups/~network-documentation/uris/{0}/uris'.format(urimap[folder])
     r = requests.get(base+service, headers=header, params={'pagesize': 9999})
     soup = BeautifulSoup(r.text, features='xml')
     for document in soup.find_all('uri'):
+        docids.append(document['docid'])
         url = 'https://'+ document['docid'].replace('_nd_','').replace('_','.')
         urls.append(url)
+    
+    return urls, docids
     
         
 
@@ -92,12 +108,17 @@ def alive(url):
     if r.status_code > 400 and r.status_code < 600:
         print('Bad response code {0} from url {1}\n\n'.format(r.status_code, url))
         dead[url] = r.status_code
+        return False
     else:
         print('OK\n\n')
         live.append(url)
         return True
 
 
+def archive(docid):
+    service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/archive'.format(docid)
+    r = requests.post(base+service, headers=header)
+    return r
 
 
 if __name__ == "__main__":
