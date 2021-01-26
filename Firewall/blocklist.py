@@ -10,8 +10,8 @@ def main():
     global rejects
     rejects = []
 
-    blockrange = 'J:/atemp/wellington/block-range-22-Jan.txt'
-    quarantine = 'J:/atemp/wellington/forti-quarantine-25-Jan.txt'
+    blockrange = 'J:/atemp/wellington/block-range-25-Jan.txt'
+    quarantine = 'J:/atemp/wellington/forti-quarantine-27-Jan.txt'
     with open('J:/atemp/wellington/block_ips.txt', 'r') as stream:
         for line in stream.readlines():
             if not line.startswith('#'):
