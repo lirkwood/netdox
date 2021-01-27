@@ -7,7 +7,6 @@ Firewall/
 !Firewall/query.json
 !Firewall/block_ips.txt
 !Firewall/talos.py
-!**/iptools.py
 **/Logs
 **/outgoing
 **/json
@@ -24,7 +23,6 @@ netdoc/Sources/*
 fragments/xen/*
 *.zip
 **/log.*
-isolated_cnames.txt
 testing/
 netdoc/linktest/
 !netdoc/linktest/auth.py
@@ -35,3 +33,4 @@ netdoc/linktest/
 !netdoc/linktest/exclusions.txt
 !netdoc/linktest/settings.json
 netdoc/get-workers.ps1
+!**/iptools.py
