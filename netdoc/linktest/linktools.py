@@ -1,7 +1,9 @@
 from bs4 import BeautifulSoup
 from datetime import datetime
+from PIL import Image
 import subprocess
 import requests
+import shutil
 import json
 import auth
 import os
@@ -51,15 +53,18 @@ def main(folder):
             if page.test():
                 live.append(page.url)
             else:
-                dead[page.url] = str(page.code)
-                for ip in page.get_ips():
-                    ping = subprocess.run('ping -n 1 '+ ip, stdout=subprocess.PIPE)
-                    if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
-                        print('URL {0} failed but ip {1} succeeded.\n\n'.format(page.url, ip))
-                        dead[page.url] += '\nIP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
+                if page.protocol == 'https' and '_ssl.c:1123' in str(page.code):
+                    page.protocol = 'http'
+                    if page.test():
+                        dead['https://'+ page.domain] = 'HTTPS failed but HTTP succeeded.'
+                        print('HTTPS failed but HTTP succeeded.')
+                        live.append(page.url)
                     else:
-                        print('URL {0} failed and ip {1} failed with code {2}.\n\n'.format(page.url, ip, ping.returncode))
-                        dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
+                        dead[page.url] = str(page.code)
+                        testips(page)
+                else:
+                    dead[page.url] = str(page.code)
+                    testips(page)
 
 
     with open('log.txt','w') as log:
@@ -78,16 +83,8 @@ def main(folder):
                 os.remove(file)
             
     subprocess.run('node screenshot.js')    #get screenshots of all urls in live
+    imgdiff()
 
-    with open('imgdiff_log.txt','w') as stream:
-        for file in os.scandir('new'): #test if current screenshot = known screenshot
-            stream.write(file.name)
-            result = subprocess.run('imgdiff base/{0} new/{0}'.format(file.name), stdout=stream)
-            if result.returncode == 0:
-                os.remove('new/'+ file.name)
-            else:
-                os.rename('new/'+ file.name, 'review/'+ file.name)
-            stream.write('\n\n')
 
     for file in os.scandir('base'):     #post image fragment to documents we have screenshots for
         docid = file.name.split('.')[0].replace('_nd_img_', '_nd_')
@@ -118,12 +115,40 @@ def archive(docid):
     return r
 
 
+def testips(page):
+    for ip in page.get_ips():
+        ping = subprocess.run('ping -n 1 '+ ip, stdout=subprocess.PIPE)
+        if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
+            print('URL {0} failed but ip {1} succeeded.\n\n'.format(page.url, ip))
+            dead[page.url] += '\nIP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
+        else:
+            print('URL {0} failed and ip {1} failed with code {2}.\n\n'.format(page.url, ip, ping.returncode))
+            dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
+
+
+def imgdiff():
+    with open('imgdiff_log.txt','w') as stream:
+        for file in os.scandir('new'): #test if current screenshot = known screenshot
+            stream.write(file.name)
+            result = subprocess.run('imgdiff -t 0.3 base/{0} new/{0}'.format(file.name), stdout=stream, stderr=subprocess.PIPE)
+            if result.returncode != 0:
+                if 'cannot find the file' in str(result.stderr):
+                    shutil.copyfile('new/'+ file.name, 'review/'+ file.name)    
+                else:
+                    src = Image.open('base/'+ file.name)
+                    new = Image.open('new/'+ file.name)
+                    combined = Image.new('RGB',(src.size[0]*2, src.size[1]))
+                    combined.paste(src,(0,0))
+                    combined.paste(new,(src.size[0],0))
+                    combined.save('review/'+ file.name)
+            stream.write('\n\n')
+
+
 exclusions = open('exclusions.txt','r').read().splitlines()
 settings = json.load(open('settings.json','r'))
 
 class webpage:
     def __init__(self, url):
-        self.url = url
         self.domain = url.split('://')[1]
         self.docid = '_nd_'+ self.domain.replace('.','_')
         
@@ -146,6 +171,8 @@ class webpage:
             self.protocol = 'https'
         else:
             self.protocol = 'http'
+
+        self.url = self.protocol +'://'+ self.domain
 
         if url in exclusions:   #get exclusion details
             self.exclude = True
