@@ -121,7 +121,7 @@ def pods(sdict):
 def mapworkers(pdict):
     global workers
     tmp = {}
-    with open('Sources/domains.json','r') as stream:
+    with open('Sources/dns.json','r') as stream:
         jsondata = json.load(stream)
         for worker in workers:
             for domain in jsondata:
@@ -199,10 +199,8 @@ def main():
     master = mapworkers(pdict)
     master = podlink(master)
     worker2app(master)
-    with open('Sources/kube.xml', 'w') as out:
-        out.write('<root>')
+    with open('Sources/apps.json', 'w') as out:
         out.write(json.dumps(master, indent=4))
-        out.write('</root>')
     return master
 
 
