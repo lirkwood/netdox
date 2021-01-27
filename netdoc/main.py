@@ -9,17 +9,13 @@ import os
 print('Removing old documents...')
 if not os.path.exists('outgoing'):
     os.mkdir('outgoing')
-if not os.path.exists('outgoing/DNS'):
-    os.mkdir('outgoing/DNS')
-else: 
-    for f in os.scandir('outgoing/DNS'):
-        os.remove(f)
-        
-if not os.path.exists('outgoing/IPs'):
-    os.mkdir('outgoing/IPs')
-else:
-    for f in os.scandir('outgoing/IPs'):
-        os.remove(f)
+
+for path in ('DNS', 'IPs', 'k8s'):
+    if not os.path.exists('outgoing/'+path):
+        os.mkdir('outgoing/'+path)
+    else: 
+        for f in os.scandir('outgoing/'+path):
+            os.remove(f)
 print('Done.')
 
 subprocess.run('pwsh.exe ./get-ad.ps1')
@@ -101,5 +97,7 @@ print('IP documents done')
 import ingress2pod
 ingress2pod.main()
 subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:deployments.xsl -s:Sources/kube.xml')
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:workers.xsl -s:Sources/workers.xml')
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:clusters.xsl -s:Sources/workers.xml')
 
 print('Kubernetes documents done')
