@@ -7,7 +7,8 @@
 <xsl:output method="xml" indent="yes" />
 
 <xsl:template match="/">
-    <xsl:for-each select="json-to-xml(.)/xpf:map/xpf:map">
+    <xsl:variable name="apps" select="json-to-xml(apps)"/>
+    <xsl:for-each select="$apps/xpf:map/xpf:map">
         <xsl:apply-templates select="xpf:map">
             <xsl:with-param name="context" select="@key"/>
         </xsl:apply-templates>
