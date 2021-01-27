@@ -21,7 +21,7 @@
 
             <metadata>
                 <properties>
-                    <property name="template_version"     title="Template version"   value="3.6" />
+                    <property name="template_version"     title="Template version"   value="3.7" />
                 </properties>
             </metadata>
 
@@ -45,11 +45,15 @@
                     <property name="ipv4" title="Private IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
+                    <property name="ipv4_3" title="Octet 3" value="{tokenize(.,'\.')[3]}" />
+                    <property name="ipv4_3-4" title="Octets 3-4" value="{tokenize(.,'\.')[3]}.{tokenize(.,'\.')[4]}" />
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array[@key = 'public']/xpf:string">
                     <property name="ipv4" title="Public IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
+                    <property name="ipv4_3" title="Octet 3" value="{tokenize(.,'\.')[3]}" />
+                    <property name="ipv4_3-4" title="Octets 3-4" value="{tokenize(.,'\.')[3]}.{tokenize(.,'\.')[4]}" />
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:array[@key = 'domains']/xpf:string">
                     <xsl:choose>
@@ -63,6 +67,11 @@
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:for-each>
+                <xsl:for-each select="xpf:map/xpf:array[@key = 'apps']/xpf:string">
+                    <property name="app" title="Application" datatype="xref">
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                    </property>
+                </xsl:for-each>
                 </properties-fragment>
                 
                 <properties-fragment id="subnets">
@@ -71,7 +80,7 @@
                 </xsl:for-each>
                 </properties-fragment>
 
-                <fragment id="screenshot" />
+                <fragment id="screenshot" labels="text-align-center"/>
                 
             </section>
             
