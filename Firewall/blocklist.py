@@ -4,6 +4,8 @@ import datetime
 import iptools
 import talos
 
+url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/block_ips.txt'
+
 def main():
     master = []
     count = {}
@@ -12,13 +14,14 @@ def main():
 
     blockrange = 'J:/atemp/wellington/block-range-25-Jan.txt'
     quarantine = 'J:/atemp/wellington/forti-quarantine-27-Jan.txt'
-    with open('J:/atemp/wellington/block_ips.txt', 'r') as stream:
-        for line in stream.readlines():
-            if not line.startswith('#'):
-                cleanline = re.sub(r'[^0-9.]','',line)
-                if line.strip('\n \t') != cleanline:
-                    print('Unexpected chars in line: "{0}"'.format(bytes(line, 'utf-8')))
-                master.append(cleanline)
+    
+    current = requests.get(url)
+    for line in str(current.content, encoding='utf-8').split('\r\n'):
+        if not line.startswith('#'):
+            cleanline = re.sub(r'[^0-9.]','',line)
+            if line.strip('\n \t') != cleanline:
+                print('Unexpected chars in line: "{0}"'.format(bytes(line, 'utf-8')))
+            master.append(cleanline)
     # fq_mtime = 0
     # br_mtime = 0
     # for file in os.scandir('J:/atemp/wellington'):
@@ -53,10 +56,12 @@ def main():
     for i in range(len(master)):
         ip = iptools.parsed_ip(master[i])
         if not ip.valid:
-            rejects.append(ip)
+            if not ip.string.isspace():
+                rejects.append(ip.string)
             master.pop(i)
         elif not ip.foreign:
-            rejects.append(ip)
+            if not ip.string.isspace():
+                rejects.append(ip.string)
             master.pop(i)
 
     master.insert(0, '#Block_IPs')
@@ -88,7 +93,6 @@ def addips(iplist, file):
     return list(dict.fromkeys(iplist))
 
 def update():
-    url = 'https://sy4-storage-03.allette.com.au:9000/fortigate/block_ips.txt'
     header = {'content-type': 'application/x-www-form-urlencoded'}
     with open('block_ips.txt','rb') as payload:
         r = requests.put(url, data=payload, headers=header)
