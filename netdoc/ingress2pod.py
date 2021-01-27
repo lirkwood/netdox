@@ -181,7 +181,7 @@ def worker2app(master):
         with open('Sources/xo.txt','r') as details:
             user = details.readline().strip()
             password = details.readline().strip()
-            register = subprocess.run('xo-cli --register https://xosy4.allette.com.au '+ user +' '+ password, shell=True)
+            subprocess.run('xo-cli --register https://xosy4.allette.com.au '+ user +' '+ password, shell=True)
             for context in workers:
                 for _worker in workers[context]:
                     worker = workers[context][_worker]
