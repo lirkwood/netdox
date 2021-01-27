@@ -17,8 +17,8 @@
 <xsl:template match="xpf:map">
     <xsl:param name="context"/>
     <xsl:try>
-        <xsl:result-document href="outgoing/deployments/{@key}.psml">
-            <document level="portable" type="deployment">
+        <xsl:result-document href="outgoing/k8s/{@key}.psml">
+            <document level="portable" type="k8s_app">
 
                 <documentinfo>
                     <uri title="app: {@key}" docid="_nd_{@key}" />
@@ -26,7 +26,7 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version" title="Template version" value="1.1" />
+                        <property name="template_version" title="Template version" value="1.0" />
                     </properties>
                 </metadata>
     
