@@ -33,4 +33,5 @@ netdoc/linktest/
 !netdoc/linktest/package.json
 !netdoc/linktest/package-lock.json
 !netdoc/linktest/exclusions.txt
+!netdoc/linktest/settings.json
 netdoc/get-workers.ps1
