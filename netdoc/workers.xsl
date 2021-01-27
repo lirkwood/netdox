@@ -31,7 +31,9 @@
                 </fragment>
 
                 <properties-fragment id="vm">
-                    <property name="vm" title="Host VM" datatype="xref" />
+                    <property name="vm" title="Host VM" datatype="xref">
+                        <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}" />
+                    </property>
                 </properties-fragment>
             </section>
 

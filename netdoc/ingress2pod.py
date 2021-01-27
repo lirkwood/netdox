@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import subprocess
 import copy
 import json
 import sys
@@ -164,12 +165,40 @@ def podlink(master):
 
 
 
+def worker2app(master):
+    with open('sources/worker2app.json','w') as stream:
+        workers = {}
+        for context in master:
+            workers[context] = {}
+            _workers = workers[context]
+            for app in master[context]:
+                appinf = master[context][app]
+                if appinf['nodename'] not in _workers:
+                    _workers[appinf['nodename']] = {'ip': appinf['hostip'], 'apps': []}
+                if app not in _workers[appinf['nodename']]['apps']:
+                    _workers[appinf['nodename']]['apps'].append(app)
+        
+        with open('Sources/xo.txt','r') as details:
+            user = details.readline().strip()
+            password = details.readline().strip()
+            register = subprocess.run('xo-cli --register https://xosy4.allette.com.au '+ user +' '+ password, shell=True)
+            for context in workers:
+                for _worker in workers[context]:
+                    worker = workers[context][_worker]
+                    response = subprocess.check_output('xo-cli --list-objects type=VM mainIpAddress='+ worker['ip'], shell=True)     #xo-cli query goes here
+                    vm = json.loads(response)
+                    if len(vm) != 1:
+                        print('ALERT: Multiple VMs with IP: {0}. Using first returned, name_label={1}'.format(worker['ip'], vm[0]['name_label']))
+                    worker['vm'] = vm[0]['uuid']
+            stream.write(json.dumps(workers, indent=2))
+
 def main():
     idict = ingress()
     sdict = service(idict)
     pdict = pods(sdict)
     master = mapworkers(pdict)
     master = podlink(master)
+    worker2app(master)
     with open('Sources/kube.xml', 'w') as out:
         out.write('<root>')
         out.write(json.dumps(master, indent=4))
