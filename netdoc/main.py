@@ -1,5 +1,7 @@
 import ad_domains
 import dnsme_domains
+import k8s_domains
+import ingress2pod
 import iptools
 
 import subprocess
@@ -27,10 +29,14 @@ dnsme = dnsme_domains.main()
 dnsme_f = dnsme['forward']
 dnsme_r = dnsme['reverse']
 print('DNSMadeEasy domains processed.')
+ingress2pod.main()
+k8s = k8s_domains.main()
+print('Kubernetes domains processed.')
 
 master = {}
 for domain in ad_f:   #combining dicts
     master[domain.lower()] = ad_f[domain]
+
 for domain in dnsme_f:
     if domain in master:
         for ip in dnsme_f[domain]['dest']['ips']:
@@ -39,6 +45,13 @@ for domain in dnsme_f:
             master[domain]['dest']['domains'].append(alias)
     else:
         master[domain] = dnsme_f[domain]
+
+for domain in k8s:
+    if domain in master:
+        for app in k8s[domain]['dest']['apps']:
+            master[domain]['dest']['apps'].append(app)
+    else:
+        master[domain] = k8s[domain]
 
 ptr = {}    #gathering ptr records
 for ip in ad_r:
@@ -85,7 +98,7 @@ for domain in master:   #adding subnets and sorting public/private ips
 with open('Sources/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:Sources/domains.xml')
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:Sources/dns.xml')
 
 print('DNS documents done')
 
@@ -94,9 +107,7 @@ ipdocs.main(iplist, ptr)
 
 print('IP documents done')
 
-import ingress2pod
-ingress2pod.main()
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:deployments.xsl -s:Sources/kube.xml')
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:deployments.xsl -s:Sources/apps.xml')
 subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:workers.xsl -s:Sources/workers.xml')
 subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:clusters.xsl -s:Sources/workers.xml')
 
