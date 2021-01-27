@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
-import subprocess
 from datetime import datetime
+import subprocess
 import requests
 import json
 import auth
@@ -20,15 +20,12 @@ urimap = {
     'xo': '42183'
 }
 
-global count    #no. of urls tested
-count = 0  
 live = []      #no. of successful responses to a basic GET
 dead = {}       #key = url, value = error code
 
 
-
 def main(folder):
-    urls, docids = get_uris(folder)
+    urls, docids = get_uris(folder) 
 
     outgoing = []
     for file in os.scandir('../outgoing/'+ folder):
@@ -40,32 +37,45 @@ def main(folder):
     
     service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(urimap[folder])
     version = requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})
-    with open('versionlog.xml','w') as l: l.write(BeautifulSoup(version.text,'lxml').prettify())
-    #version all docs that are not archived => current
+    with open('versionlog.xml','w') as log:
+        log.write(BeautifulSoup(version.text,'lxml').prettify())    # version all docs that are not archived => current
     
-    urls, docids = get_uris(folder)
+    urls, docids = get_uris(folder)     #get current uri list
 
-    with open('exclusions.txt','r') as stream:
-        exclusions = stream.read().splitlines()
-        for url in urls:
-            if url not in exclusions:
-                test(url)
+    count = 0
+    for url in urls:
+        page = webpage(url)
+        if not page.exclude:
+            count += 1
+            print('Testing '+ page.url)
+            if page.test():
+                live.append(page.url)
+            else:
+                dead[page.url] = str(page.code)
+                for ip in page.get_ips():
+                    ping = subprocess.run('ping -n 1 '+ ip, stdout=subprocess.PIPE)
+                    if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
+                        print('URL {0} failed but ip {1} succeeded.\n\n'.format(page.url, ip))
+                        dead[page.url] += '\nIP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
+                    else:
+                        print('URL {0} failed and ip {1} failed with code {2}.\n\n'.format(page.url, ip, ping.returncode))
+                        dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
+
 
     with open('log.txt','w') as log:
         log.write('Out of {0} tested urls, {1} failed.\n'.format(count, len(dead)))
         for url in dead:
             log.write('URL: {0} Code: {1}\n\n'.format(url, dead[url]))
+
     with open('live.json','w') as out:
-        out.write(json.dumps(live, indent=2))
-    #write results to files
+        out.write(json.dumps(live, indent=2))   #write results to files
     
-    for folder in ('new', 'review'):
+    for folder in ('new', 'review'):    # clean screenshot dirs
         if not os.path.exists(folder):
             os.mkdir(folder)
         else:
             for file in os.scandir(folder):
                 os.remove(file)
-    #clean screenshot dirs
             
     subprocess.run('node screenshot.js')    #get screenshots of all urls in live
 
@@ -79,12 +89,13 @@ def main(folder):
                 os.rename('new/'+ file.name, 'review/'+ file.name)
             stream.write('\n\n')
 
-    for file in os.scandir('outgoing'):     #post image fragment to documents we have screenshots for
+    for file in os.scandir('base'):     #post image fragment to documents we have screenshots for
         docid = file.name.split('.')[0].replace('_nd_img_', '_nd_')
-        fragment = "<fragment><image src='/ps/network/documentation/website/screenshots/{0}'/></fragment>".format(file.name)
+        fragment = "<fragment labels='text-align-center'><block label='border-2'><image src='/ps/network/documentation/website/screenshots/{0}'/></block></fragment>".format(file.name)
         service = '/members/~lkirkwood/groups/~network-documentation/uris/~{0}/fragments/screenshot'.format(docid)
         r = requests.put(base+service,headers=header,data=fragment)
-        with open('log.xml','w') as log: log.write(BeautifulSoup(r.text,'lxml').prettify())
+        with open('log.xml','w') as log:
+            log.write(BeautifulSoup(r.text,'lxml').prettify())
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
@@ -99,44 +110,78 @@ def get_uris(folder): #returns list of uris of all documents in a folder, define
         urls.append(url)
     
     return urls, docids
-    
-
-def test(url):
-    global count
-    count += 1
-    print('Testing '+ url)
-    try:
-        alive(url)
-    except Exception as e:
-        if '_ssl.c:1123' in str(e) and 'https' in url:
-            try:
-                if alive(url.replace('https','http')):
-                    print('HTTPS failed but HTTP succeeded.\n\n')
-                    dead[url] = 'HTTPS failed but HTTP succeeded.'
-            except Exception as e:
-                print('Fatal error occurred: {0}\n\n'.format(str(e)))
-                dead[url] = str(e)
-        else:
-            print('Fatal error occurred: {0}\n\n'.format(str(e)))
-            dead[url] = str(e)
-
-
-def alive(url):
-    r = requests.get(url, timeout=1)
-    if r.status_code > 400 and r.status_code < 600:
-        print('Bad response code {0} from url {1}\n\n'.format(r.status_code, url))
-        dead[url] = r.status_code
-        return False
-    else:
-        print('OK\n\n')
-        live.append(url)
-        return True
 
 
 def archive(docid):
     service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/archive'.format(docid)
     r = requests.post(base+service, headers=header)
     return r
+
+
+exclusions = open('exclusions.txt','r').read().splitlines()
+settings = json.load(open('settings.json','r'))
+
+class webpage:
+    def __init__(self, url):
+        self.url = url
+        self.domain = url.split('://')[1]
+        self.docid = '_nd_'+ self.domain.replace('.','_')
+        
+        if self.domain in settings:     #get settings
+            if 'protocol' in settings[self.domain]:
+                self.protocol = settings[self.domain]['protocol']
+            else:
+                self.protocol = url.split('://')[0]
+
+            if 'auth' in settings[self.domain]:
+                self.auth = settings[self.domain]['auth']
+                self.url = '{0}://{1}:{2}@{3}'.format(self.protocol, self.auth['user'], self.auth['password'], self.domain)
+            else:
+                self.auth = None
+        else:
+            self.protocol = url.split('://')[0]
+            self.auth = None
+
+        if 'https' in url:  #store protocol
+            self.protocol = 'https'
+        else:
+            self.protocol = 'http'
+
+        if url in exclusions:   #get exclusion details
+            self.exclude = True
+        else:
+            self.exclude = False
+    
+    def test(self):
+        try:
+            r = requests.get(self.url, timeout=1)
+            self.code = r.status_code
+            if self.code > 400 and self.code < 600:
+                print('Bad response code {0} from url {1}\n\n'.format(self.code, self.url))
+                self.status = False
+                return False
+            else:
+                print('OK\n\n')
+                self.status = True
+                return True
+        except Exception as e:
+            self.code = e
+            print('Fatal error. \n\n')
+            self.status = False
+            return False
+
+    def get_ips(self):
+        self.ips = []
+
+        service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/fragments/dest'.format(self.docid)
+        soup = BeautifulSoup(requests.get(base+service, headers=header).text, 'lxml')
+        for prop in soup.find_all('property'):
+            if prop['name'] == 'ipv4':
+                self.ips.append(prop.xref.string)
+        
+        return self.ips
+
+
 
 
 if __name__ == "__main__":
