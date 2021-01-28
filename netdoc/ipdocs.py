@@ -72,6 +72,10 @@ def write(ip, info, soup, ptr):
             p['value'] = ip.subnet
         elif p['name'] == 'ipv4':
             p['value'] = ip.ipv4
+        elif p['name'] == 'ipv4_3':
+            p['value'] == ip.ipv4.split('.')[2]
+        elif p['name'] == 'ipv4_3-4':
+            p['value'] == ip.ipv4.split('.')[2:4]
         elif p['name'] == 'source':
             p['value'] = info['source']
 
