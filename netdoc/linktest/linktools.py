@@ -18,7 +18,7 @@ base = 'https://ps-doc.allette.com.au/ps/service'
 urimap = {
     'dns': 	'46055',
     'ips': '45604',
-    'deployments': '42262',
+    'k8s': '47002',
     'xo': '42183'
 }
 
@@ -27,20 +27,9 @@ dead = {}       #key = url, value = error code
 
 
 def main(folder):
-    urls, docids = get_uris(folder) 
+    # urls, docids = get_uris(folder) 
 
-    outgoing = []
-    for file in os.scandir('../outgoing/'+ folder):
-        outgoing.append('_nd_'+ file.name.replace('.psml',''))
-
-    for docid in docids:    #archive docs not generated in last batch
-        if docid not in outgoing:
-            archive(docid)
-    
-    service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(urimap[folder])
-    version = requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})
-    with open('versionlog.xml','w') as log:
-        log.write(BeautifulSoup(version.text,'lxml').prettify())    # version all docs that are not archived => current
+    # version(folder, docids)
     
     urls, docids = get_uris(folder)     #get current uri list
 
@@ -57,7 +46,7 @@ def main(folder):
                     page.protocol = 'http'
                     if page.test():
                         dead['https://'+ page.domain] = 'HTTPS failed but HTTP succeeded.'
-                        print('HTTPS failed but HTTP succeeded.')
+                        print('HTTPS failed but HTTP succeeded.\n\n')
                         live.append(page.url)
                     else:
                         dead[page.url] = str(page.code)
@@ -75,7 +64,7 @@ def main(folder):
     with open('live.json','w') as out:
         out.write(json.dumps(live, indent=2))   #write results to files
     
-    for folder in ('new', 'review'):    # clean screenshot dirs
+    for folder in ('screenshots', 'review'):    # clean screenshot dirs
         if not os.path.exists(folder):
             os.mkdir(folder)
         else:
@@ -83,16 +72,14 @@ def main(folder):
                 os.remove(file)
             
     subprocess.run('node screenshot.js')    #get screenshots of all urls in live
+
     imgdiff()
 
+    for url in dead:  #copy placeholder for all docs with no image 
+        docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
+        shutil.copy('placeholder.png', 'screenshots/{0}.png'.format(docid))
 
-    for file in os.scandir('base'):     #post image fragment to documents we have screenshots for
-        docid = file.name.split('.')[0].replace('_nd_img_', '_nd_')
-        fragment = "<fragment labels='text-align-center'><block label='border-2'><image src='/ps/network/documentation/website/screenshots/{0}'/></block></fragment>".format(file.name)
-        service = '/members/~lkirkwood/groups/~network-documentation/uris/~{0}/fragments/screenshot'.format(docid)
-        r = requests.put(base+service,headers=header,data=fragment)
-        with open('log.xml','w') as log:
-            log.write(BeautifulSoup(r.text,'lxml').prettify())
+    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:review.xml -o:_nd_status_update.psml')
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
@@ -107,6 +94,19 @@ def get_uris(folder): #returns list of uris of all documents in a folder, define
         urls.append(url)
     
     return urls, docids
+
+
+def version(folder, docids):
+    outgoing = []
+    for file in os.scandir('../outgoing/'+ folder):
+        outgoing.append('_nd_'+ file.name.replace('.psml',''))
+
+    for docid in docids:    #archive docs not generated in last batch
+        if docid not in outgoing:
+            archive(docid)
+    
+    service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(urimap[folder])
+    requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
 
 
 def archive(docid):
@@ -127,21 +127,30 @@ def testips(page):
 
 
 def imgdiff():
-    with open('imgdiff_log.txt','w') as stream:
-        for file in os.scandir('new'): #test if current screenshot = known screenshot
-            stream.write(file.name)
-            result = subprocess.run('imgdiff -t 0.3 base/{0} new/{0}'.format(file.name), stdout=stream, stderr=subprocess.PIPE)
+    with open('review.xml','w') as stream:
+        stream.write('<root>')
+        review = []
+        for file in os.scandir('screenshots'): #test if current screenshot = known screenshot
+            result = subprocess.run('imgdiff -t 0.3 base/{0} screenshots/{0}'.format(file.name), stderr=subprocess.PIPE)
             if result.returncode != 0:
+                review.append(file.name)
                 if 'cannot find the file' in str(result.stderr):
-                    shutil.copyfile('new/'+ file.name, 'review/'+ file.name)    
+                    shutil.copyfile('screenshots/'+ file.name, 'review/'+ file.name)    
                 else:
                     src = Image.open('base/'+ file.name)
-                    new = Image.open('new/'+ file.name)
+                    src.resize((1024, 576))
+                    new = Image.open('screenshots/'+ file.name)
+                    new.resize((1024, 576))
                     combined = Image.new('RGB',(src.size[0]*2, src.size[1]))
                     combined.paste(src,(0,0))
                     combined.paste(new,(src.size[0],0))
                     combined.save('review/'+ file.name)
-            stream.write('\n\n')
+            img = Image.open('screenshots/'+ file.name)
+            img.resize((1024, 576))
+            os.remove('screenshots/'+ file.name)
+            img.save('screenshots/'+ file.name)
+        stream.write(json.dumps(review, indent=2))
+        stream.write('</root>')
 
 
 exclusions = open('exclusions.txt','r').read().splitlines()
@@ -154,30 +163,37 @@ class webpage:
         
         if self.domain in settings:     #get settings
             if 'protocol' in settings[self.domain]:
-                self.protocol = settings[self.domain]['protocol']
+                self._protocol = settings[self.domain]['protocol']
             else:
-                self.protocol = url.split('://')[0]
+                self._protocol = url.split('://')[0]
 
             if 'auth' in settings[self.domain]:
                 self.auth = settings[self.domain]['auth']
-                self.url = '{0}://{1}:{2}@{3}'.format(self.protocol, self.auth['user'], self.auth['password'], self.domain)
+                self.url = '{0}://{1}:{2}@{3}'.format(self._protocol, self.auth['user'], self.auth['password'], self.domain)
             else:
                 self.auth = None
         else:
-            self.protocol = url.split('://')[0]
+            self._protocol = url.split('://')[0]
             self.auth = None
 
-        if 'https' in url:  #store protocol
-            self.protocol = 'https'
-        else:
-            self.protocol = 'http'
-
-        self.url = self.protocol +'://'+ self.domain
+        self.url = self._protocol +'://'+ self.domain
 
         if url in exclusions:   #get exclusion details
             self.exclude = True
         else:
             self.exclude = False
+
+    @property
+    def protocol(self):
+        return self._protocol
+    
+    @protocol.setter
+    def protocol(self, new_protocol):
+        if new_protocol == 'http' or new_protocol == 'https':
+            self._protocol = new_protocol
+            self.url = self._protocol +'://'+ self.domain
+        else:
+            print('Provide a valid protocol (http or https)')
     
     def test(self):
         try:
