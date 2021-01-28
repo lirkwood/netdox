@@ -25,6 +25,7 @@ fragments/xen/*
 **/log.*
 testing/
 netdoc/linktest/
+!netdoc/linktest/base/*
 !netdoc/linktest/auth.py
 !netdoc/linktest/linktools.py
 !netdoc/linktest/screenshot.js
@@ -32,5 +33,6 @@ netdoc/linktest/
 !netdoc/linktest/package-lock.json
 !netdoc/linktest/exclusions.txt
 !netdoc/linktest/settings.json
+!netdoc/linktest/placeholder.png
 netdoc/get-workers.ps1
 !**/iptools.py
