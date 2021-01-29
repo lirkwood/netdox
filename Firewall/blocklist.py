@@ -12,8 +12,8 @@ def main():
     global rejects
     rejects = []
 
-    blockrange = 'J:/atemp/wellington/block-range-25-Jan.txt'
-    quarantine = 'J:/atemp/wellington/forti-quarantine-27-Jan.txt'
+    blockrange = 'J:/atemp/wellington/block-range-27-Jan.txt'
+    quarantine = 'J:/atemp/wellington/forti-quarantine-29-Jan.txt'
     
     current = requests.get(url)
     for line in str(current.content, encoding='utf-8').split('\r\n'):
@@ -53,16 +53,19 @@ def main():
 
     master = list(dict.fromkeys(master))
 
+    tmp = []
     for i in range(len(master)):
         ip = iptools.parsed_ip(master[i])
         if not ip.valid:
             if not ip.string.isspace():
                 rejects.append(ip.string)
-            master.pop(i)
         elif not ip.foreign:
             if not ip.string.isspace():
                 rejects.append(ip.string)
-            master.pop(i)
+        else:
+            tmp.append(master[i])
+    
+    master = list(tmp)
 
     master.insert(0, '#Block_IPs')
     master.insert(1, '#Processed at time '+ str(datetime.datetime.utcnow()) +' +1100 UTC')
