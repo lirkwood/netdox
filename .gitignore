@@ -36,3 +36,4 @@ netdoc/linktest/
 !netdoc/linktest/placeholder.png
 netdoc/get-workers.ps1
 !**/iptools.py
+fragments/
