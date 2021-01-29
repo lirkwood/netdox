@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, date
 from PIL import Image
 import subprocess
 import requests
@@ -9,9 +9,8 @@ import auth
 import os
 
 
-token = auth.token()
 header = {
-    'authorization': 'Bearer {0}'.format(token)
+    'authorization': 'Bearer {0}'.format(auth.token())
 }
 base = 'https://ps-doc.allette.com.au/ps/service'
 
@@ -19,7 +18,10 @@ urimap = {
     'dns': 	'46055',
     'ips': '45604',
     'k8s': '47002',
-    'xo': '42183'
+    'xo': '42183',
+    'review': '48468',
+    'screenshots': '47004',
+    'status_update': '48585'
 }
 
 live = []      #no. of successful responses to a basic GET
@@ -64,7 +66,7 @@ def main(folder):
     with open('live.json','w') as out:
         out.write(json.dumps(live, indent=2))   #write results to files
     
-    for folder in ('screenshots', 'review'):    # clean screenshot dirs
+    for folder in ('screenshots/', 'review/'):    # clean screenshot dirs
         if not os.path.exists(folder):
             os.mkdir(folder)
         else:
@@ -73,13 +75,24 @@ def main(folder):
             
     subprocess.run('node screenshot.js')    #get screenshots of all urls in live
 
-    imgdiff()
+    for file in os.scandir('screenshots/'):
+        img = Image.open('screenshots/'+ file.name)
+        img.resize((1024, 576))
+        os.remove(file)
+        img.save('screenshots/'+ file.name)
 
     for url in dead:  #copy placeholder for all docs with no image 
         docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
-        shutil.copy('placeholder.png', 'screenshots/{0}.png'.format(docid))
+        if not os.path.exists('screenshots/{0}.png'.format(docid)):
+            shutil.copy('placeholder.png', 'screenshots/{0}.png'.format(docid))
 
-    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:review.xml -o:_nd_status_update.psml')
+    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:review.xml -o:status_update/_nd_status_update_{0}.psml'.format(date.today()))
+    # run xsl to generate daily status update
+    print('Status update file generated.')
+    print('Archiving old review images...')
+
+    archive(urimap['review'])
+    print('Done.')
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
@@ -124,33 +137,6 @@ def testips(page):
         else:
             print('URL {0} failed and ip {1} failed with code {2}.\n\n'.format(page.url, ip, ping.returncode))
             dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
-
-
-def imgdiff():
-    with open('review.xml','w') as stream:
-        stream.write('<root>')
-        review = []
-        for file in os.scandir('screenshots'): #test if current screenshot = known screenshot
-            result = subprocess.run('imgdiff -t 0.3 base/{0} screenshots/{0}'.format(file.name), stderr=subprocess.PIPE)
-            if result.returncode != 0:
-                review.append(file.name)
-                if 'cannot find the file' in str(result.stderr):
-                    shutil.copyfile('screenshots/'+ file.name, 'review/'+ file.name)    
-                else:
-                    src = Image.open('base/'+ file.name)
-                    src.resize((1024, 576))
-                    new = Image.open('screenshots/'+ file.name)
-                    new.resize((1024, 576))
-                    combined = Image.new('RGB',(src.size[0]*2, src.size[1]))
-                    combined.paste(src,(0,0))
-                    combined.paste(new,(src.size[0],0))
-                    combined.save('review/'+ file.name)
-            img = Image.open('screenshots/'+ file.name)
-            img.resize((1024, 576))
-            os.remove('screenshots/'+ file.name)
-            img.save('screenshots/'+ file.name)
-        stream.write(json.dumps(review, indent=2))
-        stream.write('</root>')
 
 
 exclusions = open('exclusions.txt','r').read().splitlines()

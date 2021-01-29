@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const { compare } = require("odiff-bin");
 const fs = require('fs');
 const urlList = require('./live.json');
-var failed = []
+var review = {}
 
 
 async function imgdiff(array) {
@@ -15,15 +15,17 @@ async function imgdiff(array) {
         "review/".concat(image)
       );
       if (match == false) {
-        failed.push(image)
+        review[image] = 'imgdiff'
       }
     } catch (error) {
       if (error instanceof TypeError) {
-        failed.push(image)
+        fs.copyFile('screenshots/'.concat(image), 'review/'.concat(image), (err) => {if (err) throw (err);});
+        console.log(`No base image for ${image}. Screenshot copied for review.`)
+        review[image] = 'no_base'
       }
     }
   }
-  fs.writeFile('review.json', failed, function (err) {if (err) throw err;});
+  fs.writeFileSync('review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
 }
 
 (async (callback) => {
@@ -43,7 +45,7 @@ async function imgdiff(array) {
       await page.screenshot({path: 'screenshots/'.concat(path)});
       array.push(path)
     } catch (error) {
-      failed.push(path)
+      review[path] = `no_ss:${error}`
       console.log(`Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`);
     }
   }
