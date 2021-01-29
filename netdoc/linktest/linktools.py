@@ -29,6 +29,7 @@ dead = {}       #key = url, value = error code
 
 
 def main(folder):
+    # pylint: disable=unused-variable
     # urls, docids = get_uris(folder) 
 
     # version(folder, docids)
