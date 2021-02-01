@@ -42,12 +42,16 @@
                     <properties-fragment id="kube_pods">
                         <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
                             <property name="pod"  title="Pod"  value="{@key}" />
-                            <property name="pod_link"  title="Pod on Rancher" value="{xpf:string[@key = 'rancher']}" />
+                            <property name="pod_link"  title="Pod on Rancher">
+                                <link href="{xpf:string[@key = 'rancher']}"/>
+                            </property>
                             <xsl:for-each select="xpf:map[@key = 'containers']/xpf:string">
                                 <property name="container" title="Container" value="{@key}" />
                                 <property name="image" title="Image ID" value="{.}"/>
                                 <xsl:if test="contains(.,'registry-gitlab.allette.com.au')">
-                                    <property name="gitlab" title="Project on GitLab" value="{substring-before(substring-after(.,'registry-'),':')}"/>
+                                    <property name="gitlab" title="Project on GitLab" value="{substring-before(substring-after(.,'registry-'),':')}">
+                                    <link href="{substring-before(substring-after(.,'registry-'),':')}" />
+                                    </property>
                                 </xsl:if>
                             </xsl:for-each>
                         </xsl:for-each>

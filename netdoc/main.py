@@ -107,7 +107,7 @@ ipdocs.main(iplist, ptr)
 
 print('IP documents done')
 
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:deployments.xsl -s:Sources/apps.xml')
+subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:apps.xsl -s:Sources/apps.xml')
 subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:workers.xsl -s:Sources/workers.xml')
 subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:clusters.xsl -s:Sources/workers.xml')
 
