@@ -12,8 +12,8 @@ def main():
     global rejects
     rejects = []
 
-    blockrange = 'J:/atemp/wellington/block-range-27-Jan.txt'
-    quarantine = 'J:/atemp/wellington/forti-quarantine-29-Jan.txt'
+    blockrange = 'J:/atemp/wellington/block-range-30-Jan.txt'
+    quarantine = 'J:/atemp/wellington/forti-quarantine-1-Feb.txt'
     
     current = requests.get(url)
     for line in str(current.content, encoding='utf-8').split('\r\n'):
