@@ -87,7 +87,7 @@ def main(folder):
         if not os.path.exists('screenshots/{0}.png'.format(docid)):
             shutil.copy('placeholder.png', 'screenshots/{0}.png'.format(docid))
 
-    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:review.xml -o:status_update/_nd_status_update_{0}.psml'.format(date.today()))
+    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:review.xml -o:status_update/_nd_status_update.psml')
     # run xsl to generate daily status update
     print('Status update file generated.')
     print('Archiving old review images...')
