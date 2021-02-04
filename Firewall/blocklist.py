@@ -12,8 +12,8 @@ def main():
     global rejects
     rejects = []
 
-    blockrange = 'J:/atemp/wellington/block-range-30-Jan.txt'
-    quarantine = 'J:/atemp/wellington/forti-quarantine-1-Feb.txt'
+    blockrange = 'J:/atemp/wellington/block-range-2-Feb.txt'
+    quarantine = 'J:/atemp/wellington/forti-quarantine-4-Feb.txt'
     
     current = requests.get(url)
     for line in str(current.content, encoding='utf-8').split('\r\n'):
@@ -69,12 +69,14 @@ def main():
 
     master.insert(0, '#Block_IPs')
     master.insert(1, '#Processed at time '+ str(datetime.datetime.utcnow()) +' +1100 UTC')
+    master.insert(2, '#{0} ips in blocklist.'.format(len(master)))
+    master.insert(2, '#{0} new ips added total.'.format(len(master) - count['old']))
     master.insert(2, '#{0} ips from previous block_ips.txt'.format(count['old']))
     master.insert(3, '#{0} ips from {1}'.format(count['blockrange'], blockrange))
     master.insert(4, '#{0} ips from {1}'.format(count['quarantine'], quarantine))
     master.insert(5, '#{0} ips from Talos.'.format(count['talos']))
     for item in rejects:
-        master.insert(2, '#Rejected ip: ' + item)
+        print('Rejected ip: ' + item)
 
     with open('block_ips.txt', 'w') as log:
         for line in master:
