@@ -4,6 +4,7 @@ import k8s_domains
 import ingress2pod
 import iptools
 
+# from bs4 import BeautifulSoup
 import subprocess
 import json
 import os
@@ -86,14 +87,15 @@ for domain in master:   #adding subnets and sorting public/private ips
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
+# print('Searching secret server for secrets...')
 
-    # for i in range(len(master[domain]['dest']['domains'])): #adding cnames
-    #     alias = master[domain]['dest']['domains'][i]
-    #     if '_wildcard_' in alias:
-    #         master[domain]['dest']['domains'][i] = alias.replace('_wildcard_','*')
-    #     else:
-    #         master[domain]['dest']['domains'][i] = 'https://'+ alias
-    
+# import secret_api
+# for domain in master:
+#     master[domain]['secrets'] = []
+#     resp = secret_api.searchSecrets(domain)
+#     soup = BeautifulSoup(resp.text, features='xml')
+#     for id in soup.find_all('secretId'):
+#         master[domain]['secrets'].append(id.string.strip())
 
 with open('Sources/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
