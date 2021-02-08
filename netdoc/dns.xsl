@@ -45,15 +45,11 @@
                     <property name="ipv4" title="Private IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
-                    <property name="ipv4_3" title="Octet 3" value="{tokenize(.,'\.')[3]}" />
-                    <property name="ipv4_3-4" title="Octets 3-4" value="{tokenize(.,'\.')[3]}.{tokenize(.,'\.')[4]}" />
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array[@key = 'public']/xpf:string">
                     <property name="ipv4" title="Public IP" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
-                    <property name="ipv4_3" title="Octet 3" value="{tokenize(.,'\.')[3]}" />
-                    <property name="ipv4_3-4" title="Octets 3-4" value="{tokenize(.,'\.')[3]}.{tokenize(.,'\.')[4]}" />
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:array[@key = 'domains']/xpf:string">
                     <xsl:choose>
@@ -80,11 +76,21 @@
                 </xsl:for-each>
                 </properties-fragment>
 
+                <properties-fragment id="for-search">
+                    <xsl:variable name="octets">
+                        <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array/xpf:string">
+                            <xsl:value-of select="concat(tokenize(.,'\.')[3], ', ', concat(tokenize(.,'\.')[3],'.',tokenize(.,'\.')[4]), ', ')"/>
+                        </xsl:for-each>
+                    </xsl:variable>
+                    <property name="octets" title="Octets for search" value="{substring($octets,1,string-length($octets)-2)}"/>
+                </properties-fragment>
+
                 <fragment id="screenshot" labels="text-align-center">
                     <block label="border-2">
                         <image src="/ps/network/documentation/website/screenshots/_nd_img_{translate($name,'.','_')}.png"/>
                     </block>
                 </fragment>
+
                 
             </section>
             
