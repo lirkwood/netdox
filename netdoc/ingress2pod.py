@@ -14,21 +14,36 @@ def ingress():
         for c in jsondata:  #context either sandbox or production cluster
             context = jsondata[c]
             idict[c] = {}
-            for service in context['items']:
-                name = service['metadata']['name']
+            for ingress in context['items']:
+                name = findService(ingress)
                 hosts = []
-                for h in service['spec']['rules']:
-                    host = h['host'].replace('www.', '').replace('.internal', '')
+                for h in ingress['spec']['rules']:
+                    host = h['host'].replace('.internal', '')
                     hosts.append(host)
 
                 hosts = list(dict.fromkeys(hosts))  #make unique
                 idict[c][name] = hosts  #dict has structure 'service name' : ['host1', 'host2',...] etc
-    
+                
     return idict
 
 
+def findService(obj):
+    if isinstance(obj, dict):
+        for item in obj:
+            if item == 'serviceName':
+                return obj[item]
+            else:
+                test = findService(obj[item])
+                if test: return test
+    elif isinstance(obj, list):
+        for item in obj:
+            test = findService(item)
+            if test: return test
+    else:
+        return None
 
-def service(sdict):
+
+def service(idict):
     global links
     ndict = {} #new dictionary
     noingress = {}
@@ -51,7 +66,7 @@ def service(sdict):
                         app = None
                         print('Found isolated service: {0}. Ignoring...'.format(name))  #if has no link at all
                     try:
-                        ndict[c][app] = sdict[c][name]  #dict where deployment is key and associated domains are values
+                        ndict[c][app] = idict[c][name]  #sdict is dict where ingress is key and associated domains are values
                     except KeyError:
                         print('Found service with no ingress: {0}. Attempting to find related service...'.format(name))
                         noingress[c][name] = app
@@ -88,7 +103,7 @@ def pods(sdict):
                     else:
                         appname = labels['app.kubernetes.io/instance']
                 except KeyError:
-                    print('Discovered system pod. Ignoring...')
+                    # print('Discovered system pod. Ignoring...')
                     appname = None
                 podname = pod['metadata']['name']
                 if appname:
