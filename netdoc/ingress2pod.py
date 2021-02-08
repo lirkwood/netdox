@@ -16,14 +16,16 @@ def ingress():
             idict[c] = {}
             for ingress in context['items']:
                 name = findService(ingress)
-                hosts = []
-                for h in ingress['spec']['rules']:
-                    host = h['host'].replace('.internal', '')
-                    hosts.append(host)
+                if name:
+                    hosts = []
+                    for h in ingress['spec']['rules']:
+                        host = h['host'].replace('.internal', '')
+                        hosts.append(host)
 
-                hosts = list(dict.fromkeys(hosts))  #make unique
-                idict[c][name] = hosts  #dict has structure 'service name' : ['host1', 'host2',...] etc
-                
+                    hosts = list(dict.fromkeys(hosts))  #make unique
+                    idict[c][name] = hosts  #dict has structure 'service name' : ['host1', 'host2',...] etc
+                else:
+                    print('Found ingress with no destination: '+ ingress['metadata']['name'])
     return idict
 
 
