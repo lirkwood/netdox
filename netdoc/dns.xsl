@@ -21,13 +21,20 @@
 
             <metadata>
                 <properties>
-                    <property name="template_version"     title="Template version"   value="3.7" />
+                    <property name="template_version"     title="Template version"   value="3.9" />
                 </properties>
             </metadata>
 
             <section id="title">
                 <fragment id="title">
-                    <heading level="1">dns: <xsl:value-of select="$name"/></heading>
+                <xsl:choose>
+                    <xsl:when test="contains($name, '_wildcard_')">
+                        <heading level="1">dns: <link href="{substring-after($name, '_wildcard_')}"><xsl:value-of select="replace($name,'_wildcard_','*.')"/></link></heading>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <heading level="1">dns: <link href="$name"><xsl:value-of select="$name"/></link></heading>
+                    </xsl:otherwise>
+                </xsl:choose>
                 </fragment>
             </section>
 
@@ -76,6 +83,18 @@
                 </xsl:for-each>
                 </properties-fragment>
 
+                <fragment id="screenshot" labels="text-align-center">
+                    <block label="border-2">
+                        <image src="/ps/network/documentation/website/screenshots/_nd_img_{translate($name,'.','_')}.png"/>
+                    </block>
+                </fragment>
+
+                <fragment id="secrets">
+                    <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
+                        <para><link href="https://secret.allette.com.au/app/#/secret/{@key}"><xsl:value-of select="substring-before(.,';')"/> on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</link></para>
+                    </xsl:for-each>
+                </fragment>
+
                 <properties-fragment id="for-search">
                     <xsl:variable name="octets">
                         <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array/xpf:string">
@@ -84,13 +103,6 @@
                     </xsl:variable>
                     <property name="octets" title="Octets for search" value="{substring($octets,1,string-length($octets)-2)}"/>
                 </properties-fragment>
-
-                <fragment id="screenshot" labels="text-align-center">
-                    <block label="border-2">
-                        <image src="/ps/network/documentation/website/screenshots/_nd_img_{translate($name,'.','_')}.png"/>
-                    </block>
-                </fragment>
-
                 
             </section>
             
