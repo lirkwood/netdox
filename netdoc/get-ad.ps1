@@ -30,5 +30,5 @@ $list = "ad.allette.com.au",
 
 
 foreach ($zone in $list) {
-    Get-DnsServerResourceRecord -ZoneName $zone -ComputerName "ad.allette.com.au" | ConvertTo-Json -Depth 10 | Out-File -width 300 -FilePath "c:\Users\lkirkwood\network-documentation\netdoc\Sources\records\$zone.json"
+    Get-DnsServerResourceRecord -ZoneName $zone -ComputerName "ad.allette.com.au" | ConvertTo-Json -Depth 10 | Out-File -width 300 -FilePath "Sources\records\$zone.json"
 }
