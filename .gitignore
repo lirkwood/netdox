@@ -44,5 +44,6 @@ fragments/*
 *.zip
 **/log.*
 **/__pycache__
+**/package-lock.json
 
 !**/iptools.py
