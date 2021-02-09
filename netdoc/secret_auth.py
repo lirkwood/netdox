@@ -26,13 +26,16 @@ def refresh():
         return e
 
 def auth():
-    with open('Sources/secret_token.txt','r') as stream:
-        token = stream.readline().strip()
-        last = stream.readline()
-        if int(last) > (time.time() - 7200):
-            return token
-        else:
-            return refresh()
+    try:
+        with open('Sources/secret_token.txt','r') as stream:
+            token = stream.readline().strip()
+            last = stream.readline()
+            if int(last) > (time.time() - 7200):
+                return token
+            else:
+                return refresh()
+    except FileNotFoundError:
+        return refresh()
 
 if __name__ == '__main__':
     refresh()
