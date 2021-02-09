@@ -91,7 +91,7 @@
 
                 <fragment id="secrets">
                     <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
-                        <para><link href="https://secret.allette.com.au/app/#/secret/{@key}"><xsl:value-of select="substring-before(.,';')"/> on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</link></para>
+                        <para><link href="https://secret.allette.com.au/app/#/secret/{@key}">"<xsl:value-of select="substring-before(.,';')"/>" on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</link></para>
                     </xsl:for-each>
                 </fragment>
 
