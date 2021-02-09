@@ -31,9 +31,11 @@
                 </fragment>
 
                 <properties-fragment id="vm">
+                    <xsl:for-each select="xpf:string[@key = 'vm']">
                     <property name="vm" title="Host VM" datatype="xref">
-                        <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}" />
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                     </property>
+                    </xsl:for-each>
                 </properties-fragment>
             </section>
 
