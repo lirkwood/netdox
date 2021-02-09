@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const { compare } = require("odiff-bin");
 const fs = require('fs');
-const urlList = require('./live.json');
+const urlList = require('./files/live.json');
 var review = {}
 
 
@@ -10,22 +10,22 @@ async function imgdiff(array) {
     const image = array[index]
     try {
       const { match, reason } = await compare(
-        "base/".concat(image),
-        "screenshots/".concat(image),
-        "review/".concat(image)
+        "files/base/".concat(image),
+        "files/screenshots/".concat(image),
+        "files/review/".concat(image)
       );
       if (match == false) {
         review[image] = 'imgdiff'
       }
     } catch (error) {
       if (error instanceof TypeError) {
-        fs.copyFile('screenshots/'.concat(image), 'review/'.concat(image), (err) => {if (err) throw (err);});
+        fs.copyFile('files/screenshots/'.concat(image), 'files/review/'.concat(image), (err) => {if (err) throw (err);});
         console.log(`No base image for ${image}. Screenshot copied for review.`)
         review[image] = 'no_base'
       }
     }
   }
-  fs.writeFileSync('review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
+  fs.writeFileSync('files/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
 }
 
 (async (callback) => {
@@ -42,7 +42,7 @@ async function imgdiff(array) {
     console.log(url.concat(' screenshot saved.'))
     try{
       await page.goto(url);
-      await page.screenshot({path: 'screenshots/'.concat(path)});
+      await page.screenshot({path: 'files/screenshots/'.concat(path)});
       array.push(path)
     } catch (error) {
       review[path] = `no_ss:${error}`
