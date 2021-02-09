@@ -8,15 +8,18 @@ headers = {
         'Content-Type': 'text/xml',
 }
 
-def searchSecrets(term):
+def searchSecrets(term=None, field=None):
     with open('Sources/soap.xml','r') as stream:
         soup = BeautifulSoup(stream.read(), features='xml')  #body and envelope
         soup.token.string = auth()
-        soup.operation.name = 'SearchSecrets'
+        if not field:
+            soup.operation.name = 'SearchSecrets'
+        else:
+            soup.operation.append(soup.new_tag('fieldName'))
+            soup.operation.name = 'SearchSecretsByFieldValue'
+            soup.fieldName.string = field
         soup.param.name = 'searchTerm'
-        soup.searchTerm.string = term
+        if term:
+            soup.searchTerm.string = term
         r = requests.post(api, headers=headers, data=bytes(str(soup), encoding='utf-8'))
         return r
-
-if __name__ == '__main__':
-    searchSecrets('test')
