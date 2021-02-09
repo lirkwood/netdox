@@ -8,7 +8,7 @@ import os
 
 
 def ingress():
-    os.system('pwsh.exe ./get-ingress.ps1')
+    subprocess.run('pwsh.exe ./get-ingress.ps1', check=True, stderr=subprocess.DEVNULL)
     with open('Sources/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
@@ -51,7 +51,7 @@ def service(idict):
     ndict = {} #new dictionary
     noingress = {}
     links = {}
-    os.system('pwsh.exe ./get-services.ps1')
+    subprocess.run('pwsh.exe ./get-services.ps1')
     with open('Sources/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -92,7 +92,7 @@ def pods(sdict):
     global workers
     workers = []
     pdict = {}
-    os.system('pwsh.exe ./get-pods.ps1')
+    subprocess.run('pwsh.exe ./get-pods.ps1')
     with open('Sources/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -235,8 +235,26 @@ def noauth():
 		print("Invalid input. Enter 'y' or 'n'.")
 		return noauth()
 
+
+def proceed():
+    choice = input('Bad response from Kubernetes; check kubeconfig. Proceed without Kubernetes data? (y/n): ')
+    if choice == 'y':
+        return True
+    elif choice == 'n':
+        return False
+    else:
+        print("Invalid input. Enter 'y' or 'n'.")
+        return proceed()
+
+
 def main(dns):
-    idict = ingress()
+    try:
+        idict = ingress()
+    except subprocess.CalledProcessError:
+        if proceed():
+            return {}
+        else:
+            quit()
     sdict = service(idict)
     pdict = pods(sdict)
     master = mapworkers(pdict, dns)
