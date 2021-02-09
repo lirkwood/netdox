@@ -1,5 +1,4 @@
-*__pycache__*
-Firewall/
+Firewall/*
 !Firewall/blocklist.py
 !Firewall/graylog.py
 !Firewall/iptools.py
@@ -7,27 +6,31 @@ Firewall/
 !Firewall/block_ips.txt
 !Firewall/talos.py
 
+netdoc/get-workers.ps1
+
 netdoc/Sources/*
 !netdoc/Sources/nmap.xml
 !netdoc/Sources/template-ip.psml
 !netdoc/Sources/prefixes.txt
 
-netdoc/linktest/
-!netdoc/linktest/base/*
+netdoc/linktest/*
+!netdoc/linktest/files/
 !netdoc/linktest/auth.py
 !netdoc/linktest/linktools.py
-!netdoc/linktest/screenshot.js
+!netdoc/linktest/screenshotCompare.js
 !netdoc/linktest/status.xsl
 !netdoc/linktest/package.json
 !netdoc/linktest/package-lock.json
-!netdoc/linktest/exclusions.txt
-!netdoc/linktest/settings.json
-!netdoc/linktest/placeholder.png
-netdoc/get-workers.ps1
 
-testing/
-validate/
-fragments/
+netdoc/linktest/files/*
+!netdoc/linktest/files/base/
+!netdoc/linktest/files/exclusions.txt
+!netdoc/linktest/files/settings.json
+!netdoc/linktest/files/placeholder.png
+
+testing/*
+validate/*
+fragments/*
 **/Logs
 **/outgoing
 **/json
@@ -39,4 +42,6 @@ fragments/
 **/encode.ps1
 *.zip
 **/log.*
+**/__pycache__
+
 !**/iptools.py
