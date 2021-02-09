@@ -15,17 +15,20 @@ header = {
 base = 'https://ps-doc.allette.com.au/ps/service'
 
 urimap = {
-    'dns': 	'46055',
-    'ips': '45604',
-    'k8s': '47002',
+    'dns': 	'57424',
+    'ips': '52663',
+    'k8s': '52294',
     'xo': '42183',
-    'review': '48468',
+    'review': '48612',
     'screenshots': '47004',
-    'status_update': '48585'
+    'status_update': '48621'
 }
 
 live = []      #no. of successful responses to a basic GET
 dead = {}       #key = url, value = error code
+
+if not os.path.exists('node_modules'):
+    subprocess.run('npm install')
 
 
 def main(folder):
@@ -59,35 +62,35 @@ def main(folder):
                     testips(page)
 
 
-    with open('log.txt','w') as log:
+    with open('files/log.txt','w') as log:
         log.write('Out of {0} tested urls, {1} failed.\n'.format(count, len(dead)))
         for url in dead:
             log.write('URL: {0} Code: {1}\n\n'.format(url, dead[url]))
 
-    with open('live.json','w') as out:
+    with open('files/live.json','w') as out:
         out.write(json.dumps(live, indent=2))   #write results to files
     
-    for folder in ('screenshots/', 'review/'):    # clean screenshot dirs
+    for folder in ('files/screenshots/', 'files/review/'):    # clean screenshot dirs
         if not os.path.exists(folder):
             os.mkdir(folder)
         else:
             for file in os.scandir(folder):
                 os.remove(file)
             
-    subprocess.run('node screenshot.js')    #get screenshots of all urls in live
+    subprocess.run('node screenshotCompare.js')    #get screenshots of all urls in live
 
-    for file in os.scandir('screenshots/'):
-        img = Image.open('screenshots/'+ file.name)
+    for file in os.scandir('files/screenshots/'):
+        img = Image.open('files/screenshots/'+ file.name)
         img.resize((1024, 576))
         os.remove(file)
-        img.save('screenshots/'+ file.name)
+        img.save('files/screenshots/'+ file.name)
 
     for url in dead:  #copy placeholder for all docs with no image 
         docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
-        if not os.path.exists('screenshots/{0}.png'.format(docid)):
-            shutil.copy('placeholder.png', 'screenshots/{0}.png'.format(docid))
+        if not os.path.exists('files/screenshots/{0}.png'.format(docid)):
+            shutil.copy('files/placeholder.png', 'files/screenshots/{0}.png'.format(docid))
 
-    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:review.xml -o:status_update/_nd_status_update.psml')
+    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:files/review.xml -o:files/_nd_status_update.psml')
     # run xsl to generate daily status update
     print('Status update file generated.')
     print('Archiving old review images...')
@@ -140,8 +143,8 @@ def testips(page):
             dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
 
 
-exclusions = open('exclusions.txt','r').read().splitlines()
-settings = json.load(open('settings.json','r'))
+exclusions = open('files/exclusions.txt','r').read().splitlines()
+settings = json.load(open('files/settings.json','r'))
 
 class webpage:
     def __init__(self, url):
