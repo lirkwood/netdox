@@ -12,6 +12,7 @@ netdoc/Sources/*
 !netdoc/Sources/nmap.xml
 !netdoc/Sources/template-ip.psml
 !netdoc/Sources/prefixes.txt
+!netdoc/Sources/soap.xml
 
 netdoc/linktest/*
 !netdoc/linktest/files/
