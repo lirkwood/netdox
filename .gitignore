@@ -27,6 +27,7 @@ netdoc/linktest/files/*
 !netdoc/linktest/files/exclusions.txt
 !netdoc/linktest/files/settings.json
 !netdoc/linktest/files/placeholder.png
+!netdoc/linktest/files/review.xml
 
 testing/*
 validate/*
