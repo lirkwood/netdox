@@ -1,8 +1,6 @@
 from bs4 import BeautifulSoup
 import iptools
 import copy
-import test
-import csv
 import os
 
 

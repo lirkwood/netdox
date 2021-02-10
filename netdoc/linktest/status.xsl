@@ -39,13 +39,27 @@
             </xsl:when>
         </xsl:choose>
         </properties-fragment>
-        <xsl:if test="not(substring-before(.,':') = 'no_ss')">
+        <xsl:choose>
+            <xsl:when test=". = 'imgdiff'">
+        <fragment id="{position()}_img_col1" labels="text-align-center, col-1-of-2">
+            <block label="border-2">
+                <image src="/ps/network/documentation/website/review/{@key}"/>
+            </block>
+        </fragment>
+        <fragment id="{position()}_img_col2" labels="text-align-center, col-1-of-2">
+            <block label="border-2">
+                <image src="/ps/network/documentation/website/screenshots/{@key}"/>
+            </block>
+        </fragment>
+            </xsl:when>
+            <xsl:when test=". = 'no_base'">
         <fragment id="{position()}_img" labels="text-align-center">
             <block label="border-2">
                 <image src="/ps/network/documentation/website/review/{@key}"/>
             </block>
         </fragment>
-        </xsl:if>
+            </xsl:when>
+        </xsl:choose>
     </xsl:for-each>
     </section>
 </document>

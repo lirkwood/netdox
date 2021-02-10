@@ -28,6 +28,9 @@ $list = "ad.allette.com.au",
 "SY4",
 "tekreader.com.internal"
 
+if (-Not (Test-Path -Path "Sources\records")) {
+    New-Item -Path "Sources" -Name "records" -ItemType "directory" | Out-Null
+}
 
 foreach ($zone in $list) {
     Get-DnsServerResourceRecord -ZoneName $zone -ComputerName "ad.allette.com.au" | ConvertTo-Json -Depth 10 | Out-File -width 300 -FilePath "Sources\records\$zone.json"

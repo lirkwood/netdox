@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from getpass import getpass
 import subprocess
 import copy
 import json
@@ -7,7 +8,7 @@ import os
 
 
 def ingress():
-    os.system('pwsh.exe ./get-ingress.ps1')
+    subprocess.run('pwsh.exe ./get-ingress.ps1', check=True, stderr=subprocess.DEVNULL)
     with open('Sources/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
@@ -50,7 +51,7 @@ def service(idict):
     ndict = {} #new dictionary
     noingress = {}
     links = {}
-    os.system('pwsh.exe ./get-services.ps1')
+    subprocess.run('pwsh.exe ./get-services.ps1')
     with open('Sources/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -91,7 +92,7 @@ def pods(sdict):
     global workers
     workers = []
     pdict = {}
-    os.system('pwsh.exe ./get-pods.ps1')
+    subprocess.run('pwsh.exe ./get-pods.ps1')
     with open('Sources/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -135,15 +136,13 @@ def pods(sdict):
 
 
 
-def mapworkers(pdict):
+def mapworkers(pdict, dns):
     global workers
     tmp = {}
-    with open('Sources/dns.json','r') as stream:
-        jsondata = json.load(stream)
-        for worker in workers:
-            for domain in jsondata:
-                if worker in domain:
-                    tmp[worker] = domain
+    for worker in workers:
+        for domain in dns:
+            if worker in domain:
+                tmp[worker] = domain
     workers = dict(tmp)
 
     for context in pdict:
@@ -183,7 +182,7 @@ def podlink(master):
 
 
 def worker2app(master):
-    with open('sources/worker2app.json','w') as stream:
+    with open('sources/workers.json','w') as stream:
         workers = {}
         for context in master:
             workers[context] = {}
@@ -194,11 +193,17 @@ def worker2app(master):
                     _workers[appinf['nodename']] = {'ip': appinf['hostip'], 'apps': []}
                 if app not in _workers[appinf['nodename']]['apps']:
                     _workers[appinf['nodename']]['apps'].append(app)
-        
-        with open('Sources/xo.txt','r') as details:
+        try:
+            details = open('Sources/xo.txt','r')
             user = details.readline().strip()
             password = details.readline().strip()
-            subprocess.run('xo-cli --register https://xosy4.allette.com.au '+ user +' '+ password, shell=True)
+            try:
+                subprocess.run('xo-cli --register https://xosy4.allette.com.au '+ user +' '+ password, shell=True, check=True, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError:
+                print('Xen Orchestra authentication failed. Clearing bad authentication data...')
+                details.close()
+                os.remove('Sources/xo.txt')
+                return worker2app(master)
             for context in workers:
                 for _worker in workers[context]:
                     worker = workers[context][_worker]
@@ -207,20 +212,54 @@ def worker2app(master):
                     if len(vm) != 1:
                         print('ALERT: Multiple VMs with IP: {0}. Using first returned, name_label={1}'.format(worker['ip'], vm[0]['name_label']))
                     worker['vm'] = vm[0]['uuid']
-            stream.write(json.dumps(workers, indent=2))
+            details.close()
+        except FileNotFoundError:
+            if noauth():
+                return worker2app(master)
+            else:
+                pass
+        stream.write(json.dumps(workers, indent=2))
 
-def main():
-    idict = ingress()
+def noauth():
+	choice = input('***ALERT***\nNo Xen Orchestra authentication details detected. Do you wish to enter them now? (y/n): ')
+	if choice == 'y':
+		with open('Sources/xo.txt','w') as keys:
+			keys.write(getpass('Enter your Xen Orchestra username: '))
+			keys.write('\n')
+			keys.write(getpass('Enter your Xen Orchestra password: '))
+		return True
+	elif choice == 'n':
+		print('Proceeding without Xen Orchestra data...')
+		return False
+	else:
+		print("Invalid input. Enter 'y' or 'n'.")
+		return noauth()
+
+
+def proceed():
+    choice = input('Bad response from Kubernetes; check kubeconfig. Proceed without Kubernetes data? (y/n): ')
+    if choice == 'y':
+        return True
+    elif choice == 'n':
+        return False
+    else:
+        print("Invalid input. Enter 'y' or 'n'.")
+        return proceed()
+
+
+def main(dns):
+    try:
+        idict = ingress()
+    except subprocess.CalledProcessError:
+        if proceed():
+            return {}
+        else:
+            quit()
     sdict = service(idict)
     pdict = pods(sdict)
-    master = mapworkers(pdict)
+    master = mapworkers(pdict, dns)
     master = podlink(master)
     worker2app(master)
     with open('Sources/apps.json', 'w') as out:
-        out.write(json.dumps(master, indent=4))
+        out.write(json.dumps(master, indent=2))
     return master
-
-
-
-if __name__ == '__main__':
-    main()

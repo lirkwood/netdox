@@ -28,7 +28,7 @@ live = []      #no. of successful responses to a basic GET
 dead = {}       #key = url, value = error code
 
 if not os.path.exists('node_modules'):
-    subprocess.run('npm install')
+    subprocess.run('npm install', shell=True)
 
 
 def main(folder):

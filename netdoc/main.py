@@ -25,14 +25,11 @@ subprocess.run('pwsh.exe ./get-ad.ps1')
 ad = ad_domains.main()
 ad_f = ad['forward']
 ad_r = ad['reverse']
-print('Active Directory domains processed.')
+print('Active Directory query finished.')
 dnsme = dnsme_domains.main()
 dnsme_f = dnsme['forward']
 dnsme_r = dnsme['reverse']
-print('DNSMadeEasy domains processed.')
-ingress2pod.main()
-k8s = k8s_domains.main()
-print('Kubernetes domains processed.')
+print('DNSMadeEasy query finished.')
 
 master = {}
 for domain in ad_f:   #combining dicts
@@ -46,6 +43,10 @@ for domain in dnsme_f:
             master[domain]['dest']['domains'].append(alias)
     else:
         master[domain] = dnsme_f[domain]
+
+ingress2pod.main(master)
+k8s = k8s_domains.main()
+print('Kubernetes query finished.')
 
 for domain in k8s:
     if domain in master:
@@ -100,6 +101,16 @@ for domain in master:
 
 with open('Sources/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
+
+for type in ('dns', 'apps', 'workers'):     #if xsl json import files dont exist, generate them
+    if not os.path.exists(f'Sources/{type}.xml'):
+        with open(f'Sources/{type}.xml','w') as stream:
+            stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE {type} [
+<!ENTITY json SYSTEM "{type}.json">
+]>
+<{type}>&json;</{type}>""")
+
 
 subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:Sources/dns.xml')
 
