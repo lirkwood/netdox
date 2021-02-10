@@ -6,28 +6,28 @@ Firewall/*
 !Firewall/block_ips.txt
 !Firewall/talos.py
 
-netdoc/get-workers.ps1
+netdox-src/get-workers.ps1
 
-netdoc/Sources/*
-!netdoc/Sources/nmap.xml
-!netdoc/Sources/template-ip.psml
-!netdoc/Sources/prefixes.txt
-!netdoc/Sources/soap.xml
+netdox-src/Sources/*
+!netdox-src/Sources/nmap.xml
+!netdox-src/Sources/template-ip.psml
+!netdox-src/Sources/prefixes.txt
+!netdox-src/Sources/soap.xml
 
-netdoc/linktest/*
-!netdoc/linktest/files/
-!netdoc/linktest/auth.py
-!netdoc/linktest/linktools.py
-!netdoc/linktest/screenshotCompare.js
-!netdoc/linktest/status.xsl
-!netdoc/linktest/package.json
+netdox-src/linktest/*
+!netdox-src/linktest/files/
+!netdox-src/linktest/auth.py
+!netdox-src/linktest/linktools.py
+!netdox-src/linktest/screenshotCompare.js
+!netdox-src/linktest/status.xsl
+!netdox-src/linktest/package.json
 
-netdoc/linktest/files/*
-!netdoc/linktest/files/base/
-!netdoc/linktest/files/exclusions.txt
-!netdoc/linktest/files/settings.json
-!netdoc/linktest/files/placeholder.png
-!netdoc/linktest/files/review.xml
+netdox-src/linktest/files/*
+!netdox-src/linktest/files/base/
+!netdox-src/linktest/files/exclusions.txt
+!netdox-src/linktest/files/settings.json
+!netdox-src/linktest/files/placeholder.png
+!netdox-src/linktest/files/review.xml
 
 testing/*
 validate/*
