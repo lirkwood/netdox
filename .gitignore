@@ -20,7 +20,6 @@ netdoc/linktest/*
 !netdoc/linktest/screenshotCompare.js
 !netdoc/linktest/status.xsl
 !netdoc/linktest/package.json
-!netdoc/linktest/package-lock.json
 
 netdoc/linktest/files/*
 !netdoc/linktest/files/base/
@@ -44,5 +43,6 @@ fragments/*
 *.zip
 **/log.*
 **/__pycache__
+**/package-lock.json
 
 !**/iptools.py
