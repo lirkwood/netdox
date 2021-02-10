@@ -39,11 +39,11 @@ async function imgdiff(array) {
     } else {
       var path = '_nd_img_'.concat(url.replace('http://','').replace(/\./g,'_').concat('.png'))
     }
-    console.log(url.concat(' screenshot saved.'))
     try{
       await page.goto(url);
       await page.screenshot({path: 'files/screenshots/'.concat(path)});
       array.push(path)
+      console.log(url.concat(' screenshot saved.'))
     } catch (error) {
       review[path] = `no_ss:${error}`
       console.log(`Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`);
