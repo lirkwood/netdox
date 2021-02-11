@@ -33,5 +33,5 @@ if (-Not (Test-Path -Path "netdox\Sources\records")) {
 }
 
 foreach ($zone in $list) {
-    Get-DnsServerResourceRecord -ZoneName $zone -ComputerName "ad.allette.com.au" | ConvertTo-Json -Depth 10 | Out-File -width 300 -FilePath "Sources\records\$zone.json"
+    Get-DnsServerResourceRecord -ZoneName $zone -ComputerName "ad.allette.com.au" | ConvertTo-Json -Depth 10 | Out-File -width 300 -FilePath "netdox\Sources\records\$zone.json"
 }
