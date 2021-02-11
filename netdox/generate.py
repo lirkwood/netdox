@@ -24,11 +24,11 @@ print('Done.')
 try:
     subprocess.run('pwsh.exe ./get-ad.ps1')
     ad = ad_domains.main()
-    ad_f = ad['forward']
-    ad_r = ad['reverse']
-    print('Active Directory query finished.')
 except:
     ad = {'forward': {}, 'reverse': {}}
+ad_f = ad['forward']
+ad_r = ad['reverse']
+print('Active Directory query finished.')
 dnsme = dnsme_domains.main()
 dnsme_f = dnsme['forward']
 dnsme_r = dnsme['reverse']

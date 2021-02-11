@@ -28,7 +28,7 @@ $list = "ad.allette.com.au",
 "SY4",
 "tekreader.com.internal"
 
-if (-Not (Test-Path -Path "Sources\records")) {
+if (-Not (Test-Path -Path "netdox\Sources\records")) {
     New-Item -Path "Sources" -Name "records" -ItemType "directory" | Out-Null
 }
 
