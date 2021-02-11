@@ -21,11 +21,7 @@ for path in ('DNS', 'IPs', 'k8s'):
             os.remove(f)
 print('Done.')
 
-try:
-    subprocess.run('pwsh.exe ./get-ad.ps1')
-    ad = ad_domains.main()
-except:
-    ad = {'forward': {}, 'reverse': {}}
+ad = ad_domains.main()
 ad_f = ad['forward']
 ad_r = ad['reverse']
 print('Active Directory query finished.')
