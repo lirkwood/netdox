@@ -24,7 +24,6 @@ print('Done.')
 ad = ad_domains.main()
 ad_f = ad['forward']
 ad_r = ad['reverse']
-print('Active Directory query finished.')
 dnsme = dnsme_domains.main()
 dnsme_f = dnsme['forward']
 dnsme_r = dnsme['reverse']
