@@ -8,7 +8,7 @@ import os
 
 
 def ingress():
-    subprocess.run('pwsh.exe ./get-ingress.ps1', check=True, stderr=subprocess.DEVNULL)
+    subprocess.run('pwsh ./get-ingress.ps1', check=True, stderr=subprocess.DEVNULL)
     with open('Sources/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
@@ -51,7 +51,7 @@ def service(idict):
     ndict = {} #new dictionary
     noingress = {}
     links = {}
-    subprocess.run('pwsh.exe ./get-services.ps1')
+    subprocess.run('pwsh ./get-services.ps1')
     with open('Sources/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -92,7 +92,7 @@ def pods(sdict):
     global workers
     workers = []
     pdict = {}
-    subprocess.run('pwsh.exe ./get-pods.ps1')
+    subprocess.run('pwsh ./get-pods.ps1')
     with open('Sources/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
