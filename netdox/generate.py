@@ -7,19 +7,12 @@ import iptools
 from bs4 import BeautifulSoup
 import subprocess
 import json
+import sys
 import os
-    
-print('Removing old documents...')
-if not os.path.exists('outgoing'):
-    os.mkdir('outgoing')
 
+os.mkdir('outgoing')
 for path in ('DNS', 'IPs', 'k8s'):
-    if not os.path.exists('outgoing/'+path):
-        os.mkdir('outgoing/'+path)
-    else: 
-        for f in os.scandir('outgoing/'+path):
-            os.remove(f)
-print('Done.')
+    os.mkdir('outgoing/'+path)
 
 ad = ad_domains.main()
 ad_f = ad['forward']
@@ -110,7 +103,7 @@ for type in ('dns', 'apps', 'workers'):     #if xsl json import files dont exist
 <{type}>&json;</{type}>""")
 
 
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:dns.xsl -s:Sources/dns.xml')
+subprocess.run('xslt -xsl:dns.xsl -s:Sources/dns.xml')
 
 print('DNS documents done')
 
@@ -119,8 +112,8 @@ ipdocs.main(iplist, ptr)
 
 print('IP documents done')
 
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:apps.xsl -s:Sources/apps.xml')
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:workers.xsl -s:Sources/workers.xml')
-subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:clusters.xsl -s:Sources/workers.xml')
+subprocess.run('xslt -xsl:apps.xsl -s:Sources/apps.xml')
+subprocess.run('xslt -xsl:workers.xsl -s:Sources/workers.xml')
+subprocess.run('xslt -xsl:clusters.xsl -s:Sources/workers.xml')
 
 print('Kubernetes documents done')
