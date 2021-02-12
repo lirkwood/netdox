@@ -49,7 +49,7 @@ function chooseAuth($name) {
 }
 
 
-$auth = Get-Content -Path "authentication.json" | ConvertFrom-Json
+$auth = Get-Content -Path "src/authentication.json" | ConvertFrom-Json
 
 if (($auth.DNSMadeEasy.API -eq '') -or ($auth.DNSMadeEasy.Secret -eq '')) {
     chooseAuth('DNSMadeEasy')
@@ -72,7 +72,7 @@ else {
 
 
 Write-Host "Querying ActiveDirectory..."
-./get-ad.ps1
+./netdox/get-ad.ps1
 if ($? -eq 'True') {
     Write-Host "ActiveDirectory query successful."
 }
