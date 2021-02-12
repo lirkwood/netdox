@@ -13,7 +13,5 @@ do
 done
 jqbody=${jqbody%, }
 jqbody+='}'
-echo $jqbody
-jq -r ${jqargs[@]} '{sandbox: $sandbox, production: $production}' > ../src/$resource.json
-
-cat ../src/ingress.json
+jq ${jqargs[@]} "$jqbody" > ../src/$resource.json
+echo 'Done.'
