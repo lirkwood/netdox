@@ -38,5 +38,6 @@ linktest/files/*
 **/log.*
 **/__pycache__
 **/package-lock.json
+.kube
 
 !**/iptools.py
