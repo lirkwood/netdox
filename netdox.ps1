@@ -49,7 +49,7 @@ function chooseAuth($name) {
 }
 
 
-$auth = Get-Content -Path "src/authentication.json" | ConvertFrom-Json
+$auth = Get-Content -Path "authentication.json" | ConvertFrom-Json
 
 if (($auth.DNSMadeEasy.API -eq '') -or ($auth.DNSMadeEasy.Secret -eq '')) {
     chooseAuth('DNSMadeEasy')
@@ -59,15 +59,26 @@ if (($auth.XenOrchestra.Username -eq '') -or ($auth.XenOrchestra.Password -eq ''
 }
 
 
-$kubepath = Get-ChildItem $HOME ".kube" -Recurse -Directory -ErrorAction SilentlyContinue
+$kubepath = Get-ChildItem $HOME ".kube" -Recurse -Exclude . -Directory -ErrorAction SilentlyContinue
+# $kubepath = $kubepath.Replace('\','/')
+# $kubepath -match '[A-Z]:/' | Out-Null
+# $posixdrive = $Matches[0] | % {$_.Replace(':','')} | % {$_.ToLower()}
+# $kubepath = $kubepath.Replace($Matches[0], "/mnt/$posixdrive")
+# $kubepath = $kubepath.Replace(':','')
+#Convert from windows path to posix path
 if ($null -eq $kubepath) {
     $kubepath = choosek8s
     if ($null -ne $kubepath) {
         Write-Host "Kubernetes config detected."
+        Copy-Item -Recurse -Force -Path $kubepath -Destination '.kube' | Out-Null
+    }
+    else {
+        New-Item -ItemType "dicectory" -Name '.kube'
     }
 }
 else {
     Write-Host "Kubernetes config detected."
+    Copy-Item -Recurse -Force -Path $kubepath -Destination '.kube' | Out-Null
 }
 
 
@@ -82,16 +93,11 @@ else {
 
 
 Write-Host "Building Docker image..."
-if ($null -ne $kubepath) {
-    docker build -t netdox --build-arg kubepath=$kubepath .
-}
-else {
-    docker build -t netdox .
-}
+docker build -t netdox --build-arg kubepath=$kubepath .
 
 if ($? -eq 'True') {
-    Write-Host "Build successful. Running container with name 'netdox-container'."
-    docker run -it --name netdox-container netdox
+    Write-Host "Build successful. Starting container..."
+    docker run -it netdox
 }
 else {
     Write-Host "Docker build failed."
