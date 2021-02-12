@@ -14,13 +14,15 @@ os.mkdir('../out')
 for path in ('DNS', 'IPs', 'k8s'):
     os.mkdir('../out/'+path)
 
+print('Parsing ActiveDirectory response...')
 ad = ad_domains.main()
 ad_f = ad['forward']
 ad_r = ad['reverse']
+print('Querying DNSMadeEasy...')
 dnsme = dnsme_domains.main()
 dnsme_f = dnsme['forward']
 dnsme_r = dnsme['reverse']
-print('DNSMadeEasy query finished.')
+print('Parsing DNSMadeEasy response...')
 
 master = {}
 for domain in ad_f:   #combining dicts
