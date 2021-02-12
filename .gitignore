@@ -39,5 +39,6 @@ linktest/files/*
 **/__pycache__
 **/package-lock.json
 .kube
+**/authentication.json
 
 !**/iptools.py
