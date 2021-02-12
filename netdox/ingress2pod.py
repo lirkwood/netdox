@@ -9,7 +9,7 @@ import os
 
 def ingress():
     subprocess.run('pwsh ./get-ingress.ps1', check=True, stderr=subprocess.DEVNULL)
-    with open('Sources/ingress.json', 'r') as stream:
+    with open('src/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
         for c in jsondata:  #context either sandbox or production cluster
@@ -52,7 +52,7 @@ def service(idict):
     noingress = {}
     links = {}
     subprocess.run('pwsh ./get-services.ps1')
-    with open('Sources/services.json', 'r') as stream:
+    with open('src/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             ndict[c] = {}
@@ -93,7 +93,7 @@ def pods(sdict):
     workers = []
     pdict = {}
     subprocess.run('pwsh ./get-pods.ps1')
-    with open('Sources/pods.json', 'r') as stream:
+    with open('src/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             pdict[c] = {}
@@ -182,7 +182,7 @@ def podlink(master):
 
 
 def worker2app(master):
-    with open('sources/workers.json','w') as stream:
+    with open('src/workers.json','w') as stream:
         workers = {}
         for context in master:
             workers[context] = {}
@@ -194,7 +194,7 @@ def worker2app(master):
                 if app not in _workers[appinf['nodename']]['apps']:
                     _workers[appinf['nodename']]['apps'].append(app)
         try:
-            details = open('Sources/xo.txt','r')
+            details = open('src/xo.txt','r')
             user = details.readline().strip()
             password = details.readline().strip()
             try:
@@ -202,7 +202,7 @@ def worker2app(master):
             except subprocess.CalledProcessError:
                 print('Xen Orchestra authentication failed. Clearing bad authentication data...')
                 details.close()
-                os.remove('Sources/xo.txt')
+                os.remove('src/xo.txt')
                 return worker2app(master)
             for context in workers:
                 for _worker in workers[context]:
@@ -223,7 +223,7 @@ def worker2app(master):
 def noauth():
 	choice = input('***ALERT***\nNo Xen Orchestra authentication details detected. Do you wish to enter them now? (y/n): ')
 	if choice == 'y':
-		with open('Sources/xo.txt','w') as keys:
+		with open('src/xo.txt','w') as keys:
 			keys.write(getpass('Enter your Xen Orchestra username: '))
 			keys.write('\n')
 			keys.write(getpass('Enter your Xen Orchestra password: '))
@@ -260,6 +260,6 @@ def main(dns):
     master = mapworkers(pdict, dns)
     master = podlink(master)
     worker2app(master)
-    with open('Sources/apps.json', 'w') as out:
+    with open('src/apps.json', 'w') as out:
         out.write(json.dumps(master, indent=2))
     return master

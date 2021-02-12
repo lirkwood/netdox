@@ -9,7 +9,7 @@ headers = {
 }
 
 def searchSecrets(term=None, field=None):
-    with open('Sources/soap.xml','r') as stream:
+    with open('src/soap.xml','r') as stream:
         soup = BeautifulSoup(stream.read(), features='xml')  #body and envelope
         soup.token.string = auth()
         if not field:

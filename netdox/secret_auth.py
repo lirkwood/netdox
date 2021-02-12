@@ -17,7 +17,7 @@ def refresh():
     r = requests.post('https://secret.allette.com.au/webservices/SSWebservice.asmx/Authenticate', headers=headers, data=params)
     try:
         soup = BeautifulSoup(r.text, features='xml')
-        with open('Sources/secret_token.txt','w') as stream:
+        with open('src/secret_token.txt','w') as stream:
             stream.write(soup.Token.string)
             stream.write(f'\n{int(time.time())}')
             return soup.Token.string
@@ -27,7 +27,7 @@ def refresh():
 
 def auth():
     try:
-        with open('Sources/secret_token.txt','r') as stream:
+        with open('src/secret_token.txt','r') as stream:
             token = stream.readline().strip()
             last = stream.readline()
             if int(last) > (time.time() - 7200):

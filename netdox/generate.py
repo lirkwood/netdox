@@ -90,12 +90,12 @@ for domain in master:
     for secret in soup.find_all('SecretSummary'):
         master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
 
-with open('Sources/dns.json','w') as stream:
+with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
 for type in ('dns', 'apps', 'workers'):     #if xsl json import files dont exist, generate them
-    if not os.path.exists(f'Sources/{type}.xml'):
-        with open(f'Sources/{type}.xml','w') as stream:
+    if not os.path.exists(f'src/{type}.xml'):
+        with open(f'src/{type}.xml','w') as stream:
             stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE {type} [
 <!ENTITY json SYSTEM "{type}.json">
@@ -103,7 +103,7 @@ for type in ('dns', 'apps', 'workers'):     #if xsl json import files dont exist
 <{type}>&json;</{type}>""")
 
 
-subprocess.run('xslt -xsl:dns.xsl -s:Sources/dns.xml')
+subprocess.run('xslt -xsl:dns.xsl -s:src/dns.xml')
 
 print('DNS documents done')
 
@@ -112,8 +112,8 @@ ipdocs.main(iplist, ptr)
 
 print('IP documents done')
 
-subprocess.run('xslt -xsl:apps.xsl -s:Sources/apps.xml')
-subprocess.run('xslt -xsl:workers.xsl -s:Sources/workers.xml')
-subprocess.run('xslt -xsl:clusters.xsl -s:Sources/workers.xml')
+subprocess.run('xslt -xsl:apps.xsl -s:src/apps.xml')
+subprocess.run('xslt -xsl:workers.xsl -s:src/workers.xml')
+subprocess.run('xslt -xsl:clusters.xsl -s:src/workers.xml')
 
 print('Kubernetes documents done')
