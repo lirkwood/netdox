@@ -8,11 +8,11 @@ Firewall/*
 
 netdox/get-workers.ps1
 
-netdox/Sources/*
-!netdox/Sources/nmap.xml
-!netdox/Sources/template-ip.psml
-!netdox/Sources/prefixes.txt
-!netdox/Sources/soap.xml
+netdox/src/*
+!netdox/src/nmap.xml
+!netdox/src/template-ip.psml
+!netdox/src/prefixes.txt
+!netdox/src/soap.xml
 
 netdox/linktest/*
 !netdox/linktest/files/
