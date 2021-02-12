@@ -133,7 +133,7 @@ def subn_bounds(subnet):
 
 def fetch_prefixes():
     prefixes = {}
-    with open('src/prefixes.txt') as stream:
+    with open('../src/prefixes.txt') as stream:
         for line in stream.read().splitlines():
             if line not in prefixes:
                 prefixes[line] = subn_bounds(line)

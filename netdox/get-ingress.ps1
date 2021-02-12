@@ -6,4 +6,4 @@ $production = kubectl get ingress -o json | ConvertFrom-Json
 $dict = @{}
 $dict['sandbox'] = $sandbox
 $dict['production'] = $production
-$dict | ConvertTo-Json -depth 100 | Out-File src/ingress.json
+$dict | ConvertTo-Json -depth 100 | Out-File ../src/ingress.json

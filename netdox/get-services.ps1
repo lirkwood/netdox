@@ -6,4 +6,4 @@ $production = kubectl get services -o json | ConvertFrom-Json
 $dict = @{}
 $dict['sandbox'] = $sandbox
 $dict['production'] = $production
-$dict | ConvertTo-Json -depth 100 | Out-File src/services.json
+$dict | ConvertTo-Json -depth 100 | Out-File ../src/services.json

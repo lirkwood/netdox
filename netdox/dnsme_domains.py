@@ -23,7 +23,7 @@ def main():
 	response = json.loads(r.text)
 	if "error" in response:
 		print('DNSMadeEasy authentication failed. Clearing bad authentication data...')
-		os.remove('src/dnsme.txt')
+		os.remove('../src/dnsme.txt')
 		return main()
 	domains = {}
 	for record in response['data']:
@@ -84,7 +84,7 @@ def main():
 
 def genheader():
 	try:
-		with open('src/dnsme.txt','r') as keys:
+		with open('../src/dnsme.txt','r') as keys:
 			api = keys.readline().strip()
 			secret = keys.readline().strip()
 			time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
@@ -105,7 +105,7 @@ def genheader():
 def noauth():
 	choice = input('***ALERT***\nNo DNSMadeEasy authentication details detected. Do you wish to enter them now? (y/n): ')
 	if choice == 'y':
-		with open('src/dnsme.txt','w') as keys:
+		with open('../src/dnsme.txt','w') as keys:
 			keys.write(getpass('Enter the DNSMadeEasy API key: '))
 			keys.write('\n')
 			keys.write(getpass('Enter the DNSMadeEasy secret key: '))
