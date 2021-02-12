@@ -4,7 +4,7 @@ import iptools
 from bs4 import BeautifulSoup
 
 def main():
-    path = "../src/records"
+    path = "../src/records/"
     master = extract(path)
     return master
 
