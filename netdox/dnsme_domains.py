@@ -22,9 +22,8 @@ def main():
 	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
 	response = json.loads(r.text)
 	if "error" in response:
-		print('DNSMadeEasy authentication failed. Clearing bad authentication data...')
-		os.remove('../src/dnsme.txt')
-		return main()
+		print('DNSMadeEasy authentication failed.')
+		return master
 	domains = {}
 	for record in response['data']:
 		if record['id'] not in domains:
@@ -83,10 +82,11 @@ def main():
 
 
 def genheader():
-	try:
-		with open('../src/dnsme.txt','r') as keys:
-			api = keys.readline().strip()
-			secret = keys.readline().strip()
+	with open('../src/authentication.json','r') as stream:
+		keys = json.load(stream)
+		api = keys['DNSMadeEasy']['API']
+		secret = keys['DNSMadeEasy']['Secret']
+		if api != '' and secret != '':
 			time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
 			hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
 			
@@ -98,24 +98,9 @@ def genheader():
 			}
 			
 			return header
-		#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
-	except FileNotFoundError:
-		return noauth()
-
-def noauth():
-	choice = input('***ALERT***\nNo DNSMadeEasy authentication details detected. Do you wish to enter them now? (y/n): ')
-	if choice == 'y':
-		with open('../src/dnsme.txt','w') as keys:
-			keys.write(getpass('Enter the DNSMadeEasy API key: '))
-			keys.write('\n')
-			keys.write(getpass('Enter the DNSMadeEasy secret key: '))
-		return genheader()
-	elif choice == 'n':
-		print('Proceeding without DNSMadeEasy data...')
-		return None
-	else:
-		print("Invalid input. Enter 'y' or 'n'.")
-		return noauth()
+		else:
+			return None
+	#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
 
 if __name__ == '__main__':
 	main()
