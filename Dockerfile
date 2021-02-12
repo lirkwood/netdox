@@ -9,7 +9,8 @@ RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/a
 RUN apt-get update
 RUN apt-get install -y kubectl
 
-ENV KUBECONFIG=/usr/.kube/config
+ARG _kubeconfig
+ENV KUBECONFIG=${_kubeconfig}
 
 RUN apt-get install -y jq
 

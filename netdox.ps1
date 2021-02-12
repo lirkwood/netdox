@@ -70,7 +70,7 @@ if ($null -eq $kubepath) {
     $kubepath = choosek8s
     if ($null -ne $kubepath) {
         Write-Host "Kubernetes config detected."
-        Copy-Item -Recurse -Force -Path $kubepath -Destination '.kube' | Out-Null
+        Copy-Item -Recurse -Force -Path $kubepath -Destination '.' | Out-Null
     }
     else {
         New-Item -ItemType "dicectory" -Name '.kube'
@@ -78,7 +78,7 @@ if ($null -eq $kubepath) {
 }
 else {
     Write-Host "Kubernetes config detected."
-    Copy-Item -Recurse -Force -Path $kubepath -Destination '.kube' | Out-Null
+    Copy-Item -Recurse -Force -Path $kubepath -Destination '.' | Out-Null
 }
 
 
@@ -91,9 +91,13 @@ else {
     chooseAD
 }
 
+Set-Location -Path ".kube"
+$KUBECONFIG = Get-ChildItem -Path "." -File -Recurse | % {Resolve-Path -Relative -Path $_} | % {"/usr/.kube/$_;" -replace '\\','/' -replace '/./','/'} | % {$_.TrimEnd(';')}
+#Awful pipeline that adds all files in .kube to string and converts to absolute posix path in dir /usr/.kube/
+Set-Location ".."
 
 Write-Host "Building Docker image..."
-docker build -t netdox --build-arg kubepath=$kubepath .
+docker build -t netdox --build-arg _kubeconfig=$KUBECONFIG .
 
 if ($? -eq 'True') {
     Write-Host "Build successful. Starting container..."
