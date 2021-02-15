@@ -2,16 +2,14 @@
 resource=$1
 echo "Fetching Kubernetes $resource..."
 contexts=( "sandbox" "production" )
-jqargs=()
-jqbody='{'
+
+json='{'
 for context in ${contexts[@]}
 do
     kubectl config use-context $context
-    kubectl get $resource -o json > ../src/tmp-$context.json
-    jqargs+=( "--slurpfile $context ../src/tmp-$context.json" )
-    jqbody+="$context: \$$context, "
+    json+="\"$context\": $(kubectl get $resource -o json),"
 done
-jqbody=${jqbody%, }
-jqbody+='}'
-jq ${jqargs[@]} "$jqbody" > ../src/$resource.json
-echo 'Done.'
+json=${json%,}
+json+='}'
+
+echo $json > "../src/$resource.json"
