@@ -1,6 +1,7 @@
 import ad_domains
 import dnsme_domains
 import k8s_domains
+import xo_inf
 import ingress2pod
 import iptools
 
@@ -11,7 +12,7 @@ import sys
 import os
 
 os.mkdir('../out')
-for path in ('DNS', 'IPs', 'k8s'):
+for path in ('DNS', 'IPs', 'k8s', 'vms', 'hosts', 'pools'):
     os.mkdir('../out/'+path)
 
 print('Parsing ActiveDirectory response...')
@@ -37,9 +38,10 @@ for domain in dnsme_f:
     else:
         master[domain] = dnsme_f[domain]
 
+print('Querying Kubernetes...')
 ingress2pod.main(master)
 k8s = k8s_domains.main()
-print('Kubernetes query finished.')
+print('Parsing Kubernetes response...')
 
 for domain in k8s:
     if domain in master:
@@ -56,6 +58,10 @@ for ip in dnsme_r:
         ptr[ip].append(dnsme_r[ip])
     else:
         ptr[ip] = dnsme_r[ip]
+
+print('Querying Xen Orchestra...')
+xo_inf.main()
+print('Parsing Xen Orchestra response...')
 
 
 iplist = {}
@@ -81,21 +87,21 @@ for domain in master:   #adding subnets and sorting public/private ips
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
-print('Searching secret server for secrets...')
+# print('Searching secret server for secrets...')
 
-import secret_api
-for domain in master:
-    master[domain]['secrets'] = {}
-    resp = secret_api.searchSecrets(domain)
-    soup = BeautifulSoup(resp.text, features='xml')
-    print('Searching for '+ domain)
-    for secret in soup.find_all('SecretSummary'):
-        master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
+# import secret_api
+# for domain in master:
+#     master[domain]['secrets'] = {}
+#     resp = secret_api.searchSecrets(domain)
+#     soup = BeautifulSoup(resp.text, features='xml')
+#     print('Searching for '+ domain)
+#     for secret in soup.find_all('SecretSummary'):
+#         master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
 
 with open('../src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
-for type in ('dns', 'apps', 'workers'):     #if xsl json import files dont exist, generate them
+for type in ('dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
     if not os.path.exists(f'../src/{type}.xml'):
         with open(f'../src/{type}.xml','w') as stream:
             stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -105,7 +111,7 @@ for type in ('dns', 'apps', 'workers'):     #if xsl json import files dont exist
 <{type}>&json;</{type}>""")
 
 
-subprocess.run('xslt -xsl:dns.xsl -s:../src/dns.xml')
+subprocess.run('xslt -xsl:dns.xsl -s:../src/dns.xml', shell=True)
 
 print('DNS documents done')
 
@@ -114,8 +120,14 @@ ipdocs.main(iplist, ptr)
 
 print('IP documents done')
 
-subprocess.run('xslt -xsl:apps.xsl -s:../src/apps.xml')
-subprocess.run('xslt -xsl:workers.xsl -s:../src/workers.xml')
-subprocess.run('xslt -xsl:clusters.xsl -s:../src/workers.xml')
+subprocess.run('xslt -xsl:apps.xsl -s:../src/apps.xml', shell=True)
+subprocess.run('xslt -xsl:workers.xsl -s:../src/workers.xml', shell=True)
+subprocess.run('xslt -xsl:clusters.xsl -s:../src/workers.xml', shell=True)
 
 print('Kubernetes documents done')
+
+subprocess.run('xslt -xsl:pools.xsl -s:../src/pools.xml', shell=True)
+subprocess.run('xslt -xsl:hosts.xsl -s:../src/hosts.xml', shell=True)
+subprocess.run('xslt -xsl:vms.xsl -s:../src/vms.xml', shell=True)
+
+print('Xen Orchestra documents done')
