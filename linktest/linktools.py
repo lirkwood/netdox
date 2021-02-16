@@ -27,9 +27,9 @@ urimap = {
 live = []      #no. of successful responses to a basic GET
 dead = {}       #key = url, value = error code
 
-if not os.path.exists('node_modules'):
-    subprocess.run('npm install', shell=True)
-
+for path in ('screenshots', 'review'):
+    if not os.path.exists(f'../out/{path}'):
+        os.mkdir(f'../out/{path}')
 
 def main(folder):
     # pylint: disable=unused-variable
@@ -69,28 +69,21 @@ def main(folder):
 
     with open('files/live.json','w') as out:
         out.write(json.dumps(live, indent=2))   #write results to files
-    
-    for folder in ('files/screenshots/', 'files/review/'):    # clean screenshot dirs
-        if not os.path.exists(folder):
-            os.mkdir(folder)
-        else:
-            for file in os.scandir(folder):
-                os.remove(file)
             
     subprocess.run('node screenshotCompare.js')    #get screenshots of all urls in live
 
-    for file in os.scandir('files/screenshots/'):
-        img = Image.open('files/screenshots/'+ file.name)
+    for file in os.scandir('../out/screenshots/'):
+        img = Image.open('../out/screenshots/'+ file.name)
         img.resize((1024, 576))
         os.remove(file)
-        img.save('files/screenshots/'+ file.name)
+        img.save('../out/screenshots/'+ file.name)
 
     for url in dead:  #copy placeholder for all docs with no image 
         docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
-        if not os.path.exists('files/screenshots/{0}.png'.format(docid)):
-            shutil.copy('files/placeholder.png', 'files/screenshots/{0}.png'.format(docid))
+        if not os.path.exists('../out/screenshots/{0}.png'.format(docid)):
+            shutil.copy('files/placeholder.png', '../out/screenshots/{0}.png'.format(docid))
 
-    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:files/review.xml -o:files/_nd_status_update.psml')
+    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:files/review.xml -o:../out/_nd_status_update.psml')
     # run xsl to generate daily status update
     print('Status update file generated.')
     print('Archiving old review images...')
@@ -113,23 +106,23 @@ def get_uris(folder): #returns list of uris of all documents in a folder, define
     return urls, docids
 
 
-def version(folder, docids):
-    outgoing = []
-    for file in os.scandir('../outgoing/'+ folder):
-        outgoing.append('_nd_'+ file.name.replace('.psml',''))
+# def version(folder, docids):
+#     outgoing = []
+#     for file in os.scandir('../outgoing/'+ folder):
+#         outgoing.append('_nd_'+ file.name.replace('.psml',''))
 
-    for docid in docids:    #archive docs not generated in last batch
-        if docid not in outgoing:
-            archive(docid)
+#     for docid in docids:    #archive docs not generated in last batch
+#         if docid not in outgoing:
+#             archive(docid)
     
-    service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(urimap[folder])
-    requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
+#     service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/versions'.format(urimap[folder])
+#     requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
 
 
-def archive(docid):
-    service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/archive'.format(docid)
-    r = requests.post(base+service, headers=header)
-    return r
+# def archive(docid):
+#     service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/archive'.format(docid)
+#     r = requests.post(base+service, headers=header)
+#     return r
 
 
 def testips(page):
