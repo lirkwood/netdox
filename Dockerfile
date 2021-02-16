@@ -58,5 +58,4 @@ COPY authentication.json /opt/app/src
 COPY netdox /opt/app/netdox
 
 WORKDIR /opt/app/netdox
-# CMD [ "python3", "generate.py" ]
-CMD [ "bash" ]
+CMD [ "python3", "generate.py" ]
