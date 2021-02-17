@@ -9,6 +9,8 @@ RUN npm install bufferutil@4.0.3
 RUN npm install odiff-bin@2.0.0
 RUN npm install puppeteer@5.5.0
 RUN npm install utf-8-validate@5.0.4
+
+#delete all packages in node_modules that are not in node_deps.txt
 WORKDIR /opt/app/node_modules
 RUN bash -c 'readarray -t deps < /opt/app/node_deps.txt &&\
     for package in */ ; do\
@@ -55,13 +57,15 @@ RUN apt-get install --no-install-recommends -y gconf-service libasound2 libatk1.
     libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1\
     libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation\
     libappindicator1 libnss3 lsb-release xdg-utils wget libgbm-dev zip curl jq iputils-ping
+
+#purge package cache
 RUN rm -rf /var/lib/apt/lists/* && \
     apt-get purge   --auto-remove && \
     apt-get clean
 
-#copy main files
-COPY netdox /opt/app
+#copy main files and node deps
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
+COPY netdox /opt/app
 
 #copy auth details
 COPY authentication.json /opt/app/src
