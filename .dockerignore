@@ -4,6 +4,7 @@ netdox/__pycache__
 netdox/logs
 
 netdox/src/*
+!netdox/src/records/
 !netdox/src/base/
 !netdox/src/nmap.xml
 !netdox/src/template-ip.psml
