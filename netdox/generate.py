@@ -131,3 +131,7 @@ subprocess.run('xslt -xsl:hosts.xsl -s:src/hosts.xml', shell=True)
 subprocess.run('xslt -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('Xen Orchestra documents done')
+print('Testing domains...')
+import linktools
+linktools.main()
+subprocess.run('bash -c "zip -q netdox-src.zip out"')
