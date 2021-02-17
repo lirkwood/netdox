@@ -59,7 +59,7 @@ def main():
                         testips(page)
 
 
-        with open('logs/linktest.txt','w') as log:
+        with open('src/linktest.txt','w') as log:
             log.write('Out of {0} tested urls, {1} failed.\n'.format(count, len(dead)))
             for url in dead:
                 log.write('URL: {0} Code: {1}\n\n'.format(url, dead[url]))
