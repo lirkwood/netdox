@@ -134,4 +134,4 @@ print('Xen Orchestra documents done')
 print('Testing domains...')
 import linktools
 linktools.main()
-subprocess.run('bash -c "zip -q netdox-src.zip out"')
+subprocess.run('bash -c "zip -r -q /netdox-src.zip /opt/app/out/*"', shell=True)
