@@ -52,17 +52,20 @@
                     <properties-fragment id="kube_worker">
                         <property name="worker_name" title="Worker Name" value="{xpf:string[@key = 'nodename']}" />
                         <property name="worker_host" title="Worker Hostname" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'worker'],'.','_')}" />
+                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'worker'],'.','_')}"  
+                                reversetitle="App running on this worker"/>
                         </property>
                         <property name="ipv4"  title="Worker IP"  datatype="xref" >
-                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" />
+                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
+                                reversetitle="App running on this IP" />
                         </property>
                     </properties-fragment>
                     
                     <properties-fragment id="domains">
                         <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
                             <property name="domain" title="Domain" datatype="xref">
-                                <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                                <xref frag="default" docid="_nd_{translate(.,'.','_')}" 
+                                reversetitle="App served on this domain" />
                             </property>
                         </xsl:for-each>
                     </properties-fragment>

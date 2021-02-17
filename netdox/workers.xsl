@@ -33,7 +33,8 @@
                 <properties-fragment id="vm">
                     <xsl:for-each select="xpf:string[@key = 'vm']">
                     <property name="vm" title="Host VM" datatype="xref">
-                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" 
+                        reversetitle="Kubernetes worker in this VM"/>
                     </property>
                     </xsl:for-each>
                 </properties-fragment>
@@ -43,7 +44,8 @@
 
                 <xref-fragment id="apps">
                 <xsl:for-each select="xpf:array[@key = 'apps']/xpf:string">
-                    <blockxref frag="default" type="embed" docid="_nd_{translate(.,'.','_')}" />
+                    <blockxref frag="default" type="embed" docid="_nd_{translate(.,'.','_')}" 
+                    reversetitle="Kubernetes worker running this app"/>
                 </xsl:for-each>
                 </xref-fragment>
             </section>

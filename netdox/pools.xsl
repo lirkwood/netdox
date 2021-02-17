@@ -42,11 +42,11 @@
           <xref-fragment id="xrefs">
             <xsl:if test="xpf:string[@key='master']">
               <blockxref type="embed" title="Controller" display="document+manual" docid="_nd_{xpf:string[@key='master']}" frag="default"
-                    reverselink="true" reversetitle="{$label} in pool document as pool controller" reversetype="none" />
+                    reverselink="true" reversetitle="Pool this device controls" reversetype="none" />
             </xsl:if>
             <xsl:for-each select="$devices//*[@key = $uuid]/xpf:string">
                 <blockxref type="embed" title="Device" display="document+manual" docid="_nd_{.}" frag="default"
-                      reverselink="true" reversetitle="{$label} in pool document as pool device" reversetype="none" />
+                      reverselink="true" reversetitle="Pool this device belongs to" reversetype="none" />
             </xsl:for-each>
           </xref-fragment>
         </section>

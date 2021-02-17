@@ -28,7 +28,8 @@
             <section id="nodes">
                 <xref-fragment id="workers">
                 <xsl:for-each select="xpf:map">
-                    <blockxref frag="default" type="embed" docid="_nd_{translate(@key,'.','_')}"/>
+                    <blockxref frag="default" type="embed" docid="_nd_{translate(@key,'.','_')}"
+                    reversetitle="Cluster this worker belongs to"/>
                 </xsl:for-each>
                 </xref-fragment>
             </section>

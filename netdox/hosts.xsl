@@ -40,9 +40,9 @@
             <property name="host"          title="Host name"                value="{xpf:string[@key='hostname']}" />
             <property name="ipv4"       title="Internal IP"             datatype="xref" >
               <xref frag="default" docid="{concat('_nd_', translate(xpf:string[@key='address'], '.', '_'))}"
-              reversetitle="{$label} in inf_xen_host document as ipv4" />
-	    </property>
-	    <property name="subnet" title="Subnet" value="{xpf:string[@key = 'subnet']}" />
+              reversetitle="{$label} in XO" />
+	          </property>
+	          <property name="subnet" title="Subnet" value="{xpf:string[@key = 'subnet']}" />
           </properties-fragment>
           <properties-fragment id="cpus">
             <property name="host-cpu-count"          title="CPU count"      value="{xpf:map[@key='CPUs']/xpf:string[@key='cpu_count']}" />
@@ -55,7 +55,7 @@
             <property name="pool"            title="Pool"           datatype="xref">
               <xsl:if test="xpf:string[@key='$pool']">
                 <xref type="none" display="document" docid="_nd_{xpf:string[@key='$pool']}" frag="default"
-                      reverselink="true" reversetitle="{$label} in host document as pool" reversetype="none" />
+                      reverselink="true" reversetitle="Hosts in this pool" reversetype="none" />
               </xsl:if>
             </property>
           </properties-fragment>
@@ -68,7 +68,7 @@
           <xref-fragment id="xrefs">
             <xsl:for-each select="$vms//*[@key = $uuid]/xpf:string">
                 <blockxref type="embed" docid="_nd_{.}" frag="default"
-                      reverselink="true" reversetitle="{$label} in host document as resident vm" reversetype="none" />
+                      reverselink="true" reversetitle="Host of this VM" reversetype="none" />
             </xsl:for-each>
           </xref-fragment>
         </section>

@@ -39,7 +39,7 @@
           <properties-fragment id="addresses">
             <property name="ipv4"               title="IPv4"          datatype="xref" >
               <xref frag="default" docid="_nd_{translate(xpf:map[@key='addresses']/xpf:string[@key='0/ipv4/0'], '.', '_')}"
-              reversetitle="{xpf:string[@key='name_label']} in inf_xen_vm document as ipv4" />
+              reversetitle="{xpf:string[@key='name_label']} in XO" />
             </property>
 	    <property name="subnet" title="Subnet" value="{xpf:string[@key = 'subnet']}" />
             <property name="ipv6"               title="IPv6"          value="{xpf:map[@key='addresses']/xpf:string[@key='0/ipv6/0']}" />
@@ -55,13 +55,13 @@
             <property name="xen_host"       title="Host machine"           datatype="xref">
               <xsl:if test="xpf:string[@key='$container']">
                 <xref type="none" display="document" docid="_nd_{xpf:string[@key='$container']}" frag="default"
-                      reverselink="true" reversetitle="{xpf:string[@key='name_label']} in inf_xen_vm document as host machine" reversetype="none" />
+                      reverselink="true" reversetitle="VMs on this host" reversetype="none" />
               </xsl:if>
             </property>
             <property name="xen_pool"            title="Pool"           datatype="xref">
               <xsl:if test="xpf:string[@key='$pool']">
                 <xref type="none" display="document" docid="_nd_{xpf:string[@key='$pool']}" frag="default"
-                      reverselink="true" reversetitle="{xpf:string[@key='name_label']} in inf_xen_vm document as pool" reversetype="none" />
+                      reverselink="true" reversetitle="VMs in this pool" reversetype="none" />
               </xsl:if>
             </property>
           </properties-fragment>

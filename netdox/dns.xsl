@@ -50,19 +50,19 @@
                 <properties-fragment id="dest">
                 <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array[@key = 'private']/xpf:string">
                     <property name="ipv4" title="Private IP" datatype="xref">
-                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"/>
                     </property>
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array[@key = 'public']/xpf:string">
                     <property name="ipv4" title="Public IP" datatype="xref">
-                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"/>
                     </property>
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:array[@key = 'domains']/xpf:string">
                     <xsl:choose>
                         <xsl:when test="not(string-length(.) > 75)">
                     <property name="alias" title="Alias to" datatype="xref">
-                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this domain"/>
                     </property>
                         </xsl:when>
                         <xsl:otherwise>
@@ -72,7 +72,7 @@
                 </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:array[@key = 'apps']/xpf:string">
                     <property name="app" title="Application" datatype="xref">
-                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this app"/>
                     </property>
                 </xsl:for-each>
                 </properties-fragment>
