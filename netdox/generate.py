@@ -101,7 +101,7 @@ for domain in master:   #adding subnets and sorting public/private ips
 with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
-for type in ('dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
+for type in ('dns', 'apps', 'workers', 'xo'):     #if xsl json import files dont exist, generate them
     if not os.path.exists(f'src/{type}.xml'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -134,4 +134,4 @@ print('Xen Orchestra documents done')
 print('Testing domains...')
 import linktools
 linktools.main()
-subprocess.run('bash -c "zip -r -q /netdox-src.zip /opt/app/out/*"', shell=True)
+subprocess.run('bash -c "cd /opt/app/out && zip -r -q /netdox-src.zip *"', shell=True)
