@@ -70,7 +70,7 @@ def main(folder):
     with open('files/live.json','w') as out:
         out.write(json.dumps(live, indent=2))   #write results to files
             
-    subprocess.run('node screenshotCompare.js')    #get screenshots of all urls in live
+    subprocess.run('node screenshotCompare.js', shell=True)    #get screenshots of all urls in live
 
     for file in os.scandir('../out/screenshots/'):
         img = Image.open('../out/screenshots/'+ file.name)
@@ -83,7 +83,7 @@ def main(folder):
         if not os.path.exists('../out/screenshots/{0}.png'.format(docid)):
             shutil.copy('files/placeholder.png', '../out/screenshots/{0}.png'.format(docid))
 
-    subprocess.run('java -jar c:/saxon/saxon-he-10.3.jar -xsl:status.xsl -s:files/review.xml -o:../out/_nd_status_update.psml')
+    subprocess.run('xslt -xsl:status.xsl -s:files/review.xml -o:../out/_nd_status_update.psml', shell=True)
     # run xsl to generate daily status update
     print('Status update file generated.')
     print('Archiving old review images...')
@@ -119,20 +119,24 @@ def get_uris(folder): #returns list of uris of all documents in a folder, define
 #     requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
 
 
-# def archive(docid):
-#     service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/archive'.format(docid)
-#     r = requests.post(base+service, headers=header)
-#     return r
+def archive(docid):
+    service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/archive'.format(docid)
+    r = requests.post(base+service, headers=header)
+    return r
 
 
 def testips(page):
     for ip in page.get_ips():
-        ping = subprocess.run('ping -n 1 '+ ip, stdout=subprocess.PIPE)
-        if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
-            print('URL {0} failed but ip {1} succeeded.\n\n'.format(page.url, ip))
-            dead[page.url] += '\nIP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
-        else:
-            print('URL {0} failed and ip {1} failed with code {2}.\n\n'.format(page.url, ip, ping.returncode))
+        try:
+            ping = subprocess.run('ping -c 1 '+ ip, stdout=subprocess.PIPE, shell=True, timeout=2)
+            if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
+                print('URL {0} failed but ip {1} succeeded.\n\n'.format(page.url, ip))
+                dead[page.url] += '\nIP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
+            else:
+                print('URL {0} failed and ip {1} failed with code {2}.\n\n'.format(page.url, ip, ping.returncode))
+                dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
+        except subprocess.TimeoutExpired:
+            print('URL {0} failed and ip {1} failed from timeout after two seconds.\n\n'.format(page.url, ip))
             dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
 
 

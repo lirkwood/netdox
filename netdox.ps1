@@ -95,7 +95,6 @@ Set-Location -Path ".kube"
 $KUBECONFIG = Get-ChildItem -Path "." -Filter "*config*" -File -Recurse | % {Resolve-Path -Relative -Path $_} | % {"/usr/.kube/${_}:" -replace '\\','/' -replace '/./','/'} | % {$_.TrimEnd(':')}
 #Awful pipeline that adds all files in .kube to string and converts to absolute posix path in dir /usr/.kube/
 Set-Location ".."
-echo $KUBECONFIG
 Write-Host "Building Docker image..."
 docker build -t netdox --build-arg _kubeconfig=$KUBECONFIG .
 
