@@ -29,10 +29,10 @@
                 <fragment id="title">
                 <xsl:choose>
                     <xsl:when test="contains($name, '_wildcard_')">
-                        <heading level="1">dns: <link href="{substring-after($name, '_wildcard_')}"><xsl:value-of select="replace($name,'_wildcard_','*.')"/></link></heading>
+                        <heading level="1">dns: <link href="https://{substring-after($name, '_wildcard_')}"><xsl:value-of select="replace($name,'_wildcard_','*.')"/></link></heading>
                     </xsl:when>
                     <xsl:otherwise>
-                        <heading level="1">dns: <link href="{$name}"><xsl:value-of select="$name"/></link></heading>
+                        <heading level="1">dns: <link href="https://{$name}"><xsl:value-of select="$name"/></link></heading>
                     </xsl:otherwise>
                 </xsl:choose>
                 </fragment>
