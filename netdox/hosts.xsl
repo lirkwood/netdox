@@ -4,7 +4,7 @@
                 exclude-result-prefixes="#all">
 
   <xsl:output method="xml" indent="yes" />
-  <xsl:variable name="vms" select="json-to-xml(unparsed-text('src/hosts.json'))"/>
+  <xsl:variable name="vms" select="json-to-xml(unparsed-text('src/residents.json'))"/>
 
   <!-- default template -->
   <xsl:template match="/">
@@ -15,7 +15,7 @@
   <xsl:template match="xpf:array/xpf:map">
     <xsl:variable name="uuid" select="xpf:string[@key='uuid']"/>
     <xsl:variable name="label" select="xpf:string[@key='name_label']"/>
-    <xsl:result-document href="out/hosts/{translate($label,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/xo/{translate($label,'.','_')}.psml" method="xml" indent="yes">
       <document type="xo_host" level="portable">
         <documentinfo>
           <uri title="{$label}" docid="_nd_{$uuid}"><labels>show-reversexrefs</labels></uri>

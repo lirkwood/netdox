@@ -49,7 +49,7 @@ def main():
 
             stream.write(json.dumps(jsondata, indent=2))
 
-    with open('src/roles.json', 'w') as stream:
+    with open('src/devices.json', 'w') as stream:
         stream.write(json.dumps(pools, indent=4))
 
     with open('src/residents.json', 'w') as stream:
