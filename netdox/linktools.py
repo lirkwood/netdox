@@ -31,65 +31,62 @@ for path in ('screenshots', 'review'):
     if not os.path.exists(f'out/{path}'):
         os.mkdir(f'out/{path}')
 
-def main(folder):
-    # pylint: disable=unused-variable
-    # urls, docids = get_uris(folder) 
-
-    # version(folder, docids)
-    
-    urls, docids = get_uris(folder)     #get current uri list
-
-    count = 0
-    for url in urls:
-        page = webpage(url)
-        if not page.exclude:
-            count += 1
-            print('Testing '+ page.url)
-            if page.test():
-                live.append(page.url)
-            else:
-                if page.protocol == 'https' and '_ssl.c:1123' in str(page.code):
-                    page.protocol = 'http'
-                    if page.test():
-                        dead['https://'+ page.domain] = 'HTTPS failed but HTTP succeeded.'
-                        print('HTTPS failed but HTTP succeeded.\n\n')
-                        live.append(page.url)
+def main():
+    with open('src/dns.json','r') as src:
+        global dns
+        dns = json.load(src)
+        count = 0
+        for domain in dns:
+            url = 'https://'+ domain
+            page = webpage(url)
+            if not page.exclude:
+                count += 1
+                print('Testing '+ page.url)
+                if page.test():
+                    live.append(page.url)
+                else:
+                    if page.protocol == 'https' and '_ssl.c:1123' in str(page.code):
+                        page.protocol = 'http'
+                        if page.test():
+                            dead['https://'+ page.domain] = 'HTTPS failed but HTTP succeeded.'
+                            print('HTTPS failed but HTTP succeeded.\n\n')
+                            live.append(page.url)
+                        else:
+                            dead[page.url] = str(page.code)
+                            testips(page)
                     else:
                         dead[page.url] = str(page.code)
                         testips(page)
-                else:
-                    dead[page.url] = str(page.code)
-                    testips(page)
 
 
-    with open('files/log.txt','w') as log:
-        log.write('Out of {0} tested urls, {1} failed.\n'.format(count, len(dead)))
-        for url in dead:
-            log.write('URL: {0} Code: {1}\n\n'.format(url, dead[url]))
+        with open('logs/linktest.txt','w') as log:
+            log.write('Out of {0} tested urls, {1} failed.\n'.format(count, len(dead)))
+            for url in dead:
+                log.write('URL: {0} Code: {1}\n\n'.format(url, dead[url]))
 
-    with open('files/live.json','w') as out:
-        out.write(json.dumps(live, indent=2))   #write results to files
-            
-    subprocess.run('node screenshotCompare.js', shell=True)    #get screenshots of all urls in live
+        with open('src/live.json','w') as out:
+            out.write(json.dumps(live, indent=2))   #write results to files
+                
+        subprocess.run('node screenshotCompare.js', shell=True)    #get screenshots of all urls in live
 
-    for file in os.scandir('out/screenshots/'):
-        img = Image.open('out/screenshots/'+ file.name)
-        img.resize((1024, 576))
-        os.remove(file)
-        img.save('out/screenshots/'+ file.name)
+        for file in os.scandir('out/screenshots/'):
+            img = Image.open('out/screenshots/'+ file.name)
+            img.resize((1024, 576))
+            os.remove(file)
+            img.save('out/screenshots/'+ file.name)
 
-    for url in dead:  #copy placeholder for all docs with no image 
-        docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
-        if not os.path.exists('out/screenshots/{0}.png'.format(docid)):
-            shutil.copy('files/placeholder.png', 'out/screenshots/{0}.png'.format(docid))
+        for url in dead:  #copy placeholder for all docs with no image 
+            docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
+            if not os.path.exists('out/screenshots/{0}.png'.format(docid)):
+                shutil.copy('src/placeholder.png', 'out/screenshots/{0}.png'.format(docid))
 
-    subprocess.run('xslt -xsl:status.xsl -s:files/review.xml -o:out/_nd_status_update.psml', shell=True)
-    # run xsl to generate daily status update
-    print('Status update file generated.')
-    print('Archiving old review images...')
+        subprocess.run('xslt -xsl:status.xsl -s:src/review.xml -o:out/_nd_status_update.psml', shell=True)
+        # run xsl to generate daily status update
+        print('Status update file generated.')
+        print('Archiving old review images...')
 
-    archive(urimap['review'])
-    print('Done.')
+        archive(urimap['review'])
+        print('Done.')
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
@@ -126,7 +123,8 @@ def archive(docid):
 
 
 def testips(page):
-    for ip in page.get_ips():
+    global dns
+    for ip in (dns[page.domain]['dest']['ips']['private'] + dns[page.domain]['dest']['ips']['public']):
         try:
             ping = subprocess.run('ping -c 1 '+ ip, stdout=subprocess.PIPE, shell=True, timeout=2)
             if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
@@ -140,8 +138,8 @@ def testips(page):
             dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
 
 
-exclusions = open('files/exclusions.txt','r').read().splitlines()
-settings = json.load(open('files/settings.json','r'))
+exclusions = open('src/exclusions.txt','r').read().splitlines()
+settings = json.load(open('src/settings.json','r'))
 
 class webpage:
     def __init__(self, url):
@@ -200,16 +198,16 @@ class webpage:
             self.status = False
             return False
 
-    def get_ips(self):
-        self.ips = []
+    # def get_ips(self):
+    #     self.ips = []
 
-        service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/fragments/dest'.format(self.docid)
-        soup = BeautifulSoup(requests.get(base+service, headers=header).text, 'lxml')
-        for prop in soup.find_all('property'):
-            if prop['name'] == 'ipv4':
-                self.ips.append(prop.xref.string)
+    #     service = '/members/~lkirkwood/groups/~network-documentation/uris/{0}/fragments/dest'.format(self.docid)
+    #     soup = BeautifulSoup(requests.get(base+service, headers=header).text, 'lxml')
+    #     for prop in soup.find_all('property'):
+    #         if prop['name'] == 'ipv4':
+    #             self.ips.append(prop.xref.string)
         
-        return self.ips
+    #     return self.ips
 
 
 
