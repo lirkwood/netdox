@@ -26,5 +26,6 @@ linktest/files/*
 *.zip
 **/log.*
 **/__pycache__
+**/.gitignore
 
 !**/iptools.py
