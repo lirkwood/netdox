@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const { compare } = require("odiff-bin");
 const fs = require('fs');
-const urlList = require('./files/live.json');
+const urlList = require('./src/live.json');
 var review = {}
 
 
@@ -10,7 +10,7 @@ async function imgdiff(array) {
     const image = array[index]
     try {
       const { match, reason } = await compare(
-        "files/base/".concat(image),
+        "src/base/".concat(image),
         "out/screenshots/".concat(image),
         "out/review/".concat(image)
       );
@@ -25,7 +25,7 @@ async function imgdiff(array) {
       }
     }
   }
-  fs.writeFileSync('files/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
+  fs.writeFileSync('src/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
 }
 
 (async (callback) => {
