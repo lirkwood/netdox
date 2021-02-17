@@ -87,16 +87,16 @@ for domain in master:   #adding subnets and sorting public/private ips
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
-# print('Searching secret server for secrets...')
+print('Searching secret server for secrets...')
 
-# import secret_api
-# for domain in master:
-#     master[domain]['secrets'] = {}
-#     resp = secret_api.searchSecrets(domain)
-#     soup = BeautifulSoup(resp.text, features='xml')
-#     print('Searching for '+ domain)
-#     for secret in soup.find_all('SecretSummary'):
-#         master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
+import secret_api
+for domain in master:
+    master[domain]['secrets'] = {}
+    resp = secret_api.searchSecrets(domain)
+    soup = BeautifulSoup(resp.text, features='xml')
+    print('Searching for '+ domain)
+    for secret in soup.find_all('SecretSummary'):
+        master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
 
 with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
