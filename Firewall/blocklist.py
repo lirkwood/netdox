@@ -12,7 +12,7 @@ def main():
     global rejects
     rejects = []
 
-    blockrange = 'J:/atemp/wellington/block-range-14-Feb.txt'
+    blockrange = 'J:/atemp/wellington/block-range-16-Feb.txt'
     quarantine = 'J:/atemp/wellington/forti-quarantine-15-Feb.txt'
     
     current = requests.get(url)
