@@ -12,7 +12,7 @@
   </xsl:template>
 
   <xsl:template match="xpf:array/xpf:map">
-    <xsl:result-document href="../out/vms/{xpf:string[@key='name_label']}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/vms/{xpf:string[@key='name_label']}.psml" method="xml" indent="yes">
       <document type="xo_vm" level="portable">
         <documentinfo>
           <uri title="vm: {xpf:string[@key='name_label']}" docid="_nd_{xpf:string[@key='uuid']}"><labels>show-reversexrefs</labels></uri>

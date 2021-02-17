@@ -11,9 +11,9 @@ import json
 import sys
 import os
 
-os.mkdir('../out')
+os.mkdir('out')
 for path in ('DNS', 'IPs', 'k8s', 'vms', 'hosts', 'pools'):
-    os.mkdir('../out/'+path)
+    os.mkdir('out/'+path)
 
 print('Parsing ActiveDirectory response...')
 ad = ad_domains.main()
@@ -98,12 +98,12 @@ for domain in master:   #adding subnets and sorting public/private ips
 #     for secret in soup.find_all('SecretSummary'):
 #         master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
 
-with open('../src/dns.json','w') as stream:
+with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
 for type in ('dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
-    if not os.path.exists(f'../src/{type}.xml'):
-        with open(f'../src/{type}.xml','w') as stream:
+    if not os.path.exists(f'src/{type}.xml'):
+        with open(f'src/{type}.xml','w') as stream:
             stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE {type} [
 <!ENTITY json SYSTEM "{type}.json">
@@ -111,7 +111,7 @@ for type in ('dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl jso
 <{type}>&json;</{type}>""")
 
 
-subprocess.run('xslt -xsl:dns.xsl -s:../src/dns.xml', shell=True)
+subprocess.run('xslt -xsl:dns.xsl -s:src/dns.xml', shell=True)
 
 print('DNS documents done')
 
@@ -120,14 +120,14 @@ ipdocs.main(iplist, ptr)
 
 print('IP documents done')
 
-subprocess.run('xslt -xsl:apps.xsl -s:../src/apps.xml', shell=True)
-subprocess.run('xslt -xsl:workers.xsl -s:../src/workers.xml', shell=True)
-subprocess.run('xslt -xsl:clusters.xsl -s:../src/workers.xml', shell=True)
+subprocess.run('xslt -xsl:apps.xsl -s:src/apps.xml', shell=True)
+subprocess.run('xslt -xsl:workers.xsl -s:src/workers.xml', shell=True)
+subprocess.run('xslt -xsl:clusters.xsl -s:src/workers.xml', shell=True)
 
 print('Kubernetes documents done')
 
-subprocess.run('xslt -xsl:pools.xsl -s:../src/pools.xml', shell=True)
-subprocess.run('xslt -xsl:hosts.xsl -s:../src/hosts.xml', shell=True)
-subprocess.run('xslt -xsl:vms.xsl -s:../src/vms.xml', shell=True)
+subprocess.run('xslt -xsl:pools.xsl -s:src/pools.xml', shell=True)
+subprocess.run('xslt -xsl:hosts.xsl -s:src/hosts.xml', shell=True)
+subprocess.run('xslt -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('Xen Orchestra documents done')

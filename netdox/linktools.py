@@ -28,8 +28,8 @@ live = []      #no. of successful responses to a basic GET
 dead = {}       #key = url, value = error code
 
 for path in ('screenshots', 'review'):
-    if not os.path.exists(f'../out/{path}'):
-        os.mkdir(f'../out/{path}')
+    if not os.path.exists(f'out/{path}'):
+        os.mkdir(f'out/{path}')
 
 def main(folder):
     # pylint: disable=unused-variable
@@ -72,18 +72,18 @@ def main(folder):
             
     subprocess.run('node screenshotCompare.js', shell=True)    #get screenshots of all urls in live
 
-    for file in os.scandir('../out/screenshots/'):
-        img = Image.open('../out/screenshots/'+ file.name)
+    for file in os.scandir('out/screenshots/'):
+        img = Image.open('out/screenshots/'+ file.name)
         img.resize((1024, 576))
         os.remove(file)
-        img.save('../out/screenshots/'+ file.name)
+        img.save('out/screenshots/'+ file.name)
 
     for url in dead:  #copy placeholder for all docs with no image 
         docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
-        if not os.path.exists('../out/screenshots/{0}.png'.format(docid)):
-            shutil.copy('files/placeholder.png', '../out/screenshots/{0}.png'.format(docid))
+        if not os.path.exists('out/screenshots/{0}.png'.format(docid)):
+            shutil.copy('files/placeholder.png', 'out/screenshots/{0}.png'.format(docid))
 
-    subprocess.run('xslt -xsl:status.xsl -s:files/review.xml -o:../out/_nd_status_update.psml', shell=True)
+    subprocess.run('xslt -xsl:status.xsl -s:files/review.xml -o:out/_nd_status_update.psml', shell=True)
     # run xsl to generate daily status update
     print('Status update file generated.')
     print('Archiving old review images...')
@@ -108,7 +108,7 @@ def get_uris(folder): #returns list of uris of all documents in a folder, define
 
 # def version(folder, docids):
 #     outgoing = []
-#     for file in os.scandir('../outgoing/'+ folder):
+#     for file in os.scandir('outgoing/'+ folder):
 #         outgoing.append('_nd_'+ file.name.replace('.psml',''))
 
 #     for docid in docids:    #archive docs not generated in last batch

@@ -82,7 +82,7 @@ def main():
 
 
 def genheader():
-	with open('../src/authentication.json','r') as stream:
+	with open('src/authentication.json','r') as stream:
 		keys = json.load(stream)
 		api = keys['DNSMadeEasy']['API']
 		secret = keys['DNSMadeEasy']['Secret']

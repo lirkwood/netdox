@@ -9,7 +9,7 @@ import os
 
 def ingress():
     subprocess.run('./k8s_fetch.sh ingress', shell=True)
-    with open('../src/ingress.json', 'r') as stream:
+    with open('src/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
         for c in jsondata:  #context either sandbox or production cluster
@@ -52,7 +52,7 @@ def service(idict):
     noingress = {}
     links = {}
     subprocess.run('./k8s_fetch.sh services', shell=True)
-    with open('../src/services.json', 'r') as stream:
+    with open('src/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             ndict[c] = {}
@@ -93,7 +93,7 @@ def pods(sdict):
     workers = []
     pdict = {}
     subprocess.run('./k8s_fetch.sh pods', shell=True)
-    with open('../src/pods.json', 'r') as stream:
+    with open('src/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
             pdict[c] = {}
@@ -182,7 +182,7 @@ def podlink(master):
 
 
 def worker2app(master):
-    with open('../src/workers.json','w') as stream:
+    with open('src/workers.json','w') as stream:
         workers = {}
         for context in master:
             workers[context] = {}
@@ -193,7 +193,7 @@ def worker2app(master):
                     _workers[appinf['nodename']] = {'ip': appinf['hostip'], 'apps': []}
                 if app not in _workers[appinf['nodename']]['apps']:
                     _workers[appinf['nodename']]['apps'].append(app)
-            with open('../src/authentication.json','r') as auth:
+            with open('src/authentication.json','r') as auth:
                 details = json.load(auth)
                 user = details['XenOrchestra']['Username']
                 password = details['XenOrchestra']['Password']
@@ -237,6 +237,6 @@ def main(dns):
     master = mapworkers(pdict, dns)
     master = podlink(master)
     worker2app(master)
-    with open('../src/apps.json', 'w') as out:
+    with open('src/apps.json', 'w') as out:
         out.write(json.dumps(master, indent=2))
     return master

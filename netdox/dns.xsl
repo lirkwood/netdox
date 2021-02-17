@@ -12,7 +12,7 @@
 
 <xsl:template match="xpf:map">
     <xsl:variable name="name" select="@key"/>
-    <xsl:result-document href="../out/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
         <document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <documentinfo>

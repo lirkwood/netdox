@@ -2,7 +2,7 @@ import json
 import os
 
 def main():
-    with open('../src/apps.json','r') as stream:
+    with open('src/apps.json','r') as stream:
         master = {}
         jsondata = json.load(stream)
         for context in jsondata:

@@ -2,7 +2,7 @@ import requests, json
 
 def token():
     try:
-        with open('../src/authentication.json','r') as stream:
+        with open('src/authentication.json','r') as stream:
             credentials = json.load(stream)['PageSeeder']
             print('Requesting new access token...')
             url = 'https://ps-doc.allette.com.au/ps/oauth/token'

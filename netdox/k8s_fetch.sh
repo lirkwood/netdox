@@ -12,4 +12,4 @@ done
 json=${json%,}
 json+='}'
 
-echo $json > "../src/$resource.json"
+echo $json > "src/$resource.json"

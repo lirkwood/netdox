@@ -11,15 +11,15 @@ async function imgdiff(array) {
     try {
       const { match, reason } = await compare(
         "files/base/".concat(image),
-        "../out/screenshots/".concat(image),
-        "../out/review/".concat(image)
+        "out/screenshots/".concat(image),
+        "out/review/".concat(image)
       );
       if (match == false) {
         review[image] = 'imgdiff'
       }
     } catch (error) {
       if (error instanceof TypeError) {
-        fs.copyFile('../out/screenshots/'.concat(image), '../out/review/'.concat(image), (err) => {if (err) throw (err);});
+        fs.copyFile('out/screenshots/'.concat(image), 'out/review/'.concat(image), (err) => {if (err) throw (err);});
         console.log(`No base image for ${image}. Screenshot copied for review.`)
         review[image] = 'no_base'
       }
@@ -41,7 +41,7 @@ async function imgdiff(array) {
     }
     try{
       await page.goto(url);
-      await page.screenshot({path: '../out/screenshots/'.concat(path)});
+      await page.screenshot({path: 'out/screenshots/'.concat(path)});
       array.push(path)
       console.log(url.concat(' screenshot saved.'))
     } catch (error) {

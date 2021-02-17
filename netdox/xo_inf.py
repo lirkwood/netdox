@@ -1,7 +1,7 @@
 import sys, subprocess, json
 import iptools
 
-authstream = open('../src/authentication.json','r')
+authstream = open('src/authentication.json','r')
 auth = json.load(authstream)['XenOrchestra']
 args = {
     'register': ['xo-cli', '--register', 'https://xo.allette.com.au', auth['Username'], auth['Password']],
@@ -17,7 +17,7 @@ hosts = {}
 def main():
     subprocess.run(args['register'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     for type in ('pools', 'hosts', 'vms'): #temporarily removed 'aws'
-        with open(f'../src/{type}.json', 'w+') as stream:
+        with open(f'src/{type}.json', 'w+') as stream:
             content = subprocess.run(args[type], stdout=subprocess.PIPE)
             jsondata = json.loads(content.stdout)
 
@@ -49,8 +49,8 @@ def main():
 
             stream.write(json.dumps(jsondata, indent=2))
 
-    with open('../src/roles.json', 'w') as stream:
+    with open('src/roles.json', 'w') as stream:
         stream.write(json.dumps(pools, indent=4))
 
-    with open('../src/residents.json', 'w') as stream:
+    with open('src/residents.json', 'w') as stream:
         stream.write(json.dumps(hosts, indent=4))
