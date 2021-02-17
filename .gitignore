@@ -2,6 +2,7 @@
 netdox/out
 netdox/node_modules
 netdox/__pycache__
+netdox/logs
 
 netdox/src/*
 !netdox/src/base/
@@ -9,8 +10,8 @@ netdox/src/*
 !netdox/src/template-ip.psml
 !netdox/src/prefixes.txt
 !netdox/src/soap.xml
-!netdox/src/authentication.json
 !netdox/src/exclusions.txt
 !netdox/src/settings.json
 !netdox/src/placeholder.png
 !netdox/src/review.xml
+!netdox/src/node_deps.txt
