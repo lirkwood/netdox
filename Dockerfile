@@ -2,12 +2,19 @@ FROM klakegg/saxon:9.9.1-7-he-graal AS saxon
 FROM node:15.8.0-buster-slim AS node
 
 WORKDIR /opt/app
+COPY netdox/src/node_deps.txt .
 #install required node packages
 RUN npm install -g xo-cli
 RUN npm install bufferutil@4.0.3
 RUN npm install odiff-bin@2.0.0
 RUN npm install puppeteer@5.5.0
 RUN npm install utf-8-validate@5.0.4
+WORKDIR /opt/app/node_modules
+RUN bash -c 'readarray -t deps < /opt/app/node_deps.txt &&\
+    for package in */ ; do\
+    if [[ ! " ${deps[@]} " =~ " ${package%/} " ]]; then\
+    rm -rf $package;\
+    fi done'
 
 #install kubectl
 RUN apt-get update && apt-get install -y apt-transport-https gnupg2 curl
@@ -53,14 +60,10 @@ RUN rm -rf /var/lib/apt/lists/* && \
     apt-get clean
 
 #copy main files
-COPY linktest /opt/app/linktest
-COPY --from=node /opt/app/node_modules /opt/app/linktest/node_modules
-COPY src /opt/app/src
-COPY netdox /opt/app/netdox
-COPY master.sh /opt/app
+COPY netdox /opt/app
+COPY --from=node /opt/app/node_modules /opt/app/node_modules
 
 #copy auth details
 COPY authentication.json /opt/app/src
 
-ENTRYPOINT [ "bash" ]
-CMD [ "./master.sh" ]
+CMD [ "bash" ]
