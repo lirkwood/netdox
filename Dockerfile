@@ -71,4 +71,4 @@ COPY netdox /opt/app
 #copy auth details
 COPY authentication.json /opt/app/src
 
-CMD [ "bash" ]
+CMD [ "python3", "generate.py" ]
