@@ -6,10 +6,7 @@ import ingress2pod
 import iptools
 
 from bs4 import BeautifulSoup
-import subprocess
-import json
-import sys
-import os
+import subprocess, json, os
 
 os.mkdir('out')
 for path in ('DNS', 'IPs', 'k8s', 'vms', 'hosts', 'pools'):
@@ -64,7 +61,7 @@ xo_inf.main()
 print('Parsing Xen Orchestra response...')
 
 
-iplist = {}
+ipdict = {}
 for domain in master:   #adding subnets and sorting public/private ips
     master[domain]['dest']['ips'] = list(dict.fromkeys(master[domain]['dest']['ips']))
     master[domain]['dest']['domains'] = list(dict.fromkeys(master[domain]['dest']['domains']))
@@ -75,7 +72,7 @@ for domain in master:   #adding subnets and sorting public/private ips
         ip = iptools.parsed_ip(master[domain]['dest']['ips'][i])
         if ip.valid:
             master[domain]['subnets'].append(ip.subnet)
-            iplist[ip.ipv4] = master[domain]['source']
+            ipdict[ip.ipv4] = master[domain]['source']
             tmp.append(ip)
         else:
             master[domain]['dest']['ips'].pop(i)
@@ -94,14 +91,13 @@ for domain in master:
     master[domain]['secrets'] = {}
     resp = secret_api.searchSecrets(domain)
     soup = BeautifulSoup(resp.text, features='xml')
-    print('Searching for '+ domain)
     for secret in soup.find_all('SecretSummary'):
         master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
 
 with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
-for type in ('dns', 'apps', 'workers', 'xo'):     #if xsl json import files dont exist, generate them
+for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
     if not os.path.exists(f'src/{type}.xml'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -115,14 +111,15 @@ subprocess.run('xslt -xsl:dns.xsl -s:src/dns.xml', shell=True)
 
 print('DNS documents done')
 
-import ipdocs
-ipdocs.main(iplist, ptr)
+import ipdocs, ip_inf
+ipdocs.main(ipdict, ptr)
+ip_inf.main(ipdict, ptr)
 
 print('IP documents done')
 
-subprocess.run('xslt -xsl:apps.xsl -s:src/apps.xml', shell=True)
-subprocess.run('xslt -xsl:workers.xsl -s:src/workers.xml', shell=True)
 subprocess.run('xslt -xsl:clusters.xsl -s:src/workers.xml', shell=True)
+subprocess.run('xslt -xsl:workers.xsl -s:src/workers.xml', shell=True)
+subprocess.run('xslt -xsl:apps.xsl -s:src/apps.xml', shell=True)
 
 print('Kubernetes documents done')
 
