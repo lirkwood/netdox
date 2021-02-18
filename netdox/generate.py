@@ -72,7 +72,7 @@ for domain in master:   #adding subnets and sorting public/private ips
         ip = iptools.parsed_ip(master[domain]['dest']['ips'][i])
         if ip.valid:
             master[domain]['subnets'].append(ip.subnet)
-            ipdict[ip.ipv4] = master[domain]['source']
+            ipdict[ip.ipv4] = {'source': master[domain]['source']}
             tmp.append(ip)
         else:
             master[domain]['dest']['ips'].pop(i)
@@ -97,6 +97,8 @@ for domain in master:
 with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
 
+
+
 for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
     if not os.path.exists(f'src/{type}.xml'):
         with open(f'src/{type}.xml','w') as stream:
@@ -107,6 +109,7 @@ for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if 
 <{type}>&json;</{type}>""")
 
 
+
 subprocess.run('xslt -xsl:dns.xsl -s:src/dns.xml', shell=True)
 
 print('DNS documents done')
@@ -114,6 +117,7 @@ print('DNS documents done')
 import ipdocs, ip_inf
 ipdocs.main(ipdict, ptr)
 ip_inf.main(ipdict, ptr)
+subprocess.run('xslt -xsl:ips.xsl -s:src/ips.xml', shell=True)
 
 print('IP documents done')
 
@@ -131,4 +135,6 @@ print('Xen Orchestra documents done')
 print('Testing domains...')
 import linktools
 linktools.main()
+
+
 subprocess.run('bash -c "cd /opt/app/out && zip -r -q /netdox-src.zip *"', shell=True)
