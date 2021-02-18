@@ -1,9 +1,11 @@
 from bs4 import BeautifulSoup
 import subprocess, json
 import iptools
+import nat
 
 def main(ipdict, ptr):
     for ip in ipdict:
+        ipdict[ip]['nat'] = nat.lookup(ip)
         if ip in ptr:
             ipdict[ip]['ptr'] = ptr[ip]
 
