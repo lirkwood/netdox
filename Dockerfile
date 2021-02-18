@@ -2,7 +2,6 @@ FROM klakegg/saxon:9.9.1-7-he-graal AS saxon
 FROM node:15.8.0-buster-slim AS node
 
 WORKDIR /opt/app
-COPY netdox/src/node_deps.txt .
 #install required node packages
 RUN npm install -g xo-cli
 RUN npm install bufferutil@4.0.3
@@ -10,13 +9,15 @@ RUN npm install odiff-bin@2.0.0
 RUN npm install puppeteer@5.5.0
 RUN npm install utf-8-validate@5.0.4
 
-#delete all packages in node_modules that are not in node_deps.txt
-WORKDIR /opt/app/node_modules
-RUN bash -c 'readarray -t deps < /opt/app/node_deps.txt &&\
-    for package in */ ; do\
-    if [[ ! " ${deps[@]} " =~ " ${package%/} " ]]; then\
-    rm -rf $package;\
-    fi done'
+#delete all packages in node_modules that are not in node_deps.txt #BREAKS THINGS
+# COPY netdox/src/node_deps.txt .
+# WORKDIR /opt/app/node_modules
+# RUN bash -c 'IFS=$"\n" && dir=$PWD && cd /opt/app/node_modules &&\
+# readarray -t deps < /opt/app/node_deps.txt &&\
+#     for package in */ ; do\
+#         if [[ ! " ${deps[@]} " =~ " ${package%/} " ]]; then\
+#             rm -rf $package;\
+#         fi done && unset IFS && cd $dir'
 
 #install kubectl
 RUN apt-get update && apt-get install -y apt-transport-https gnupg2 curl
