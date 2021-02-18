@@ -15,3 +15,4 @@ netdox/src/*
 !netdox/src/placeholder.png
 !netdox/src/review.xml
 !netdox/src/node_deps.txt
+!netdox/src/nat.txt
