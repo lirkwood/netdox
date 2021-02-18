@@ -11,11 +11,16 @@
 </xsl:template>
 
 <xsl:template match="xpf:map">
+    <xsl:result-document href="out/IPs/{translate(@key,'.','_')}.psml" method="xml" indent="yes">
     <document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+        <documentinfo>
+            <uri docid="_nd_{translate(@key,'.','_')}" title="ip: {@key}"><labels>show-reversexrefs</labels></uri>
+        </documentinfo>
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="1.5" />
+                <property name="template_version"     title="Template version"   value="1.6" />
             </properties>
         </metadata>
 
@@ -31,18 +36,11 @@
                 <property name="network"               title="Network"          value="" />
                 <property name="subnet"               title="subnet"          value="{xpf:string[@key = 'subnet']}" />
                 <property name="ipv4"               title="IP"          value="{@key}" /> 
-                <property name="source" title="Source" value="{xpf:string[@key = 'source']}" />
-                <property name="ipv4_3"              title="Octet 3"      value = "{xpf:string[@key = 'o3']}" />
-                <property name="ipv4_3-4"              title="Octets 3-4"      value = "{xpf:string[@key = 'o3-4']}" />
-            </properties-fragment>
-    
-            <properties-fragment id="nat">
-            <xsl:for-each select="xpf:map[@key = 'nat']/xpf:string">
                 <property name="nat_dest" title="NAT Destination" datatype="xref">
-                    <xref frag="default" docid="_nd_{translate(.,'.','_')}"
+                    <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'nat'],'.','_')}"
                     reversetitle="NAT alias" />
                 </property>
-            </xsl:for-each>
+                <property name="source" title="Source" value="{xpf:string[@key = 'source']}" />
             </properties-fragment>
         
             <properties-fragment id="ports">
@@ -59,10 +57,15 @@
                 </property>
             </xsl:for-each>
             </properties-fragment>
+
+            <properties-fragment id="for-search" labels="s-hide-content">
+                <property name="octets" title="Octets for search" value="{concat(tokenize(.,'\.')[3], ', ', concat(tokenize(.,'\.')[3],'.',tokenize(.,'\.')[4]))}"/>
+            </properties-fragment>
             
         </section> 
 
     </document>
+    </xsl:result-document>
 </xsl:template>
 
 </xsl:stylesheet>
