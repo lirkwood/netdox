@@ -95,7 +95,7 @@
                     </xsl:for-each>
                 </fragment>
 
-                <properties-fragment id="for-search">
+                <properties-fragment id="for-search" labels="s-hide-content">
                     <xsl:variable name="octets">
                         <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array/xpf:string">
                             <xsl:value-of select="concat(tokenize(.,'\.')[3], ', ', concat(tokenize(.,'\.')[3],'.',tokenize(.,'\.')[4]), ', ')"/>
