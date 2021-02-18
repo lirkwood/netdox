@@ -89,7 +89,7 @@ print('Searching secret server for secrets...')
 import secret_api
 for domain in master:
     master[domain]['secrets'] = {}
-    resp = secret_api.searchSecrets(domain)
+    resp = secret_api.searchSecrets(domain, 'URL Key')
     soup = BeautifulSoup(resp.text, features='xml')
     for secret in soup.find_all('SecretSummary'):
         master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
