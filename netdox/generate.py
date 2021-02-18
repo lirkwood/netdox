@@ -115,7 +115,7 @@ subprocess.run('xslt -xsl:dns.xsl -s:src/dns.xml', shell=True)
 print('DNS documents done')
 
 import ipdocs, ip_inf
-ipdocs.main(ipdict, ptr)
+# ipdocs.main(ipdict, ptr)
 ip_inf.main(ipdict, ptr)
 subprocess.run('xslt -xsl:ips.xsl -s:src/ips.xml', shell=True)
 
