@@ -13,7 +13,11 @@ def main(ipdict, ptr):
                 for sibling in ip.iter_subnet():
                     if sibling not in ipdict:
                         ipdict[sibling] = 'Generated'
-                        
+        
+        ipdict[ip]['subnet'] = ip.subnet
+        ipdict[ip]['o3'] = ip.ipv4.split('.')[2]
+        ipdict[ip]['o3-4'] = '.'.join(ip.ipv4.split('.')[2:4])
+
     with open('src/nmap.xml', 'r') as stream:
         soup = BeautifulSoup(stream, features='xml')
         for port in soup.find_all('port'):
