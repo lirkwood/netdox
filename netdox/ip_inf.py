@@ -4,21 +4,25 @@ import iptools
 import nat
 
 def main(ipdict, ptr):
+    tmp = {}
     for ip in ipdict:
+        _ip = iptools.parsed_ip(ip)
+        if _ip.valid:
+            if not _ip.public:
+                for sibling in _ip.iter_subnet():
+                    if sibling not in ipdict:
+                        tmp[sibling] = {'source': 'Generated'}
+    ipdict = tmp | ipdict   #populate ipdict with unused private ips
+
+    for ip in ipdict:
+        _ip = iptools.parsed_ip(ip)
         ipdict[ip]['nat'] = nat.lookup(ip)
         if ip in ptr:
             ipdict[ip]['ptr'] = ptr[ip]
+        ipdict[ip]['subnet'] = _ip.subnet
+        ipdict[ip]['o3'] = ip.split('.')[2]
+        ipdict[ip]['o3-4'] = '.'.join(ip.split('.')[2:4])
 
-        ip = iptools.parsed_ip(ip)
-        if ip.valid:
-            if not ip.public:
-                for sibling in ip.iter_subnet():
-                    if sibling not in ipdict:
-                        ipdict[sibling] = 'Generated'
-        
-        ipdict[ip.ipv4]['subnet'] = ip.subnet
-        ipdict[ip.ipv4]['o3'] = ip.ipv4.split('.')[2]
-        ipdict[ip.ipv4]['o3-4'] = '.'.join(ip.ipv4.split('.')[2:4])
 
     with open('src/nmap.xml', 'r') as stream:
         soup = BeautifulSoup(stream, features='xml')
