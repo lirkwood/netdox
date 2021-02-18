@@ -3,7 +3,7 @@ import iptools
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}):\d+\s+(?P<dest1>(\d{1,3}\.){3}\d{1,3})-(?P<dest2>(\d{1,3}\.){3}\d{1,3}).*')
 
-with open('nat.txt','r') as stream:
+with open('src/nat.txt','r') as stream:
     natDict = {}
     for line in stream.read().splitlines():
         match = re.match(patt_nat, line)
