@@ -48,6 +48,7 @@ function chooseAuth($name) {
     }
 }
 
+$sw = [Diagnostics.Stopwatch]::StartNew()
 
 $auth = Get-Content -Path "authentication.json" | ConvertFrom-Json
 
@@ -105,3 +106,6 @@ if ($? -eq 'True') {
 else {
     Write-Host "Docker build failed."
 }
+
+$sw.Stop()
+Write-Host $sw.Elapsed
