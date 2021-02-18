@@ -78,6 +78,13 @@ class parsed_ip:
             return False
         else:
             return True
+    
+    def iter_subnet(self):
+        bounds = subn_bounds(self.subnet)
+        upper = int(bounds['upper'], 2)
+        lower = int(bounds['lower'], 2)
+        for ip in range((upper - lower)+ 1):    #+1 to include upper bound as bounds are inclusive
+            yield binary2cidr(int2bin(ip+lower))
 
 
 
@@ -104,7 +111,7 @@ def valid_ip(ip):                                             #Requirements for 
     return True
 
 
-def to_binary(ip):
+def cidr2binary(ip):
     bin_ip = ''
     for octet in ip.split('.'):
         bin_ip += bin(int(octet))[2:].zfill(8) 
@@ -116,7 +123,7 @@ def subn_bounds(subnet):
     bounds = {}
 
     ip = subnet.split('/')[0]   #prefixes come in form x.x.x.x/mask
-    lower = to_binary(ip)
+    lower = cidr2binary(ip)
     bounds['lower'] = lower
 
     mask = int(subnet.split('/')[1])
@@ -124,7 +131,6 @@ def subn_bounds(subnet):
     upper = str(lower)
     upper = upper[:mask]
     for i in range(32 - mask):
-        i = i   #stop vscode showing a warning for unused var
         upper += '1'    #set all bits out of mask range
     bounds['upper'] = upper
 
@@ -141,7 +147,7 @@ def fetch_prefixes():
 
 
 def in_subnet(ip, subnet, verbose=False):
-    bin_ip = int(to_binary(ip), base=2)
+    bin_ip = int(cidr2binary(ip), base=2)
     bounds = subn_bounds(subnet)
     if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
         if verbose:
@@ -151,3 +157,16 @@ def in_subnet(ip, subnet, verbose=False):
         if verbose:
             print('IP Address {0} is outside subnet {1}.'.format(ip, subnet))
         return False
+
+def binary2cidr(bin_ip):
+    cache = ''
+    octets = []
+    for index in range(32):
+        cache += bin_ip[index]
+        if (index+1) %8 == 0:
+            octets.append(str(int(cache,2)))
+            cache = ''
+    return '.'.join(octets)
+
+def int2bin(i):
+    return bin(i).replace('0b','').zfill(32)
