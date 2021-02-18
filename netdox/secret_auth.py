@@ -1,18 +1,21 @@
 from bs4 import BeautifulSoup
 from getpass import getpass
-import requests, time
+import requests, time, json
 
 def refresh():
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Accept": 'application/json'
-    }  
-    params = {
-        "username": "lkirkwood",
-        "password": getpass('Secret Server Password: '),
-        "organization": "",
-        "domain": "allette"
     }
+    params={}
+    with open('src/authentication.json','r') as stream:
+        auth = json.load(stream)['Secret']
+        params = {
+            "username": auth['Username'],
+            "password": auth['Password'],
+            "organization": "",
+            "domain": "allette"
+        }
 
     r = requests.post('https://secret.allette.com.au/webservices/SSWebservice.asmx/Authenticate', headers=headers, data=params)
     try:
