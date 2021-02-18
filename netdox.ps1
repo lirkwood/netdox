@@ -59,7 +59,7 @@ if (($auth.XenOrchestra.Username -eq '') -or ($auth.XenOrchestra.Password -eq ''
 }
 
 
-$kubepath = Get-ChildItem $HOME ".kube" -Recurse -Exclude . -Directory -ErrorAction SilentlyContinue
+$kubepath = Get-ChildItem $HOME ".kube" -Recurse -Directory -ErrorAction SilentlyContinue
 # $kubepath = $kubepath.Replace('\','/')
 # $kubepath -match '[A-Z]:/' | Out-Null
 # $posixdrive = $Matches[0] | % {$_.Replace(':','')} | % {$_.ToLower()}
