@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import subprocess, json, os
 
 os.mkdir('out')
-for path in ('DNS', 'IPs', 'k8s', 'vms', 'hosts', 'pools'):
+for path in ('DNS', 'IPs', 'k8s', 'xo'):
     os.mkdir('out/'+path)
 
 print('Parsing ActiveDirectory response...')
