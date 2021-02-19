@@ -16,3 +16,5 @@ netdox/src/*
 !netdox/src/review.xml
 !netdox/src/node_deps.txt
 !netdox/src/nat.txt
+
+*.zip
