@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
-import subprocess, json
-import iptools
-import nat
+import json
+import iptools, nat
 
 def main(ipdict, ptr):
     tmp = {}
@@ -16,13 +15,13 @@ def main(ipdict, ptr):
 
     for ip in ipdict:
         _ip = iptools.parsed_ip(ip)
-        ipdict[ip]['nat'] = nat.lookup(ip)
+        ipnat = nat.lookup(ip)
+        if ipnat:
+            ipdict[ip]['nat'] = ipnat
         if ip in ptr:
             ipdict[ip]['ptr'] = ptr[ip]
         ipdict[ip]['subnet'] = _ip.subnet
-        ipdict[ip]['o3'] = ip.split('.')[2]
-        ipdict[ip]['o3-4'] = '.'.join(ip.split('.')[2:4])
-
+        ipdict[ip]['for-search'] = f"{ip.split('.')[2]}, {'.'.join(ip.split('.')[2:4])}"
 
     with open('src/nmap.xml', 'r') as stream:
         soup = BeautifulSoup(stream, features='xml')
