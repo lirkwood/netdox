@@ -36,10 +36,12 @@
                 <property name="network"               title="Network"          value="" />
                 <property name="subnet"               title="subnet"          value="{xpf:string[@key = 'subnet']}" />
                 <property name="ipv4"               title="IP"          value="{@key}" /> 
+                <xsl:for-each select="xpf:string[@key = 'nat']">
                 <property name="nat_dest" title="NAT Destination" datatype="xref">
-                    <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'nat'],'.','_')}"
+                    <xref frag="default" docid="_nd_{translate(.,'.','_')}"
                     reversetitle="NAT alias" />
                 </property>
+                </xsl:for-each>
                 <property name="source" title="Source" value="{xpf:string[@key = 'source']}" />
             </properties-fragment>
         
@@ -59,7 +61,7 @@
             </properties-fragment>
 
             <properties-fragment id="for-search" labels="s-hide-content">
-                <property name="octets" title="Octets for search" value="{concat(tokenize(.,'\.')[3], ', ', concat(tokenize(.,'\.')[3],'.',tokenize(.,'\.')[4]))}"/>
+                <property name="octets" title="Octets for search" value="{xpf:string[@key = 'for-search']}"/>
             </properties-fragment>
             
         </section> 
