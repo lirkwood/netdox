@@ -16,4 +16,7 @@ with open('src/nat.txt','r') as stream:
         natDict[alias.ipv4] = dest.ipv4
 
 def lookup(ip):
-    return natDict[ip]
+    if ip in natDict:
+        return natDict[ip]
+    else:
+        return None
