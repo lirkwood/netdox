@@ -53,9 +53,17 @@
           </properties-fragment>
           <properties-fragment id="location">
             <property name="xen_host"       title="Host machine"           datatype="xref">
-              <xsl:if test="xpf:string[@key='$container'] and (xpf:string[@key='power_state'] = 'Running')">
+              <xsl:if test="xpf:string[@key='$container']">
+                <xsl:choose>
+                  <xsl:when test="xpf:string[@key='power_state'] = 'Running'">
                 <xref type="none" display="document" docid="_nd_{xpf:string[@key='$container']}" frag="default"
                       reverselink="true" reversetitle="VMs on this host" reversetype="none" />
+                  </xsl:when>
+                  <xsl:otherwise>
+                <xref type="none" display="document" docid="_nd_{xpf:string[@key='$container']}" frag="default"
+                      reverselink="true" reversetitle="Halted/Suspended VMs in this pool" reversetype="none" />
+                  </xsl:otherwise>
+                </xsl:choose>
               </xsl:if>
             </property>
             <property name="xen_pool"            title="Pool"           datatype="xref">
