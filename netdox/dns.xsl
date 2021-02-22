@@ -29,10 +29,10 @@
                 <fragment id="title">
                 <xsl:choose>
                     <xsl:when test="contains($name, '_wildcard_')">
-                        <heading level="1">dns: <link href="https://{substring-after($name, '_wildcard_')}"><xsl:value-of select="replace($name,'_wildcard_','*.')"/></link></heading>
+                        <heading level="1">dns: <xsl:value-of select="replace($name,'_wildcard_','*.')"/></heading>
                     </xsl:when>
                     <xsl:otherwise>
-                        <heading level="1">dns: <link href="https://{$name}"><xsl:value-of select="$name"/></link></heading>
+                        <heading level="1">dns: <xsl:value-of select="$name"/></heading>
                     </xsl:otherwise>
                 </xsl:choose>
                 </fragment>
@@ -91,7 +91,7 @@
 
                 <fragment id="secrets">
                     <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
-                        <para><link href="https://secret.allette.com.au/app/#/secret/{@key}">"<xsl:value-of select="substring-before(.,';')"/>" on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</link></para>
+                        <para>"<xsl:value-of select="substring-before(.,';')"/>" on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</para>
                     </xsl:for-each>
                 </fragment>
 

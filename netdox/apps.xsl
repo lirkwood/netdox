@@ -73,11 +73,11 @@
                     <fragment id="links">
                     <xsl:for-each select="*//xpf:map[@key = 'containers']/xpf:string">
                         <xsl:if test="contains(.,'registry-gitlab.allette.com.au')">
-                        <para><link href="https://{substring-before(substring-after(.,'registry-'),':')}">Project on GitLab.</link></para>
+                        <para><xsl:value-of select="."/>Project on GitLab.</para>
                         </xsl:if>
                     </xsl:for-each>
                     <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
-                        <para><link href="{xpf:string[@key = 'rancher']}">Pod <xsl:value-of select="@key"/> on Rancher.</link></para>
+                        <para>Pod <xsl:value-of select="@key"/> on Rancher.</para>
                     </xsl:for-each>
                     </fragment>
                 

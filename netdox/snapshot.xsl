@@ -33,7 +33,7 @@
                 <xsl:for-each select="./xpf:map">
                 <fragment id="heading_{position()}">
                     <heading level='2'>
-                        <link href="https://{@key}"><xsl:value-of select="@key"/></link>
+                        <xsl:value-of select="@key"/>
                     </heading>
                 </fragment>
                 <properties-fragment id="info_{position()}">
