@@ -53,7 +53,7 @@
           </properties-fragment>
           <properties-fragment id="location">
             <property name="xen_host"       title="Host machine"           datatype="xref">
-              <xsl:if test="xpf:string[@key='$container']">
+              <xsl:if test="xpf:string[@key='$container'] and (xpf:string[@key='power_state'] = 'Running')">
                 <xref type="none" display="document" docid="_nd_{xpf:string[@key='$container']}" frag="default"
                       reverselink="true" reversetitle="VMs on this host" reversetype="none" />
               </xsl:if>
