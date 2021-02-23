@@ -502,3 +502,28 @@
 192.168.12.23:0	103.127.18.16-103.127.18.16(0:0)
 192.168.12.16:0	103.127.18.31-103.127.18.31(0:0)
 192.168.12.13:0	103.127.18.30-103.127.18.30(0:0)
+
+119.63.219.197 	192.168.200.216 	* 	gitlab.allette.com.au  	
+119.63.219.198 	192.168.20.29 	* 	lab.wipdoc.allette.com.au  	
+119.63.219.199 	192.168.20.232 	* 	stage.macmillan.pageseeder.net  	
+119.63.219.200 	192.168.200.32 	* 	hg.allette.com.au, hg.timebase.allette.com.au  	
+119.63.219.201 	192.168.200.154 	* 	icinga.allette.com.au  	
+119.63.219.202 	192.168.200.11 	* 	live3.pbs.gov.au  	
+119.63.219.203 	192.168.20.115 	* 	analytics.pbs.gov.au  	
+119.63.219.204 	192.168.20.220 	* 	smtp-staging.allette.net  	
+119.63.219.206 	192.168.200.12 	* 	stage-mps4.pbs.gov.au  	
+119.63.219.207 	192.168.200.14 	* 	bus-ps.pbs.gov.au  	
+119.63.219.208 	192.168.200.16 	* 	pico.allette.com.au  	
+119.63.219.209 	192.168.200.21 	* 	ps.allette.com.au  	
+119.63.219.210 	192.168.200.158 	* 	demo.pageseeder.com  	
+119.63.219.211 	192.168.200.143 	* 	ps-doc.allette.com.au  	
+119.63.219.212 	192.168.200.144 	* 	ps-staging.allette.com.au  	
+119.63.219.213 	192.168.20.224 	* 	secret.allette.com.au  	
+119.63.219.214 	192.168.200.217 	* 	imgop.allette.com.au  	
+119.63.219.215 	192.168.200.100 	* 	philip-pc.ad.allette.com.au  	
+119.63.219.216 	192.168.200.13 	* 	ato2.allette.com.au  	
+119.63.219.217 	192.168.200.210 	* 	postgresql.allette.com.au  	
+119.63.219.220 	192.168.200.229 	* 	analytics.allette.com.au  	
+119.63.219.221 	192.168.200.247 	* 	01-sdbx.proxy.allette.com.au  	
+119.63.219.222 	192.168.200.246 	* 	rancher.allette.com.au  	
+119.63.219.223 	192.168.200.247 	* 	01-sdbx.proxy.allette.com.au  	
