@@ -28,10 +28,10 @@ $list = "ad.allette.com.au",
 "SY4",
 "tekreader.com.internal"
 
-if (-Not (Test-Path -Path "src\records")) {
-    New-Item -Path "src" -Name "records" -ItemType "directory" | Out-Null
+if (-Not (Test-Path -Path "netdox\src\records")) {
+    New-Item -Path "netdox\src" -Name "records" -ItemType "directory" | Out-Null
 }
 
 foreach ($zone in $list) {
-    Get-DnsServerResourceRecord -ZoneName $zone -ComputerName "ad.allette.com.au" | ConvertTo-Json -Depth 10 | Out-File -width 300 -FilePath "src\records\$zone.json"
+    Get-DnsServerResourceRecord -ZoneName $zone -ComputerName "ad.allette.com.au" | ConvertTo-Json -Depth 10 | Out-File -width 300 -FilePath "netdox\src\records\$zone.json"
 }
