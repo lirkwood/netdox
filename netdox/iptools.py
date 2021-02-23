@@ -13,6 +13,7 @@ class parsed_ip:
             self.ipv4 = None
             self.binary = None
             self.subnet = None
+            self.octets = None
 
 
     def to_binary(self):
@@ -91,6 +92,7 @@ class parsed_ip:
         a = []
         for o in self.ipv4.split('.'):
             a.append(o)
+        return a
 
 
 
