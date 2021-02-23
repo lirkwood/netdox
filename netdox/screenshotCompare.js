@@ -35,9 +35,9 @@ async function imgdiff(array) {
     const page = await browser.newPage();
     const url = urlList[index]
     if (url.includes('https')) {
-      var path = '_nd_img_'.concat(url.replace('https://','').replace(/\./g,'_').concat('.png'))
+      var path = url.replace('https://','').replace(/\./g,'_').concat('.png')
     } else {
-      var path = '_nd_img_'.concat(url.replace('http://','').replace(/\./g,'_').concat('.png'))
+      var path = url.replace('http://','').replace(/\./g,'_').concat('.png')
     }
     try{
       await page.goto(url);

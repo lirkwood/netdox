@@ -80,7 +80,7 @@ def main():
             if not os.path.exists('out/screenshots/{0}.png'.format(docid)):
                 shutil.copy('src/placeholder.png', 'out/screenshots/{0}.png'.format(docid))
 
-        subprocess.run('xslt -xsl:status.xsl -s:src/review.xml -o:out/_nd_status_update.psml', shell=True)
+        subprocess.run('xslt -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
         # run xsl to generate daily status update
         print('Status update file generated.')
         print('Archiving old review images...')
