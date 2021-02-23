@@ -8,6 +8,7 @@ class parsed_ip:
             self.binary = self.to_binary()
             self.subnet = self.sort()
             self.public = self.is_public()
+            self.octets = self._octets()
         else:
             self.ipv4 = None
             self.binary = None
@@ -85,6 +86,11 @@ class parsed_ip:
         lower = int(bounds['lower'], 2)
         for ip in range((upper - lower)+ 1):    #+1 to include upper bound as bounds are inclusive
             yield binary2cidr(int2bin(ip+lower))
+
+    def _octets(self):
+        a = []
+        for o in self.ipv4.split('.'):
+            a.append(o)
 
 
 
