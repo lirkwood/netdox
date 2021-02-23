@@ -7,7 +7,7 @@ def main(ipdict, ptr):
     for ip in ipdict:
         _ip = iptools.parsed_ip(ip)
         if _ip.valid:
-            if not _ip.public:
+            if (not _ip.public) or _ip.in_subnet('103.127.18.0/24') or _ip.in_subnet('119.63.219.195/26'):
                 for sibling in _ip.iter_subnet():
                     if sibling not in ipdict:
                         tmp[sibling] = {'source': 'Generated'}
@@ -21,6 +21,7 @@ def main(ipdict, ptr):
         if ip in ptr:
             ipdict[ip]['ptr'] = ptr[ip]
         ipdict[ip]['subnet'] = _ip.subnet
+        ipdict[ip]['network'] = f'{_ip.octets[0]}.{_ip.octets[1]}.0.0/16'
         ipdict[ip]['for-search'] = f"{ip.split('.')[2]}, {'.'.join(ip.split('.')[2:4])}"
 
     with open('src/nmap.xml', 'r') as stream:
