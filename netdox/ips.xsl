@@ -33,7 +33,7 @@
         <section id="details" title="details">
         
             <properties-fragment id="addresses">
-                <property name="network"               title="Network"          value="" />
+                <property name="network"               title="Network"          value="{xpf:string[@key = 'network']}" />
                 <property name="subnet"               title="subnet"          value="{xpf:string[@key = 'subnet']}" />
                 <property name="ipv4"               title="IP"          value="{@key}" /> 
                 <xsl:for-each select="xpf:string[@key = 'nat']">
