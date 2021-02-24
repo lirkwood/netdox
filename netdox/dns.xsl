@@ -89,9 +89,6 @@
                     </block>
                 </fragment>
 
-                <properties-fragment id="assoc">
-                </properties-fragment>
-
                 <fragment id="secrets">
                     <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
                         <para>"<xsl:value-of select="substring-before(.,';')"/>" on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</para>
