@@ -1,49 +1,85 @@
-import requests
-from secret_auth import auth
 from bs4 import BeautifulSoup
+from getpass import getpass
+import requests, time, json
+
+def refresh():
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": 'application/json'
+    }
+    params={}
+    with open('src/authentication.json','r') as stream:
+        auth = json.load(stream)['Secret']
+        params = {
+            "username": auth['Username'],
+            "password": auth['Password'],
+            "organization": "",
+            "domain": "allette"
+        }
+
+    r = requests.post('https://secret.allette.com.au/webservices/SSWebservice.asmx/Authenticate', headers=headers, data=params)
+    try:
+        soup = BeautifulSoup(r.text, features='xml')
+        with open('src/secret_token.txt','w') as stream:
+            stream.write(soup.Token.string)
+            stream.write(f'\n{int(time.time())}')
+            return soup.Token.string
+    except Exception as e:
+        print(e)
+        return e
+
+def auth():
+    try:
+        with open('src/secret_token.txt','r') as stream:
+            token = stream.readline().strip()
+            last = stream.readline()
+            if int(last) > (time.time() - 7200):
+                return token
+            else:
+                return refresh()
+    except FileNotFoundError:
+        return refresh()
 
 api = 'https://secret.allette.com.au/webservices/SSWebservice.asmx'
 headers = {
         'Host': 'secret.allette.com.au',
-        'Content-Type': 'text/xml',
+        'Content-Type': 'application/x-www-form-urlencoded',
 }
 
-def searchSecrets(term=None, field=None, settings={}):
-    with open('src/soap.xml','r') as stream:
-        soup = BeautifulSoup(stream.read(), features='xml')  #body and envelope
-        soup.token.string = auth()
-
-        for setting in settings:
-            t = soup.new_tag(setting)
-            t.string = settings[setting]
-            soup.param.insert_after(t)
-
-        if not field:
-            soup.operation.name = 'SearchSecrets'
+def searchSecrets(term=None, field=None, exposed=True, partial=False):
+    params = {}
+    if term:
+        params['searchTerm'] = term
+        if field:
+            params['fieldName'] = field
+            params['showDeleted'] = 'false'
+            params['showRestricted'] = 'true'
+            if exposed:
+                action = 'SearchSecretsByExposedFieldValue'
+                if partial:
+                    params['showPartialMatches'] = 'true'
+                else:
+                    params['showPartialMatches'] = 'false'
+            else:
+                action = 'SearchSecretsByFieldValue'
         else:
-            soup.operation.append(soup.new_tag('fieldName'))
-            soup.operation.name = 'SearchSecretsByFieldValue'
-            soup.fieldName.string = field
-        soup.param.name = 'searchTerm'
+            action = 'SearchSecrets'
+            params['includeDeleted'] = 'false'
+            params['includeRestricted'] = 'true'
+    
+    return query(action, params)
+    
+# defaults = {
 
-        if term:
-            soup.searchTerm.string = term
-        r = requests.post(api, headers=headers, data=bytes(str(soup), encoding='utf-8'))
-        return r
+# }
 
-def getSecret(id, settings={}):
-    with open('soap.xml','r') as stream:
-        soup = BeautifulSoup(stream.read(), features='xml')  #body and envelope
-        soup.token.string = auth()
-        
-        for setting in settings:
-            t = soup.new_tag(setting)
-            t.string = settings[setting]
-            soup.param.insert_after(t)
+def query(action, params={}):
 
-        soup.operation.name = 'GetSecret'
-        soup.param.name = 'secretId'
-        soup.secretId.string = str(id)
+    url = api +'/'+ action
 
-        r = requests.post(api, headers=headers, data=bytes(str(soup), encoding='utf-8'))
-        return r
+    body = f'token={auth()}'
+    for param in params:
+        body += f'&{param}={params[param]}'
+
+    r = requests.post(url, headers=headers, data=bytes(body, encoding='utf-8'))
+    return r
