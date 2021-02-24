@@ -52,7 +52,7 @@
             </properties-fragment>
 
             <properties-fragment id="reversedns">
-            <xsl:for-each select="xpf:map[@key = 'ptr']">
+            <xsl:for-each select="xpf:array[@key = 'ptr']/xpf:string">
                 <property name="ptr" title="Reverse DNS Record" datatype="xref">
                     <xref frag="default" docid="_nd_{translate(.,'.','_')}"
                     reversetitle="Reverse DNS destination" />
