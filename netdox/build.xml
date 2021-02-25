@@ -1,0 +1,15 @@
+<project name="pageseeder-upload" default="psml-zip"
+         xmlns:ps="antlib:com.pageseeder.publishapi.ant">   
+  <target name="psml-zip" description="ZIP file containing PSML">
+    <ps:config file="pageseeder.properties" />
+    <ps:upload group="operations-network"
+               folder="website"
+               overwriteproperties="true"
+               overwrite="true"
+               unzip="true">
+      <fileset dir="out">
+        <include name="netdox-src.zip"/>
+      </fileset>
+    </ps:upload>
+  </target>
+</project>

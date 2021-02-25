@@ -108,32 +108,45 @@ for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if 
 ]>
 <{type}>&json;</{type}>""")
 
+xslt = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
 
-
-subprocess.run('xslt -xsl:dns.xsl -s:src/dns.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:dns.xsl -s:src/dns.xml', shell=True)
 
 print('DNS documents done')
 
 import ip_inf
 ip_inf.main(ipdict, ptr)
-subprocess.run('xslt -xsl:ips.xsl -s:src/ips.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:ips.xsl -s:src/ips.xml', shell=True)
 
 print('IP documents done')
 
-subprocess.run('xslt -xsl:clusters.xsl -s:src/workers.xml', shell=True)
-subprocess.run('xslt -xsl:workers.xsl -s:src/workers.xml', shell=True)
-subprocess.run('xslt -xsl:apps.xsl -s:src/apps.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:clusters.xsl -s:src/workers.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:workers.xsl -s:src/workers.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:apps.xsl -s:src/apps.xml', shell=True)
 
 print('Kubernetes documents done')
 
-subprocess.run('xslt -xsl:pools.xsl -s:src/pools.xml', shell=True)
-subprocess.run('xslt -xsl:hosts.xsl -s:src/hosts.xml', shell=True)
-subprocess.run('xslt -xsl:vms.xsl -s:src/vms.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:pools.xsl -s:src/pools.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:hosts.xsl -s:src/hosts.xml', shell=True)
+subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('Xen Orchestra documents done')
 print('Testing domains...')
 import linktools
 linktools.main()
 
+# load pageseeder properties and auth info
+with open('pageseeder.properties','r') as f: properties = f.read()
+with open('src/authentication.json','r') as f:
+    auth = json.load(f)['PageSeeder']
 
-subprocess.run('bash -c "cd /opt/app/out && zip -r -q /netdox-src.zip *"', shell=True)
+# if property is defined in authentication.json use that value
+with open('pageseeder.properties','w') as stream:
+    for line in properties.splitlines():
+        property = line.split('=')[0]
+        if property in auth:
+            stream.write(f'{property}={auth[property]}')
+        else:
+            stream.write(line)
+
+subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
