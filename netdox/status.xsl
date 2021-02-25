@@ -25,7 +25,7 @@
     <xsl:for-each select="json-to-xml(root)/xpf:map/xpf:string">
         <properties-fragment id="{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
-                <xref frag="default" reversetitle="Status Update" docid="{substring-before(concat(substring-before(@key, 'img_'),substring-after(@key, 'img_')),'.png')}" />
+                <xref frag="default" reversetitle="Status Update" docid="{substring-before(@key,'.png')}" />
             </property>
         <xsl:choose>
             <xsl:when test=". = 'imgdiff'">

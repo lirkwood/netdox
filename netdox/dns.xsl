@@ -93,7 +93,7 @@
                     <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
                         <para><link href="https://secret.allette.com.au/app/#/secret/{@key}/general">"<xsl:value-of select="substring-before(.,';')"/>" on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</link></para>
                     </xsl:for-each>
-                    <para><link href="https://graylogiv.allette.com.au/search?q=%22{$name}%22&rangetype=relative&relative=3600"/>Last hour of logs on Graylog.</para>
+                    <para><link href="https://graylogiv.allette.com.au/search?q=%22{$name}%22&amp;rangetype=relative&amp;relative=3600">Last hour of logs on Graylog.</link></para>
                 </fragment>
 
                 <properties-fragment id="for-search" labels="s-hide-content">

@@ -76,7 +76,7 @@ def main():
             img.save('out/screenshots/'+ file.name)
 
         for url in dead:  #copy placeholder for all docs with no image 
-            docid = '_nd_img_'+ url.split('://')[1].replace('.','_')
+            docid = url.split('://')[1].replace('.','_')
             if not os.path.exists('out/screenshots/{0}.png'.format(docid)):
                 shutil.copy('src/placeholder.png', 'out/screenshots/{0}.png'.format(docid))
 
