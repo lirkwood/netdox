@@ -3,13 +3,13 @@ import requests, json
 def token():
     try:
         with open('src/authentication.json','r') as stream:
-            credentials = json.load(stream)['PageSeeder']
+            credentials = json.load(stream)['pageseeder']
             print('Requesting new access token...')
             url = 'https://ps-doc.allette.com.au/ps/oauth/token'
             header = {
                 'grant_type': 'client_credentials',
-                'client_id': credentials['ID'],
-                'client_secret': credentials['Secret']
+                'client_id': credentials['id'],
+                'client_secret': credentials['secret']
             }
 
             r = requests.post(url, params=header)

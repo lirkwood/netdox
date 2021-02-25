@@ -195,8 +195,8 @@ def worker2app(master):
                     _workers[appinf['nodename']]['apps'].append(app)
             with open('src/authentication.json','r') as auth:
                 details = json.load(auth)
-                user = details['XenOrchestra']['Username']
-                password = details['XenOrchestra']['Password']
+                user = details['xenorchestra']['username']
+                password = details['xenorchestra']['password']
                 try:
                     subprocess.run('xo-cli --register https://xosy4.allette.com.au '+ user +' '+ password, shell=True, check=True, stderr=subprocess.DEVNULL)
                     for context in workers:

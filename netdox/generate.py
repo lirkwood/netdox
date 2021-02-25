@@ -138,7 +138,7 @@ linktools.main()
 # load pageseeder properties and auth info
 with open('pageseeder.properties','r') as f: properties = f.read()
 with open('src/authentication.json','r') as f:
-    auth = json.load(f)['PageSeeder']
+    auth = json.load(f)['pageseeder']
 
 # if property is defined in authentication.json use that value
 with open('pageseeder.properties','w') as stream:

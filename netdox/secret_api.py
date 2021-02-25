@@ -9,10 +9,10 @@ def refresh():
     }
     params={}
     with open('src/authentication.json','r') as stream:
-        auth = json.load(stream)['Secret']
+        auth = json.load(stream)['secret']
         params = {
-            "username": auth['Username'],
-            "password": auth['Password'],
+            "username": auth['username'],
+            "password": auth['password'],
             "organization": "",
             "domain": "allette"
         }

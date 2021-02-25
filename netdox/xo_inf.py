@@ -2,9 +2,9 @@ import sys, subprocess, json
 import iptools
 
 authstream = open('src/authentication.json','r')
-auth = json.load(authstream)['XenOrchestra']
+auth = json.load(authstream)['xenorchestra']
 args = {
-    'register': ['xo-cli', '--register', 'https://xo.allette.com.au', auth['Username'], auth['Password']],
+    'register': ['xo-cli', '--register', 'https://xo.allette.com.au', auth['username'], auth['password']],
     'pools': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--master', 'type=pool'],
     'hosts': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--hostname', '--address', '--CPUs', '--$pool', '--power_state', 'type=host'],
     'vms': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--addresses', '--os_version', '--$container', '--$pool', '--power_state', 'type=VM'],

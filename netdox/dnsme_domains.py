@@ -84,8 +84,8 @@ def main():
 def genheader():
 	with open('src/authentication.json','r') as stream:
 		keys = json.load(stream)
-		api = keys['DNSMadeEasy']['API']
-		secret = keys['DNSMadeEasy']['Secret']
+		api = keys['dnsmadeeasy']['api']
+		secret = keys['dnsmadeeasy']['secret']
 		if api != '' and secret != '':
 			time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
 			hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()

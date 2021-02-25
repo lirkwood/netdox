@@ -1,14 +1,21 @@
 {
-    "DNSMadeEasy": {
-        "API": "",
-        "Secret": ""
+    "dnsmadeeasy": {
+        "api": "",
+        "secret": ""
     },
-    "XenOrchestra": {
-        "Username": "",
-        "Password": ""
+    "xenorchestra": {
+        "username": "",
+        "password": ""
     },
-    "PageSeeder": {
-        "ID": "",
-        "Secret": ""
+    "pageseeder": {
+        "id": "",
+        "secret": "",
+        "username": "",
+        "password": "",
+        "host": ""
+    },
+    "secret": {
+        "username": "",
+        "password": ""
     }
 }
