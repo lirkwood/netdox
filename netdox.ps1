@@ -102,8 +102,9 @@ Write-Host "Building Docker image..."
 docker build -t netdox --build-arg _kubeconfig=$KUBECONFIG .
 
 if ($? -eq 'True') {
+    docker container rm netdox | Out-Null
     Write-Host "Build successful. Starting container..."
-    docker run -it netdox | Write-Host
+    docker run -it --name netdox netdox | Write-Host
 }
 else {
     Write-Host "Docker build failed."
