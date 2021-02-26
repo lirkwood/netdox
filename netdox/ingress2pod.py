@@ -149,10 +149,17 @@ def mapworkers(pdict, dns):
             if worker in domain:
                 tmp[worker] = domain
     workers = dict(tmp)
+    with open('src/authentication.json') as authstream:
+        auth = json.load(authstream)['xenorchestra']
+        subprocess.run(['xo-cli', '--register', 'https://xo.allette.com.au', auth['username'], auth['password']])
 
     for context in pdict:
         for domain in pdict[context]:
             pdict[context][domain]['worker'] = workers[pdict[context][domain]['nodename']]
+
+            xo_query = subprocess.run([f'xo-cli --list-objects type=VM mainIpAddress={pdict[context][domain]["hostip"]}'], stdout=subprocess.PIPE)
+            vm_inf = json.loads(xo_query)[0]
+            pdict[context][domain]['vm'] = vm_inf['uuid']
     
     return pdict
 
@@ -230,13 +237,7 @@ def proceed():
 
 
 def main(dns):
-    # try:
     idict = ingress()
-    # except subprocess.CalledProcessError:
-    #     if proceed():
-    #         return {}
-    #     else:
-    #         quit()
     sdict = service(idict)
     pdict = pods(sdict)
     master = mapworkers(pdict, dns)

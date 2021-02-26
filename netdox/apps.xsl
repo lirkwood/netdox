@@ -16,7 +16,6 @@
 </xsl:template>
 
 <xsl:template match="xpf:map">
-    <xsl:param name="context"/>
     <xsl:try>
         <xsl:result-document href="out/k8s/{@key}.psml">
             <document level="portable" type="k8s_app">
@@ -50,8 +49,11 @@
                     </properties-fragment>
                     
                     <properties-fragment id="kube_worker">
-                        <property name="worker_name" title="Worker Name" value="{xpf:string[@key = 'nodename']}" />
-                        <property name="worker_host" title="Worker Hostname" datatype="xref">
+                        <property name="worker_vm" title="Worker VM" datatype="xref" >
+                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
+                            reversetitle="App running on this VM"/>
+                        </property>
+                        <property name="worker_hostname" title="Worker Hostname" datatype="xref">
                             <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'worker'],'.','_')}"  
                                 reversetitle="App running on this worker"/>
                         </property>
