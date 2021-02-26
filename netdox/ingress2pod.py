@@ -149,16 +149,16 @@ def mapworkers(pdict, dns):
             if worker in domain:
                 tmp[worker] = domain
     workers = dict(tmp)
-    with open('src/authentication.json') as authstream:
+    with open('src/authentication.json','r') as authstream:
         auth = json.load(authstream)['xenorchestra']
-        subprocess.run(['xo-cli', '--register', 'https://xo.allette.com.au', auth['username'], auth['password']])
+        subprocess.run(['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']])
 
     for context in pdict:
         for domain in pdict[context]:
             pdict[context][domain]['worker'] = workers[pdict[context][domain]['nodename']]
 
-            xo_query = subprocess.run([f'xo-cli --list-objects type=VM mainIpAddress={pdict[context][domain]["hostip"]}'], stdout=subprocess.PIPE)
-            vm_inf = json.loads(xo_query)[0]
+            xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={pdict[context][domain]["hostip"]}'], stdout=subprocess.PIPE)
+            vm_inf = json.loads(xo_query.stdout)[0]
             pdict[context][domain]['vm'] = vm_inf['uuid']
     
     return pdict
