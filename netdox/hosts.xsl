@@ -18,7 +18,7 @@
     <xsl:result-document href="out/xo/{translate($label,'.','_')}.psml" method="xml" indent="yes">
       <document type="xo_host" level="portable">
         <documentinfo>
-          <uri title="{$label}" docid="_nd_{$uuid}"><labels>show-reversexrefs</labels></uri>
+          <uri title="host: {$label}" docid="_nd_{$uuid}"><labels>show-reversexrefs</labels></uri>
         </documentinfo>
 
         <metadata>
@@ -29,7 +29,7 @@
 	
         <section id="details">
         	<fragment id="title">
-            <heading level="1">Host: <xsl:value-of select="$label" /></heading>
+            <heading level="1">host: <xsl:value-of select="$label" /></heading>
         	</fragment>
           <properties-fragment id="core">
             <property name="name-label"         title="Label"          value="{$label}" />
