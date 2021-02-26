@@ -35,7 +35,7 @@ def extract(path):
                         ip = item['Value'].strip('.')
 
                 if hostname not in forward:
-                    forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': []}, 'root': domain, 'source': 'ActiveDirectory'}
+                    forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': []}, 'root': domain, 'source': 'ActiveDirectory'}
                 forward[hostname]['dest']['ips'].append(ip)
 
             elif record['RecordType'] == 'CNAME':
@@ -59,7 +59,7 @@ def extract(path):
                             dest = dest.strip('.')
             
                 if hostname not in forward:
-                    forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': []}, 'root': domain, 'source': 'ActiveDirectory'}
+                    forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': []}, 'root': domain, 'source': 'ActiveDirectory'}
                 forward[hostname]['dest']['domains'].append(dest)
             
             elif record['RecordType'] == 'PTR':
