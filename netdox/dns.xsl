@@ -85,7 +85,7 @@
 
                 <fragment id="screenshot" labels="text-align-center">
                     <block label="border-2">
-                        <image src="/ps/operations/network/website/screenshots/_nd_img_{translate($name,'.','_')}.png"/>
+                        <image src="/ps/operations/network/website/screenshots/{translate($name,'.','_')}.png"/>
                     </block>
                 </fragment>
 
