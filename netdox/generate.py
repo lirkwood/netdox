@@ -56,10 +56,6 @@ for ip in dnsme_r:
     else:
         ptr[ip] = dnsme_r[ip]
 
-print('Querying Xen Orchestra...')
-xo_inf.main()
-print('Parsing Xen Orchestra response...')
-
 
 ipdict = {}
 for domain in master:   #adding subnets and sorting public/private ips
@@ -83,6 +79,19 @@ for domain in master:   #adding subnets and sorting public/private ips
             master[domain]['dest']['ips']['public'].append(ip.ipv4)
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
+
+print('Querying Xen Orchestra...')
+xo_inf.main(master)
+print('Parsing Xen Orchestra response...')
+
+# search for VMs
+for domain in master:
+    for ip in master[domain]['dest']['ips']['private']:
+        xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
+        for vm in json.loads(xo_query):
+            master[domain]['dest']['vms'].append(vm['uuid'])
+
+
 
 print('Searching secret server for secrets...')
 

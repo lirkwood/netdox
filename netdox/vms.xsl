@@ -35,6 +35,12 @@
             <property name="name-label"         title="Label"          value="{xpf:string[@key='name_label']}" />
             <property name="name-description"   title="Description"   value="{xpf:string[@key='name_description']}" />
             <property name="uuid"               title="UUID"          value="{xpf:string[@key='uuid']}" />
+            <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
+              <property name="domain" title="Domain" datatype="xref">
+                <xref frag="default" docid="_nd_{translate(.,'.','_')}"
+                reversetitle="VM exposed by this domain"/>
+              </property>
+            </xsl:for-each>
           </properties-fragment>
           <properties-fragment id="addresses">
             <property name="ipv4"               title="IPv4"          datatype="xref" >

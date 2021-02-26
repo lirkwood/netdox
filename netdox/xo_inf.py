@@ -4,17 +4,17 @@ import iptools
 authstream = open('src/authentication.json','r')
 auth = json.load(authstream)['xenorchestra']
 args = {
-    'register': ['xo-cli', '--register', 'https://xo.allette.com.au', auth['username'], auth['password']],
+    'register': ['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']],
     'pools': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--master', 'type=pool'],
     'hosts': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--hostname', '--address', '--CPUs', '--$pool', '--power_state', 'type=host'],
-    'vms': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--addresses', '--os_version', '--$container', '--$pool', '--power_state', 'type=VM'],
+    'vms': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--mainIpAddress', '--addresses', '--os_version', '--$container', '--$pool', '--power_state', 'type=VM'],
     'aws': ['/usr/local/bin/aws','ec2','describe-instances','--profile','oup','--output','json','--query','Reservations[*].Instances[*].{Name:Tags[?Key==`Name`]|[0].Value,Environment:Tags[?Key==`environment`]|[0].Value,InstanceId:InstanceId,InstanceType:InstanceType,AvailabilityZone:Placement.AvailabilityZone,PrivateIpAddress:PrivateIpAddress,PublicIpAddress:PublicIpAddress}']
 }
 pools = {}
 controllers = set()
 hosts = {}
 
-def main():
+def main(dns):
     subprocess.run(args['register'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     for type in ('pools', 'hosts', 'vms'): #temporarily removed 'aws'
         with open(f'src/{type}.json', 'w+') as stream:
@@ -46,6 +46,11 @@ def main():
                         vm['subnet'] = ipv4.subnet
                     except:
                         print(f'VM {vm["name_label"]} has no ipv4.', file=sys.stderr)
+
+                    vm['domains'] = []
+                    for domain in dns:
+                        if vm['mainIpAddress'] in dns[domain]['dest']['ips']['private']:
+                            vm['domains'].append(domain)
 
             stream.write(json.dumps(jsondata, indent=2))
 
