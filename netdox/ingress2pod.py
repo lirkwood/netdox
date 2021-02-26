@@ -106,18 +106,23 @@ def pods(sdict):
                     else:
                         appname = labels['app.kubernetes.io/instance']
                 except KeyError:
-                    # print('Discovered system pod. Ignoring...')
+                    # Discovered system pod. Ignoring...
                     appname = None
                 podname = pod['metadata']['name']
                 if appname:
                     if appname not in pdict[c]:
-                        pdict[c][appname] = {}
-                        pdict[c][appname]['pods'] = {}
+                        pdict[c][appname] = {'pods': {}}
                     pdict[c][appname]['pods'][podname] = {}
                     _pod = pdict[c][appname]['pods'][podname]
-                    nodename = pod['spec']['nodeName']
-                    hostip = pod['status']['hostIP']
-                    workers.append(nodename)
+                    try:
+                        nodename = pod['spec']['nodeName']
+                        hostip = pod['status']['hostIP']
+                        workers.append(nodename)
+                    except KeyError as e:
+                        if pod['status']['phase'] != 'Running':
+                            print(f'[INFO][ingress2pod.py] Pod {podname} not running.')
+                        else:
+                            raise e
                     try:
                         pdict[c][appname]['nodename'] = nodename
                         pdict[c][appname]['hostip'] = hostip
