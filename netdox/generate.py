@@ -148,5 +148,6 @@ with open('pageseeder.properties','w') as stream:
             stream.write(f'{property}={auth[property]}')
         else:
             stream.write(line)
+        stream.write('\n')
 
 subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
