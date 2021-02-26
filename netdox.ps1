@@ -48,6 +48,8 @@ function chooseAuth($name) {
     }
 }
 
+Start-Transcript -IncludeInvocationHeader -Path netdox-log.txt
+
 $sw = [Diagnostics.Stopwatch]::StartNew()
 
 $auth = Get-Content -Path "authentication.json" | ConvertFrom-Json
@@ -101,7 +103,7 @@ docker build -t netdox --build-arg _kubeconfig=$KUBECONFIG .
 
 if ($? -eq 'True') {
     Write-Host "Build successful. Starting container..."
-    docker run -it netdox
+    docker run -it netdox | Write-Host
 }
 else {
     Write-Host "Docker build failed."
@@ -109,3 +111,4 @@ else {
 
 $sw.Stop()
 Write-Host $sw.Elapsed
+Stop-Transcript

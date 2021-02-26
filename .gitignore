@@ -18,3 +18,4 @@ netdox/src/*
 !netdox/src/nat.txt
 
 *.zip
+*log.txt
