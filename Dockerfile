@@ -63,11 +63,7 @@ RUN pip install lxml
 RUN pip install requests
 RUN pip install Pillow
 
-#pass paths to any files in .kube with config in name
-ARG _kubeconfig
-ENV KUBECONFIG=${_kubeconfig}
 WORKDIR /opt/app
-COPY .kube /usr/.kube
 
 #install puppeteer deps and a few others
 RUN apt-get install --no-install-recommends -y gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3\
@@ -85,10 +81,15 @@ RUN rm -rf /var/lib/apt/lists/* && \
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
 
+#pass paths to any files in .kube with config in name
+ARG _kubeconfig
+ENV KUBECONFIG=${_kubeconfig}
+COPY .kube /usr/.kube
+
 #copy auth details
 COPY authentication.json /opt/app/src
 
 #copy repo
 COPY netdox /opt/app
 
-CMD [ "bash" ]
+CMD [ "python3", "generate.py" ]
