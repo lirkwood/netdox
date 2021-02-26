@@ -48,9 +48,10 @@ def main(dns):
                         print(f'VM {vm["name_label"]} has no ipv4.', file=sys.stderr)
 
                     vm['domains'] = []
-                    for domain in dns:
-                        if vm['mainIpAddress'] in dns[domain]['dest']['ips']['private']:
-                            vm['domains'].append(domain)
+                    if 'mainIpAddress' in vm:
+                        for domain in dns:
+                            if vm['mainIpAddress'] in dns[domain]['dest']['ips']['private']:
+                                vm['domains'].append(domain)
 
             stream.write(json.dumps(jsondata, indent=2))
 
