@@ -75,6 +75,11 @@
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this app"/>
                     </property>
                 </xsl:for-each>
+                <xsl:for-each select="xpf:map/xpf:array[@key = 'vms']/xpf:string">
+                    <property name="vm" title="VM" datatype="xref">
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this VM"/>
+                    </property>
+                </xsl:for-each>
                 </properties-fragment>
                 
                 <properties-fragment id="subnets">
