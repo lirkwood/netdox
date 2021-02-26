@@ -80,13 +80,10 @@ def main():
             if not os.path.exists('out/screenshots/{0}.png'.format(docid)):
                 shutil.copy('src/placeholder.png', 'out/screenshots/{0}.png'.format(docid))
 
-        subprocess.run('xslt -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
+        xslt = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
+        subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
         # run xsl to generate daily status update
         print('Status update file generated.')
-        print('Archiving old review images...')
-
-        archive(urimap['review'])
-        print('Done.')
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
