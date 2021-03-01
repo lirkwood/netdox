@@ -1,8 +1,6 @@
 import ad_domains
 import dnsme_domains
 import k8s_domains
-import xo_inf
-import ingress2pod
 import iptools
 
 from bs4 import BeautifulSoup
@@ -48,12 +46,13 @@ for domain in dnsme_f:
         master[domain] = dnsme_f[domain]
 
 try:
+    import k8s_inf
     print('[INFO][generate.py] Querying Kubernetes...')
-    ingress2pod.main(master)
+    k8s_inf.main(master)
 except Exception as e:
-    print('[ERROR][ingress2pod.py] Kubernetes query threw an exception:')
+    print('[ERROR][k8s_inf.py] Kubernetes query threw an exception:')
     print(e)
-    print('[ERROR][ingress2pod.py] ****END****')
+    print('[ERROR][k8s_inf.py] ****END****')
 
 try:
     k8s = k8s_domains.main()
@@ -104,6 +103,7 @@ for domain in master:   #adding subnets and sorting public/private ips
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
 try:
+    import xo_inf
     print('[INFO][generate.py] Querying Xen Orchestra...')
     xo_inf.main(master)
     print('[INFO][generate.py] Parsing Xen Orchestra response...')

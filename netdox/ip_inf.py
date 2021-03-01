@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import json
-import iptools, nat
+import iptools, nat_inf
 
 def main(ipdict, ptr):
     tmp = {}
@@ -15,7 +15,7 @@ def main(ipdict, ptr):
 
     for ip in ipdict:
         _ip = iptools.parsed_ip(ip)
-        ipnat = nat.lookup(ip)
+        ipnat = nat_inf.lookup(ip)
         if ipnat:
             ipdict[ip]['nat'] = ipnat
         if ip in ptr:

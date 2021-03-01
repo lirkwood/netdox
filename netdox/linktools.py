@@ -5,12 +5,12 @@ import subprocess
 import requests
 import shutil
 import json
-import auth
+import ps_auth
 import os
 
 
 header = {
-    'authorization': 'Bearer {0}'.format(auth.token())
+    'authorization': 'Bearer {0}'.format(ps_auth.token())
 }
 base = 'https://ps-doc.allette.com.au/ps/service'
 
