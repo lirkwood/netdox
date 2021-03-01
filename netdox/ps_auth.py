@@ -4,7 +4,7 @@ def token():
     try:
         with open('src/authentication.json','r') as stream:
             credentials = json.load(stream)['pageseeder']
-            print('[INFO][auth.py] Requesting new access token...')
+            print('[INFO][ps_auth.py] Requesting new access token...')
             url = 'https://ps-doc.allette.com.au/ps/oauth/token'
             header = {
                 'grant_type': 'client_credentials',
