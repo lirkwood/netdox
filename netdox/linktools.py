@@ -42,20 +42,21 @@ def main():
             if not page.exclude:
                 count += 1
                 if page.test():
+                    print(f'[INFO][linktools.py] {page.domain} succeeded.')
                     live.append(page.url)
                 else:
                     if page.protocol == 'https' and '_ssl.c:1123' in str(page.code):
                         page.protocol = 'http'
                         if page.test():
                             dead['https://'+ page.domain] = 'HTTPS failed but HTTP succeeded.'
-                            print(f'[INFO][linktools.py] {page.domain} failed on HTTPS but succeeded on HTTP.')
+                            print(f'[INFO][linktools.py] Domain {page.domain} failed on HTTPS but succeeded on HTTP.')
                             live.append(page.url)
                         else:
                             dead[page.url] = str(page.code)
-                            testips(page)
+                            testips(page, verbose=True)
                     else:
                         dead[page.url] = str(page.code)
-                        testips(page)
+                        testips(page, verbose=True)
 
 
         with open('src/linktest.txt','w') as log:
@@ -118,19 +119,22 @@ def archive(docid):
     return r
 
 
-def testips(page):
+def testips(page, verbose=False):
     global dns
     for ip in (dns[page.domain]['dest']['ips']['private'] + dns[page.domain]['dest']['ips']['public']):
         try:
             ping = subprocess.run('ping -c 1 '+ ip, stdout=subprocess.PIPE, shell=True, timeout=2)
             if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
-                print('[INFO][linktools.py] URL {0} failed but ip {1} succeeded.'.format(page.url, ip))
+                if verbose:
+                    print('[INFO][linktools.py] URL {0} failed but ip {1} succeeded.'.format(page.url, ip))
                 dead[page.url] += 'IP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
             else:
-                print('[ERROR][linktools.py] URL {0} failed and ip {1} failed with code {2}.'.format(page.url, ip, ping.returncode))
+                if verbose:
+                    print('[ERROR][linktools.py] URL {0} failed and ip {1} failed with code {2}.'.format(page.url, ip, ping.returncode))
                 dead[page.url] += 'IP {0} failed. Tested for URL {1}.'.format(ip, page.url)
         except subprocess.TimeoutExpired:
-            print('[ERROR][linktools.py] URL {0} failed and ip {1} failed from timeout after two seconds.'.format(page.url, ip))
+            if verbose:
+                print('[ERROR][linktools.py] URL {0} failed and ip {1} failed from timeout after two seconds.'.format(page.url, ip))
             dead[page.url] += 'IP {0} failed. Tested for URL {1}.'.format(ip, page.url)
 
 

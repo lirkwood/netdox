@@ -8,7 +8,7 @@ import os
 
 
 def ingress():
-    subprocess.run('./k8s_fetch.sh ingress', shell=True)
+    subprocess.run('./k8s_fetch.sh ingress', shell=True, stdout=subprocess.DEVNULL)
     with open('src/ingress.json', 'r') as stream:
         jsondata = json.load(stream)
         idict = {}
@@ -51,7 +51,7 @@ def service(idict):
     ndict = {} #new dictionary
     noingress = {}
     links = {}
-    subprocess.run('./k8s_fetch.sh services', shell=True)
+    subprocess.run('./k8s_fetch.sh services', shell=True, stdout=subprocess.DEVNULL)
     with open('src/services.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -92,7 +92,7 @@ def pods(sdict):
     global workers
     workers = []
     pdict = {}
-    subprocess.run('./k8s_fetch.sh pods', shell=True)
+    subprocess.run('./k8s_fetch.sh pods', shell=True, stdout=subprocess.DEVNULL)
     with open('src/pods.json', 'r') as stream:
         jsondata = json.load(stream)
         for c in jsondata:
@@ -205,23 +205,16 @@ def worker2app(master):
                     _workers[appinf['nodename']] = {'ip': appinf['hostip'], 'apps': []}
                 if app not in _workers[appinf['nodename']]['apps']:
                     _workers[appinf['nodename']]['apps'].append(app)
-            with open('src/authentication.json','r') as auth:
-                details = json.load(auth)
-                user = details['xenorchestra']['username']
-                password = details['xenorchestra']['password']
-                try:
-                    subprocess.run('xo-cli --register https://xosy4.allette.com.au '+ user +' '+ password, shell=True, check=True, stderr=subprocess.DEVNULL)
-                    for context in workers:
-                        for _worker in workers[context]:
-                            worker = workers[context][_worker]
-                            response = subprocess.check_output('xo-cli --list-objects type=VM mainIpAddress='+ worker['ip'], shell=True)     #xo-cli query goes here
-                            vm = json.loads(response)
-                            if len(vm) != 1:
-                                print('[WARNING][ingress2pod.py] Multiple VMs with IP: {0}. Using first returned, name_label={1}'.format(worker['ip'], vm[0]['name_label']))
-                            worker['vm'] = vm[0]['uuid']
 
-                except subprocess.CalledProcessError:
-                    print('[ERROR][ingress2pod.py] Xen Orchestra authentication failed.')
+        for context in workers:
+            for _worker in workers[context]:
+                worker = workers[context][_worker]
+                response = subprocess.check_output('xo-cli --list-objects type=VM mainIpAddress='+ worker['ip'], shell=True)     #xo-cli query goes here
+                vm = json.loads(response)
+                if len(vm) != 1:
+                    print('[WARNING][ingress2pod.py] Multiple VMs with IP: {0}. Using first returned, name_label={1}'.format(worker['ip'], vm[0]['name_label']))
+                worker['vm'] = vm[0]['uuid']
+                
         stream.write(json.dumps(workers, indent=2))
 
 

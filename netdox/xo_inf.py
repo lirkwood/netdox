@@ -15,7 +15,7 @@ controllers = set()
 hosts = {}
 
 def main(dns):
-    subprocess.run(args['register'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.run(args['register'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for type in ('pools', 'hosts', 'vms'): #temporarily removed 'aws'
         with open(f'src/{type}.json', 'w+') as stream:
             content = subprocess.run(args[type], stdout=subprocess.PIPE)
