@@ -43,7 +43,7 @@ async function imgdiff(array) {
       await page.goto(url);
       await page.screenshot({path: 'out/screenshots/'.concat(path)});
       array.push(path)
-      console.log(url.concat(' screenshot saved.'))
+      console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
     } catch (error) {
       review[path] = `no_ss:${error}`
       console.log(`[ERROR][screenshotCompare.js] Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`);
