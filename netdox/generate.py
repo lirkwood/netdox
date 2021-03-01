@@ -140,6 +140,7 @@ except Exception as e:
     print(e)
     print('[ERROR][secret_api.py] ****END****')
 
+
 try:
     import icinga_inf
     for domain in master:
