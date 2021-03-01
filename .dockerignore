@@ -7,14 +7,11 @@ netdox/src/*
 !netdox/src/records/
 !netdox/src/base/
 !netdox/src/nmap.xml
-!netdox/src/template-ip.psml
 !netdox/src/prefixes.txt
-!netdox/src/soap.xml
 !netdox/src/exclusions.txt
 !netdox/src/settings.json
 !netdox/src/placeholder.png
 !netdox/src/review.xml
-!netdox/src/node_deps.txt
 !netdox/src/nat.txt
 
 *.zip
