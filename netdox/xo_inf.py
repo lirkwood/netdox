@@ -1,4 +1,4 @@
-import sys, subprocess, json
+import re, sys, subprocess, json
 import iptools
 
 authstream = open('src/authentication.json','r')
@@ -52,6 +52,10 @@ def main(dns):
                         for domain in dns:
                             if vm['mainIpAddress'] in dns[domain]['dest']['ips']['private']:
                                 vm['domains'].append(domain)
+            
+            for object in jsondata:
+                if 'name_label' in object:
+                    object['name_label'] = re.sub(r'[A-Za-z0-9_\.\s-]','', object['name_label'])
 
             stream.write(json.dumps(jsondata, indent=2))
 
