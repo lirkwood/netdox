@@ -12,15 +12,27 @@ os.mkdir('out')
 for path in ('DNS', 'IPs', 'k8s', 'xo'):
     os.mkdir('out/'+path)
 
-print('Parsing ActiveDirectory response...')
-ad = ad_domains.main()
-ad_f = ad['forward']
-ad_r = ad['reverse']
-print('Querying DNSMadeEasy...')
-dnsme = dnsme_domains.main()
-dnsme_f = dnsme['forward']
-dnsme_r = dnsme['reverse']
-print('Parsing DNSMadeEasy response...')
+try:
+    print('[INFO][generate.py] Parsing ActiveDirectory response...')
+    ad = ad_domains.main()
+    ad_f = ad['forward']
+    ad_r = ad['reverse']
+except Exception as e:
+    print('[ERROR][ad_domains.py] ActiveDirectory parsing threw an exception:')
+    print(e)
+    print('[ERROR][ad_domains.py] ****END****')
+
+try:
+    print('[INFO][generate.py] Querying DNSMadeEasy...')
+    dnsme = dnsme_domains.main()
+    dnsme_f = dnsme['forward']
+    dnsme_r = dnsme['reverse']
+except Exception as e:
+    print('[ERROR][ad_domains.py] DNSMadeEasy query threw an exception:')
+    print(e)
+    print('[ERROR][ad_domains.py] ****END****')
+
+print('[INFO][generate.py] Parsing DNSMadeEasy response...')
 
 master = {}
 for domain in ad_f:   #combining dicts
@@ -35,10 +47,21 @@ for domain in dnsme_f:
     else:
         master[domain] = dnsme_f[domain]
 
-print('Querying Kubernetes...')
-ingress2pod.main(master)
-k8s = k8s_domains.main()
-print('Parsing Kubernetes response...')
+try:
+    print('[INFO][generate.py] Querying Kubernetes...')
+    ingress2pod.main(master)
+except Exception as e:
+    print('[ERROR][ingress2pod.py] Kubernetes query threw an exception:')
+    print(e)
+    print('[ERROR][ingress2pod.py] ****END****')
+
+try:
+    k8s = k8s_domains.main()
+    print('[INFO][generate.py] Parsing Kubernetes response...')
+except Exception as e:
+    print('[ERROR][k8s_domains.py] Kubernetes parsing threw an exception:')
+    print(e)
+    print('[ERROR][k8s_domains.py] ****END****')
 
 for domain in k8s:
     if domain in master:
@@ -72,7 +95,7 @@ for domain in master:   #adding subnets and sorting public/private ips
             tmp.append(ip)
         else:
             master[domain]['dest']['ips'].pop(i)
-            print('Removed invalid ip: '+ ip.ipv4)
+            print('[WARNING][generate.py] Removed invalid ip: '+ ip.ipv4)
     master[domain]['dest']['ips'] = {'private': [], 'public': []}
     for ip in tmp:
         if ip.public:
@@ -80,10 +103,16 @@ for domain in master:   #adding subnets and sorting public/private ips
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
-print('Querying Xen Orchestra...')
-xo_inf.main(master)
-print('Parsing Xen Orchestra response...')
+try:
+    print('[INFO][generate.py] Querying Xen Orchestra...')
+    xo_inf.main(master)
+    print('[INFO][generate.py] Parsing Xen Orchestra response...')
+except Exception as e:
+    print('[ERROR][xo_inf.py] Xen Orchestra query threw an exception:')
+    print(e)
+    print('[ERROR][xo_inf.py] ****END****')
 
+    
 # search for VMs
 for domain in master:
     for ip in master[domain]['dest']['ips']['private']:
@@ -93,19 +122,35 @@ for domain in master:
 
 
 
-print('Searching secret server for secrets...')
+print('[INFO][generate.py] Searching secret server for secrets...')
 
-import secret_api
-for domain in master:
-    master[domain]['secrets'] = {}
-    resp = secret_api.searchSecrets(domain, 'URL Key')
-    soup = BeautifulSoup(resp.text, features='xml')
-    for secret in soup.find_all('SecretSummary'):
-        master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
+try:
+    import secret_api
+    for domain in master:
+        master[domain]['secrets'] = {}
+        resp = secret_api.searchSecrets(domain, 'URL Key')
+        soup = BeautifulSoup(resp.text, features='xml')
+        for secret in soup.find_all('SecretSummary'):
+            master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
 
-with open('src/dns.json','w') as stream:
-    stream.write(json.dumps(master, indent=2))
+    with open('src/dns.json','w') as stream:
+        stream.write(json.dumps(master, indent=2))
+except Exception as e:
+    print('[ERROR][secret_api.py] Secret server query threw an exception:')
+    print(e)
+    print('[ERROR][secret_api.py] ****END****')
 
+try:
+    import icinga_inf
+    for domain in master:
+        master[domain]['icinga'] = 'Not Monitored'
+        display_name = icinga_inf.lookup([domain]+[master[domain]['dest']['ips']['private']])
+        if display_name:
+            master[domain]['icinga'] = display_name
+except Exception as e:
+    print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
+    print(e)
+    print('[ERROR][icinga_inf.py] ****END****')
 
 
 for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
@@ -121,28 +166,33 @@ xslt = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
 
 subprocess.run(f'{xslt} -xsl:dns.xsl -s:src/dns.xml', shell=True)
 
-print('DNS documents done')
+print('[INFO][generate.py] DNS documents done')
 
 import ip_inf
 ip_inf.main(ipdict, ptr)
 subprocess.run(f'{xslt} -xsl:ips.xsl -s:src/ips.xml', shell=True)
 
-print('IP documents done')
+print('[INFO][generate.py] IP documents done')
 
 subprocess.run(f'{xslt} -xsl:clusters.xsl -s:src/workers.xml', shell=True)
 subprocess.run(f'{xslt} -xsl:workers.xsl -s:src/workers.xml', shell=True)
 subprocess.run(f'{xslt} -xsl:apps.xsl -s:src/apps.xml', shell=True)
 
-print('Kubernetes documents done')
+print('[INFO][generate.py] Kubernetes documents done')
 
 subprocess.run(f'{xslt} -xsl:pools.xsl -s:src/pools.xml', shell=True)
 subprocess.run(f'{xslt} -xsl:hosts.xsl -s:src/hosts.xml', shell=True)
 subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
-print('Xen Orchestra documents done')
-print('Testing domains...')
-import linktools
-linktools.main()
+print('[INFO][generate.py] Xen Orchestra documents done')
+print('[INFO][generate.py] Testing domains...')
+try:
+    import linktools
+    linktools.main()
+except Exception as e:
+    print('[ERROR][linktools.py] Link test and screenshot compare module threw an exception:')
+    print(e)
+    print('[ERROR][linktools.py] ****END****')
 
 # load pageseeder properties and auth info
 with open('pageseeder.properties','r') as f: properties = f.read()
