@@ -34,7 +34,7 @@ def main(dns):
                         ipv4 = iptools.parsed_ip(host['address'])
                         host['subnet'] = ipv4.subnet
                     except:
-                        print('Failed to allocate a subnet to IPv4 address: '+ ipv4.ipv4, file=sys.stderr)
+                        print('[WARNING][xo_inf.py] Failed to allocate a subnet to IPv4 address: '+ ipv4.ipv4, file=sys.stderr)
 
             elif type == 'vms':
                 for vm in jsondata:
@@ -45,7 +45,7 @@ def main(dns):
                         ipv4 = iptools.parsed_ip(vm['addresses']['0/ipv4/0'])
                         vm['subnet'] = ipv4.subnet
                     except:
-                        print(f'VM {vm["name_label"]} has no ipv4.', file=sys.stderr)
+                        print(f'[WARNING][xo_inf.py] VM {vm["name_label"]} has no ipv4.', file=sys.stderr)
 
                     vm['domains'] = []
                     if 'mainIpAddress' in vm:

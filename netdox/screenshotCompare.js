@@ -20,7 +20,7 @@ async function imgdiff(array) {
     } catch (error) {
       if (error instanceof TypeError) {
         fs.copyFile('out/screenshots/'.concat(image), 'out/review/'.concat(image), (err) => {if (err) throw (err);});
-        console.log(`No base image for ${image}. Screenshot copied for review.`)
+        console.log(`[WARNING][screenshotCompare.js] No base image for ${image}. Screenshot copied for review.`)
         review[image] = 'no_base'
       }
     }
@@ -46,7 +46,7 @@ async function imgdiff(array) {
       console.log(url.concat(' screenshot saved.'))
     } catch (error) {
       review[path] = `no_ss:${error}`
-      console.log(`Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`);
+      console.log(`[ERROR][screenshotCompare.js] Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`);
     }
   }
   await browser.close();

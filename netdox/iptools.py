@@ -27,18 +27,18 @@ class parsed_ip:
         rawip = bytes(self.ipv4, 'utf-8')                                      #- 3 periods for 4 octets
         for octet in self.ipv4.split('.'):                                     #- Each octet between 1 and three digits
             if len(octet) > 3 or len(octet) < 1:                        #- Each octet no greater than 255 or less than 0
-                print('Bad octet in ip: {0}'.format(rawip))             #- No characters in string other than [0-9.]
+                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')             #- No characters in string other than [0-9.]
                 return False
             elif int(octet) > 255 or int(octet) < 0:
-                print('Bad octet in ip: {0}'.format(rawip))
+                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
                 return False
 
         if self.ipv4.count('.') != 3:
-            print('Wrong number of octets in ip: {0}'.format(rawip))
+            print(f'[ERROR][iptools.py] Wrong number of octets in ip: {rawip}')
             return False
 
         for char in re.findall(r'[^0-9.]',self.ipv4):
-            print('Bad character {0} in ip: {1}'.format(char, rawip))
+            print(f'[ERROR][iptools.py] Bad character {char} in ip: {rawip}')
             return False
 
         return True
@@ -49,7 +49,7 @@ class parsed_ip:
         try:
             subndict = fetch_prefixes()
         except FileNotFoundError:
-            print('prefixes.txt not found. Sorting using default 255.255.255.0 subnet mask.')
+            print('[WARNING][iptools.py] prefixes.txt not found. Sorting using default 255.255.255.0 subnet mask.')
             subndict = {}
         for prefix in subndict:
             if bin_ip >= int(subndict[prefix]['lower'], 2) and bin_ip <= int(subndict[prefix]['upper'], 2):
@@ -64,11 +64,11 @@ class parsed_ip:
         bounds = subn_bounds(subnet)
         if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
             if verbose:
-                print('IP Address {0} is within subnet {1}.'.format(self.ipv4, subnet))
+                print(f'[INFO][iptools.py] IP Address {self.ipv4} is within subnet {subnet}')
             return True
         else:
             if verbose:
-                print('IP Address {0} is outside subnet {1}.'.format(self.ipv4, subnet))
+                print(f'[INFO][iptools.py] IP Address {self.ipv4} is outside subnet {subnet}')
             return False    
 
     def is_public(self):
@@ -98,22 +98,26 @@ class parsed_ip:
 
 #User functions
 
-def valid_ip(ip):                                             #Requirements for validity:
+def valid_ip(ip, verbose=False):                                             #Requirements for validity:
     rawip = bytes(ip, 'utf-8')                                      #- 3 periods for 4 octets
     for octet in ip.split('.'):                                     #- Each octet between 1 and three digits
-        if len(octet) > 3 or len(octet) < 1:                        #- Each octet no greater than 255 or less than 0
-            print('Bad octet in ip: {0}'.format(rawip))             #- No characters in string other than [0-9.]
+        if len(octet) > 3 or len(octet) < 1: 
+            if verbose:                       #- Each octet no greater than 255 or less than 0
+                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')             #- No characters in string other than [0-9.]
             return False
         elif int(octet) > 255 or int(octet) < 0:
-            print('Bad octet in ip: {0}'.format(rawip))
+            if verbose:
+                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
             return False
 
     if ip.count('.') != 3:
-        print('Wrong number of octets in ip: {0}'.format(rawip))
+        if verbose:
+            print(f'[ERROR][iptools.py] Wrong number of octets in ip: {rawip}')
         return False
 
     for char in re.findall(r'[^0-9.]',ip):
-        print('Bad character {0} in ip: {1}'.format(char, rawip))
+        if verbose:
+            print(f'[ERROR][iptools.py] Bad character {char} in ip: {rawip}')
         return False
 
     return True
@@ -159,11 +163,11 @@ def in_subnet(ip, subnet, verbose=False):
     bounds = subn_bounds(subnet)
     if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
         if verbose:
-            print('IP Address {0} is within subnet {1}.'.format(ip, subnet))
+            print('[INFO][iptools.py] IP Address {0} is within subnet {1}.'.format(ip, subnet))
         return True
     else:
         if verbose:
-            print('IP Address {0} is outside subnet {1}.'.format(ip, subnet))
+            print('[INFO][iptools.py] IP Address {0} is outside subnet {1}.'.format(ip, subnet))
         return False
 
 def binary2cidr(bin_ip):

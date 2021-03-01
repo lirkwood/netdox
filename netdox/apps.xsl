@@ -87,7 +87,10 @@
             </document>
         </xsl:result-document>
         <xsl:catch>
-            <xsl:message>Error thrown during document creation.</xsl:message>
+            <xsl:message>[ERROR][apps.xsl] The transformation threw an exception.</xsl:message>
+            <xsl:message>[ERROR][apps.xsl] Error code: <xsl:value-of select="$err:code"/></xsl:message>
+            <xsl:message>[ERROR][apps.xsl] Error description: <xsl:value-of select="$err:description"/></xsl:message>
+            <xsl:message>[ERROR][apps.xsl] ****END****</xsl:message>
         </xsl:catch>
     </xsl:try>
 </xsl:template>

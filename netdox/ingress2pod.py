@@ -26,7 +26,7 @@ def ingress():
                     hosts = list(dict.fromkeys(hosts))  #make unique
                     idict[c][name] = hosts  #dict has structure 'service name' : ['host1', 'host2',...] etc
                 else:
-                    print('Found ingress with no destination: '+ ingress['metadata']['name'])
+                    print('[WARNING][ingress2pod.py] Found ingress with no destination: '+ ingress['metadata']['name'])
     return idict
 
 
@@ -67,21 +67,21 @@ def service(idict):
                         app = service['spec']['selector']['app']
                     else:
                         app = None
-                        print('Found isolated service: {0}. Ignoring...'.format(name))  #if has no link at all
+                        print(f'[WARNING][ingress2pod.py] Found isolated service: {name}. Ignoring...')  #if has no link at all
                     try:
                         ndict[c][app] = idict[c][name]  #sdict is dict where ingress is key and associated domains are values
                     except KeyError:
-                        print('Found service with no ingress: {0}. Attempting to find related service...'.format(name))
+                        print(f'[INFO][ingress2pod.py] Found service with no ingress: {name}. Attempting to find related service...')
                         noingress[c][name] = app
                 except KeyError:
-                    print('Found isolated service: {0}. Ignoring...'.format(name))
+                    print(f'[WARNING][ingress2pod.py] Found isolated service: {name}. Ignoring...')
         for context in noingress:   #sandbox and production
             for service in noingress[context]:  #for each service with no matching ingress
                 selector = noingress[context][service]  #value of the service in ndict is its selector; either its deployment or sibling service
                 if selector in ndict[context].keys():   #if its sibling service has an entry
                     siblingsdom = ndict[context][selector]  #get its sibling service's domains
                     ndict[context][service] = siblingsdom   #associate unmatched service with sibling's domains
-                    print('Service {0} matched on service {1}'.format(service, selector))
+                    print(f'[INFO][ingress2pod.py] Service {service} matched on service {selector}')
                     links[service] = selector   #record links
 
     return ndict
@@ -135,7 +135,7 @@ def pods(sdict):
                         _pod['containers'] = containers
                             
                     except KeyError:
-                        print('Discovered pod with no service {0}. Ignoring...'.format(appname))
+                        print('[WARNING][ingress2pod.py] Discovered pod with no service {0}. Ignoring...'.format(appname))
     
     return pdict
 
@@ -217,23 +217,13 @@ def worker2app(master):
                             response = subprocess.check_output('xo-cli --list-objects type=VM mainIpAddress='+ worker['ip'], shell=True)     #xo-cli query goes here
                             vm = json.loads(response)
                             if len(vm) != 1:
-                                print('ALERT: Multiple VMs with IP: {0}. Using first returned, name_label={1}'.format(worker['ip'], vm[0]['name_label']))
+                                print('[WARNING][ingress2pod.py] Multiple VMs with IP: {0}. Using first returned, name_label={1}'.format(worker['ip'], vm[0]['name_label']))
                             worker['vm'] = vm[0]['uuid']
 
                 except subprocess.CalledProcessError:
-                    print('Xen Orchestra authentication failed.')
+                    print('[ERROR][ingress2pod.py] Xen Orchestra authentication failed.')
         stream.write(json.dumps(workers, indent=2))
 
-
-def proceed():
-    choice = input('Bad response from Kubernetes; check kubeconfig. Proceed without Kubernetes data? (y/n): ')
-    if choice == 'y':
-        return True
-    elif choice == 'n':
-        return False
-    else:
-        print("Invalid input. Enter 'y' or 'n'.")
-        return proceed()
 
 
 def main(dns):

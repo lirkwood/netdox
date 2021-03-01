@@ -1,6 +1,6 @@
 #!/bin/bash
 resource=$1
-echo "Fetching Kubernetes $resource..."
+echo "[INFO][k8s_fetch.sh] Fetching Kubernetes $resource..."
 contexts=( "sandbox" "production" )
 
 json='{'

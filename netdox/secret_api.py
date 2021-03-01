@@ -25,7 +25,9 @@ def refresh():
             stream.write(f'\n{int(time.time())}')
             return soup.Token.string
     except Exception as e:
+        print('[ERROR][secret_api.py] Secret server authentication threw an exception:')
         print(e)
+        print('[ERROR][secret_api.py] ****END****')
         return e
 
 def auth():

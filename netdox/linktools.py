@@ -41,7 +41,6 @@ def main():
             page = webpage(url)
             if not page.exclude:
                 count += 1
-                print('Testing '+ page.url)
                 if page.test():
                     live.append(page.url)
                 else:
@@ -49,7 +48,7 @@ def main():
                         page.protocol = 'http'
                         if page.test():
                             dead['https://'+ page.domain] = 'HTTPS failed but HTTP succeeded.'
-                            print('HTTPS failed but HTTP succeeded.\n\n')
+                            print(f'[INFO][linktools.py] {page.domain} failed on HTTPS but succeeded on HTTP.')
                             live.append(page.url)
                         else:
                             dead[page.url] = str(page.code)
@@ -83,7 +82,7 @@ def main():
         xslt = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
         subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
         # run xsl to generate daily status update
-        print('Status update file generated.')
+        print('[INFO][linktools.py] Status update file generated.')
 
 
 def get_uris(folder): #returns list of uris of all documents in a folder, defined by urimap
@@ -125,14 +124,14 @@ def testips(page):
         try:
             ping = subprocess.run('ping -c 1 '+ ip, stdout=subprocess.PIPE, shell=True, timeout=2)
             if ping.returncode == 0 and 'Destination host unreachable' not in str(ping.stdout):
-                print('URL {0} failed but ip {1} succeeded.\n\n'.format(page.url, ip))
-                dead[page.url] += '\nIP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
+                print('[INFO][linktools.py] URL {0} failed but ip {1} succeeded.'.format(page.url, ip))
+                dead[page.url] += 'IP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
             else:
-                print('URL {0} failed and ip {1} failed with code {2}.\n\n'.format(page.url, ip, ping.returncode))
-                dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
+                print('[ERROR][linktools.py] URL {0} failed and ip {1} failed with code {2}.'.format(page.url, ip, ping.returncode))
+                dead[page.url] += 'IP {0} failed. Tested for URL {1}.'.format(ip, page.url)
         except subprocess.TimeoutExpired:
-            print('URL {0} failed and ip {1} failed from timeout after two seconds.\n\n'.format(page.url, ip))
-            dead[page.url] += '\nIP {0} failed. Tested for URL {1}.'.format(ip, page.url)
+            print('[ERROR][linktools.py] URL {0} failed and ip {1} failed from timeout after two seconds.'.format(page.url, ip))
+            dead[page.url] += 'IP {0} failed. Tested for URL {1}.'.format(ip, page.url)
 
 
 exclusions = open('src/exclusions.txt','r').read().splitlines()
@@ -175,23 +174,20 @@ class webpage:
             self._protocol = new_protocol
             self.url = self._protocol +'://'+ self.domain
         else:
-            print('Provide a valid protocol (http or https)')
+            print('[ERROR][linktools.py] Provide a valid protocol (http or https)')
     
     def test(self):
         try:
             r = requests.get(self.url, timeout=1)
             self.code = r.status_code
             if self.code > 400 and self.code < 600:
-                print('Bad response code {0} from url {1}\n\n'.format(self.code, self.url))
                 self.status = False
                 return False
             else:
-                print('OK\n\n')
                 self.status = True
                 return True
         except Exception as e:
             self.code = e
-            print('Fatal error. \n\n')
             self.status = False
             return False
 

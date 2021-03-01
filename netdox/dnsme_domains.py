@@ -22,7 +22,7 @@ def main():
 	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
 	response = json.loads(r.text)
 	if "error" in response:
-		print('DNSMadeEasy authentication failed.')
+		print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
 		return master
 	domains = {}
 	for record in response['data']:
