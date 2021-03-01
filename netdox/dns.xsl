@@ -21,7 +21,7 @@
 
             <metadata>
                 <properties>
-                    <property name="template_version"     title="Template version"   value="3.9" />
+                    <property name="template_version"     title="Template version"   value="4.1" />
                 </properties>
             </metadata>
 
