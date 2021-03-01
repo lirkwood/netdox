@@ -151,15 +151,24 @@ def mapworkers(pdict, dns):
     workers = dict(tmp)
     with open('src/authentication.json','r') as authstream:
         auth = json.load(authstream)['xenorchestra']
-        subprocess.run(['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']])
+        try:
+            register = subprocess.run(['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']], stdout=subprocess.DEVNULL)
+            register.check_returncode()
+        except subprocess.CalledProcessError:
+            print('[ERROR][ingress2pod.py] Xen Orchestra authentication failed.')
+        except Exception as e:
+            print(f'[ERROR][ingress2pod.py] While attempting Xen Orchestra authentication an exception was thrown:')
+            print(e)
+            print('[ERROR][ingress2pod.py] ****END****')
 
-    for context in pdict:
-        for domain in pdict[context]:
-            pdict[context][domain]['worker'] = workers[pdict[context][domain]['nodename']]
+        else:
+            for context in pdict:
+                for domain in pdict[context]:
+                    pdict[context][domain]['worker'] = workers[pdict[context][domain]['nodename']]
 
-            xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={pdict[context][domain]["hostip"]}'], stdout=subprocess.PIPE)
-            vm_inf = json.loads(xo_query.stdout)[0]
-            pdict[context][domain]['vm'] = vm_inf['uuid']
+                    xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={pdict[context][domain]["hostip"]}'], stdout=subprocess.PIPE)
+                    vm_inf = json.loads(xo_query.stdout)[0]
+                    pdict[context][domain]['vm'] = vm_inf['uuid']
     
     return pdict
 
