@@ -44,6 +44,7 @@
                     <property name="domain"       title="Domain"        value="{$name}" />
                     <property name="root"       title="Root"        value="{xpf:string[@key = 'root']}" />
                     <property name="source"     title="Source"      value="{xpf:string[@key = 'source']}" />
+                    <property name="icinga"     title="Icinga Display Name"      value="{xpf:string[@key = 'icinga']}" />
                     <property name="client"     title="Client"      value="" />
                 </properties-fragment>
 
