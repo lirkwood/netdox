@@ -23,24 +23,28 @@ class parsed_ip:
         #strip 0b prefix and pad to size with 0s
         return bin_ip
 
-    def valid_ip(self):                                             #Requirements for validity:
-        rawip = bytes(self.ipv4, 'utf-8')                                      #- 3 periods for 4 octets
-        for octet in self.ipv4.split('.'):                                     #- Each octet between 1 and three digits
-            if len(octet) > 3 or len(octet) < 1:                        #- Each octet no greater than 255 or less than 0
-                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')             #- No characters in string other than [0-9.]
-                return False
-            elif int(octet) > 255 or int(octet) < 0:
-                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
+    def valid_ip(self):
+        rawip = bytes(self.ipv4, 'utf-8')
+        if re.match(r'([0-9]{1,3}\.){3}[0-9]{1,3}', self.ipv4):
+
+            for char in re.findall(r'[^0-9.]',self.ipv4):
+                print(f'[ERROR][iptools.py] Bad character {char} in ip: {rawip}')
                 return False
 
-        if self.ipv4.count('.') != 3:
-            print(f'[ERROR][iptools.py] Wrong number of octets in ip: {rawip}')
-            return False
+            for octet in self.ipv4.split('.'):
+                if len(octet) > 3 or len(octet) < 1:
+                    print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
+                    return False
+                elif int(octet) > 255 or int(octet) < 0:
+                    print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
+                    return False
 
-        for char in re.findall(r'[^0-9.]',self.ipv4):
-            print(f'[ERROR][iptools.py] Bad character {char} in ip: {rawip}')
-            return False
+            if self.ipv4.count('.') != 3:
+                print(f'[ERROR][iptools.py] Wrong number of octets in ip: {rawip}')
+                return False
 
+        else:
+            return False
         return True
 
     def sort(self):

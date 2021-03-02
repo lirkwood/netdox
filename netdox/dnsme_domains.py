@@ -1,4 +1,5 @@
 from getpass import getpass
+from json.decoder import JSONDecodeError
 from requests import get
 import hmac, hashlib
 import datetime
@@ -82,24 +83,36 @@ def main():
 
 
 def genheader():
-	with open('src/authentication.json','r') as stream:
-		keys = json.load(stream)
-		api = keys['dnsmadeeasy']['api']
-		secret = keys['dnsmadeeasy']['secret']
-		if api != '' and secret != '':
-			time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
-			hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
-			
-			header = {	#populate header
-			"x-dnsme-apiKey" : api,
-			"x-dnsme-requestDate" : time,
-			"x-dnsme-hmac" : hash,
-			"accept" : 'application/json'
-			}
-			
-			return header
-		else:
-			return None
+	try:
+		with open('src/authentication.json','r') as stream:
+			try:
+				keys = json.load(stream)
+				api = keys['dnsmadeeasy']['api']
+				secret = keys['dnsmadeeasy']['secret']
+			except JSONDecodeError:
+				print('[ERROR][dnsme_domains.py] Incorrect formatting in src/authentication.json. Unable to read details.')
+			except KeyError:
+				print('[ERROR][dnsme_domains.py] Missing or corrupted authentication details')
+			else:
+				if api != '' and secret != '':
+					time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
+					hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+					
+					header = {	#populate header
+					"x-dnsme-apiKey" : api,
+					"x-dnsme-requestDate" : time,
+					"x-dnsme-hmac" : hash,
+					"accept" : 'application/json'
+					}
+					
+					return header
+				else:
+					return None
+
+	except FileNotFoundError:
+		print('[ERROR][dnsme_domains.py] Missing or inaccessible src/authentication.json')
+
+
 	#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
 
 if __name__ == '__main__':

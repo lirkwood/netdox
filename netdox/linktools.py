@@ -10,7 +10,7 @@ import os
 
 
 header = {
-    'authorization': 'Bearer {0}'.format(ps_auth.token())
+    'authorization': f'Bearer {ps_auth.token()}'
 }
 base = 'https://ps-doc.allette.com.au/ps/service'
 
@@ -130,11 +130,11 @@ def testips(page, verbose=False):
                 dead[page.url] += 'IP {0} succeeded. Tested for URL {1}.'.format(ip, page.url)
             else:
                 if verbose:
-                    print('[ERROR][linktools.py] URL {0} failed and ip {1} failed with code {2}.'.format(page.url, ip, ping.returncode))
+                    print('[WARNING][linktools.py] URL {0} failed and ip {1} failed with code {2}.'.format(page.url, ip, ping.returncode))
                 dead[page.url] += 'IP {0} failed. Tested for URL {1}.'.format(ip, page.url)
         except subprocess.TimeoutExpired:
             if verbose:
-                print('[ERROR][linktools.py] URL {0} failed and ip {1} failed from timeout after two seconds.'.format(page.url, ip))
+                print('[WARNING][linktools.py] URL {0} failed and ip {1} failed from timeout after two seconds.'.format(page.url, ip))
             dead[page.url] += 'IP {0} failed. Tested for URL {1}.'.format(ip, page.url)
 
 
@@ -178,7 +178,7 @@ class webpage:
             self._protocol = new_protocol
             self.url = self._protocol +'://'+ self.domain
         else:
-            print('[ERROR][linktools.py] Provide a valid protocol (http or https)')
+            print(f'[ERROR][linktools.py] Invalid protocol {new_protocol}. Use http or https.')
     
     def test(self):
         try:
