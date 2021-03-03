@@ -91,8 +91,10 @@ def genheader():
 				secret = keys['dnsmadeeasy']['secret']
 			except JSONDecodeError:
 				print('[ERROR][dnsme_domains.py] Incorrect formatting in src/authentication.json. Unable to read details.')
+				return None
 			except KeyError:
 				print('[ERROR][dnsme_domains.py] Missing or corrupted authentication details')
+				return None
 			else:
 				if api != '' and secret != '':
 					time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
@@ -111,6 +113,7 @@ def genheader():
 
 	except FileNotFoundError:
 		print('[ERROR][dnsme_domains.py] Missing or inaccessible src/authentication.json')
+		return None
 
 
 	#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
