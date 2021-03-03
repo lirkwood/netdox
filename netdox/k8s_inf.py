@@ -1,10 +1,4 @@
-from bs4 import BeautifulSoup
-from getpass import getpass
-import subprocess
-import copy
-import json
-import sys
-import os
+import subprocess, json
 
 
 def ingress():
