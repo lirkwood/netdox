@@ -145,9 +145,9 @@ try:
     import icinga_inf
     for domain in master:
         master[domain]['icinga'] = 'Not Monitored'
-        display_name = icinga_inf.lookup([domain]+[master[domain]['dest']['ips']['private']])
-        if display_name:
-            master[domain]['icinga'] = display_name
+        details = icinga_inf.lookup([domain]+[master[domain]['dest']['ips']['private']])
+        if details:
+            master[domain]['icinga'] = details['display_name']
 except Exception as e:
     print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
     print(e)
