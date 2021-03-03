@@ -46,7 +46,7 @@ async function imgdiff(array) {
       console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
     } catch (error) {
       review[path] = `no_ss:${error}`
-      console.log(`[ERROR][screenshotCompare.js] Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`);
+      console.log(`[WARNING][screenshotCompare.js] Error thrown when taking screenshot of url: ${url}. Error thrown: ${error}`);
     }
   }
   await browser.close();
