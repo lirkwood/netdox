@@ -55,7 +55,7 @@ def main(dns):
             
             for object in jsondata:
                 if 'name_label' in object:
-                    object['name_label'] = re.sub(r'[A-Za-z0-9_\.\s-]','', object['name_label'])
+                    object['name_label'] = re.sub(r'[/\\]','', object['name_label'])
 
             stream.write(json.dumps(jsondata, indent=2))
 
