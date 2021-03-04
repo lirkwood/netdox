@@ -44,7 +44,7 @@
           </properties-fragment>
           <properties-fragment id="addresses">
             <property name="ipv4"               title="IPv4"          datatype="xref" >
-              <xref frag="default" docid="_nd_{translate(xpf:map[@key='addresses']/xpf:string[@key='0/ipv4/0'], '.', '_')}"
+              <xref frag="default" docid="_nd_{translate(xpf:map[@key='addresses']/xpf:string[@key='mainIpAddress'], '.', '_')}"
               reversetitle="{xpf:string[@key='name_label']} in XO" />
             </property>
 	    <property name="subnet" title="Subnet" value="{xpf:string[@key = 'subnet']}" />
