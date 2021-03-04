@@ -85,3 +85,6 @@ def query(action, params={}):
 
     r = requests.post(url, headers=headers, data=bytes(body, encoding='utf-8'))
     return r
+
+if __name__ == '__main__':
+    auth()
