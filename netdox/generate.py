@@ -113,13 +113,12 @@ except Exception as e:
     print('[ERROR][xo_inf.py] ****END****')
 
     
-# search for VMs
+# search for VMs to match on domains
 for domain in master:
     for ip in master[domain]['dest']['ips']['private']:
         xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
         for vm in json.loads(xo_query):
             master[domain]['dest']['vms'].append(vm['uuid'])
-
 
 
 print('[INFO][generate.py] Searching secret server for secrets...')
