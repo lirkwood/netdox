@@ -63,12 +63,7 @@ if (($auth.XenOrchestra.Username -eq '') -or ($auth.XenOrchestra.Password -eq ''
 
 
 $kubepath = Get-ChildItem $HOME ".kube" -Recurse -Directory -ErrorAction SilentlyContinue
-# $kubepath = $kubepath.Replace('\','/')
-# $kubepath -match '[A-Z]:/' | Out-Null
-# $posixdrive = $Matches[0] | % {$_.Replace(':','')} | % {$_.ToLower()}
-# $kubepath = $kubepath.Replace($Matches[0], "/mnt/$posixdrive")
-# $kubepath = $kubepath.Replace(':','')
-#Convert from windows path to posix path
+
 if ($null -eq $kubepath) {
     $kubepath = choosek8s
     if ($null -ne $kubepath) {
@@ -96,7 +91,7 @@ else {
 
 Set-Location -Path ".kube"
 $KUBECONFIG = Get-ChildItem -Path "." -Filter "*config*" -File -Recurse | % {Resolve-Path -Relative -Path $_} | % {"/usr/.kube/${_}:" -replace '\\','/' -replace '/./','/'} | % {$_.TrimEnd(':')}
-#Awful pipeline that adds all files in .kube to string and converts to absolute posix path in dir /usr/.kube/
+# Awful pipeline that adds all files in .kube to string and converts to absolute posix path in dir /usr/.kube/
 Set-Location ".."
 Write-Host "[INFO][netdox.ps1] Building Docker image..."
 docker build -t netdox --build-arg _kubeconfig=$KUBECONFIG .
