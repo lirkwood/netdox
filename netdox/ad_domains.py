@@ -66,7 +66,7 @@ def extract(path):
                 zone = record['DistinguishedName'].split(',')[1].strip('DC=')
                 subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and fix...
                 address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
-                ip = iptools.parsed_ip(subnet +'.'+ address)
+                ip = iptools.ipv4(subnet +'.'+ address)
 
                 for item in record['RecordData']['CimInstanceProperties']:
                     if item['Name'] == 'PtrDomainName':

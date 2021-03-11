@@ -8,8 +8,8 @@ with open('src/nat.txt','r') as stream:
     for line in stream.read().splitlines():
         match = re.match(patt_nat, line)
         if match:
-            alias = iptools.parsed_ip(match['alias'])
-            dest = iptools.parsed_ip(match['dest'])
+            alias = iptools.ipv4(match['alias'])
+            dest = iptools.ipv4(match['dest'])
             natDict[alias.ipv4] = dest.ipv4
             natDict[dest.ipv4] = alias.ipv4
 

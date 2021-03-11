@@ -71,7 +71,7 @@ def main():
 
 			elif record['type'] == 'PTR':
 				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])
-				ip = iptools.parsed_ip(subnet +'.'+ record['name'])
+				ip = iptools.ipv4(subnet +'.'+ record['name'])
 				value = record['value'].strip('.')
 				
 				if ip.valid:

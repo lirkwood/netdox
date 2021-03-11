@@ -5,7 +5,7 @@ import iptools, nat_inf
 def main(ipdict, ptr):
     tmp = {}
     for ip in ipdict:
-        _ip = iptools.parsed_ip(ip)
+        _ip = iptools.ipv4(ip)
         if _ip.valid:
             if (not _ip.public) or _ip.in_subnet('103.127.18.0/24') or _ip.in_subnet('119.63.219.195/26'):
                 for sibling in _ip.iter_subnet():
@@ -14,7 +14,7 @@ def main(ipdict, ptr):
     ipdict = tmp | ipdict   #populate ipdict with unused private ips
 
     for ip in ipdict:
-        _ip = iptools.parsed_ip(ip)
+        _ip = iptools.ipv4(ip)
         ipnat = nat_inf.lookup(ip)
         if ipnat:
             ipdict[ip]['nat'] = ipnat

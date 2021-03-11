@@ -4,20 +4,20 @@ import iptools
 class iptools_tests(unittest.TestCase):
 
     def test_letters(self):
-        self.assertEqual(False, iptools.parsed_ip('abc.efg.hij.klm').valid)
-        self.assertEqual(False, iptools.parsed_ip('192.168.0.abc').valid)
-        self.assertEqual(False, iptools.parsed_ip('192.168.0.1a').valid)
+        self.assertEqual(False, iptools.ipv4('abc.efg.hij.klm').valid)
+        self.assertEqual(False, iptools.ipv4('192.168.0.abc').valid)
+        self.assertEqual(False, iptools.ipv4('192.168.0.1a').valid)
     
     def test_octets(self):
-        self.assertEqual(False, iptools.parsed_ip('192.168.0').valid)
-        self.assertEqual(False, iptools.parsed_ip('192.168.0.').valid)
-        self.assertEqual(False, iptools.parsed_ip('192.168.0.1.0').valid)
-        self.assertEqual(False, iptools.parsed_ip('192.168.0.1.').valid)
-        self.assertEqual(False, iptools.parsed_ip('.192.168.0.1').valid)
-        self.assertEqual(True, iptools.parsed_ip('192.168.0.1').valid)
+        self.assertEqual(False, iptools.ipv4('192.168.0').valid)
+        self.assertEqual(False, iptools.ipv4('192.168.0.').valid)
+        self.assertEqual(False, iptools.ipv4('192.168.0.1.0').valid)
+        self.assertEqual(False, iptools.ipv4('192.168.0.1.').valid)
+        self.assertEqual(False, iptools.ipv4('.192.168.0.1').valid)
+        self.assertEqual(True, iptools.ipv4('192.168.0.1').valid)
 
-        self.assertIsInstance(iptools.parsed_ip('192.168.0.1').octets, list)
-        self.assertEqual(['192','168','0','1'], iptools.parsed_ip('192.168.0.1').octets)
+        self.assertIsInstance(iptools.ipv4('192.168.0.1').octets, list)
+        self.assertEqual(['192','168','0','1'], iptools.ipv4('192.168.0.1').octets)
 
 
 import ad_domains

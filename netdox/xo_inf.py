@@ -31,7 +31,7 @@ def main(dns):
                     if host['uuid'] not in controllers:
                         pools[host['$pool']].append(host['uuid'])
                     try:
-                        ipv4 = iptools.parsed_ip(host['address'])
+                        ipv4 = iptools.ipv4(host['address'])
                         host['subnet'] = ipv4.subnet
                     except:
                         print('[WARNING][xo_inf.py] Failed to allocate a subnet to IPv4 address: '+ ipv4.ipv4, file=sys.stderr)
@@ -42,7 +42,7 @@ def main(dns):
                         hosts[vm['$container']] = []
                     hosts[vm['$container']].append(vm['uuid'])
                     try:
-                        ipv4 = iptools.parsed_ip(vm['addresses']['0/ipv4/0'])
+                        ipv4 = iptools.ipv4(vm['addresses']['0/ipv4/0'])
                         vm['subnet'] = ipv4.subnet
                     except:
                         print(f'[WARNING][xo_inf.py] VM {vm["name_label"]} has no ipv4.', file=sys.stderr)

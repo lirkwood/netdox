@@ -87,7 +87,7 @@ for domain in master:   #adding subnets and sorting public/private ips
 
     tmp = []
     for i in range(len(master[domain]['dest']['ips'])):
-        ip = iptools.parsed_ip(master[domain]['dest']['ips'][i])
+        ip = iptools.ipv4(master[domain]['dest']['ips'][i])
         if ip.valid:
             master[domain]['subnets'].append(ip.subnet)
             ipdict[ip.ipv4] = {'source': master[domain]['source']}
