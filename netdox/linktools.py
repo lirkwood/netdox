@@ -32,6 +32,7 @@ for path in ('screenshots', 'review'):
         os.mkdir(f'out/{path}')
 
 def main():
+    # Reading from dns and testing each domain
     with open('src/dns.json','r') as src:
         global dns
         dns = json.load(src)
@@ -45,6 +46,7 @@ def main():
                     print(f'[INFO][linktools.py] {page.domain} succeeded.')
                     live.append(page.url)
                 else:
+                    # if GET https://domain failed, due to a certificate error, try with http
                     if page.protocol == 'https' and '_ssl.c:1123' in str(page.code):
                         page.protocol = 'http'
                         if page.test():
@@ -56,24 +58,28 @@ def main():
                             testips(page, verbose=True)
                     else:
                         dead[page.url] = str(page.code)
+                        # If GET failed try pinging the IPs linked to domain
                         testips(page, verbose=True)
 
 
+        # Logging
         with open('src/linktest.txt','w') as log:
             log.write('Out of {0} tested urls, {1} failed.\n'.format(count, len(dead)))
             for url in dead:
                 log.write('URL: {0} Code: {1}\n\n'.format(url, dead[url]))
 
+        # Used as input for puppeteer/odiff
         with open('src/live.json','w') as out:
-            out.write(json.dumps(live, indent=2))   #write results to files
+            out.write(json.dumps(live, indent=2))
                 
-        subprocess.run('node screenshotCompare.js', shell=True)    #get screenshots of all urls in live
+        subprocess.run('node screenshotCompare.js', shell=True)    # run puppeteer/odiff script
 
+        
         for file in os.scandir('out/screenshots/'):
             img = Image.open('out/screenshots/'+ file.name)
-            img.resize((1024, 576))
+            img_small = img.resize((1024, 576))
             os.remove(file)
-            img.save('out/screenshots/'+ file.name)
+            img_small.save('out/screenshots/'+ file.name)
 
         for url in dead:  #copy placeholder for all docs with no image 
             docid = url.split('://')[1].replace('.','_')
