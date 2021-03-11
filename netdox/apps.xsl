@@ -1,7 +1,7 @@
 <xsl:stylesheet version="3.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xpf="http://www.w3.org/2005/xpath-functions"
-                xmlns:err="http://www.w3.org/2005/xqt-error"
+                xmlns:err="http://www.w3.org/2005/xqt-errors"
                 exclude-result-prefixes="#all">
 
 <xsl:output method="xml" indent="yes" />
@@ -87,10 +87,10 @@
             </document>
         </xsl:result-document>
         <xsl:catch>
-            <xsl:message>[ERROR][apps.xsl] The transformation threw an exception.</xsl:message>
-            <xsl:message>[ERROR][apps.xsl] Error code: <xsl:value-of select="$err:code"/></xsl:message>
-            <xsl:message>[ERROR][apps.xsl] Error description: <xsl:value-of select="$err:description"/></xsl:message>
-            <xsl:message>[ERROR][apps.xsl] ****END****</xsl:message>
+            <xsl:message>[ERROR][apps.xsl] The transformation threw an exception.
+            [ERROR][apps.xsl] Error code: <xsl:value-of select="$err:code"/>
+            [ERROR][apps.xsl] Error description: <xsl:value-of select="$err:description"/>
+            [ERROR][apps.xsl] ****END****</xsl:message>
         </xsl:catch>
     </xsl:try>
 </xsl:template>
