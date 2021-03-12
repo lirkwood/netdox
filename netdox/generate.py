@@ -187,12 +187,11 @@ subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 print('[INFO][generate.py] Xen Orchestra documents done')
 print('[INFO][generate.py] Testing domains...')
 try:
-    import linktools
-    linktools.main()
+    subprocess.run('node screenshotCompare.js')
 except Exception as e:
-    print('[ERROR][linktools.py] Link test and screenshot compare module threw an exception:')
+    print('[ERROR][screenshotCompare.js] Screenshot compare module threw an exception:')
     print(e)
-    print('[ERROR][linktools.py] ****END****')
+    print('[ERROR][screenshotCompare.js] ****END****')
 
 # load pageseeder properties and auth info
 with open('pageseeder.properties','r') as f: properties = f.read()
@@ -210,3 +209,6 @@ with open('pageseeder.properties','w') as stream:
         stream.write('\n')
 
 subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
+
+import cleanup
+cleanup.clean()
