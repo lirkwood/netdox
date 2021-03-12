@@ -12,7 +12,7 @@
     </documentinfo>
     <section id="title">
         <fragment id="title">
-            <heading level="1">Status Update on <xsl:value-of select="format-dateTime(current-dateTime(), '[Y0001]-[M01]-[D01] at [H01]:[m01] [z]')"/></heading>
+            <heading level="1">Status Update on <xsl:value-of select="format-dateTime(adjust-dateTime-to-timezone(current-dateTime(), P11H), '[Y0001]-[M01]-[D01] at [H01]:[m01] [z]')"/></heading>
         </fragment>
         <properties-fragment id="stats">
             <property name="total" title="No. of domains up for review" value="{count(json-to-xml(root)//xpf:string)}" />
