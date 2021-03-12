@@ -90,8 +90,12 @@ else {
 }
 
 Set-Location -Path ".kube"
-$KUBECONFIG = Get-ChildItem -Path "." -Filter "*config*" -File -Recurse | % {Resolve-Path -Relative -Path $_} | % {"/usr/.kube/${_}:" -replace '\\','/' -replace '/./','/'}
-$KUBECONFIG = $KUBECONFIG.TrimEnd(':')
+$kubeconfig_arr = Get-ChildItem -Path "." -Filter "*config*" -File -Recurse | % {Resolve-Path -Relative -Path $_} | % {"/usr/.kube/${_}" -replace '\\','/' -replace '/./','/'}
+if ($kubeconfic_arr.Length -gt 1) {
+    $KUBECONFIG = ':' -join $kubeconfig_arr
+} else {
+    $KUBECONFIG = $kubeconfig_arr
+}
 # Awful pipeline that adds all files in .kube to string and converts to absolute posix path in dir /usr/.kube/
 Set-Location ".."
 Write-Host "[INFO][netdox.ps1] Building Docker image..."
