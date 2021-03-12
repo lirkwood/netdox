@@ -187,7 +187,7 @@ subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 print('[INFO][generate.py] Xen Orchestra documents done')
 print('[INFO][generate.py] Testing domains...')
 try:
-    subprocess.run('node screenshotCompare.js')
+    subprocess.run('node screenshotCompare.js', shell=True)
 except Exception as e:
     print('[ERROR][screenshotCompare.js] Screenshot compare module threw an exception:')
     print(e)
