@@ -161,16 +161,19 @@ except Exception as e:
     print('[ERROR][icinga_inf.py] ****END****')
 
 
-# Remove manually excluded domains
-with open('exclusions.txt','r') as stream:
-    exclusions = stream.read().splitlines()
-
-tmp = []
-for domain in master:
-    if domain in exclusions:
-        tmp.append(domain)
-for domain in tmp:
-    del master[domain]
+try:
+    # Remove manually excluded domains
+    with open('src/exclusions.txt','r') as stream:
+        exclusions = stream.read().splitlines()
+except FileNotFoundError:
+    print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
+else:
+    tmp = []
+    for domain in master:
+        if domain in exclusions:
+            tmp.append(domain)
+    for domain in tmp:
+        del master[domain]
 
 with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
