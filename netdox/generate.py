@@ -10,6 +10,11 @@ os.mkdir('out')
 for path in ('DNS', 'IPs', 'k8s', 'xo'):
     os.mkdir('out/'+path)
 
+
+##################
+# Gathering data #
+##################
+
 try:
     print('[INFO][generate.py] Parsing ActiveDirectory response...')
     ad = ad_domains.main()
@@ -32,8 +37,9 @@ except Exception as e:
 
 print('[INFO][generate.py] Parsing DNSMadeEasy response...')
 
+# combine activedirectory and dnsmadeeasy data
 master = {}
-for domain in ad_f:   #combining dicts
+for domain in ad_f:
     master[domain.lower()] = ad_f[domain]
 
 for domain in dnsme_f:
@@ -45,6 +51,7 @@ for domain in dnsme_f:
     else:
         master[domain] = dnsme_f[domain]
 
+# maps pods to domains by tracing back through services/ingress
 try:
     import k8s_inf
     print('[INFO][generate.py] Querying Kubernetes...')
@@ -54,6 +61,7 @@ except Exception as e:
     print(e)
     print('[ERROR][k8s_inf.py] ****END****')
 
+# gets kubernetes internal dns info
 try:
     k8s = k8s_domains.main()
     print('[INFO][generate.py] Parsing Kubernetes response...')
@@ -78,7 +86,7 @@ for ip in dnsme_r:
     else:
         ptr[ip] = dnsme_r[ip]
 
-
+# generate json file with all ptr records in the dns
 ipdict = {}
 for domain in master:   #adding subnets and sorting public/private ips
     master[domain]['dest']['ips'] = list(dict.fromkeys(master[domain]['dest']['ips']))
@@ -95,6 +103,8 @@ for domain in master:   #adding subnets and sorting public/private ips
         else:
             master[domain]['dest']['ips'].pop(i)
             print('[WARNING][generate.py] Removed invalid ip: '+ ip.ipv4)
+
+    # sort ips by public/private
     master[domain]['dest']['ips'] = {'private': [], 'public': []}
     for ip in tmp:
         if ip.public:
@@ -102,6 +112,7 @@ for domain in master:   #adding subnets and sorting public/private ips
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
+# Api call getting all vms/hosts/pools
 try:
     import xo_inf
     print('[INFO][generate.py] Querying Xen Orchestra...')
@@ -122,7 +133,7 @@ for domain in master:
 
 
 print('[INFO][generate.py] Searching secret server for secrets...')
-
+# Search secret server for secrets with <domain> as url key
 try:
     import secret_api
     for domain in master:
@@ -131,15 +142,12 @@ try:
         soup = BeautifulSoup(resp.text, features='xml')
         for secret in soup.find_all('SecretSummary'):
             master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
-
-    with open('src/dns.json','w') as stream:
-        stream.write(json.dumps(master, indent=2))
 except Exception as e:
     print('[ERROR][secret_api.py] Secret server query threw an exception:')
     print(e)
     print('[ERROR][secret_api.py] ****END****')
 
-
+# Add name of domain in icinga if it exists
 try:
     import icinga_inf
     for domain in master:
@@ -152,6 +160,25 @@ except Exception as e:
     print(e)
     print('[ERROR][icinga_inf.py] ****END****')
 
+
+# Remove manually excluded domains
+with open('exclusions.txt','r') as stream:
+    exclusions = stream.read().splitlines()
+
+tmp = []
+for domain in master:
+    if domain in exclusions:
+        tmp.append(domain)
+for domain in tmp:
+    del master[domain]
+
+with open('src/dns.json','w') as stream:
+    stream.write(json.dumps(master, indent=2))
+
+
+################################################
+# Data gathering done, start generating output #
+################################################
 
 for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
     if not os.path.exists(f'src/{type}.xml'):
