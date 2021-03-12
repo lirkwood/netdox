@@ -96,7 +96,6 @@ if ($_kubeconfig.GetType().Name -eq 'Object[]') {
 } else {
     $kubeconfig = $_kubeconfig
 }
-echo $kubeconfig
 # Awful pipeline that adds all files in .kube to string and converts to absolute posix path in dir /usr/.kube/
 Set-Location ".."
 Write-Host "[INFO][netdox.ps1] Building Docker image..."
