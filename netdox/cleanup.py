@@ -47,5 +47,5 @@ def placeholders():
 def clean():
     png2jpg('out/screenshots')
     placeholders()
-    for folder in urimap:
-        ps_api.version(urimap[folder])
+    # for folder in urimap:
+    #     ps_api.version(urimap[folder])
