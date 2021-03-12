@@ -209,6 +209,10 @@ with open('pageseeder.properties','w') as stream:
         stream.write('\n')
 
 subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
+print('[INFO][generate.py] Pageseeder upload finished')
+
+subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
+print('[INFO][generate.py] Status update generated')
 
 import cleanup
 cleanup.clean()
