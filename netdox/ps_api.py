@@ -1,11 +1,12 @@
 import requests, json
 
-def token():
+def auth():
     try:
         with open('src/authentication.json','r') as stream:
             credentials = json.load(stream)['pageseeder']
-            print('[INFO][ps_auth.py] Requesting new access token...')
-            url = 'https://ps-doc.allette.com.au/ps/oauth/token'
+            ps_host = credentials["host"]
+            print('[INFO][ps_api.py] Requesting new access token...')
+            url = f'https://{ps_host}/ps/oauth/token'
             header = {
                 'grant_type': 'client_credentials',
                 'client_id': credentials['id'],
@@ -18,5 +19,5 @@ def token():
             return token
 
     except KeyError:
-        print('[ERROR][auth.py] PageSeeder authentication failed.')
+        print('[ERROR][ps_api.py] PageSeeder authentication failed.')
         quit()
