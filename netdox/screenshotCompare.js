@@ -8,8 +8,8 @@ var success = []
 
 
 async function imgdiff() {
-  for (let index = 0; index < array.length; index++) {
-    const image = array[index]
+  for (let index = 0; index < success.length; index++) {
+    const image = success[index]
     try {
       const { match, reason } = await compare(
         "src/base/".concat(image),
