@@ -1,4 +1,5 @@
-import requests, json
+import requests, datetime, json
+from bs4 import BeautifulSoup
 
 def auth():
     try:
@@ -21,3 +22,38 @@ def auth():
     except KeyError:
         print('[ERROR][ps_api.py] PageSeeder authentication failed.')
         quit()
+
+def get_uri(uri):
+    service = f'/groups/~operations-network/uris/{uri}/uris'
+    r = requests.get(base+service, headers=header, params={'pagesize': 9999})
+    return r.text
+
+def get_files(uri): # returns list of filenames in a folder on pageseeder
+    files = []
+    soup = BeautifulSoup(get_uri(uri), features='xml')
+    for uri in soup.find_all('uri'):
+        files.append(uri['path'].split('/')[-1])
+    
+    return files
+
+
+def archive(docid):
+    service = f'/members/~{credentials["username"]}/groups/~network-documentation/uris/{docid}/archive'
+    r = requests.post(base+service, headers=header)
+    return r
+
+
+def version(uri):
+    service = f'/members/~{credentials["username"]}/groups/~network-documentation/uris/{uri}/versions'
+    requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
+
+# Global vars
+
+header = {
+    'authorization': f'Bearer {auth()}'
+}
+
+with open('src/authentication.json','r') as stream:
+    credentials = json.load(stream)['pageseeder']
+
+base = f'https://{credentials["host"]}/ps/service'    
