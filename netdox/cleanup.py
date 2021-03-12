@@ -2,15 +2,6 @@ from PIL import Image, UnidentifiedImageError
 import os, json, shutil
 import ps_api
 
-header = {
-    'authorization': f'Bearer {ps_api.auth()}'
-}
-
-with open('src/authentication.json','r') as stream:
-    credentials = json.load(stream)['pageseeder']
-
-base = f'https://{credentials["host"]}/ps/service'
-
 urimap = {
     'dns': 	'397664',
     'ips': '391134',
