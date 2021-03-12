@@ -46,7 +46,7 @@ def version(uri):
 
 # Global vars
 
-with open('authentication.json','r') as stream:
+with open('src/authentication.json','r') as stream:
     credentials = json.load(stream)['pageseeder']
 
 header = {
