@@ -51,7 +51,7 @@ def main():
 
 				name = name.replace('*.','_wildcard_.')
 				if name not in forward:
-					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': []}, 'root': domain, 'source': 'DNSMadeEasy'}
+					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': {}}, 'root': domain, 'source': 'DNSMadeEasy'}
 				forward[name]['dest']['ips'].append(record['value'])
 			
 			elif record['type'] == 'CNAME':
@@ -66,7 +66,7 @@ def main():
 				else:
 					value += '.'+ domain
 				if name not in forward:
-					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': []}, 'root': domain, 'source': 'DNSMadeEasy'}
+					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'DNSMadeEasy'}
 				forward[name]['dest']['domains'].append(value)
 
 			elif record['type'] == 'PTR':

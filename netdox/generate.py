@@ -7,8 +7,9 @@ from bs4 import BeautifulSoup
 import subprocess, json, os
 
 os.mkdir('out')
-for path in ('DNS', 'IPs', 'k8s', 'xo'):
+for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'review'):
     os.mkdir('out/'+path)
+
 
 
 ##################
@@ -77,6 +78,22 @@ for domain in k8s:
     else:
         master[domain] = k8s[domain]
 
+
+try:
+    # Remove manually excluded domains once all dns sources have been queried
+    with open('src/exclusions.txt','r') as stream:
+        exclusions = stream.read().splitlines()
+except FileNotFoundError:
+    print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
+else:
+    tmp = []
+    for domain in master:
+        if domain in exclusions:
+            tmp.append(domain)
+    for domain in tmp:
+        del master[domain]
+
+
 ptr = {}    #gathering ptr records
 for ip in ad_r:
     ptr[ip] = ad_r[ip]
@@ -111,6 +128,19 @@ for domain in master:   #adding subnets and sorting public/private ips
             master[domain]['dest']['ips']['public'].append(ip.ipv4)
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
+
+
+# check each ip for each domain against the NAT
+import nat_inf
+for domain in master:
+    for scope in master[domain]['dest']['ips']:
+        for ip in master[domain]['dest']['ips'][scope]:
+            ip_alias = nat_inf.lookup(ip)
+            if ip_alias:
+                for domain in master:
+                    if ip_alias in (master[domain]['dest']['ips']['public'] | master[domain]['dest']['ips']['private']):
+                        master[domain]['dest']['nat'].append(domain)
+
 
 # Api call getting all vms/hosts/pools
 try:
@@ -159,21 +189,6 @@ except Exception as e:
     print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
     print(e)
     print('[ERROR][icinga_inf.py] ****END****')
-
-
-try:
-    # Remove manually excluded domains
-    with open('src/exclusions.txt','r') as stream:
-        exclusions = stream.read().splitlines()
-except FileNotFoundError:
-    print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
-else:
-    tmp = []
-    for domain in master:
-        if domain in exclusions:
-            tmp.append(domain)
-    for domain in tmp:
-        del master[domain]
 
 with open('src/dns.json','w') as stream:
     stream.write(json.dumps(master, indent=2))
@@ -238,11 +253,12 @@ with open('pageseeder.properties','w') as stream:
             stream.write(line)
         stream.write('\n')
 
-subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
-print('[INFO][generate.py] Pageseeder upload finished')
 
 subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
 print('[INFO][generate.py] Status update generated')
 
 import cleanup
 cleanup.clean()
+
+subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
+print('[INFO][generate.py] Pageseeder upload finished')

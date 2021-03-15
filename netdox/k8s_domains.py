@@ -11,7 +11,7 @@ def main():
                 try:
                     for domain in app['domains']:
                         if domain not in master:
-                            master[domain] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': []}, 'root': '', 'source': 'Kubernetes'}
+                            master[domain] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': '', 'source': 'Kubernetes'}
                         master[domain]['dest']['apps'].append(_app)
                 except KeyError:
                     pass

@@ -71,6 +71,11 @@
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:for-each>
+                <xsl:for-each select="xpf:map/xpf:array[@key = 'nat']">
+                    <property name="nat_dest" title="NAT Destination" datatype="xref">
+                        <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="NAT alias"/>
+                    </property>
+                </xsl:for-each>
                 <xsl:for-each select="xpf:map/xpf:array[@key = 'apps']/xpf:string">
                     <property name="app" title="Application" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this app"/>
@@ -95,12 +100,13 @@
                     </block>
                 </fragment>
 
-                <fragment id="links">
+                <properties-fragment id="secrets">
                     <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
-                        <para><link href="https://secret.allette.com.au/app/#/secret/{@key}/general">"<xsl:value-of select="substring-before(.,';')"/>" on secret server. (<xsl:value-of select="substring-after(.,';')"/>)</link></para>
+                        <property name="secret" title="Secret" datatype="link">
+                            <link href="https://secret.allette.com.au/app/#/secret/{@key}/general">"<xsl:value-of select="substring-before(.,';')"/>" (<xsl:value-of select="substring-after(.,';')"/>)</link>
+                        </property>
                     </xsl:for-each>
-                    <para><link href="https://graylogiv.allette.com.au/search?q=%22{$name}%22&amp;rangetype=relative&amp;relative=3600">Last hour of logs on Graylog.</link></para>
-                </fragment>
+                </properties-fragment>
 
                 <properties-fragment id="for-search" labels="s-hide-content">
                     <xsl:variable name="octets">
