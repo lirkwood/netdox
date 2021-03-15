@@ -201,6 +201,17 @@ def valid_ip(ip, verbose=False):
 
     return True
 
+# returns true if provided ip is not in one of the 3 predefined private subnets
+def is_public(ip):
+    if in_subnet(ip, '192.168.0.0/16'):
+        return False
+    elif in_subnet(ip, '10.0.0.0/8'):
+        return False
+    elif in_subnet(ip, '172.16.0.0/12'):
+        return False
+    else:
+        return True
+
 # converts ipv4 in CIDR format to 32 bit wide binary str
 def cidr2binary(ip):
     bin_ip = ''
