@@ -14,11 +14,11 @@ urimap = {
 def png2jpg(path):
     for file in os.scandir(path):
         try:
-            img = Image.open(path+file.name)
+            img = Image.open(path +'/'+ file.name)
             img_small = img.resize((1024, 576)).convert('RGB')
             os.remove(file)
             outfile = file.name.replace('.png','.jpg')
-            img_small.save(path+outfile)
+            img_small.save(path +'/'+ outfile)
 
         except UnidentifiedImageError:
             print(f'[WARNING][cleanup.py] Cannot open {file.name} as image file.')
