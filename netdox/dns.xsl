@@ -71,7 +71,7 @@
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:for-each>
-                <xsl:for-each select="xpf:map/xpf:array[@key = 'nat']">
+                <xsl:for-each select="xpf:map/xpf:array[@key = 'nat']/xpf:string">
                     <property name="nat_dest" title="NAT Destination" datatype="xref">
                         <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="NAT alias"/>
                     </property>
@@ -96,7 +96,7 @@
 
                 <fragment id="screenshot" labels="text-align-center">
                     <block label="border-2">
-                        <image src="/ps/operations/network/website/screenshots/{translate($name,'.','_')}.png"/>
+                        <image src="/ps/operations/network/website/screenshots/{translate($name,'.','_')}.jpg"/>
                     </block>
                 </fragment>
 
