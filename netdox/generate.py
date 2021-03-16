@@ -12,9 +12,9 @@ for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'review'):
 
 
 
-##################
-# Gathering data #
-##################
+#####################
+# Gathering domains #
+#####################
 
 try:
     print('[INFO][generate.py] Parsing ActiveDirectory response...')
@@ -129,17 +129,29 @@ for domain in master:   #adding subnets and sorting public/private ips
         else:
             master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
+# not literally ptr records, forward dns records reversed for convenience
+ptr_implied = {}
+for domain in master:
+    for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
+        if ip not in ptr_implied:
+            ptr_implied[ip] = []
+        ptr_implied[ip].append(domain)
+
+
+########################
+# Gathering other data #
+########################
+
 
 # check each ip for each domain against the NAT
 import nat_inf
 for domain in master:
         for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
             ip_alias = nat_inf.lookup(ip)
-            if ip_alias:
-                for _domain in master:
-                    if ip_alias in (master[_domain]['dest']['ips']['public'] + master[_domain]['dest']['ips']['private']):
-                        if domain != _domain:
-                            master[domain]['dest']['nat'].append(_domain)
+            if ip_alias and (ip_alias in ptr_implied):
+                for _domain in ptr_implied[ip]:
+                    if _domain != domain:
+                        master[domain]['dest']['nat'].append(_domain)
 
 
 # Api call getting all vms/hosts/pools
