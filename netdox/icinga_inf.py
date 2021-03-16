@@ -22,7 +22,7 @@ with open('src/icinga_log.json','w') as stream:
     stream.write(json.dumps(response, indent=2))
 
 def lookup(list):
-    for _obj in response['results']:
+    for _obj in objects:
         obj = _obj['attrs']
         if obj['address'] in list:
             return obj
