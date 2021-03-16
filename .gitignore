@@ -12,7 +12,7 @@ netdox/src/*
 !netdox/src/soap.xml
 !netdox/src/exclusions.txt
 !netdox/src/settings.json
-!netdox/src/placeholder.png
+!netdox/src/placeholder.jpg
 !netdox/src/review.xml
 !netdox/src/node_deps.txt
 !netdox/src/nat.txt
