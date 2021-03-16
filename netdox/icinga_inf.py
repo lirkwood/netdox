@@ -4,9 +4,20 @@ headers = {
     "Accept": "application/json",
 }
 
-r = requests.get('https://icinga.allette.com.au:5665/v1/objects/hosts', auth=('root','8a2b3a827f09c18c'), verify=False)
+with open('src/authentication.json','r') as stream:
+    credentials = json.load(stream)['icinga']
 
-response = json.loads(r.text)
+objects = []
+for host in ('icinga.allette.com.au', 'icinga-sy4.allette.com.au'):
+    r = requests.get(f'https://{host}:5665/v1/objects/hosts', auth=(credentials["username"], credentials["password"]), verify=False)
+    response = json.loads(r.text)
+    try:
+        for obj in response["results"]:
+            objects.append(obj)
+    except KeyError:
+        print(f'[ERROR][icinga_inf.py] Icinga query on host {host} failed. Proceeding anyway...')
+    
+
 with open('src/icinga_log.json','w') as stream:
     stream.write(json.dumps(response, indent=2))
 
