@@ -15,8 +15,14 @@
     <xsl:result-document href="out/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
         <document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
+        <xsl:variable name="labels">
+            <xsl:for-each select="xpf:array[@key = 'labels']/xpf:string">,<xsl:value-of select="."/></xsl:for-each>
+        </xsl:variable>
+
             <documentinfo>
-                <uri docid="_nd_{translate($name,'.','_')}" title="dns: {$name}"><labels>show-reversexrefs</labels></uri>
+                <uri docid="_nd_{translate($name,'.','_')}" title="dns: {$name}">
+                    <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
+                </uri>
             </documentinfo>
 
             <metadata>

@@ -24,6 +24,13 @@ with open('src/icinga_log.json','w') as stream:
 def lookup(list):
     for _obj in objects:
         obj = _obj['attrs']
+        # if any host object in icinga has value present in <list> return obj
         if obj['address'] in list:
             return obj
+        # if any host object has http service on a value presetn in <list> return obj
+        elif ('vars' in obj) and ('http_vhosts' in obj['vars']):
+            for _vhost in obj['vars']['http_vhosts']:
+                vhost = obj['vars']['http_vhosts'][_vhost]
+                if ("http_address" in vhost) and (vhost["http_address"] in list):
+                    return obj
     return None

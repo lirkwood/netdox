@@ -194,7 +194,8 @@ try:
     import icinga_inf
     for domain in master:
         master[domain]['icinga'] = 'Not Monitored'
-        details = icinga_inf.lookup([domain]+[master[domain]['dest']['ips']['private']])
+        # search icinga for objects with address == domain (or any private ip for that domain)
+        details = icinga_inf.lookup([domain] + master[domain]['dest']['ips']['private'])
         if details:
             master[domain]['icinga'] = details['display_name']
 except Exception as e:
@@ -202,14 +203,30 @@ except Exception as e:
     print(e)
     print('[ERROR][icinga_inf.py] ****END****')
 
-with open('src/dns.json','w') as stream:
-    stream.write(json.dumps(master, indent=2))
+
+############################
+# Applying document labels #
+############################
+
+for domain in master:
+    master[domain]['labels'] = []
+    # Icinga
+    if master[domain]['icinga'] == 'Not Monitored':
+        master[domain]['labels'].append('icinga_not_monitored')
+    # Secret Server
+    if len(master[domain]['secrets']) == 0:
+        master[domain]['labels'].append('no_secrets')
 
 
 ################################################
 # Data gathering done, start generating output #
 ################################################
 
+with open('src/dns.json','w') as stream:
+    stream.write(json.dumps(master, indent=2))
+
+
+    
 for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
     if not os.path.exists(f'src/{type}.xml'):
         with open(f'src/{type}.xml','w') as stream:
