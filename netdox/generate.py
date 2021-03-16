@@ -133,13 +133,13 @@ for domain in master:   #adding subnets and sorting public/private ips
 # check each ip for each domain against the NAT
 import nat_inf
 for domain in master:
-    for scope in master[domain]['dest']['ips']:
-        for ip in master[domain]['dest']['ips'][scope]:
+        for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
             ip_alias = nat_inf.lookup(ip)
             if ip_alias:
-                for domain in master:
-                    if ip_alias in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
-                        master[domain]['dest']['nat'].append(domain)
+                for _domain in master:
+                    if ip_alias in (master[_domain]['dest']['ips']['public'] + master[_domain]['dest']['ips']['private']):
+                        if domain != _domain:
+                            master[domain]['dest']['nat'].append(_domain)
 
 
 # Api call getting all vms/hosts/pools
