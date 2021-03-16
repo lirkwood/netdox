@@ -20,14 +20,16 @@ def auth():
         print('[ERROR][ps_api.py] PageSeeder authentication failed.')
         quit()
 
-def get_uri(uri):
+def get_uri(uri, params={}):
+    params['pagesize'] = 9999
+
     service = f'/groups/~operations-network/uris/{uri}/uris'
-    r = requests.get(base+service, headers=header, params={'pagesize': 9999})
+    r = requests.get(base+service, headers=header, params=params)
     return r.text
 
 def get_files(uri): # returns list of filenames in a folder on pageseeder
     files = []
-    soup = BeautifulSoup(get_uri(uri), features='xml')
+    soup = BeautifulSoup(get_uri(uri, {'type': 'document'}), features='xml')
     for uri in soup.find_all('uri'):
         files.append(uri['path'].split('/')[-1])
     

@@ -1,14 +1,20 @@
 from PIL import Image, UnidentifiedImageError
 import os, json, shutil
+
+from bs4 import BeautifulSoup
 import ps_api
 
-urimap = {
-    'dns': 	'397664',
-    'ips': '391134',
-    'k8s': '398122',
-    'xo': '397831',
-    'screenshots': '400992'
-}
+def getUrimap():
+    urimap = {}
+    # URI of website folder = 375156
+    soup = BeautifulSoup(ps_api.get_uri('375156', 'folder'))
+    for uri in soup.find_all('uri'):
+        urimap[uri.displaytitle.string] = uri['id']
+    
+    return urimap
+
+global urimap
+urimap = getUrimap()
 
 # converts every file in a dir from png to 1024x576 jpg
 def png2jpg(path):
@@ -26,13 +32,12 @@ def png2jpg(path):
 
 def placeholders():
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
-    existing_screens = ps_api.get_files('screenshots')  # get list of screenshots on pageseeder
+    existing_screens = ps_api.get_files(urimap['screenshots'])  # get list of screenshots on pageseeder
     with open('src/review.json','r') as stream:
         review = json.load(stream)
         for path in review:
             if (path.split('/')[-1] not in existing_screens) and review[path].startswith('no_ss'):
                 shutil.copyfile('src/placeholder.jpg', path)
-
 
 
 def clean():
