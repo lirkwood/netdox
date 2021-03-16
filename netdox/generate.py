@@ -138,7 +138,7 @@ for domain in master:
             ip_alias = nat_inf.lookup(ip)
             if ip_alias:
                 for domain in master:
-                    if ip_alias in (master[domain]['dest']['ips']['public'] | master[domain]['dest']['ips']['private']):
+                    if ip_alias in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
                         master[domain]['dest']['nat'].append(domain)
 
 
