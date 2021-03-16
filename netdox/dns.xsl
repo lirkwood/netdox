@@ -94,19 +94,19 @@
                 </xsl:for-each>
                 </properties-fragment>
 
+                <properties-fragment id="secrets">
+                    <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
+                        <property name="secret" title="{substring-after(.,';')}" datatype="link">
+                            <link href="https://secret.allette.com.au/app/#/secret/{@key}/general"><xsl:value-of select="substring-before(.,';')"/></link>
+                        </property>
+                    </xsl:for-each>
+                </properties-fragment>
+
                 <fragment id="screenshot" labels="text-align-center">
                     <block label="border-2">
                         <image src="/ps/operations/network/website/screenshots/{translate($name,'.','_')}.jpg"/>
                     </block>
                 </fragment>
-
-                <properties-fragment id="secrets">
-                    <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
-                        <property name="secret" title="Secret" datatype="link">
-                            <link href="https://secret.allette.com.au/app/#/secret/{@key}/general">"<xsl:value-of select="substring-before(.,';')"/>" (<xsl:value-of select="substring-after(.,';')"/>)</link>
-                        </property>
-                    </xsl:for-each>
-                </properties-fragment>
 
                 <properties-fragment id="for-search" labels="s-hide-content">
                     <xsl:variable name="octets">
