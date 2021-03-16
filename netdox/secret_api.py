@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup
-from getpass import getpass
 import requests, time, json
 
 def refresh():
