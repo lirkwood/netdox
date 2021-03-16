@@ -7,7 +7,7 @@ import ps_api
 def getUrimap():
     urimap = {}
     # URI of website folder = 375156
-    soup = BeautifulSoup(ps_api.get_uri('375156', {'type': 'folder'}))
+    soup = BeautifulSoup(ps_api.get_uri('375156', {'type': 'folder'}), 'lxml')
     for uri in soup.find_all('uri'):
         urimap[uri.displaytitle.string] = uri['id']
     
