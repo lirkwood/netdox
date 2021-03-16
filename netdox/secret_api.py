@@ -51,22 +51,24 @@ def searchSecrets(term=None, field=None, exposed=True, partial=False):
     params = {}
     if term:
         params['searchTerm'] = term
-        if field:
-            params['fieldName'] = field
-            params['showDeleted'] = 'false'
-            params['showRestricted'] = 'true'
-            if exposed:
-                action = 'SearchSecretsByExposedFieldValue'
-                if partial:
-                    params['showPartialMatches'] = 'true'
-                else:
-                    params['showPartialMatches'] = 'false'
+    else:
+        params['searchTerm'] = ''
+    if field:
+        params['fieldName'] = field
+        params['showDeleted'] = 'false'
+        params['showRestricted'] = 'true'
+        if exposed:
+            action = 'SearchSecretsByExposedFieldValue'
+            if partial:
+                params['showPartialMatches'] = 'true'
             else:
-                action = 'SearchSecretsByFieldValue'
+                params['showPartialMatches'] = 'false'
         else:
-            action = 'SearchSecrets'
-            params['includeDeleted'] = 'false'
-            params['includeRestricted'] = 'true'
+            action = 'SearchSecretsByFieldValue'
+    else:
+        action = 'SearchSecrets'
+        params['includeDeleted'] = 'false'
+        params['includeRestricted'] = 'true'
     
     return query(action, params)
     
