@@ -17,5 +17,9 @@
     "secret": {
         "username": "",
         "password": ""
+    },
+    "icinga": {
+        "username": "",
+        "password": ""
     }
 }
