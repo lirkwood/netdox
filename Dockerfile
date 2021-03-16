@@ -89,7 +89,4 @@ COPY .kube /usr/.kube
 #copy auth details
 COPY authentication.json /opt/app/src
 
-#copy repo
-COPY netdox /opt/app
-
 CMD [ "python3", "generate.py" ]
