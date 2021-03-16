@@ -7,7 +7,7 @@ urimap = {
     'ips': '391134',
     'k8s': '398122',
     'xo': '397831',
-    'screenshots': '395115'
+    'screenshots': '400992'
 }
 
 # converts every file in a dir from png to 1024x576 jpg
@@ -31,7 +31,7 @@ def placeholders():
         review = json.load(stream)
         for path in review:
             if (path.split('/')[-1] not in existing_screens) and review[path].startswith('no_ss'):
-                shutil.copyfile('src/placeholder.png', path)
+                shutil.copyfile('src/placeholder.jpg', path)
 
 
 
