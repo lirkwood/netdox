@@ -146,12 +146,12 @@ for domain in master:
 # check each ip for each domain against the NAT
 import nat_inf
 for domain in master:
-        for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
-            ip_alias = nat_inf.lookup(ip)
-            if ip_alias and (ip_alias in ptr_implied):
-                for _domain in ptr_implied[ip]:
-                    if _domain != domain:
-                        master[domain]['dest']['nat'].append(_domain)
+    for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
+        ip_alias = nat_inf.lookup(ip)
+        if ip_alias and (ip_alias in ptr_implied):
+            for _domain in ptr_implied[ip]:
+                if _domain != domain:
+                    master[domain]['dest']['nat'].append(_domain)
 
 
 # Api call getting all vms/hosts/pools
