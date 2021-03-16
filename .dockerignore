@@ -10,7 +10,7 @@ netdox/src/*
 !netdox/src/prefixes.txt
 !netdox/src/exclusions.txt
 !netdox/src/settings.json
-!netdox/src/placeholder.png
+!netdox/src/placeholder.jpg
 !netdox/src/review.xml
 !netdox/src/nat.txt
 
