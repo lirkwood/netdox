@@ -35,9 +35,10 @@ def placeholders():
     existing_screens = ps_api.get_files(urimap['screenshots'])  # get list of screenshots on pageseeder
     with open('src/review.json','r') as stream:
         review = json.load(stream)
-        for path in review:
-            if (path.split('/')[-1] not in existing_screens) and review[path].startswith('no_ss'):
-                shutil.copyfile('src/placeholder.jpg', path)
+        for png in review:
+            jpg = png.replace('.png','.jpg')
+            if (jpg not in existing_screens) and review[png].startswith('no_ss'):
+                shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpg}')
 
 
 def clean():
