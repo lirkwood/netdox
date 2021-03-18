@@ -58,7 +58,7 @@
                     </property>
                         </xsl:when>
                         <xsl:otherwise>
-                    <property name="license" title="License" value="None" />
+                    <property name="license" title="License" value="—" />
                         </xsl:otherwise>
                     </xsl:choose>
                 </properties-fragment>
