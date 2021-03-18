@@ -3,7 +3,7 @@ import subprocess, re
 import ps_api
 
 
-license_pattern = re.compile(r'(?P=<domain>[\w.-]+)\s+-\s+')
+license_pattern = re.compile(r'(REPLACED )?(?P<domain>[\w.-]+)\s+-\s+')
 
 
 def read(uri, dns):
@@ -16,7 +16,7 @@ def read(uri, dns):
         domains = [uri['title'].split()[0]]
 
     try:
-        subprocess.check_output(f'ping -c 1 -W 2 {domains[0]}', shell=True)
+        subprocess.check_output(f'ping -c 1 -w 2 {domains[0]}', shell=True, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         domains[0] = "[old] "+ domains[0]
     else:
