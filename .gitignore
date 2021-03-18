@@ -16,6 +16,7 @@ netdox/src/*
 !netdox/src/review.xml
 !netdox/src/node_deps.txt
 !netdox/src/nat.txt
+!netdox/src/licenses.json
 
 *.zip
 *log.txt
