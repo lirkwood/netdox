@@ -228,7 +228,15 @@ for domain in master:
         master[domain]['labels'].append('icinga_not_monitored')
     # Secret Server
     if len(master[domain]['secrets']) == 0:
-        master[domain]['labels'].append('no_secrets')
+        secrets = False
+        for alias in (master[domain]['dest']['domains'] + master[domain]['dest']['nat']):
+            try:
+                if len(master[alias]['secrets']) != 0:
+                    secrets = True
+            except KeyError:
+                pass
+        if not secrets:
+            master[domain]['labels'].append('no_secrets')
 
 
 ################################################
