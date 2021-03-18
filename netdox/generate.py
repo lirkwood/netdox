@@ -205,16 +205,16 @@ except Exception as e:
 
 
 try:
-    with open('src/licenses.json','r') as stream:
-        licenses = json.load(stream)
-        for license_id in licenses:
-            for domain in licenses[license_id]:
-                if isinstance(domain, str) and (not domain.startswith('[old]')):
-                    master[domain]['license'] = license_id
+    import license_inf
+    licenses = license_inf.fetch(master)
+    for license_id in licenses:
+        for domain in licenses[license_id]:
+            if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
+                master[domain]['license'] = license_id
 except Exception as e:
-    print('[ERROR][generate.py] License processing threw an exception:')
+    print('[ERROR][license_inf.py] License processing threw an exception:')
     print(e)
-    print('[ERROR][generate.py] ****END****')
+    print('[ERROR][license_inf.py] ****END****')
 
 
 ############################
