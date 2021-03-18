@@ -51,7 +51,16 @@
                     <property name="root"       title="Root"        value="{xpf:string[@key = 'root']}" />
                     <property name="source"     title="Source"      value="{xpf:string[@key = 'source']}" />
                     <property name="icinga"     title="Icinga Display Name"      value="{xpf:string[@key = 'icinga']}" />
-                    <property name="client"     title="Client"      value="" />
+                    <xsl:choose>
+                        <xsl:when test="xpf:string[@key = 'license']">
+                    <property name="license"     title="License"      datatype="xref" >
+                        <xref frag="default" uri="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
+                    </property>
+                        </xsl:when>
+                        <xsl:otherwise>
+                    <property name="license" title="License" value="None" />
+                        </xsl:otherwise>
+                    </xsl:choose>
                 </properties-fragment>
 
                 <properties-fragment id="dest">

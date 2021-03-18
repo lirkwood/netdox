@@ -204,6 +204,19 @@ except Exception as e:
     print('[ERROR][icinga_inf.py] ****END****')
 
 
+try:
+    with open('src/licenses.json','r') as stream:
+        licenses = json.load(stream)
+        for license_id in licenses:
+            for domain in licenses[license_id]:
+                if isinstance(domain, str) and (not domain.startswith('[old]')):
+                    master[domain]['license'] = license_id
+except Exception as e:
+    print('[ERROR][generate.py] License processing threw an exception:')
+    print(e)
+    print('[ERROR][generate.py] ****END****')
+
+
 ############################
 # Applying document labels #
 ############################
