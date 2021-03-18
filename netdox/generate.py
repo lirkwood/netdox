@@ -23,8 +23,7 @@ try:
     ad_r = ad['reverse']
 except Exception as e:
     print('[ERROR][ad_domains.py] ActiveDirectory parsing threw an exception:')
-    print(e)
-    print('[ERROR][ad_domains.py] ****END****')
+    raise e
 
 try:
     print('[INFO][generate.py] Querying DNSMadeEasy...')
@@ -33,8 +32,7 @@ try:
     dnsme_r = dnsme['reverse']
 except Exception as e:
     print('[ERROR][ad_domains.py] DNSMadeEasy query threw an exception:')
-    print(e)
-    print('[ERROR][ad_domains.py] ****END****')
+    raise e
 
 print('[INFO][generate.py] Parsing DNSMadeEasy response...')
 
@@ -59,8 +57,7 @@ try:
     k8s_inf.main(master)
 except Exception as e:
     print('[ERROR][k8s_inf.py] Kubernetes query threw an exception:')
-    print(e)
-    print('[ERROR][k8s_inf.py] ****END****')
+    raise e
 
 # gets kubernetes internal dns info
 try:
@@ -68,8 +65,7 @@ try:
     print('[INFO][generate.py] Parsing Kubernetes response...')
 except Exception as e:
     print('[ERROR][k8s_domains.py] Kubernetes parsing threw an exception:')
-    print(e)
-    print('[ERROR][k8s_domains.py] ****END****')
+    raise e
 
 for domain in k8s:
     if domain in master:
@@ -143,17 +139,6 @@ for domain in master:
 ########################
 
 
-# check each ip for each domain against the NAT
-import nat_inf
-for domain in master:
-    for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
-        ip_alias = nat_inf.lookup(ip)
-        if ip_alias and (ip_alias in ptr_implied):
-            for _domain in ptr_implied[ip_alias]:
-                if _domain != domain:
-                    master[domain]['dest']['nat'].append(_domain)
-
-
 # Api call getting all vms/hosts/pools
 try:
     import xo_inf
@@ -162,10 +147,25 @@ try:
     print('[INFO][generate.py] Parsing Xen Orchestra response...')
 except Exception as e:
     print('[ERROR][xo_inf.py] Xen Orchestra query threw an exception:')
-    print(e)
-    print('[ERROR][xo_inf.py] ****END****')
+    raise e
 
-    
+
+# check each ip for each domain against the NAT
+try:
+    import nat_inf
+    for domain in master:
+        for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
+            ip_alias = nat_inf.lookup(ip)
+            if ip_alias and (ip_alias in ptr_implied):
+                for _domain in ptr_implied[ip_alias]:
+                    if _domain != domain:
+                        master[domain]['dest']['nat'].append(_domain)
+except Exception as e:
+    print('[ERROR][nat_inf.py] NAT mapping threw an exception:')
+    print(e)    # Non essential => continue without
+    print('[ERROR][nat_inf.py] ****END****')
+
+
 # search for VMs to match on domains
 for domain in master:
     for ip in master[domain]['dest']['ips']['private']:
@@ -186,7 +186,7 @@ try:
             master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
 except Exception as e:
     print('[ERROR][secret_api.py] Secret server query threw an exception:')
-    print(e)
+    print(e)    # Non essential => continue without
     print('[ERROR][secret_api.py] ****END****')
 
 # Add name of domain in icinga if it exists
