@@ -54,7 +54,7 @@
                     <xsl:choose>
                         <xsl:when test="xpf:string[@key = 'license']">
                     <property name="license"     title="License"      datatype="xref" >
-                        <xref frag="default" uri="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
+                        <xref frag="default" uriid="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
                     </property>
                         </xsl:when>
                         <xsl:otherwise>
