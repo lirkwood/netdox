@@ -1,4 +1,4 @@
-import requests, datetime, json
+import requests, datetime, json, os
 from bs4 import BeautifulSoup
 
 def auth():
@@ -35,9 +35,23 @@ def get_files(uri): # returns list of filenames in a folder on pageseeder
     
     return files
 
+def export(uri, params={}, path='/opt/app/src/psml'):
+    service = f'/members/{credentials["username"]}/uris/{uri}/export'
+    if not os.path.exists(path):
+        os.mkdir(path)
+    r = requests.get(base+service, headers=header, params=params)
+    return r
 
-def archive(docid):
-    service = f'/members/~{credentials["username"]}/groups/~network-documentation/uris/{docid}/archive'
+
+def get_thread(id):
+    service = f'/threads/{id}/progress'
+    r = requests.get(base+service, headers=header)
+    return r
+
+
+
+def archive(uri):
+    service = f'/members/~{credentials["username"]}/groups/~network-documentation/uris/{uri}/archive'
     r = requests.post(base+service, headers=header)
     return r
 
