@@ -18,6 +18,9 @@ RUN apt-get install -y kubectl
 ###################################
 FROM python:3.9.1-slim-buster AS py
 
+# suppress a warning from python
+ENV PYTHONWARNINGS=default,ignore::InsecureRequestWarning
+
 # set env vars for ant
 ENV ANT_HOME=/opt/ant/apache-ant-1.10.9
 ENV PATH=${PATH}:${ANT_HOME}/bin
