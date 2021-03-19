@@ -173,21 +173,21 @@ for domain in master:
         for vm in json.loads(xo_query):
             master[domain]['dest']['vms'].append(vm['uuid'])
 
-
-print('[INFO][generate.py] Searching secret server for secrets...')
-# Search secret server for secrets with <domain> as url key
-try:
-    import secret_api
-    for domain in master:
-        master[domain]['secrets'] = {}
-        resp = secret_api.searchSecrets(domain, 'URL Key')
-        soup = BeautifulSoup(resp.text, features='xml')
-        for secret in soup.find_all('SecretSummary'):
-            master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
-except Exception as e:
-    print('[ERROR][secret_api.py] Secret server query threw an exception:')
-    print(e)    # Non essential => continue without
-    print('[ERROR][secret_api.py] ****END****')
+### PAUSED ###
+# print('[INFO][generate.py] Searching secret server for secrets...')
+# # Search secret server for secrets with <domain> as url key
+# try:
+#     import secret_api
+#     for domain in master:
+#         master[domain]['secrets'] = {}
+#         resp = secret_api.searchSecrets(domain, 'URL Key')
+#         soup = BeautifulSoup(resp.text, features='xml')
+#         for secret in soup.find_all('SecretSummary'):
+#             master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
+# except Exception as e:
+#     print('[ERROR][secret_api.py] Secret server query threw an exception:')
+#     print(e)    # Non essential => continue without
+#     print('[ERROR][secret_api.py] ****END****')
 
 # Add name of domain in icinga if it exists
 try:
@@ -229,12 +229,17 @@ for domain in master:
     # Secret Server
     if len(master[domain]['secrets']) == 0:
         secrets = False
+        # Test cnames and NAT destinations
         for alias in (master[domain]['dest']['domains'] + master[domain]['dest']['nat']):
             try:
                 if len(master[alias]['secrets']) != 0:
                     secrets = True
             except KeyError:
                 pass
+
+        # Test vms/apps
+        
+
         if not secrets:
             master[domain]['labels'].append('no_secrets')
 
@@ -302,6 +307,11 @@ with open('pageseeder.properties','w') as stream:
         else:
             stream.write(line)
         stream.write('\n')
+
+with open('build.xml','r') as stream: soup = BeautifulSoup(stream, 'lxml')
+with open('build.xml','w') as stream:
+    soup.find('ps:upload')['group'] = auth['group']
+    stream.write(soup.prettify())
 
 
 subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
