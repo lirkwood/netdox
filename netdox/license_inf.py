@@ -23,7 +23,7 @@ def read(uri, dns):
         try:
             for alias in (dns[domains[0]]['dest']['domains'] + dns[domains[0]]['dest']['nat']):
                 domains.append(alias)
-                print(f'{domains[0]} matched on {alias}')
+                # print(f'[INFO][license_inf.py] {domains[0]} matched on {alias}')
         except KeyError:
             domains[0] = "[ext] "+ domains[0]
     finally:
@@ -32,8 +32,8 @@ def read(uri, dns):
 
 def fetch(dns):
     license_dict = {}
-    # 187062 is the uri of the license folder in operations-license
-    license_xml = BeautifulSoup(ps_api.get_uris('187062', 'operations-license'), 'lxml')
+    # 187062 is the uri of the license folder in operations-license shared to operations-network
+    license_xml = BeautifulSoup(ps_api.get_uris('187062'), 'lxml')
     for uri in license_xml("uri"):
         uri_inf = read(uri, dns)
         license_dict[uri_inf[0]] = uri_inf[1]
