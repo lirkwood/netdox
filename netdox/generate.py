@@ -173,21 +173,21 @@ for domain in master:
         for vm in json.loads(xo_query):
             master[domain]['dest']['vms'].append(vm['uuid'])
 
-### PAUSED ###
-# print('[INFO][generate.py] Searching secret server for secrets...')
-# # Search secret server for secrets with <domain> as url key
-# try:
-#     import secret_api
-#     for domain in master:
-#         master[domain]['secrets'] = {}
-#         resp = secret_api.searchSecrets(domain, 'URL Key')
-#         soup = BeautifulSoup(resp.text, features='xml')
-#         for secret in soup.find_all('SecretSummary'):
-#             master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
-# except Exception as e:
-#     print('[ERROR][secret_api.py] Secret server query threw an exception:')
-#     print(e)    # Non essential => continue without
-#     print('[ERROR][secret_api.py] ****END****')
+
+print('[INFO][generate.py] Searching secret server for secrets...')
+# Search secret server for secrets with <domain> as url key
+try:
+    import secret_api
+    for domain in master:
+        master[domain]['secrets'] = {}
+        resp = secret_api.searchSecrets(domain, 'URL Key')
+        soup = BeautifulSoup(resp.text, features='xml')
+        for secret in soup.find_all('SecretSummary'):
+            master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
+except Exception as e:
+    print('[ERROR][secret_api.py] Secret server query threw an exception:')
+    print(e)    # Non essential => continue without
+    print('[ERROR][secret_api.py] ****END****')
 
 # Add name of domain in icinga if it exists
 try:

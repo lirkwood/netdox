@@ -109,13 +109,13 @@
                 </xsl:for-each>
                 </properties-fragment>
 
-                <!-- <properties-fragment id="secrets">
+                <properties-fragment id="secrets">
                     <xsl:for-each select="xpf:map[@key = 'secrets']/xpf:string">
                         <property name="secret" title="{substring-after(.,';')}" datatype="link">
                             <link href="https://secret.allette.com.au/app/#/secret/{@key}/general"><xsl:value-of select="substring-before(.,';')"/></link>
                         </property>
                     </xsl:for-each>
-                </properties-fragment> -->
+                </properties-fragment>
 
                 <fragment id="screenshot" labels="text-align-center">
                     <block label="border-2">
