@@ -47,7 +47,7 @@ def get_uris(uri, group=defaultgroup, params={}):
 
 def get_files(uri, group=defaultgroup): # returns list of filenames in a folder on pageseeder
     files = []
-    soup = BeautifulSoup(get_uri(uri, group, {'type': 'document'}), features='xml')
+    soup = BeautifulSoup(get_uris(uri, group, {'type': 'document'}), features='xml')
     for uri in soup.find_all('uri'):
         files.append(uri['path'].split('/')[-1])
     
