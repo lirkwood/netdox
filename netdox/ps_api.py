@@ -1,6 +1,16 @@
 import requests, datetime, json, os
 from bs4 import BeautifulSoup
 
+# Auth info
+
+with open('src/authentication.json','r') as stream:
+    credentials = json.load(stream)['pageseeder']
+
+defaultgroup = credentials['group']
+
+
+# Useful services
+
 def auth():
     try:
         print('[INFO][ps_api.py] Requesting new access token...')
@@ -21,12 +31,12 @@ def auth():
         quit()
 
 
-def get_uri(uri, group='operations-network'):
+def get_uri(uri, group=defaultgroup):
     service = f'/groups/~{group}/uris/{uri}'
     r = requests.get(base+service, headers=header)
     return r.text
 
-def get_uris(uri, group='operations-network', params={}):
+def get_uris(uri, group=defaultgroup, params={}):
     if 'pagesize' not in params:
         params['pagesize'] = 9999
 
@@ -35,7 +45,7 @@ def get_uris(uri, group='operations-network', params={}):
     return r.text
 
 
-def get_files(uri, group='operations-network'): # returns list of filenames in a folder on pageseeder
+def get_files(uri, group=defaultgroup): # returns list of filenames in a folder on pageseeder
     files = []
     soup = BeautifulSoup(get_uri(uri, group, {'type': 'document'}), features='xml')
     for uri in soup.find_all('uri'):
@@ -68,12 +78,8 @@ def version(uri):
     requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
 
 
-###############
-# Global vars #
-###############
 
-with open('src/authentication.json','r') as stream:
-    credentials = json.load(stream)['pageseeder']
+# Global vars
 
 header = {
     'authorization': f'Bearer {auth()}'

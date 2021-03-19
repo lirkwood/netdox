@@ -12,7 +12,8 @@
         "secret": "",
         "username": "",
         "password": "",
-        "host": ""
+        "host": "",
+        "group": ""
     },
     "secret": {
         "username": "",
