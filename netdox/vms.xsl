@@ -14,8 +14,19 @@
   <xsl:template match="xpf:array/xpf:map">
     <xsl:result-document href="out/xo/{xpf:string[@key='name_label']}.psml" method="xml" indent="yes">
       <document type="xo_vm" level="portable">
+
+        <xsl:variable name="labels">
+            <xsl:choose>
+              <xsl:when test="xpf:string[@key='power_state'] = 'Halted'">,xo_halted</xsl:when>
+              <xsl:when test="xpf:string[@key='power_state'] = 'Suspended'">,xo_suspended</xsl:when>
+              <xsl:when test="xpf:string[@key='power_state'] = 'Running'">,xo_running</xsl:when>
+            </xsl:choose>
+        </xsl:variable>
+
         <documentinfo>
-          <uri title="vm: {xpf:string[@key='name_label']}" docid="_nd_{xpf:string[@key='uuid']}"><labels>show-reversexrefs</labels></uri>
+          <uri title="vm: {xpf:string[@key='name_label']}" docid="_nd_{xpf:string[@key='uuid']}">
+            <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
+          </uri>
         </documentinfo>
 
         <metadata>
