@@ -190,6 +190,7 @@ except Exception as e:
     print('[ERROR][secret_api.py] ****END****')
 
 # Add name of domain in icinga if it exists
+print('[INFO][generate.py] Querying Icinga...')
 try:
     import icinga_inf
     for domain in master:
@@ -203,7 +204,7 @@ except Exception as e:
     print(e)
     print('[ERROR][icinga_inf.py] ****END****')
 
-
+print('[INFO][generate.py] Searching for pageseeder licenses...')
 try:
     import license_inf
     licenses = license_inf.fetch(master)
@@ -221,6 +222,7 @@ except Exception as e:
 # Applying document labels #
 ############################
 
+print('[INFO][generate.py] Applying document labels...')
 for domain in master:
     master[domain]['labels'] = []
     # Icinga
@@ -308,10 +310,10 @@ with open('pageseeder.properties','w') as stream:
             stream.write(line)
         stream.write('\n')
 
-with open('build.xml','r') as stream: soup = BeautifulSoup(stream, 'lxml')
+with open('build.xml','r') as stream: soup = BeautifulSoup(stream, features='xml')
 with open('build.xml','w') as stream:
     soup.find('ps:upload')['group'] = auth['group']
-    stream.write(soup.prettify())
+    stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
 
 subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
