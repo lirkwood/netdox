@@ -51,7 +51,7 @@ def compareFilesets():
             uri = file["uri"]
 
             if filename not in local:
-                ps_api.archive(uri)
+                print(filename)
             
 
 
