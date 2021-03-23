@@ -146,15 +146,18 @@ def mapworkers(pdict, dns):
     with open('src/authentication.json','r') as authstream:
         auth = json.load(authstream)['xenorchestra']
         try:
-            register = subprocess.run(['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']], stdout=subprocess.DEVNULL)
+            register = subprocess.run(['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']], stdout=subprocess.PIPE)
             register.check_returncode()
+            if str(register.stdout, encoding='utf-8') != f'Successfully logged with {auth["username"]}\n':
+                print(str(register.stdout, encoding='utf-8'))
+                print(f'Successfully logged with {auth["username"]}\n')
+                raise subprocess.CalledProcessError(register.returncode, ['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']])
         except subprocess.CalledProcessError:
             print('[ERROR][k8s_inf.py] Xen Orchestra authentication failed.')
         except Exception as e:
             print(f'[ERROR][k8s_inf.py] While attempting Xen Orchestra authentication an exception was thrown:')
             print(e)
             print('[ERROR][k8s_inf.py] ****END****')
-
         else:
             for context in pdict:
                 for domain in pdict[context]:
