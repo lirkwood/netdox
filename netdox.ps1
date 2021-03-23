@@ -105,6 +105,9 @@ if ($? -eq 'True') {
     docker container rm netdox | Out-Null
     Write-Host "[INFO][netdox.ps1] Build successful. Starting container..."
     docker run -it --name netdox netdox | Write-Host
+    Get-ChildItem -Path 'netdox/src/base' | % {Remove-Item $_}
+    docker cp netdox /opt/app/src/base netdox/src/base
+    # copy updated base images to local for next time
 }
 else {
     Write-Host "[ERROR][netdox.ps1] Docker build failed."
