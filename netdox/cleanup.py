@@ -42,22 +42,23 @@ def placeholders():
 
 
 def compareFilesets():
-    for folder_uri in urimap:
-        folder = urimap[folder_uri]
-        remote = BeautifulSoup(ps_api.get_uris(folder), features='xml')
+    for folder in urimap:
+        folder_uri = urimap[folder]
+        remote = BeautifulSoup(ps_api.get_uris(folder_uri), features='xml')
         local = os.listdir(f'out/{folder}')
         for file in remote("uri"):
             filename = file["path"].split('/')[-1]
             uri = file["uri"]
 
             if filename not in local:
-                print(filename)
+                ps_api.archive(uri)
             
 
 
 def clean():
     png2jpg('out/screenshots')
     placeholders()
+    compareFilesets()
     
     # for folder in urimap:
     #     ps_api.version(urimap[folder])
