@@ -1,5 +1,5 @@
 from PIL import Image, UnidentifiedImageError
-import os, json, shutil, urllib.parse
+import re, os, json, shutil
 
 from bs4 import BeautifulSoup
 import ps_api
@@ -44,16 +44,23 @@ def placeholders():
 def compareFilesets():
     for folder in urimap:
         folder_uri = urimap[folder]
-        remote = BeautifulSoup(ps_api.get_uris(folder_uri), features='xml')
+        remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={'type': 'document'}), features='xml')
         if os.path.exists(f'out/{folder}'):
-            local = os.listdir(f'out/{folder}')
+            _local = os.listdir(f'out/{folder}')
+            local = []
+            for file in _local:
+                local.append(alnum(file))
+
             for file in remote("uri"):
-                filename = urllib.parse.unquote(file["path"].split('/')[-1])
+                filename = alnum(file["decodedpath"].split('/')[-1])
                 uri = file["id"]
 
                 if filename not in local:
                     ps_api.archive(uri)
             
+
+def alnum(string):
+    return re.sub(r'[^a-zA-Z0-9 .]', '', string)
 
 
 def clean():
@@ -61,5 +68,5 @@ def clean():
     placeholders()
     compareFilesets()
     
-    # for folder in urimap:
-    #     ps_api.version(urimap[folder])
+    for folder in urimap:
+        ps_api.version(urimap[folder])
