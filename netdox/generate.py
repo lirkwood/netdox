@@ -140,115 +140,110 @@ for domain in master:
 
 
 # Api call getting all vms/hosts/pools
-# try:
-#     import xo_inf
-#     print('[INFO][generate.py] Querying Xen Orchestra...')
-#     xo_inf.main(master)
-#     print('[INFO][generate.py] Parsing Xen Orchestra response...')
-# except Exception as e:
-#     print('[ERROR][xo_inf.py] Xen Orchestra query threw an exception:')
-#     raise e
+try:
+    import xo_inf
+    print('[INFO][generate.py] Querying Xen Orchestra...')
+    xo_inf.main(master)
+    print('[INFO][generate.py] Parsing Xen Orchestra response...')
+except Exception as e:
+    print('[ERROR][xo_inf.py] Xen Orchestra query threw an exception:')
+    raise e
 
 
 # check each ip for each domain against the NAT
-# try:
-#     import nat_inf
-#     for domain in master:
-#         for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
-#             ip_alias = nat_inf.lookup(ip)
-#             if ip_alias and (ip_alias in ptr_implied):
-#                 for _domain in ptr_implied[ip_alias]:
-#                     if _domain != domain:
-#                         master[domain]['dest']['nat'].append(_domain)
-# except Exception as e:
-#     print('[ERROR][nat_inf.py] NAT mapping threw an exception:')
-#     print(e)    # Non essential => continue without
-#     print('[ERROR][nat_inf.py] ****END****')
+try:
+    import nat_inf
+    for domain in master:
+        for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
+            ip_alias = nat_inf.lookup(ip)
+            if ip_alias and (ip_alias in ptr_implied):
+                for _domain in ptr_implied[ip_alias]:
+                    if _domain != domain:
+                        master[domain]['dest']['nat'].append(_domain)
+except Exception as e:
+    print('[ERROR][nat_inf.py] NAT mapping threw an exception:')
+    print(e)    # Non essential => continue without
+    print('[ERROR][nat_inf.py] ****END****')
 
 
 # search for VMs to match on domains
-# for domain in master:
-#     for ip in master[domain]['dest']['ips']['private']:
-#         xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
-#         for vm in json.loads(xo_query):
-#             master[domain]['dest']['vms'].append(vm['uuid'])
+for domain in master:
+    for ip in master[domain]['dest']['ips']['private']:
+        xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
+        for vm in json.loads(xo_query):
+            master[domain]['dest']['vms'].append(vm['uuid'])
 
 
-# print('[INFO][generate.py] Searching secret server for secrets...')
-# # Search secret server for secrets with <domain> as url key
-# try:
-#     import secret_api
-#     for domain in master:
-#         master[domain]['secrets'] = {}
-#         resp = secret_api.searchSecrets(domain, 'URL Key')
-#         soup = BeautifulSoup(resp.text, features='xml')
-#         for secret in soup.find_all('SecretSummary'):
-#             master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
-# except Exception as e:
-#     print('[ERROR][secret_api.py] Secret server query threw an exception:')
-#     print(e)    # Non essential => continue without
-#     print('[ERROR][secret_api.py] ****END****')
+print('[INFO][generate.py] Searching secret server for secrets...')
+# Search secret server for secrets with <domain> as url key
+try:
+    import secret_api
+    for domain in master:
+        master[domain]['secrets'] = {}
+        resp = secret_api.searchSecrets(domain, 'URL Key')
+        soup = BeautifulSoup(resp.text, features='xml')
+        for secret in soup.find_all('SecretSummary'):
+            master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
+except Exception as e:
+    print('[ERROR][secret_api.py] Secret server query threw an exception:')
+    print(e)    # Non essential => continue without
+    print('[ERROR][secret_api.py] ****END****')
 
-# # Add name of domain in icinga if it exists
-# print('[INFO][generate.py] Querying Icinga...')
-# try:
-#     import icinga_inf
-#     for domain in master:
-#         master[domain]['icinga'] = 'Not Monitored'
-#         # search icinga for objects with address == domain (or any private ip for that domain)
-#         details = icinga_inf.lookup([domain] + master[domain]['dest']['ips']['private'])
-#         if details:
-#             master[domain]['icinga'] = details['display_name']
-# except Exception as e:
-#     print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
-#     print(e)
-#     print('[ERROR][icinga_inf.py] ****END****')
+# Add name of domain in icinga if it exists
+print('[INFO][generate.py] Querying Icinga...')
+try:
+    import icinga_inf
+    for domain in master:
+        master[domain]['icinga'] = 'Not Monitored'
+        # search icinga for objects with address == domain (or any private ip for that domain)
+        details = icinga_inf.lookup([domain] + master[domain]['dest']['ips']['private'])
+        if details:
+            master[domain]['icinga'] = details['display_name']
+except Exception as e:
+    print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
+    print(e)
+    print('[ERROR][icinga_inf.py] ****END****')
 
-# print('[INFO][generate.py] Searching for pageseeder licenses...')
-# try:
-#     import license_inf
-#     licenses = license_inf.fetch(master)
-#     for license_id in licenses:
-#         for domain in licenses[license_id]:
-#             if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
-#                 master[domain]['license'] = license_id
-# except Exception as e:
-#     print('[ERROR][license_inf.py] License processing threw an exception:')
-#     print(e)
-#     print('[ERROR][license_inf.py] ****END****')
+print('[INFO][generate.py] Searching for pageseeder licenses...')
+try:
+    import license_inf
+    licenses = license_inf.fetch(master)
+    for license_id in licenses:
+        for domain in licenses[license_id]:
+            if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
+                master[domain]['license'] = license_id
+except Exception as e:
+    print('[ERROR][license_inf.py] License processing threw an exception:')
+    print(e)
+    print('[ERROR][license_inf.py] ****END****')
 
 
 ############################
 # Applying document labels #
 ############################
 
-# print('[INFO][generate.py] Applying document labels...')
-# for domain in master:
-#     master[domain]['labels'] = []
-#     # Icinga
-#     if master[domain]['icinga'] == 'Not Monitored':
-#         master[domain]['labels'].append('icinga_not_monitored')
-#     # Secret Server
-#     try:
-#         if len(master[domain]['secrets']) == 0:
-#             secrets = False
-#             # Test cnames and NAT destinations
-#             for alias in (master[domain]['dest']['domains'] + master[domain]['dest']['nat']):
-#                 try:
-#                     if len(master[alias]['secrets']) != 0:
-#                         secrets = True
-#                 except KeyError:
-#                     pass
+print('[INFO][generate.py] Applying document labels...')
+for domain in master:
+    master[domain]['labels'] = []
+    # Icinga
+    if master[domain]['icinga'] == 'Not Monitored':
+        master[domain]['labels'].append('icinga_not_monitored')
+    # Secret Server
+    if len(master[domain]['secrets']) == 0:
+        secrets = False
+        # Test cnames and NAT destinations
+        for alias in (master[domain]['dest']['domains'] + master[domain]['dest']['nat']):
+            try:
+                if len(master[alias]['secrets']) != 0:
+                    secrets = True
+            except KeyError:
+                pass
 
-#             # Test vms/apps
-            
+        # Test vms/apps
+        
 
-#             if not secrets:
-#                 master[domain]['labels'].append('no_secrets')
-
-#     except KeyError:
-#         master[domain]['labels'].append('no_secrets')
-
+        if not secrets:
+            master[domain]['labels'].append('no_secrets')
 
 
 ################################################
@@ -293,12 +288,12 @@ subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('[INFO][generate.py] Xen Orchestra documents done')
 print('[INFO][generate.py] Testing domains...')
-# try:
-#     subprocess.run('node screenshotCompare.js', shell=True)
-# except Exception as e:
-#     print('[ERROR][screenshotCompare.js] Screenshot compare module threw an exception:')
-#     print(e)
-#     print('[ERROR][screenshotCompare.js] ****END****')
+try:
+    subprocess.run('node screenshotCompare.js', shell=True)
+except Exception as e:
+    print('[ERROR][screenshotCompare.js] Screenshot compare module threw an exception:')
+    print(e)
+    print('[ERROR][screenshotCompare.js] ****END****')
 
 # load pageseeder properties and auth info
 with open('pageseeder.properties','r') as f: properties = f.read()
@@ -321,11 +316,11 @@ with open('build.xml','w') as stream:
     stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
 
-# subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
-# print('[INFO][generate.py] Status update generated')
+subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
+print('[INFO][generate.py] Status update generated')
 
 import cleanup
 cleanup.clean()
 
-# subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
-# print('[INFO][generate.py] Pageseeder upload finished')
+subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
+print('[INFO][generate.py] Pageseeder upload finished')

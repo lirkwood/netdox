@@ -42,6 +42,7 @@ def placeholders():
 
 
 def compareFilesets():
+<<<<<<< HEAD
     for folder in urimap:
         folder_uri = urimap[folder]
         remote = BeautifulSoup(ps_api.get_uris(folder_uri), features='xml')
@@ -53,6 +54,18 @@ def compareFilesets():
 
                 if filename not in local:
                     ps_api.archive(uri)
+=======
+    for folder_uri in urimap:
+        folder = urimap[folder_uri]
+        remote = BeautifulSoup(ps_api.get_uris(folder), features='xml')
+        local = os.listdir(f'out/{folder}')
+        for file in remote("uri"):
+            filename = file["path"].split('/')[-1]
+            uri = file["uri"]
+
+            if filename not in local:
+                ps_api.archive(uri)
+>>>>>>> parent of be54394... commented code for test
             
 
 
