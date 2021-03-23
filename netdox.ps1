@@ -105,8 +105,9 @@ if ($? -eq 'True') {
     docker container rm netdox | Out-Null
     Write-Host "[INFO][netdox.ps1] Build successful. Starting container..."
     docker run -it --name netdox netdox | Write-Host
+    Compress-Archive -Path 'netdox/src/base' -DestinationPath 'netdox/src/base-old.zip'
     Get-ChildItem -Path 'netdox/src/base' | % {Remove-Item $_}
-    docker cp netdox /opt/app/src/base netdox/src/base
+    docker cp netdox:/opt/app/src/base netdox/src/base
     # copy updated base images to local for next time
 }
 else {
