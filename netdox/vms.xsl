@@ -56,7 +56,7 @@
           <properties-fragment id="addresses">
             <property name="ipv4"               title="IPv4"          datatype="xref" >
             <xsl:if test="xpf:string[@key='mainIpAddress']">
-              <xref frag="default" docid="_nd_{translate(., '.', '_')}" reversetitle="{xpf:string[@key='name_label']} in XO" />
+              <xref frag="default" docid="_nd_{translate(xpf:string[@key='mainIpAddress'], '.', '_')}" reversetitle="{xpf:string[@key='name_label']} in XO" />
             </xsl:if>
             </property>
 	    <property name="subnet" title="Subnet" value="{xpf:string[@key = 'subnet']}" />
