@@ -1,5 +1,6 @@
-import requests, datetime, json, os
+import requests, json
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 # Auth info
 
