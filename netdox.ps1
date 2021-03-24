@@ -48,7 +48,13 @@ function chooseAuth($name) {
     }
 }
 
-Start-Transcript -IncludeInvocationHeader -Path netdox-log.txt
+try {
+    Start-Transcript -IncludeInvocationHeader -Path netdox-log.txt
+}
+catch {
+    Stop-Transcript
+    Start-Transcript -IncludeInvocationHeader -Path netdox-log.txt
+}
 
 $sw = [Diagnostics.Stopwatch]::StartNew()
 
@@ -105,12 +111,15 @@ if ($? -eq 'True') {
     docker container rm netdox | Out-Null
     Write-Host "[INFO][netdox.ps1] Build successful. Starting container..."
     docker run -it --name netdox netdox | Write-Host
-    Compress-Archive -Force -Path 'netdox/src/base' -DestinationPath 'netdox/src/base-old.zip'
-    Get-ChildItem -Path 'netdox/src/base' | % {Remove-Item $_}
-    docker cp netdox:/opt/app/src/base netdox/src
-    # copy updated base images to local for next time
-}
-else {
+    if ($? -eq 'True') {
+        Compress-Archive -Force -Path 'netdox/src/base' -DestinationPath 'netdox/src/base-old.zip'
+        Get-ChildItem -Path 'netdox/src/base' | % {Remove-Item $_}
+        docker cp netdox:/opt/app/src/base netdox/src
+        # copy updated base images to local for next time
+    } else {
+        Write-Host "[WARNING][netdox.ps1] Docker instance exited with errors."
+    }
+} else {
     Write-Host "[ERROR][netdox.ps1] Docker build failed."
 }
 
