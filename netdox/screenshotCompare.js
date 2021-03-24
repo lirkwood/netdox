@@ -46,7 +46,8 @@ async function try_ss(dmn, protocol, browser) {
     // if failed due to cert error try with http
     if (error.toString().includes('net::ERR_CERT') && (protocol == 'https://')) {
       try_ss(dmn, 'http://', browser)
-    } else {
+      // omit timeout error as it is very common and not useful
+    } else if (!(error.toString().includes('TimeoutError'))) {
       review[path] = `no_ss:${error}`
       console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
     }
