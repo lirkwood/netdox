@@ -64,9 +64,31 @@ def alnum(string):
 
 
 def clean():
-    png2jpg('out/screenshots')
-    placeholders()
-    compareFilesets()
+    try:
+        png2jpg('out/screenshots')
+    except Exception as e:
+        print('[ERROR][cleanup.py] Converting screenshots to small jpg failed:')
+        print(e)
+        print('[ERROR][cleanup.py] ****END****')
+
+    try:
+        placeholders()
+    except Exception as e:
+        print('[ERROR][cleanup.py] Generating placeholders failed:')
+        print(e)
+        print('[ERROR][cleanup.py] ****END****')
+
+    try:
+        compareFilesets()
+    except Exception as e:
+        print('[ERROR][cleanup.py] Archiving old documents on PageSeeder failed:')
+        print(e)
+        print('[ERROR][cleanup.py] ****END****')
     
     for folder in urimap:
-        ps_api.version(urimap[folder])
+        try:
+            ps_api.version(urimap[folder])
+        except Exception as e:
+            print(f'[ERROR][cleanup.py] Versioning folder "{folder}" failed:')
+            print(e)
+            print('[ERROR][cleanup.py] ****END****')
