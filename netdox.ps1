@@ -52,7 +52,7 @@ try {
     Start-Transcript -IncludeInvocationHeader -Path netdox-log.txt
 }
 catch {
-    Stop-Transcript
+    $(Stop-Transcript) 2>&1 | Out-Null
     Start-Transcript -IncludeInvocationHeader -Path netdox-log.txt
 }
 
@@ -74,7 +74,7 @@ if ($null -eq $kubepath) {
     $kubepath = choosek8s
     if ($null -ne $kubepath) {
         Write-Host "[INFO][netdox.ps1] Kubernetes config detected."
-        Copy-Item -Recurse -Force -Path $kubepath -Destination '.' | Out-Null
+        $(Copy-Item -Recurse -Force -Path $kubepath -Destination '.') 2>&1 | Out-Null
     }
     else {
         New-Item -ItemType "directory" -Name '.kube'
@@ -82,7 +82,7 @@ if ($null -eq $kubepath) {
 }
 else {
     Write-Host "[INFO][netdox.ps1] Kubernetes config detected."
-    Copy-Item -Recurse -Force -Path $kubepath -Destination '.' | Out-Null
+    $(Copy-Item -Recurse -Force -Path $kubepath -Destination '.') 2>&1 | Out-Null
 }
 
 
@@ -108,7 +108,7 @@ Write-Host "[INFO][netdox.ps1] Building Docker image..."
 docker build -t netdox --build-arg _kubeconfig=$KUBECONFIG .
 
 if ($? -eq 'True') {
-    docker container rm netdox | Out-Null
+    $(docker container rm netdox) 2>&1 | Out-Null
     Write-Host "[INFO][netdox.ps1] Build successful. Starting container..."
     docker run -it --name netdox netdox | Write-Host
     if ($? -eq 'True') {
