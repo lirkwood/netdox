@@ -87,3 +87,6 @@ header = {
 }
 
 base = f'https://{credentials["host"]}/ps/service'
+
+if __name__ == '__main__':
+    print(header['authorization'])
