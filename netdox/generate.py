@@ -50,11 +50,23 @@ for domain in dnsme_f:
     else:
         master[domain] = dnsme_f[domain]
 
-# maps pods to domains by tracing back through services/ingress
+
+# Api call getting all vms/hosts/pools
 try:
-    import k8s_inf
+    import xo_inf
+    print('[INFO][generate.py] Querying Xen Orchestra...')
+    xo_inf.main(master)
+    print('[INFO][generate.py] Parsing Xen Orchestra response...')
+except Exception as e:
+    print('[ERROR][xo_inf.py] Xen Orchestra query threw an exception:')
+    raise e
+
+
+# maps apps to domains by tracing back through pods/services/ingress
+try:
+    import k8s_inf_new
     print('[INFO][generate.py] Querying Kubernetes...')
-    k8s_inf.main(master)
+    k8s_inf_new.main(master)
 except Exception as e:
     print('[ERROR][k8s_inf.py] Kubernetes query threw an exception:')
     raise e
@@ -137,18 +149,6 @@ for domain in master:
 ########################
 # Gathering other data #
 ########################
-
-
-# Api call getting all vms/hosts/pools
-try:
-    import xo_inf
-    print('[INFO][generate.py] Querying Xen Orchestra...')
-    xo_inf.main(master)
-    print('[INFO][generate.py] Parsing Xen Orchestra response...')
-except Exception as e:
-    print('[ERROR][xo_inf.py] Xen Orchestra query threw an exception:')
-    raise e
-
 
 # check each ip for each domain against the NAT
 try:
