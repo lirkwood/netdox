@@ -38,29 +38,22 @@
                 
                 <section id="details" title="Details">
 
-                    <properties-fragment id="kube_pods">
+                    <properties-fragment id="pods">
                         <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
                             <property name="pod"  title="Pod"  value="{@key}" />
                             <xsl:for-each select="xpf:map[@key = 'containers']/xpf:string">
                                 <property name="container" title="Container" value="{@key}" />
                                 <property name="image" title="Image ID" value="{.}"/>
                             </xsl:for-each>
+                            <property name="worker_vm" title="Worker VM" datatype="xref" >
+                                <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
+                                reversetitle="App running on this VM"/>
+                            </property>
+                            <property name="ipv4"  title="Worker IP"  datatype="xref" >
+                                <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
+                                    reversetitle="App running on this IP" />
+                            </property>
                         </xsl:for-each>
-                    </properties-fragment>
-                    
-                    <properties-fragment id="kube_worker">
-                        <property name="worker_vm" title="Worker VM" datatype="xref" >
-                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
-                            reversetitle="App running on this VM"/>
-                        </property>
-                        <property name="worker_hostname" title="Worker Hostname" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'worker'],'.','_')}"  
-                                reversetitle="App running on this worker"/>
-                        </property>
-                        <property name="ipv4"  title="Worker IP"  datatype="xref" >
-                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
-                                reversetitle="App running on this IP" />
-                        </property>
                     </properties-fragment>
                     
                     <properties-fragment id="domains">
