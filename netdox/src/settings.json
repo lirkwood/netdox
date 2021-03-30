@@ -1,9 +1,0 @@
-{
-    "hg.pageseeder.com": {
-        "auth": {
-            "user": "lkirkwood",
-            "password": "pass"
-        },
-        "protocol": "http"
-    }
-}
