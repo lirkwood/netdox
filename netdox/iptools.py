@@ -1,13 +1,17 @@
 import re, math
 from types import prepare_class
 
+###############
+# Class: ipv4 #
+###############
+
 class ipv4:
     def __init__(self, ip):
         self.raw = ip
-        self.ipv4 = ip
-        self.valid = self.valid_ip()
+        self.valid = valid_ip(self.raw)
         if self.valid:
-            self.binary = self.to_binary()
+            self.ipv4 = self.raw
+            self.binary = cidr2binary(self.ipv4)
             self.subnet = self.sort()
             self.public = self.is_public()
             self.octets = self._octets()
@@ -17,38 +21,7 @@ class ipv4:
             self.subnet = None
             self.octets = None
 
-
-    def to_binary(self):
-        bin_ip = ''
-        for octet in self.ipv4.split('.'):
-            bin_ip += bin(int(octet))[2:].zfill(8) 
-        #strip 0b prefix and pad to size with 0s
-        return bin_ip
-
-    def valid_ip(self):
-        rawip = bytes(self.ipv4, 'utf-8')
-        if re.match(r'([0-9]{1,3}\.){3}[0-9]{1,3}', self.ipv4):
-
-            for char in re.findall(r'[^0-9.]',self.ipv4):
-                print(f'[ERROR][iptools.py] Bad character {char} in ip: {rawip}')
-                return False
-
-            for octet in self.ipv4.split('.'):
-                if len(octet) > 3 or len(octet) < 1:
-                    print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
-                    return False
-                elif int(octet) > 255 or int(octet) < 0:
-                    print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
-                    return False
-
-            if self.ipv4.count('.') != 3:
-                print(f'[ERROR][iptools.py] Wrong number of octets in ip: {rawip}')
-                return False
-
-        else:
-            return False
-        return True
-
+    # Used mainly within netdox to sort ips into predefined subnets
     def sort(self):
         bin_ip = int(self.binary, 2)
         sorted = False
@@ -66,33 +39,17 @@ class ipv4:
             return '.'.join(self.ipv4.split('.')[:3]) + '.0/24'
 
     def in_subnet(self, subnet, verbose=False):
-        bin_ip = int(self.binary, base=2)
-        bounds = subn_bounds(subnet)
-        if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
-            if verbose:
-                print(f'[INFO][iptools.py] IP Address {self.ipv4} is within subnet {subnet}')
-            return True
-        else:
-            if verbose:
-                print(f'[INFO][iptools.py] IP Address {self.ipv4} is outside subnet {subnet}')
-            return False    
+        return subn_contains(subnet, self.ipv4, verbose)  
 
     def is_public(self):
-        if in_subnet(self.ipv4, '192.168.0.0/16'):
+        if subn_contains(self.ipv4, '192.168.0.0/16'):
             return False
-        elif in_subnet(self.ipv4, '10.0.0.0/8'):
+        elif subn_contains(self.ipv4, '10.0.0.0/8'):
             return False
-        elif in_subnet(self.ipv4, '172.16.0.0/12'):
+        elif subn_contains(self.ipv4, '172.16.0.0/12'):
             return False
         else:
             return True
-    
-    def iter_subnet(self):
-        bounds = subn_bounds(self.subnet)
-        upper = int(bounds['upper'], 2)
-        lower = int(bounds['lower'], 2)
-        for ip in range((upper - lower)+ 1):    #+1 to include upper bound as bounds are inclusive
-            yield binary2cidr(int2bin(ip+lower))
 
     def _octets(self):
         a = []
@@ -100,10 +57,14 @@ class ipv4:
             a.append(o)
         return a
 
+#################
+# Class: subnet #
+#################
+
 class subnet:
     def __init__(self, raw):
         self.raw = raw
-        self.valid = self.valid_subnet()
+        self.valid = valid_subnet(self.raw)
         if self.valid:
             self.min_addr = subn_floor(self.raw)
             self._mask = int(self.raw.split('/')[-1])
@@ -118,13 +79,6 @@ class subnet:
             self._mask = None
             self.min_addr = None
             self.octets = []
-
-    # returns boolean if subnet matches CIDR ipv4 format
-    def valid_subnet(self):
-        if re.fullmatch(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])', self.raw):
-            return True
-        else:
-            return False
     
     # returns value of subnet mask (int)
     @property
@@ -145,80 +99,36 @@ class subnet:
             print('[ERROR][iptools.py] Cannot set new subnet mask for invalid subnet.')
 
 
-    # returns list obj containing some subnets with a given mask (CIDR ipv4 format). The union of these is equivalent to
-    # the namespace of self.subnet
     def equiv(self, mask):
-        if self.valid:
-            if isinstance(mask, str):
-                mask = int(mask.strip('/'))
-            subnets = []
-            bin_min_addr = cidr2binary(self.min_addr)
+        subn_equiv(self.subnet, self.mask, mask)
 
-            if mask > self._mask:
-                int_min_addr = int(bin_min_addr, 2)
+####################
+# Module functions #
+####################
 
-                for i in range(2**(mask - self._mask)):
-                    min_addr = binary2cidr(int2bin(int_min_addr))
-                    subnet = min_addr +'/'+ str(mask)
-                    subnets.append(subnet)
+## Useful regex patterns
 
-                    int_min_addr += (2**(32-mask))
-            else:
-                new_subnet = self.min_addr +'/'+ str(mask)
-                subnets.append(subn_floor(new_subnet) +'/'+ str(mask))
+regex_ip = re.compile(r'([0-9]{1,3}\.){3}[0-9]{1,3}')
+regex_subnet = re.compile(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])')
 
-                
-            return subnets
-        else:
-            print('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
 
-        
-
-# __ User functions __
+## Validation
 
 # returns boolean if given str is valid within CIDR ipv4 format
-def valid_ip(ip, verbose=False):
-    rawip = bytes(ip, 'utf-8')
-    for octet in ip.split('.'):
-        if len(octet) > 3 or len(octet) < 1: 
-            if verbose:
-                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
-            return False
-        elif int(octet) > 255 or int(octet) < 0:
-            if verbose:
-                print(f'[ERROR][iptools.py] Bad octet in ip: {rawip}')
-            return False
-
-    if ip.count('.') != 3:
-        if verbose:
-            print(f'[ERROR][iptools.py] Wrong number of octets in ip: {rawip}')
-        return False
-
-    for char in re.findall(r'[^0-9.]',ip):
-        if verbose:
-            print(f'[ERROR][iptools.py] Bad character {char} in ip: {rawip}')
-        return False
-
-    return True
-
-# returns true if provided ip is not in one of the 3 predefined private subnets
-def is_public(ip):
-    if in_subnet(ip, '192.168.0.0/16'):
-        return False
-    elif in_subnet(ip, '10.0.0.0/8'):
-        return False
-    elif in_subnet(ip, '172.16.0.0/12'):
-        return False
-    else:
+def valid_ip(string):
+    if re.fullmatch(regex_ip, string):
         return True
+    else:
+        return False
+    
+def valid_subnet(string):
+    if re.fullmatch(regex_subnet, string):
+        return True
+    else:
+        return False
 
-# converts ipv4 in CIDR format to 32 bit wide binary str
-def cidr2binary(ip):
-    bin_ip = ''
-    for octet in ip.split('.'):
-        bin_ip += bin(int(octet))[2:].zfill(8) 
-    #strip 0b prefix and pad to size with 0s
-    return bin_ip
+
+## Subnet functions
 
 # returns lowest ip address in subnet (CIDR ipv4)
 def subn_floor(subnet):
@@ -267,17 +177,45 @@ def subn_bounds(string):
 
     return bounds
 
-# returns pre-defined subnets to use for sorting
-def fetch_prefixes():
-    prefixes = {}
-    with open('src/prefixes.txt') as stream:
-        for line in stream.read().splitlines():
-            if line not in prefixes:
-                prefixes[line] = subn_bounds(line)
-    return prefixes
+# returns list obj containing some subnets with a given mask (CIDR ipv4 format). The union of these is equivalent to
+# the namespace of the original subnet
+def subn_equiv(object, new_mask):
+    if isinstance(object, subnet):
+        if object.valid:
+            old_mask = object.mask
+        else:
+            print('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
+    elif isinstance(object, str):
+        if valid_subnet(object):
+            old_mask = int(object.split('/')[-1])
+        else:
+            print('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
+    else:
+        print('[ERROR][iptools.py] Please provide a valid object; Must be one of: "subnet", "str".')
+        return None
+
+    if isinstance(new_mask, str):
+        new_mask = int(new_mask.strip('/'))
+    subnets = []
+    bin_min_addr = cidr2binary(subn_floor(object))
+
+    if new_mask > old_mask:
+        int_min_addr = int(bin_min_addr, 2)
+
+        for i in range(2**(new_mask - old_mask)):
+            min_addr = binary2cidr(int2binary(int_min_addr))
+            new_subnet = min_addr +'/'+ str(new_mask)
+            subnets.append(new_subnet)
+
+            int_min_addr += (2**(32-new_mask))
+    else:
+        new_subnet = subn_floor(object) +'/'+ str(new_mask)
+        subnets.append(subn_floor(new_subnet) +'/'+ str(new_mask))
+
+    return subnets
 
 # returns boolean if ip (CIDR ipv4) is in given subnet
-def in_subnet(ip, subnet, verbose=False):
+def subn_contains(subnet, ip, verbose=False):
     bin_ip = int(cidr2binary(ip), base=2)
     bounds = subn_bounds(subnet)
     if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
@@ -288,6 +226,23 @@ def in_subnet(ip, subnet, verbose=False):
         if verbose:
             print('[INFO][iptools.py] IP Address {0} is outside subnet {1}.'.format(ip, subnet))
         return False
+    
+def subn_iter(subnet):
+    bounds = subn_bounds(subnet)
+    upper = int(bounds['upper'], 2)
+    lower = int(bounds['lower'], 2)
+    for ip in range((upper - lower)+ 1):    #+1 to include upper bound as bounds are inclusive
+        yield binary2cidr(int2binary(ip+lower))
+
+## Conversion functions
+
+# converts ipv4 in CIDR format to 32 bit wide binary str
+def cidr2binary(ipv4):
+    bin_ip = ''
+    for octet in ipv4.split('.'):
+        bin_ip += bin(int(octet))[2:].zfill(8) 
+    #strip 0b prefix and pad to size with 0s
+    return bin_ip
 
 # converts 32-bit unsigned binary str from given ipv4 using CIDR notation
 def binary2cidr(bin_ip):
@@ -301,5 +256,46 @@ def binary2cidr(bin_ip):
     return '.'.join(octets)
 
 # converts integer to binary string (default width 32 bits)
-def int2bin(i, width=32):
+def int2binary(i, width=32):
     return bin(i).replace('0b','').zfill(width)
+
+def int2cidr(i):
+    return binary2cidr(int2binary(i))
+
+def cidr2int(ipv4):
+    return int(cidr2binary(ipv4), 2)
+
+## Other
+
+def search_string(string, object, delimiter=None):
+        if object == 'ipv4':
+            validate = valid_ip
+            pattern = regex_ip
+        elif object == 'ipv4_subnet':
+            validate = valid_subnet
+            pattern = regex_subnet
+        else:
+            print('[ERROR][iptools.py] Please provide a valid object to search for; Must be one of: "ipv4", "ipv4_subnet".')
+            return None
+
+        outlist = []
+        for line in string.split(delimiter):
+            # Ignore comments
+            if not (line.startswith('#') or line.startswith('//')):
+                cleanline = line.strip()
+                if validate(cleanline):
+                    outlist.append(cleanline)
+                else:
+                    for match in re.finditer(pattern, cleanline):
+                        outlist.append(match[0])
+        return outlist
+
+
+# returns pre-defined subnets to use for sorting
+def fetch_prefixes():
+    prefixes = {}
+    with open('src/prefixes.txt') as stream:
+        for line in stream.read().splitlines():
+            if line not in prefixes:
+                prefixes[line] = subn_bounds(line)
+    return prefixes
