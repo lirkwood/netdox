@@ -173,22 +173,6 @@ for domain in master:
         for vm in json.loads(xo_query):
             master[domain]['dest']['vms'].append(vm['uuid'])
 
-
-print('[INFO][generate.py] Searching secret server for secrets...')
-# Search secret server for secrets with <domain> as url key
-try:
-    import secret_api
-    for domain in master:
-        master[domain]['secrets'] = {}
-        resp = secret_api.searchSecrets(domain, 'URL Key')
-        soup = BeautifulSoup(resp.text, features='xml')
-        for secret in soup.find_all('SecretSummary'):
-            master[domain]['secrets'][secret.SecretId.string] = secret.SecretName.string +';'+ secret.SecretTypeName.string
-except Exception as e:
-    print('[ERROR][secret_api.py] Secret server query threw an exception:')
-    print(e)    # Non essential => continue without
-    print('[ERROR][secret_api.py] ****END****')
-
 # Add name of domain in icinga if it exists
 print('[INFO][generate.py] Querying Icinga...')
 try:
@@ -228,22 +212,6 @@ for domain in master:
     # Icinga
     if master[domain]['icinga'] == 'Not Monitored':
         master[domain]['labels'].append('icinga_not_monitored')
-    # Secret Server
-    if len(master[domain]['secrets']) == 0:
-        secrets = False
-        # Test cnames and NAT destinations
-        for alias in (master[domain]['dest']['domains'] + master[domain]['dest']['nat']):
-            try:
-                if len(master[alias]['secrets']) != 0:
-                    secrets = True
-            except KeyError:
-                pass
-
-        # Test vms/apps
-        
-
-        if not secrets:
-            master[domain]['labels'].append('no_secrets')
 
 
 ################################################
