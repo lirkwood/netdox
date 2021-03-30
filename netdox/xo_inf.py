@@ -50,7 +50,7 @@ def main(dns):
                     vm['domains'] = []
                     if 'mainIpAddress' in vm:
                         for domain in dns:
-                            if vm['mainIpAddress'] in dns[domain]['dest']['ips']['private']:
+                            if vm['mainIpAddress'] in dns[domain]['dest']['ips']:
                                 vm['domains'].append(domain)
             
             for object in jsondata:
