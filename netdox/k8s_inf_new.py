@@ -6,7 +6,7 @@ selectorLabels = ('instance', 'app.kubernetes.io/instance', 'app')
 # maps service to hostnames it is exposed on
 def getIngress():
     serviceDomains = {}
-    # subprocess.run('./k8s_fetch.sh ingress', shell=True, stdout=subprocess.DEVNULL)
+    subprocess.run('./k8s_fetch.sh ingress', shell=True, stdout=subprocess.DEVNULL)
     with open('src/ingress.json', 'r') as stream:
         allIngress = json.load(stream)
         for c in allIngress:
@@ -26,7 +26,7 @@ def getIngress():
 # provides shortcut from service to its pod selectors
 def getServices():
     serviceSelectors = {}
-    # subprocess.run('./k8s_fetch.sh services', shell=True, stdout=subprocess.DEVNULL)
+    subprocess.run('./k8s_fetch.sh services', shell=True, stdout=subprocess.DEVNULL)
     with open('src/services.json', 'r') as stream:
         allServices = json.load(stream)
         for c in allServices:
@@ -44,7 +44,7 @@ def getServices():
     
 def getWorkers():
     workers = {}
-    # subprocess.run('./k8s_fetch.sh nodes "--selector=node-role.kubernetes.io/worker=true"', shell=True, stdout=subprocess.DEVNULL)
+    subprocess.run('./k8s_fetch.sh nodes "--selector=node-role.kubernetes.io/worker=true"', shell=True, stdout=subprocess.DEVNULL)
     with open('src/nodes.json','r') as workerStream:
         with open('src/vms.json','r') as vmStream:
             allWorkers = json.load(workerStream)
@@ -77,7 +77,7 @@ def getWorkers():
 
 
 def getPods():
-    # subprocess.run('./k8s_fetch.sh pods', shell=True, stdout=subprocess.DEVNULL)
+    subprocess.run('./k8s_fetch.sh pods', shell=True, stdout=subprocess.DEVNULL)
     with open('src/pods.json', 'r') as stream:
         allPods = json.load(stream)
         for c in allPods:
