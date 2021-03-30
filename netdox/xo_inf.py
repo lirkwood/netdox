@@ -45,7 +45,8 @@ def main(dns):
                         ipv4 = iptools.ipv4(vm['addresses']['0/ipv4/0'])
                         vm['subnet'] = ipv4.subnet
                     except:
-                        print(f'[WARNING][xo_inf.py] VM {vm["name_label"]} has no ipv4.', file=sys.stderr)
+                        if vm['power_state'] == 'Running':
+                            print(f'[WARNING][xo_inf.py] VM {vm["name_label"]} has no ipv4.', file=sys.stderr)
 
                     vm['domains'] = []
                     if 'mainIpAddress' in vm:
