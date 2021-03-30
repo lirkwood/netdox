@@ -45,8 +45,8 @@
                             <property name="container" title="Container" value="{@key}" />
                             <property name="image" title="Image ID" value="{.}"/>
                             <xsl:if test="contains(.,'registry-gitlab.allette.com.au')">
-                            <property name="gitlab" title="Image project on GitLab" datatype="link">
-                                <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="."/></link>
+                            <property name="gitlab" title="Image on GitLab" datatype="link">
+                                <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="{@key}"/> on GitLab.</link>
                             </property>
                             </xsl:if>
                         </xsl:for-each>
@@ -59,7 +59,7 @@
                                 reversetitle="App running on this IP" />
                         </property>
                         <property name="rancher" title="Pod on Rancher" datatype="link">
-                            <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/> on rancher</link>
+                            <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/> on rancher.</link>
                         </property>
                     </properties-fragment>
                     </xsl:for-each>
