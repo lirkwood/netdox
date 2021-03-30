@@ -26,7 +26,7 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version" title="Template version" value="1.0" />
+                        <property name="template_version" title="Template version" value="2.0" />
                     </properties>
                 </metadata>
     
@@ -38,23 +38,31 @@
                 
                 <section id="details" title="Details">
 
-                    <properties-fragment id="pods">
-                        <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
-                            <property name="pod"  title="Pod"  value="{@key}" />
-                            <xsl:for-each select="xpf:map[@key = 'containers']/xpf:string">
-                                <property name="container" title="Container" value="{@key}" />
-                                <property name="image" title="Image ID" value="{.}"/>
-                            </xsl:for-each>
-                            <property name="worker_vm" title="Worker VM" datatype="xref" >
-                                <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
-                                reversetitle="App running on this VM"/>
+                    <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
+                    <properties-fragment id="podinf_{position()}">
+                        <property name="pod"  title="Pod"  value="{@key}" />
+                        <xsl:for-each select="xpf:map[@key = 'containers']/xpf:string">
+                            <property name="container" title="Container" value="{@key}" />
+                            <property name="image" title="Image ID" value="{.}"/>
+                            <xsl:if test="contains(.,'registry-gitlab.allette.com.au')">
+                            <property name="gitlab" title="Image project on GitLab" datatype="link">
+                                <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="."/></link>
                             </property>
-                            <property name="ipv4"  title="Worker IP"  datatype="xref" >
-                                <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
-                                    reversetitle="App running on this IP" />
-                            </property>
+                            </xsl:if>
                         </xsl:for-each>
+                        <property name="worker_vm" title="Worker VM" datatype="xref" >
+                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
+                            reversetitle="App running on this VM"/>
+                        </property>
+                        <property name="ipv4"  title="Worker IP"  datatype="xref" >
+                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
+                                reversetitle="App running on this IP" />
+                        </property>
+                        <property name="rancher" title="Pod on Rancher" datatype="link">
+                            <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/> on rancher</link>
+                        </property>
                     </properties-fragment>
+                    </xsl:for-each>
                     
                     <properties-fragment id="domains">
                         <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
@@ -63,21 +71,6 @@
                                 reversetitle="App served on this domain" />
                             </property>
                         </xsl:for-each>
-                    </properties-fragment>
-                    
-                    <properties-fragment id="links">
-                    <xsl:for-each select="*//xpf:map[@key = 'containers']/xpf:string">
-                        <xsl:if test="contains(.,'registry-gitlab.allette.com.au')">
-                        <property name="gitlab" title="Project on GitLab" datatype="link">
-                            <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="."/></link>
-                        </property>
-                        </xsl:if>
-                    </xsl:for-each>
-                    <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
-                        <property name="rancher" title="Pod on Rancher" datatype="link">
-                            <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/></link>
-                        </property>
-                    </xsl:for-each>
                     </properties-fragment>
                 
                 </section>
