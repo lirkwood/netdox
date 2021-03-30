@@ -66,7 +66,7 @@ except Exception as e:
 try:
     import k8s_inf_new
     print('[INFO][generate.py] Querying Kubernetes...')
-    k8s_inf_new.main(master)
+    k8s_inf_new.main()
 except Exception as e:
     print('[ERROR][k8s_inf.py] Kubernetes query threw an exception:')
     raise e
