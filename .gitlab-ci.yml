@@ -3,6 +3,11 @@ build-job:
   script:
     - docker build -t netdox .
 
+test-job:
+  stage: test
+  script:
+    - ls -l netdox/src/records
+
 deploy-job:
   stage: deploy
   script:
