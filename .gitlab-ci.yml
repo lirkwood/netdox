@@ -3,12 +3,8 @@ build-job:
   script:
     - docker build -t netdox .
 
-test-job:
-  stage: test
+push-job:
+  stage: push
   script:
-    - ls -l netdox/src/records
-
-deploy-job:
-  stage: deploy
-  script:
-    - docker run netdox
+    - docker -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push ${CI_REGISTRY}/allette/devops/network-documentation/netdox
