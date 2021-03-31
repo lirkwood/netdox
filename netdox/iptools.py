@@ -1,4 +1,5 @@
-import re
+import re, math
+from types import prepare_class
 from typing import Union
 
 ###############
@@ -309,6 +310,7 @@ def search_string(string, object, delimiter=None):
                 else:
                     for match in re.finditer(pattern, cleanline):
                         outlist.append(match[0])
+        outlist = list(dict.fromkeys(outlist))
         return outlist
 
 
