@@ -1,5 +1,5 @@
-import re, math
-from types import prepare_class
+import re
+from typing import Union
 
 ###############
 # Class: ipv4 #
@@ -42,11 +42,11 @@ class ipv4:
         return subn_contains(subnet, self.ipv4, verbose)  
 
     def is_public(self):
-        if subn_contains(self.ipv4, '192.168.0.0/16'):
+        if subn_contains('192.168.0.0/16', self.ipv4):
             return False
-        elif subn_contains(self.ipv4, '10.0.0.0/8'):
+        elif subn_contains('10.0.0.0/8', self.ipv4):
             return False
-        elif subn_contains(self.ipv4, '172.16.0.0/12'):
+        elif subn_contains('172.16.0.0/12', self.ipv4):
             return False
         else:
             return True
@@ -162,12 +162,17 @@ def subn_floor(subnet):
         return None
 
 # Returns dict with lowest (key=lower) and highest (key=upper) ip addresses in subnet (32-bit wide binary strs)
-def subn_bounds(string):
+def subn_bounds(subn):
+    if isinstance(subn, subnet):
+        subn = subn.subnet
+    elif not isinstance(subn, str):
+        raise TypeError('Subnet object must be one of: "str", "subnet".')
+
     bounds = {}
-    lower = cidr2binary(subn_floor(string))
+    lower = cidr2binary(subn_floor(subn))
     bounds['lower'] = lower
 
-    mask = int(string.split('/')[-1])
+    mask = int(subn.split('/')[-1])
 
     upper = str(lower)
     upper = upper[:mask]
@@ -215,20 +220,36 @@ def subn_equiv(object, new_mask):
     return subnets
 
 # returns boolean if ip (CIDR ipv4) is in given subnet
-def subn_contains(subnet, ip, verbose=False):
+def subn_contains(subn: Union[str, subnet], ip: Union[str, ipv4], verbose=False):
+    # Validating input types
+    if isinstance(subn, subnet):
+        subn = subn.subnet
+    elif not isinstance(subn, str):
+        raise TypeError('Subnet object must be one of: "str", "subnet".')
+
+    if isinstance(ip, ipv4):
+        ip = ip.ipv4
+    elif not isinstance(ip, str):
+        raise TypeError('IP object must be one of: "str", "ipv4".')
+
     bin_ip = int(cidr2binary(ip), base=2)
-    bounds = subn_bounds(subnet)
+    bounds = subn_bounds(subn)
     if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
         if verbose:
-            print('[INFO][iptools.py] IP Address {0} is within subnet {1}.'.format(ip, subnet))
+            print(f'[INFO][iptools.py] IP Address {ip} is within subnet {subn}.')
         return True
     else:
         if verbose:
-            print('[INFO][iptools.py] IP Address {0} is outside subnet {1}.'.format(ip, subnet))
+            print(f'[INFO][iptools.py] IP Address {ip} is outside subnet {subn}.')
         return False
     
-def subn_iter(subnet):
-    bounds = subn_bounds(subnet)
+def subn_iter(subn):
+    if isinstance(subn, subnet):
+        subn = subn.subnet
+    elif not isinstance(subn, str):
+        raise TypeError('Subnet object must be one of: "str", "subnet".')
+        
+    bounds = subn_bounds(subn)
     upper = int(bounds['upper'], 2)
     lower = int(bounds['lower'], 2)
     for ip in range((upper - lower)+ 1):    #+1 to include upper bound as bounds are inclusive
@@ -256,11 +277,11 @@ def binary2cidr(bin_ip):
     return '.'.join(octets)
 
 # converts integer to binary string (default width 32 bits)
-def int2binary(i, width=32):
-    return bin(i).replace('0b','').zfill(width)
+def int2binary(integer, width=32):
+    return bin(integer).replace('0b','').zfill(width)
 
-def int2cidr(i):
-    return binary2cidr(int2binary(i))
+def int2cidr(integer):
+    return binary2cidr(int2binary(integer))
 
 def cidr2int(ipv4):
     return int(cidr2binary(ipv4), 2)
@@ -275,7 +296,7 @@ def search_string(string, object, delimiter=None):
             validate = valid_subnet
             pattern = regex_subnet
         else:
-            print('[ERROR][iptools.py] Please provide a valid object to search for; Must be one of: "ipv4", "ipv4_subnet".')
+            print('[ERROR][iptools.py] Search object must be one of: "ipv4", "ipv4_subnet".')
             return None
 
         outlist = []
