@@ -84,12 +84,4 @@ RUN rm -rf /var/lib/apt/lists/* && \
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
 
-#pass paths to any files in .kube with config in name
-ARG _kubeconfig
-ENV KUBECONFIG=${_kubeconfig}
-COPY .kube /usr/.kube
-
-#copy auth details
-COPY authentication.json /opt/app/src
-
 CMD [ "python3", "generate.py" ]
