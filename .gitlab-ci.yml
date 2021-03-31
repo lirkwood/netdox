@@ -1,10 +1,10 @@
-build-job:
+build:
   stage: build
   script:
     - docker build -t netdox .
 
-push-job:
-  stage: push
+post-build:
+  stage: .post
   script:
     - docker -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker push ${CI_REGISTRY}/allette/devops/network-documentation/netdox
