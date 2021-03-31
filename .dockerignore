@@ -16,3 +16,4 @@ netdox/src/*
 !netdox/src/licenses.json
 
 *.zip
+**/.git*
