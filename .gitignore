@@ -6,6 +6,7 @@ netdox/logs
 
 netdox/src/*
 !netdox/src/base/
+!netdox/src/records/
 !netdox/src/nmap.xml
 !netdox/src/template-ip.psml
 !netdox/src/prefixes.txt

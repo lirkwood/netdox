@@ -1,3 +1,6 @@
 [submodule "active-directory-json"]
     path = netdox/src/records
     url = https://gitlab.allette.com.au/allette/devops/active-directory-json
+[submodule "netdox/src/records"]
+	path = netdox/src/records
+	url = git@gitlab.allette.com.au:allette/devops/active-directory-json.git
