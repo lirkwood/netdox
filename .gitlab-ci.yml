@@ -1,7 +1,7 @@
 build:
   stage: build
   script:
-    - docker build -t netdox .
+    - docker build -t ${CI_REGISTRY}/allette/devops/network-documentation/netdox .
 
 post-build:
   stage: .post
