@@ -8,7 +8,7 @@ def main(ipdict, ptr):
         _ip = iptools.ipv4(ip)
         if _ip.valid:
             if (not _ip.public) or _ip.in_subnet('103.127.18.0/24') or _ip.in_subnet('119.63.219.195/26'):
-                for sibling in _ip.iter_subnet():
+                for sibling in iptools.subnet(f'{_ip.ipv4}/24').iterate():
                     if sibling not in ipdict:
                         tmp[sibling] = {'source': 'Generated'}
     ipdict = tmp | ipdict   #populate ipdict with unused private ips
