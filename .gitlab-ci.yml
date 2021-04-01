@@ -8,4 +8,4 @@ post-build:
   script:
     - docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY <<< $CI_REGISTRY_PASSWORD
     - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH} ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_BRANCH}
-    - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}
+    - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_BRANCH}
