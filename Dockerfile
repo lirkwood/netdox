@@ -25,6 +25,9 @@ ENV PYTHONWARNINGS="${PYTHONWARNINGS},ignore:Unverified HTTPS request"
 ENV ANT_HOME=/opt/ant/apache-ant-1.10.9
 ENV PATH=${PATH}:${ANT_HOME}/bin
 
+# set kubeconfig path
+ENV $KUBECONFIG=/opt/app/src/.kube/config
+
 # make dir for man page to stop jre postinstall script failing
 RUN mkdir -p /usr/share/man/man1
 RUN apt-get update &&  apt-get install -y --no-install-recommends curl unzip openjdk-11-jre-headless
