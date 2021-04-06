@@ -131,6 +131,15 @@ def valid_subnet(string):
     else:
         return False
 
+def public_ip(string):
+    if subn_contains('192.168.0.0/16', string):
+        return False
+    elif subn_contains('10.0.0.0/8', string):
+        return False
+    elif subn_contains('172.16.0.0/12', string):
+        return False
+    else:
+        return True
 
 ## Subnet functions
 
@@ -191,7 +200,7 @@ def subn_bounds(subn):
 def subn_equiv(subn, new_mask):
     if isinstance(subn, subnet):
         if subn.valid:
-            old_mask = object.mask
+            old_mask = subn.mask
         else:
             print('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
     elif isinstance(subn, str):
@@ -206,7 +215,7 @@ def subn_equiv(subn, new_mask):
     if isinstance(new_mask, str):
         new_mask = int(new_mask.strip('/'))
     subnets = []
-    bin_min_addr = cidr2binary(subn_floor(object))
+    bin_min_addr = cidr2binary(subn_floor(subn))
 
     if new_mask > old_mask:
         int_min_addr = int(bin_min_addr, 2)
@@ -218,7 +227,7 @@ def subn_equiv(subn, new_mask):
 
             int_min_addr += (2**(32-new_mask))
     else:
-        new_subnet = subn_floor(object) +'/'+ str(new_mask)
+        new_subnet = subn_floor(subn) +'/'+ str(new_mask)
         subnets.append(subn_floor(new_subnet) +'/'+ str(new_mask))
 
     return subnets
@@ -249,9 +258,12 @@ def subn_contains(subn: Union[str, subnet], ip: Union[str, ipv4], verbose=False)
     
 def subn_iter(subn):
     if isinstance(subn, subnet):
+        print(subn.subnet)
         subn = subn.subnet
     elif not isinstance(subn, str):
         raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+    print(subn)
+    print(type(subn))
         
     bounds = subn_bounds(subn)
     upper = int(bounds['upper'], 2)
