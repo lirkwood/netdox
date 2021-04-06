@@ -28,6 +28,8 @@ def main(ipdict, ptr):
         soup = BeautifulSoup(stream, features='xml')
         for port in soup.find_all('port'):
             ip = port.parent.parent.address['addr']
+            if ip not in ipdict:
+                ipdict[ip] = {}
             if port.service:
                 if 'ports' not in ipdict[ip]:
                     ipdict[ip]['ports'] = {}
