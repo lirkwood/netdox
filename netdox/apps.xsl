@@ -46,7 +46,7 @@
                             <property name="image" title="Image ID" value="{.}"/>
                             <xsl:if test="contains(.,'registry-gitlab.allette.com.au')">
                             <property name="gitlab" title="Image on GitLab" datatype="link">
-                                <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="{@key}"/> on GitLab.</link>
+                                <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="@key"/> on GitLab.</link>
                             </property>
                             </xsl:if>
                         </xsl:for-each>
