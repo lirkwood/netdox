@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo '[INFO][init.sh] Pod started. Running init script...'
 cp -r /etc/ext/* /opt/app/src
 chmod 777 /opt/app/*
 
