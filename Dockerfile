@@ -87,4 +87,4 @@ RUN rm -rf /var/lib/apt/lists/* && \
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
 
-CMD [ "/bin/sh", "init.sh" ]
+CMD [ "/bin/bash", "init.sh" ]
