@@ -9,4 +9,7 @@ for file in /opt/app/src/records/*.bin; do
     -K ${OPENSSL_KEY} -iv $(cat '/opt/app/src/records/vector.txt') -out "${file%.bin}" &> /dev/null
 done
 
+openssl enc -aes-256-cbc -d -in '/opt/app/src/authentication.bin' \
+-K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out '/opt/app/src/authentication.json'
+
 python3 generate.py
