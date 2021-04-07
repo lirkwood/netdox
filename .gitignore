@@ -6,18 +6,13 @@ netdox/logs
 
 netdox/src/*
 !netdox/src/base/
-!netdox/src/records/
 !netdox/src/nmap.xml
-!netdox/src/template-ip.psml
 !netdox/src/prefixes.txt
-!netdox/src/soap.xml
 !netdox/src/exclusions.txt
-!netdox/src/settings.json
 !netdox/src/placeholder.jpg
 !netdox/src/review.xml
-!netdox/src/node_deps.txt
 !netdox/src/nat.txt
-!netdox/src/licenses.json
+!netdox/src/pageseeder.properties
 
 *.zip
 *log.txt

@@ -1,7 +1,7 @@
 <project name="pageseeder-upload" default="psml-zip"
          xmlns:ps="antlib:com.pageseeder.publishapi.ant">   
   <target name="psml-zip" description="ZIP file containing PSML">
-    <ps:config file="pageseeder.properties" />
+    <ps:config file="src/pageseeder.properties" />
     <ps:upload group=""
                folder="website"
                overwriteproperties="true"
