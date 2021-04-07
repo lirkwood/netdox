@@ -31,23 +31,18 @@ master = {}
 
 try:
     print('[INFO][generate.py] Parsing ActiveDirectory response...')
-    ad = ad_domains.main()
-    ad_f = ad['forward']
-    ad_r = ad['reverse']
+    ad_f, ad_r = ad_domains.main()
 except Exception as e:
     print('[ERROR][ad_domains.py] ActiveDirectory parsing threw an exception:')
     raise e
 
 try:
     print('[INFO][generate.py] Querying DNSMadeEasy...')
-    dnsme = dnsme_domains.main()
-    dnsme_f = dnsme['forward']
-    dnsme_r = dnsme['reverse']
+    dnsme_f, dnsme_r = dnsme_domains.main()
+    print('[INFO][generate.py] Parsing DNSMadeEasy response...')
 except Exception as e:
     print('[ERROR][ad_domains.py] DNSMadeEasy query threw an exception:')
     raise e
-
-print('[INFO][generate.py] Parsing DNSMadeEasy response...')
 
 # combine activedirectory and dnsmadeeasy data
 
@@ -136,6 +131,10 @@ try:
         for ip in master[dns].ips:
             ip_alias = nat_inf.lookup(ip)
             if ip_alias and (ip_alias in ptr_implied):
+                # add NAT ips
+                master[dns].link(ip_alias, 'ipv4')
+
+                # try to resolve NAT ips to a domain
                 for _dns in ptr_implied[ip_alias]:
                     if _dns != dns:
                         master[dns].link(_dns, 'nat')
@@ -237,6 +236,7 @@ subprocess.run(f'{xslt} -xsl:hosts.xsl -s:src/hosts.xml', shell=True)
 subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('[INFO][generate.py] Xen Orchestra documents done')
+
 print('[INFO][generate.py] Testing domains...')
 try:
     subprocess.run('node screenshotCompare.js', shell=True)
@@ -272,5 +272,5 @@ print('[INFO][generate.py] Status update generated')
 import cleanup
 cleanup.clean()
 
-subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
-print('[INFO][generate.py] Pageseeder upload finished')
+# subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
+# print('[INFO][generate.py] Pageseeder upload finished')

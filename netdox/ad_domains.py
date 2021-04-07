@@ -10,9 +10,8 @@ def main():
 
 
 def extract(path):
-    master = {'forward': {}, 'reverse': {}}
-    forward = master['forward']
-    reverse = master['reverse']
+    forward = {}
+    reverse = {}
     for file in os.scandir(path):
         if file.name.endswith('.json'):
             try:
@@ -84,7 +83,7 @@ def extract(path):
                 print(f'[ERROR][ad_domains.py] Failed to parse file as json: {file.name}. Exception:')
                 print(e)
                 print('[ERROR][ad_domains.py] ****END****')
-    return master
+    return (forward, reverse)
 
 
 if __name__ == '__main__':

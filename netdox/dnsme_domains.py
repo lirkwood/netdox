@@ -12,19 +12,18 @@ import os
 ##################################################################################
 
 def main():
-	master = {'forward': {}, 'reverse': {}}
-	forward = master['forward']
-	reverse = master['reverse']
+	forward = {}
+	reverse = {}
 
 	header = genheader()
 	if not header:
-		return master
+		return (forward, reverse)
 
 	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
 	response = json.loads(r.text)
 	if "error" in response:
 		print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
-		return master
+		return (forward, reverse)
 	domains = {}
 	for record in response['data']:
 		if record['id'] not in domains:
@@ -81,7 +80,7 @@ def main():
 						reverse[ip.ipv4] = []
 					reverse[ip.ipv4].append(value)
 
-	return master
+	return (forward, reverse)
 
 
 def genheader():
