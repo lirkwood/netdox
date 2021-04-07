@@ -11,17 +11,22 @@ class dns:
     name: str
     root: str
     source: str
-    subnet: str
 
-    def __init__(self, name):
+    def __init__(self, name, root=None, source=None):
         if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', name):
             self.name = name
+            self.root = root
+            self.source = source
+
+            # destinations
             self.public_ips = set()
             self.private_ips = set()
             self.domains = set()
             self.vms = set()
             self.apps = set()
             self.nat = set()
+
+            self.subnets = set()
         else:
             raise ValueError('Must provide a valid name for dns record (some FQDN)')
 
@@ -91,6 +96,9 @@ def merge(dns1,dns2):
 
 
 class JSONEncoder(json.JSONEncoder):
+    """
+    Default json encoder except set type is encoded as list
+    """
     def default(self, obj):
         if isinstance(obj, (list, dict, str, int, float, bool, type(None))):
             return json.JSONEncoder.default(self, obj)
