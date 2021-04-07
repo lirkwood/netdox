@@ -186,11 +186,11 @@ except Exception as e:
 ############################
 
 print('[INFO][generate.py] Applying document labels...')
-for domain in master:
-    master[domain].labels = []
+for dns in master:
+    master[dns].labels = []
     # Icinga
-    if master[domain].icinga == 'Not Monitored':
-        master[domain].labels.append('icinga_not_monitored')
+    if master[dns].icinga == 'Not Monitored':
+        master[dns].labels.append('icinga_not_monitored')
 
 
 ################################################
