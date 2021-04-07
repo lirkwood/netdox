@@ -197,8 +197,12 @@ for dns in master:
 # Data gathering done, start generating output #
 ################################################
 
+jsondata = {}
+for dns in master:
+    jsondata[dns] = master[dns].__dict__
 with open('src/dns.json','w') as dns:
-    dns.write(json.dumps(master, cls=utils.JSONEncoder, indent=2))
+    dns.write(json.dumps(jsondata, cls=utils.JSONEncoder, indent=2))
+del jsondata
 
     
 for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
