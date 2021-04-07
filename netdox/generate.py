@@ -251,7 +251,7 @@ with open('src/authentication.json','r') as f:
     auth = json.load(f)['pageseeder']
 
 # if property is defined in authentication.json use that value
-with open('pageseeder.properties','w') as stream:
+with open('src/pageseeder.properties','w') as stream:
     for line in properties.splitlines():
         property = line.split('=')[0]
         if property in auth:
