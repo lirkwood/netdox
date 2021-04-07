@@ -12,8 +12,7 @@ def main():
                 try:
                     for domain in app['domains']:
                         if domain not in master:
-                            master[domain] = utils.dns(domain)
-                            master[domain].source = 'Kubernetes'
+                            master[domain] = utils.dns(domain, source='Kubernetes')
                         master[domain].link(_app, 'app')
                 except KeyError:
                     pass

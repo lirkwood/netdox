@@ -36,8 +36,7 @@ def extract(path):
                                     ip = item['Value'].strip('.')
 
                             if hostname not in forward:
-                                forward[hostname] = utils.dns(hostname)
-                                forward[hostname].source = 'ActiveDirectory'
+                                forward[hostname] = utils.dns(hostname, source='ActiveDirectory')
                             forward[hostname].link(ip, 'ipv4')
 
                         elif record['RecordType'] == 'CNAME':
@@ -61,8 +60,7 @@ def extract(path):
                                         dest = dest.strip('.')
                         
                             if hostname not in forward:
-                                forward[hostname] = utils.dns(hostname)
-                                forward[hostname].source = 'ActiveDirectory'
+                                forward[hostname] = utils.dns(hostname, source='ActiveDirectory')
                             forward[hostname].link(dest, 'domain')
                         
                         elif record['RecordType'] == 'PTR':
