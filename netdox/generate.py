@@ -237,40 +237,40 @@ subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('[INFO][generate.py] Xen Orchestra documents done')
 
-print('[INFO][generate.py] Testing domains...')
-try:
-    subprocess.run('node screenshotCompare.js', shell=True)
-except Exception as e:
-    print('[ERROR][screenshotCompare.js] Screenshot compare module threw an exception:')
-    print(e)
-    print('[ERROR][screenshotCompare.js] ****END****')
+# print('[INFO][generate.py] Testing domains...')
+# try:
+#     subprocess.run('node screenshotCompare.js', shell=True)
+# except Exception as e:
+#     print('[ERROR][screenshotCompare.js] Screenshot compare module threw an exception:')
+#     print(e)
+#     print('[ERROR][screenshotCompare.js] ****END****')
 
-# load pageseeder properties and auth info
-with open('pageseeder.properties','r') as f: properties = f.read()
-with open('src/authentication.json','r') as f:
-    auth = json.load(f)['pageseeder']
+# # load pageseeder properties and auth info
+# with open('pageseeder.properties','r') as f: properties = f.read()
+# with open('src/authentication.json','r') as f:
+#     auth = json.load(f)['pageseeder']
 
-# if property is defined in authentication.json use that value
-with open('src/pageseeder.properties','w') as stream:
-    for line in properties.splitlines():
-        property = line.split('=')[0]
-        if property in auth:
-            stream.write(f'{property}={auth[property]}')
-        else:
-            stream.write(line)
-        stream.write('\n')
+# # if property is defined in authentication.json use that value
+# with open('src/pageseeder.properties','w') as stream:
+#     for line in properties.splitlines():
+#         property = line.split('=')[0]
+#         if property in auth:
+#             stream.write(f'{property}={auth[property]}')
+#         else:
+#             stream.write(line)
+#         stream.write('\n')
 
-with open('build.xml','r') as stream: soup = BeautifulSoup(stream, features='xml')
-with open('build.xml','w') as stream:
-    soup.find('ps:upload')['group'] = auth['group']
-    stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
+# with open('build.xml','r') as stream: soup = BeautifulSoup(stream, features='xml')
+# with open('build.xml','w') as stream:
+#     soup.find('ps:upload')['group'] = auth['group']
+#     stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
 
-subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
-print('[INFO][generate.py] Status update generated')
+# subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
+# print('[INFO][generate.py] Status update generated')
 
-import cleanup
-cleanup.clean()
+# import cleanup
+# cleanup.clean()
 
 # subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
 # print('[INFO][generate.py] Pageseeder upload finished')
