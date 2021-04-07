@@ -100,9 +100,6 @@ class JSONEncoder(json.JSONEncoder):
     Default json encoder except set type is encoded as list
     """
     def default(self, obj):
-        if isinstance(obj, (list, dict, str, int, float, bool, type(None))):
-            return json.JSONEncoder.default(self, obj)
-        elif isinstance(obj, set):
-            return json.JSONEncoder.default(self, list(obj))
-        else:
-            raise TypeError(f'Object of type {type(obj)} is not JSON serializable')
+        if isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
