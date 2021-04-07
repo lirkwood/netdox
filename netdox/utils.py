@@ -40,7 +40,7 @@ class dns:
             if type == 'ipv4' or type == 'ip':
                 if iptools.valid_ip(string):
                     self.subnets.add(iptools.sort(string))
-                    if iptools.is_public(string):
+                    if iptools.public_ip(string):
                         self.public_ips.add(string)
                     else:
                         self.private_ips.add(string)
