@@ -39,7 +39,7 @@ def extract(path):
                             if hostname not in forward:
                                 forward[hostname] = utils.dns(hostname)
                                 forward[hostname].source = 'ActiveDirectory'
-                            forward[hostname].destinations(ip, 'ipv4')
+                            forward[hostname].link(ip, 'ipv4')
 
                         elif record['RecordType'] == 'CNAME':
                             domain = record['DistinguishedName'].split(',')[1].strip('DC=')
@@ -64,7 +64,7 @@ def extract(path):
                             if hostname not in forward:
                                 forward[hostname] = utils.dns(hostname)
                                 forward[hostname].source = 'ActiveDirectory'
-                            forward[hostname].destinations(dest, 'domain')
+                            forward[hostname].link(dest, 'domain')
                         
                         elif record['RecordType'] == 'PTR':
                             zone = record['DistinguishedName'].split(',')[1].strip('DC=')

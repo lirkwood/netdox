@@ -53,7 +53,7 @@ def main():
 				if name not in forward:
 					forward[name] = utils.dns(name)
 					forward[name].source = 'DNSMadeEasy'
-				forward[name].destinations(record['value'], 'ipv4')
+				forward[name].link(record['value'], 'ipv4')
 			
 			elif record['type'] == 'CNAME':
 				name = record['name'] +'.'+ domain
@@ -69,7 +69,7 @@ def main():
 				if name not in forward:
 					forward[name] = utils.dns(name)
 					forward[name].source = 'DNSMadeEasy'
-				forward[name].destinations(record['value'], 'domain')
+				forward[name].link(record['value'], 'domain')
 
 			elif record['type'] == 'PTR':
 				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])
