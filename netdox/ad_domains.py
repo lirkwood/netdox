@@ -1,6 +1,7 @@
 import os
 import json
 import iptools
+import utils
 
 def main():
     path = "src/records/"
@@ -36,8 +37,9 @@ def extract(path):
                                     ip = item['Value'].strip('.')
 
                             if hostname not in forward:
-                                forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'ActiveDirectory'}
-                            forward[hostname]['dest']['ips'].append(ip)
+                                forward[hostname] = utils.dns(hostname)
+                                forward[hostname].source = 'ActiveDirectory'
+                            forward[hostname].destinations(ip, 'ipv4')
 
                         elif record['RecordType'] == 'CNAME':
                             domain = record['DistinguishedName'].split(',')[1].strip('DC=')
@@ -60,8 +62,9 @@ def extract(path):
                                         dest = dest.strip('.')
                         
                             if hostname not in forward:
-                                forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'ActiveDirectory'}
-                            forward[hostname]['dest']['domains'].append(dest)
+                                forward[hostname] = utils.dns(hostname)
+                                forward[hostname].source = 'ActiveDirectory'
+                            forward[hostname].destinations(dest, 'domain')
                         
                         elif record['RecordType'] == 'PTR':
                             zone = record['DistinguishedName'].split(',')[1].strip('DC=')

@@ -1,9 +1,9 @@
-from getpass import getpass
 from json.decoder import JSONDecodeError
 from requests import get
 import hmac, hashlib
 import datetime
 import iptools
+import utils
 import json
 import os
 
@@ -51,8 +51,9 @@ def main():
 
 				name = name.replace('*.','_wildcard_.')
 				if name not in forward:
-					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'DNSMadeEasy'}
-				forward[name]['dest']['ips'].append(record['value'])
+					forward[name] = utils.dns(name)
+					forward[name].source = 'DNSMadeEasy'
+				forward[name].destinations(record['value'], 'ipv4')
 			
 			elif record['type'] == 'CNAME':
 				name = record['name'] +'.'+ domain
@@ -66,8 +67,9 @@ def main():
 				else:
 					value += '.'+ domain
 				if name not in forward:
-					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'DNSMadeEasy'}
-				forward[name]['dest']['domains'].append(value)
+					forward[name] = utils.dns(name)
+					forward[name].source = 'DNSMadeEasy'
+				forward[name].destinations(record['value'], 'domain')
 
 			elif record['type'] == 'PTR':
 				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])

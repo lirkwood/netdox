@@ -1,7 +1,7 @@
 import ad_domains
 import dnsme_domains
 import k8s_domains
-import iptools
+import iptools, utils
 
 from bs4 import BeautifulSoup
 import subprocess, json, os
@@ -10,11 +10,24 @@ os.mkdir('out')
 for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'review'):
     os.mkdir('out/'+path)
 
+def integrate(dns_set, superset):
+    """
+    Integrates some set of dns records into a master set
+    """
+    for domain in dns_set:
+        if domain not in superset:
+            superset[domain] = dns_set[domain]
+        else:
+            superset[domain] = utils.merge(superset[domain], dns_set[domain])
+
 
 
 #####################
 # Gathering domains #
 #####################
+
+# Main set of DNS records, dns_obj.name: dns_obj
+master = {}
 
 try:
     print('[INFO][generate.py] Parsing ActiveDirectory response...')
@@ -37,19 +50,10 @@ except Exception as e:
 print('[INFO][generate.py] Parsing DNSMadeEasy response...')
 
 # combine activedirectory and dnsmadeeasy data
-master = {}
-for domain in ad_f:
-    master[domain.lower()] = ad_f[domain]
 
-for domain in dnsme_f:
-    if domain in master:
-        for ip in dnsme_f[domain]['dest']['ips']:
-            master[domain]['dest']['ips'].append(ip)
-        for alias in dnsme_f[domain]['dest']['domains']:
-            master[domain]['dest']['domains'].append(alias)
-    else:
-        master[domain] = dnsme_f[domain]
-
+for source in (ad_f, dnsme_f):
+    integrate(source, master)
+    del source
 
 # Api call getting all vms/hosts/pools
 try:
@@ -73,18 +77,12 @@ except Exception as e:
 
 # gets kubernetes internal dns info
 try:
-    k8s = k8s_domains.main()
+    integrate(k8s_domains.main(), master)
     print('[INFO][generate.py] Parsing Kubernetes response...')
 except Exception as e:
     print('[ERROR][k8s_domains.py] Kubernetes parsing threw an exception:')
     raise e
 
-for domain in k8s:
-    if domain in master:
-        for app in k8s[domain]['dest']['apps']:
-            master[domain]['dest']['apps'].append(app)
-    else:
-        master[domain] = k8s[domain]
 
 
 try:
@@ -113,37 +111,18 @@ for ip in dnsme_r:
 
 # generate json file with all ptr records in the dns
 ipdict = {}
-for domain in master:   #adding subnets and sorting public/private ips
-    master[domain]['dest']['ips'] = list(dict.fromkeys(master[domain]['dest']['ips']))
-    master[domain]['dest']['domains'] = list(dict.fromkeys(master[domain]['dest']['domains']))
-    master[domain]['subnets'] = []
+for dns in master:
+    for ip in master[dns].ips:
+        ipdict[ip] = {'source': master[dns].source}
 
-    tmp = []
-    for i in range(len(master[domain]['dest']['ips'])):
-        ip = iptools.ipv4(master[domain]['dest']['ips'][i])
-        if ip.valid:
-            master[domain]['subnets'].append(ip.subnet)
-            ipdict[ip.ipv4] = {'source': master[domain]['source']}
-            tmp.append(ip)
-        else:
-            master[domain]['dest']['ips'].pop(i)
-            print('[WARNING][generate.py] Removed invalid ip: '+ ip.ipv4)
-
-    # sort ips by public/private
-    master[domain]['dest']['ips'] = {'private': [], 'public': []}
-    for ip in tmp:
-        if ip.public:
-            master[domain]['dest']['ips']['public'].append(ip.ipv4)
-        else:
-            master[domain]['dest']['ips']['private'].append(ip.ipv4)
 
 # not literally ptr records, forward dns records reversed for convenience
 ptr_implied = {}
-for domain in master:
-    for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
+for dns in master:
+    for ip in master[dns].ips:
         if ip not in ptr_implied:
             ptr_implied[ip] = []
-        ptr_implied[ip].append(domain)
+        ptr_implied[ip].append(dns)
 
 
 ########################
@@ -153,13 +132,13 @@ for domain in master:
 # check each ip for each domain against the NAT
 try:
     import nat_inf
-    for domain in master:
-        for ip in (master[domain]['dest']['ips']['public'] + master[domain]['dest']['ips']['private']):
+    for dns in master:
+        for ip in master[dns].ips:
             ip_alias = nat_inf.lookup(ip)
             if ip_alias and (ip_alias in ptr_implied):
-                for _domain in ptr_implied[ip_alias]:
-                    if _domain != domain:
-                        master[domain]['dest']['nat'].append(_domain)
+                for _dns in ptr_implied[ip_alias]:
+                    if _dns != dns:
+                        master[dns].link(_dns, 'nat')
 except Exception as e:
     print('[ERROR][nat_inf.py] NAT mapping threw an exception:')
     print(e)    # Non essential => continue without
@@ -167,22 +146,22 @@ except Exception as e:
 
 
 # search for VMs to match on domains
-for domain in master:
-    for ip in master[domain]['dest']['ips']['private']:
+for dns in master:
+    for ip in master[dns].private_ips:
         xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
         for vm in json.loads(xo_query):
-            master[domain]['dest']['vms'].append(vm['uuid'])
+            master[domain].link(vm['uuid'], 'vm')
 
 # Add name of domain in icinga if it exists
 print('[INFO][generate.py] Querying Icinga...')
 try:
     import icinga_inf
     for domain in master:
-        master[domain]['icinga'] = 'Not Monitored'
+        master[domain].icinga = 'Not Monitored'
         # search icinga for objects with address == domain (or any private ip for that domain)
-        details = icinga_inf.lookup([domain] + master[domain]['dest']['ips']['private'])
+        details = icinga_inf.lookup([domain] + master[domain].private_ips)
         if details:
-            master[domain]['icinga'] = details['display_name']
+            master[domain].icinga = details['display_name']
 except Exception as e:
     print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
     print(e)
@@ -195,7 +174,7 @@ try:
     for license_id in licenses:
         for domain in licenses[license_id]:
             if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
-                master[domain]['license'] = license_id
+                master[domain].license = license_id
 except Exception as e:
     print('[ERROR][license_inf.py] License processing threw an exception:')
     print(e)
@@ -208,19 +187,18 @@ except Exception as e:
 
 print('[INFO][generate.py] Applying document labels...')
 for domain in master:
-    master[domain]['labels'] = []
+    master[domain].labels = []
     # Icinga
-    if master[domain]['icinga'] == 'Not Monitored':
-        master[domain]['labels'].append('icinga_not_monitored')
+    if master[domain].icinga == 'Not Monitored':
+        master[domain].labels.append('icinga_not_monitored')
 
 
 ################################################
 # Data gathering done, start generating output #
 ################################################
 
-with open('src/dns.json','w') as stream:
-    stream.write(json.dumps(master, indent=2))
-
+with open('src/dns.json','w') as dns:
+    dns.write(json.dumps(master, cls=utils.JSONEncoder, indent=2))
 
     
 for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them

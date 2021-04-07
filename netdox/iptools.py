@@ -209,7 +209,7 @@ def subn_equiv(subn, new_mask):
         else:
             print('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
     else:
-        print(f'[ERROR][iptools.py] Please provide a valid object; Must be one of: "subnet", "str".; Not "{type(subn)}"')
+        print(f'[ERROR][iptools.py] Please provide a valid object; Must be one of: subnet, str; Not "{type(subn)}"')
         return None
 
     if isinstance(new_mask, str):
@@ -238,12 +238,12 @@ def subn_contains(subn: Union[str, subnet], ip: Union[str, ipv4], verbose=False)
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'Subnet object must be one of: "str", "subnet".; Not "{type(subn)}"')
+        raise TypeError(f'[ERROR][iptools.py] Subnet object must be one of: "str", "subnet".; Not "{type(subn)}"')
 
     if isinstance(ip, ipv4):
         ip = ip.ipv4
     elif not isinstance(ip, str):
-        raise TypeError(f'IP object must be one of: "str", "ipv4".; Not "{type(ip)}"')
+        raise TypeError(f'[ERROR][iptools.py] IP object must be one of: "str", "ipv4".; Not "{type(ip)}"')
 
     bin_ip = int(cidr2binary(ip), base=2)
     bounds = subn_bounds(subn)
@@ -261,7 +261,7 @@ def subn_iter(subn):
         print(subn.subnet)
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'[ERROR][iptools.py] Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
     print(subn)
     print(type(subn))
         
@@ -312,8 +312,8 @@ def search_string(string, object, delimiter=None):
             validate = valid_subnet
             pattern = regex_subnet
         else:
-            print(f'[ERROR][iptools.py] Search object must be one of: "ipv4", "ipv4_subnet"; Not "{type(object)}".')
-            return None
+            raise TypeError(f'[ERROR][iptools.py] Search object must be one of: ipv4, subnet; Not "{type(object)}".')
+            
 
         outlist = []
         for line in string.split(delimiter):
@@ -337,3 +337,25 @@ def fetch_prefixes():
             if line not in prefixes:
                 prefixes[line] = subn_bounds(line)
     return prefixes
+
+
+def sort(ip):
+    if isinstance(ip, ipv4):
+        ip = ip.ipv4
+    elif not isinstance(ip, str):
+        raise TypeError('[ERROR][iptools.py] IPv4 object must be one of: ipv4, str ')
+    else:
+        bin_ip = int(cidr2binary(ip), 2)
+        sorted = False
+        try:
+            subndict = fetch_prefixes()
+        except FileNotFoundError:
+            # print('[WARNING][iptools.py] prefixes.txt not found. Sorting using default 255.255.255.0 subnet mask.')
+            subndict = {}
+        for prefix in subndict:
+            if bin_ip >= int(subndict[prefix]['lower'], 2) and bin_ip <= int(subndict[prefix]['upper'], 2):
+                sorted = True
+                return prefix
+        
+        if not sorted:
+            return '.'.join(ip.split('.')[:3]) + '.0/24'

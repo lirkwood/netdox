@@ -1,3 +1,4 @@
+import utils
 import json
 import os
 
@@ -11,8 +12,9 @@ def main():
                 try:
                     for domain in app['domains']:
                         if domain not in master:
-                            master[domain] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': '', 'source': 'Kubernetes'}
-                        master[domain]['dest']['apps'].append(_app)
+                            master[domain] = utils.dns(domain)
+                            master[domain].source = 'Kubernetes'
+                        master[domain].destinations(_app, 'app')
                 except KeyError:
                     pass
         
