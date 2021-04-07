@@ -202,15 +202,14 @@ def subn_equiv(subn, new_mask):
         if subn.valid:
             old_mask = subn.mask
         else:
-            print('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
+            raise ValueError('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
     elif isinstance(subn, str):
         if valid_subnet(subn):
             old_mask = int(subn.split('/')[-1])
         else:
-            print('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
+            raise ValueError('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
     else:
-        print(f'[ERROR][iptools.py] Please provide a valid object; Must be one of: subnet, str; Not "{type(subn)}"')
-        return None
+        raise ValueError(f'[ERROR][iptools.py] Please provide a valid object; Must be one of: subnet, str; Not "{type(subn)}"')
 
     if isinstance(new_mask, str):
         new_mask = int(new_mask.strip('/'))
@@ -258,12 +257,9 @@ def subn_contains(subn: Union[str, subnet], ip: Union[str, ipv4], verbose=False)
     
 def subn_iter(subn):
     if isinstance(subn, subnet):
-        print(subn.subnet)
         subn = subn.subnet
     elif not isinstance(subn, str):
         raise TypeError(f'[ERROR][iptools.py] Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
-    print(subn)
-    print(type(subn))
         
     bounds = subn_bounds(subn)
     upper = int(bounds['upper'], 2)
@@ -313,7 +309,6 @@ def search_string(string, object, delimiter=None):
             pattern = regex_subnet
         else:
             raise TypeError(f'[ERROR][iptools.py] Search object must be one of: ipv4, subnet; Not "{type(object)}".')
-            
 
         outlist = []
         for line in string.split(delimiter):
