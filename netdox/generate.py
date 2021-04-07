@@ -18,7 +18,7 @@ def integrate(dns_set, superset):
         if domain not in superset:
             superset[domain] = dns_set[domain]
         else:
-            superset[domain] = utils.merge(superset[domain], dns_set[domain])
+            superset[domain] = utils.merge_sets(superset[domain], dns_set[domain])
 
 
 

@@ -12,6 +12,10 @@ class dns:
     root: str
     source: str
 
+    """
+    Class representing a forward DNS record
+    """
+
     def __init__(self, name, root=None, source=None):
         if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', name):
             self.name = name
@@ -82,12 +86,35 @@ class dns:
     def ips(self):
         return self.public_ips.union(self.private_ips)
 
-def merge(dns1,dns2):
+    def fetch_subnets(self):
+        for ip in self.ips:
+            self.subnets.add(iptools.sort(ip))
+
+
+class ptr:
+    nat: str
+
     """
-    Simple merge of two dns objects
+    Class representing a reverse DNS record
+    """
+    def __init__(self, ip):
+        if iptools.valid_ip(ip):
+            self.ipv4 = ip
+            self.domains = set()
+        else:
+            raise ValueError('Must provide a valid name for ptr record (some IP)')
+
+
+def merge_sets(dns1,dns2):
+    """
+    Simple merge of any sets of found in two dns objects
     """
     if isinstance(dns1, dns) and isinstance(dns2,dns):
-        dns1.__dict__.update(dns2.__dict__)
+        dns1_inf = dns1.__dict__
+        dns2_inf = dns2.__dict__
+        for attr in dns2_inf:
+            if isinstance(dns2_inf[attr], set):
+                dns1_inf[attr] = dns1_inf[attr].union(dns2_inf[attr])
         return dns1
     else:
         raise TypeError(f'Arguments must be dns objects, not {type(dns1)}, {type(dns2)}')
