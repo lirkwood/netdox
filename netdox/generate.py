@@ -87,12 +87,11 @@ try:
 except FileNotFoundError:
     print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
 else:
-    tmp = []
-    for domain in master:
-        if domain in exclusions:
-            tmp.append(domain)
-    for domain in tmp:
-        del master[domain]
+    for domain in exclusions:
+        try:
+            del master[domain]
+        except KeyError:
+            pass
 
 
 ptr = {}    #gathering ptr records
