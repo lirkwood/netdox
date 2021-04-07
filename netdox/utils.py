@@ -87,7 +87,7 @@ def merge(dns1,dns2):
     Simple merge of two dns objects
     """
     if isinstance(dns1, dns) and isinstance(dns2,dns):
-        dns1.destinations.update(dns2.destinations)
+        dns1.__dict__.update(dns2.__dict__)
         return dns1
     else:
         raise TypeError(f'Arguments must be dns objects, not {type(dns1)}, {type(dns2)}')
