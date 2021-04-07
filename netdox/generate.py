@@ -237,6 +237,8 @@ subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('[INFO][generate.py] Xen Orchestra documents done')
 
+while True: pass
+
 # print('[INFO][generate.py] Testing domains...')
 # try:
 #     subprocess.run('node screenshotCompare.js', shell=True)
