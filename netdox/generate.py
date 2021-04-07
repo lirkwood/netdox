@@ -150,18 +150,18 @@ for dns in master:
     for ip in master[dns].private_ips:
         xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
         for vm in json.loads(xo_query):
-            master[domain].link(vm['uuid'], 'vm')
+            master[dns].link(vm['uuid'], 'vm')
 
 # Add name of domain in icinga if it exists
 print('[INFO][generate.py] Querying Icinga...')
 try:
     import icinga_inf
-    for domain in master:
-        master[domain].icinga = 'Not Monitored'
+    for dns in master:
+        master[dns].icinga = 'Not Monitored'
         # search icinga for objects with address == domain (or any private ip for that domain)
-        details = icinga_inf.lookup([domain] + master[domain].private_ips)
+        details = icinga_inf.lookup([dns] + list(master[dns].private_ips))
         if details:
-            master[domain].icinga = details['display_name']
+            master[dns].icinga = details['display_name']
 except Exception as e:
     print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
     print(e)
