@@ -1,5 +1,6 @@
 import iptools, json, re
-
+from traceback import format_exc
+from datetime import datetime
 
             # if iptools.valid_ip(string) or re.fullmatch('([a-zA-Z0-9_-]\.)+[a-zA-Z0-9_-]', string):
             #     self._destinations.append(string)
@@ -90,21 +91,6 @@ class dns:
         for ip in self.ips:
             self.subnets.add(iptools.sort(ip))
 
-
-class ptr:
-    nat: str
-
-    """
-    Class representing a reverse DNS record
-    """
-    def __init__(self, ip):
-        if iptools.valid_ip(ip):
-            self.ipv4 = ip
-            self.domains = set()
-        else:
-            raise ValueError('Must provide a valid name for ptr record (some IP)')
-
-
 def merge_sets(dns1,dns2):
     """
     Simple merge of any sets of found in two dns objects
@@ -130,3 +116,30 @@ class JSONEncoder(json.JSONEncoder):
         if isinstance(obj, set):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
+
+
+def handle(func, critical=True):
+    funcname = func.__name__
+    if not critical:
+        def wrapper(*args, **kwargs):
+            print(f'[INFO][netdox.py] Called function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
+            try:
+                returned = func(*args, **kwargs)
+            except Exception as e:
+                print(f'[WARNING][netdox.py] Function {funcname} threw:\n\n {format_exc()}')
+                return None
+            else:
+                print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
+                return returned
+    else:
+        def wrapper(*args, **kwargs):
+            print(f'[INFO][netdox.py]  function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
+            try:
+                returned = func(*args, **kwargs)
+            except Exception as e:
+                print(f'[WARNING][netdox.py] Essential function {funcname} threw an exception:\n')
+                raise e
+            else:
+                print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
+                return returned
+    return wrapper
