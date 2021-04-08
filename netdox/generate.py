@@ -244,25 +244,25 @@ print('[INFO][generate.py] Xen Orchestra documents done')
 #     print(e)
 #     print('[ERROR][screenshotCompare.js] ****END****')
 
-# # load pageseeder properties and auth info
-# with open('pageseeder.properties','r') as f: properties = f.read()
-# with open('src/authentication.json','r') as f:
-#     auth = json.load(f)['pageseeder']
+# load pageseeder properties and auth info
+with open('src/pageseeder.properties','r') as f: properties = f.read()
+with open('src/authentication.json','r') as f:
+    auth = json.load(f)['pageseeder']
 
-# # if property is defined in authentication.json use that value
-# with open('src/pageseeder.properties','w') as stream:
-#     for line in properties.splitlines():
-#         property = line.split('=')[0]
-#         if property in auth:
-#             stream.write(f'{property}={auth[property]}')
-#         else:
-#             stream.write(line)
-#         stream.write('\n')
+# if property is defined in authentication.json use that value
+with open('src/pageseeder.properties','w') as stream:
+    for line in properties.splitlines():
+        property = line.split('=')[0]
+        if property in auth:
+            stream.write(f'{property}={auth[property]}')
+        else:
+            stream.write(line)
+        stream.write('\n')
 
-# with open('build.xml','r') as stream: soup = BeautifulSoup(stream, features='xml')
-# with open('build.xml','w') as stream:
-#     soup.find('ps:upload')['group'] = auth['group']
-#     stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
+with open('build.xml','r') as stream: soup = BeautifulSoup(stream, features='xml')
+with open('build.xml','w') as stream:
+    soup.find('ps:upload')['group'] = auth['group']
+    stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
 
 # subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
