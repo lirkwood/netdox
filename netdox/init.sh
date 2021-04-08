@@ -15,4 +15,6 @@ for file in /etc/ext/*.bin; do
     -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/$(basename ${file%.bin})"
 done
 
-python3 generate.py
+python3 generate.py 2>&1 | tee /var/log/netdox.log
+
+cp /var/log/netdox.log /etc/ext/log/$(date '+%Y-%m-%d_%H:%M:%S')
