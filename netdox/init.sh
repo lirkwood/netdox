@@ -12,7 +12,7 @@ done
 
 for file in /etc/ext/*.bin; do
     openssl enc -aes-256-cbc -d -in "$file" \
-    -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/$(basename $file)"
+    -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/$(basename ${file%.bin})"
 done
 
 python3 generate.py
