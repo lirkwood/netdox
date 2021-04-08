@@ -9,11 +9,10 @@ netdox/src/*
 !netdox/src/nmap.xml
 !netdox/src/prefixes.txt
 !netdox/src/exclusions.txt
-!netdox/src/settings.json
 !netdox/src/placeholder.jpg
 !netdox/src/review.xml
 !netdox/src/nat.txt
-!netdox/src/licenses.json
+!netdox/src/pageseeder.properties
 
 *.zip
 **/.git*
