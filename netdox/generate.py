@@ -236,8 +236,6 @@ subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
 
 print('[INFO][generate.py] Xen Orchestra documents done')
 
-while True: pass
-
 # print('[INFO][generate.py] Testing domains...')
 # try:
 #     subprocess.run('node screenshotCompare.js', shell=True)
@@ -273,5 +271,5 @@ while True: pass
 # import cleanup
 # cleanup.clean()
 
-# subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
-# print('[INFO][generate.py] Pageseeder upload finished')
+subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
+print('[INFO][generate.py] Pageseeder upload finished')
