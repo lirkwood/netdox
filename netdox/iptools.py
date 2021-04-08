@@ -121,7 +121,12 @@ regex_subnet = re.compile(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])')
 # returns boolean if given str is valid within CIDR ipv4 format
 def valid_ip(string):
     if re.fullmatch(regex_ip, string):
-        return True
+        for octet in string.split('.'):
+            if int(octet) >= 0 and int(octet) <= 255:
+                pass
+            else:
+                return False
+            return True
     else:
         return False
     
