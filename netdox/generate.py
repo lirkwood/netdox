@@ -1,15 +1,67 @@
-import ad_domains
-import dnsme_domains
-import k8s_domains
-import iptools, utils
+import ad_domains, dnsme_domains, k8s_domains
+import k8s_inf_new, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
+import cleanup, iptools, utils
 
+import subprocess, traceback, json, os
 from bs4 import BeautifulSoup
-import subprocess, json, os
+from datetime import datetime
 
-os.mkdir('out')
-for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'review'):
-    os.mkdir('out/'+path)
+@utils.handle
+def init():
+    """
+    Creates dirs and template files, loads authentication data, excluded domains, etc...
+    """
+    # Put this in init.sh
+    os.mkdir('out')
+    for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'review'):
+        os.mkdir('out/'+path)
+    
+    # Use set template function for this before each call
+    for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
+        with open(f'src/{type}.xml','w') as stream:
+            stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE {type} [
+            <!ENTITY json SYSTEM "{type}.json">
+            ]>
+            <{type}>&json;</{type}>""")
 
+    # load pageseeder properties and auth info
+    with open('pageseeder.properties','r') as f: 
+        psproperties = f.read()
+    with open('src/authentication.json','r') as f:
+        auth = json.load(f)
+        psauth = auth['pageseeder']
+
+    # overwrite ps properties with external values
+    with open('pageseeder.properties','w') as stream:
+        for line in psproperties.splitlines():
+            property = line.split('=')[0]
+            if property in psauth:
+                stream.write(f'{property}={psauth[property]}')
+            else:
+                stream.write(line)
+            stream.write('\n')
+
+    # Specify ps group in Ant build.xml
+    with open('build.xml','r') as stream: 
+        soup = BeautifulSoup(stream, features='xml')
+    with open('build.xml','w') as stream:
+        soup.find('ps:upload')['group'] = psauth['group']
+        stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
+
+    try:
+    # Remove manually excluded domains once all dns sources have been queried
+        with open('src/exclusions.txt','r') as stream:
+            global exclusions
+            exclusions = stream.read().splitlines()
+    except FileNotFoundError:
+        print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
+
+#####################
+# Gathering domains #
+#####################
+
+@utils.handle
 def integrate(dns_set, superset):
     """
     Integrates some set of dns records into a master set
@@ -20,256 +72,170 @@ def integrate(dns_set, superset):
         else:
             superset[domain] = utils.merge_sets(superset[domain], dns_set[domain])
 
+@utils.handle(critical=False)
+def nat(dns_set):
+    """
+    Integrates IPs from NAT into a dns set
+    """
+    for dns in dns_set:
+        for ip in dns_set[dns].ips:
+            ip_alias = nat_inf.lookup(ip)
+            if ip_alias:
+                dns_set[dns].link(ip_alias, 'ipv4')
+
+    return dns_set
+
+@utils.handle(critical=False)
+def xo_vms(dns_set):
+    for dns in dns_set:
+        for ip in dns_set[dns].private_ips:
+            xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
+            for vm in json.loads(xo_query):
+                dns_set[dns].link(vm['uuid'], 'vm')
+
+@utils.handle(critical=False)
+def icinga_labels(dns_set):
+    """
+    Integrates icinga display labels into a dns set
+    """
+    for dns in dns_set:
+        # search icinga for objects with address == domain (or any private ip for that domain)
+        details = icinga_inf.lookup([dns] + list(dns_set[dns].private_ips))
+        if details:
+            dns_set[dns].icinga = details['display_name']
+    return dns_set
+
+@utils.handle(critical=False)
+def license_keys(dns_set):
+    """
+    Integrates license keys into a dns set
+    """
+    licenses = license_inf.fetch(dns_set)
+    for license_id in licenses:
+        for domain in licenses[license_id]:
+            if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
+                dns_set[domain].license = license_id
+    return dns_set
 
 
-#####################
-# Gathering domains #
-#####################
+## All queries called from here
+@utils.handle
+def queries():
+    """
+    Makes all queries and returns complete dns set
+    """
+    # Main set of DNS records, dns_obj.name: dns_obj
+    master = {}
 
-# Main set of DNS records, dns_obj.name: dns_obj
-master = {}
+    # DNS queries
+    ad_f, ad_r = utils.handle(ad_domains.main)()
+    dnsme_f, dnsme_r = utils.handle(dnsme_domains.main)()
 
-try:
-    print('[INFO][generate.py] Parsing ActiveDirectory response...')
-    ad_f, ad_r = ad_domains.main()
-except Exception as e:
-    print('[ERROR][ad_domains.py] ActiveDirectory parsing threw an exception:')
-    raise e
+    for source in (ad_f, dnsme_f):
+        integrate(source, master)
+        del source
 
-try:
-    print('[INFO][generate.py] Querying DNSMadeEasy...')
-    dnsme_f, dnsme_r = dnsme_domains.main()
-    print('[INFO][generate.py] Parsing DNSMadeEasy response...')
-except Exception as e:
-    print('[ERROR][ad_domains.py] DNSMadeEasy query threw an exception:')
-    raise e
+    # Integrate NAT
+    master = nat(master)
 
-# combine activedirectory and dnsmadeeasy data
+    # VM/App queries
+    utils.handle(xo_inf.main)(master)
+    utils.handle(k8s_inf_new.main)()
 
-for source in (ad_f, dnsme_f):
-    integrate(source, master)
-    del source
+    # More DNS (move this)
+    k8s = utils.handle(k8s_domains.main)()
+    integrate(k8s, master)
 
-# Api call getting all vms/hosts/pools
-try:
-    import xo_inf
-    print('[INFO][generate.py] Querying Xen Orchestra...')
-    xo_inf.main(master)
-    print('[INFO][generate.py] Parsing Xen Orchestra response...')
-except Exception as e:
-    print('[ERROR][xo_inf.py] Xen Orchestra query threw an exception:')
-    raise e
-
-
-# maps apps to domains by tracing back through pods/services/ingress
-try:
-    import k8s_inf_new
-    print('[INFO][generate.py] Querying Kubernetes...')
-    k8s_inf_new.main()
-except Exception as e:
-    print('[ERROR][k8s_inf.py] Kubernetes query threw an exception:')
-    raise e
-
-# gets kubernetes internal dns info
-try:
-    integrate(k8s_domains.main(), master)
-    print('[INFO][generate.py] Parsing Kubernetes response...')
-except Exception as e:
-    print('[ERROR][k8s_domains.py] Kubernetes parsing threw an exception:')
-    raise e
-
-
-
-try:
-    # Remove manually excluded domains once all dns sources have been queried
-    with open('src/exclusions.txt','r') as stream:
-        exclusions = stream.read().splitlines()
-except FileNotFoundError:
-    print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
-else:
+    # Exclude specified domains
     for domain in exclusions:
         try:
             del master[domain]
         except KeyError:
             pass
 
+    ptr = {}
+    for ip in ad_r:
+        ptr[ip] = ad_r[ip]
+    for ip in dnsme_r:
+        if ip in ptr:
+            ptr[ip].append(dnsme_r[ip])
+        else:
+            ptr[ip] = dnsme_r[ip]
 
-ptr = {}    #gathering ptr records
-for ip in ad_r:
-    ptr[ip] = ad_r[ip]
-for ip in dnsme_r:
-    if ip in ptr:
-        ptr[ip].append(dnsme_r[ip])
-    else:
-        ptr[ip] = dnsme_r[ip]
-
-# generate json file with all ptr records in the dns
-ipdict = {}
-for dns in master:
-    for ip in master[dns].ips:
-        ipdict[ip] = {'source': master[dns].source}
-
-
-# not literally ptr records, forward dns records reversed for convenience
-ptr_implied = {}
-for dns in master:
-    for ip in master[dns].ips:
-        if ip not in ptr_implied:
-            ptr_implied[ip] = []
-        ptr_implied[ip].append(dns)
-
-
-########################
-# Gathering other data #
-########################
-
-# check each ip for each domain against the NAT
-try:
-    import nat_inf
+    # Describes source ips came from
+    ipsources = {}
     for dns in master:
         for ip in master[dns].ips:
-            ip_alias = nat_inf.lookup(ip)
-            if ip_alias and (ip_alias in ptr_implied):
-                # add NAT ips
-                master[dns].link(ip_alias, 'ipv4')
+            ipsources[ip] = {'source': master[dns].source}
 
-                # try to resolve NAT ips to a domain
-                for _dns in ptr_implied[ip_alias]:
-                    if _dns != dns:
-                        master[dns].link(_dns, 'nat')
-except Exception as e:
-    print('[ERROR][nat_inf.py] NAT mapping threw an exception:')
-    print(e)    # Non essential => continue without
-    print('[ERROR][nat_inf.py] ****END****')
+    return (master, ptr, ipsources)
 
 
-# search for VMs to match on domains
-for dns in master:
-    for ip in master[dns].private_ips:
-        xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
-        for vm in json.loads(xo_query):
-            master[dns].link(vm['uuid'], 'vm')
+@utils.handle(critical=False)
+def labels(dns_set):
+    """
+    Applies any relevant document labels
+    """
+    for dns in dns_set:
+        dns_set[dns].labels = []
+        # Icinga
+        if not dns_set[dns].icinga:
+            dns_set[dns].labels.append('icinga_not_monitored')
 
-# Add name of domain in icinga if it exists
-print('[INFO][generate.py] Querying Icinga...')
-try:
-    import icinga_inf
-    for dns in master:
-        master[dns].icinga = 'Not Monitored'
-        # search icinga for objects with address == domain (or any private ip for that domain)
-        details = icinga_inf.lookup([dns] + list(master[dns].private_ips))
-        if details:
-            master[dns].icinga = details['display_name']
-except Exception as e:
-    print('[ERROR][icinga_inf.py] Icinga query threw an exception:')
-    print(e)
-    print('[ERROR][icinga_inf.py] ****END****')
+@utils.handle
+def write_dns(dns_set):
+    """
+    Encodes dns set as json and writes to file
+    """
+    jsondata = {}
+    for dns in dns_set:
+        jsondata[dns] = dns_set[dns].__dict__
+    with open('src/dns.json','w') as dns:
+        dns.write(json.dumps(jsondata, cls=utils.JSONEncoder, indent=2))
+    del jsondata
 
-print('[INFO][generate.py] Searching for pageseeder licenses...')
-try:
-    import license_inf
-    licenses = license_inf.fetch(master)
-    for license_id in licenses:
-        for domain in licenses[license_id]:
-            if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
-                master[domain].license = license_id
-except Exception as e:
-    print('[ERROR][license_inf.py] License processing threw an exception:')
-    print(e)
-    print('[ERROR][license_inf.py] ****END****')
+@utils.handle
+def xslt(xsl, src, out=None):
+    xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
+    if out:
+        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src} -o:{out}', shell=True)
+    else:
+        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
 
-
-############################
-# Applying document labels #
-############################
-
-print('[INFO][generate.py] Applying document labels...')
-for dns in master:
-    master[dns].labels = []
-    # Icinga
-    if master[dns].icinga == 'Not Monitored':
-        master[dns].labels.append('icinga_not_monitored')
+@utils.handle(critical=False)
+def screenshots():
+    subprocess.run('node screenshotCompare.js', shell=True)
+    xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
 
 
-################################################
-# Data gathering done, start generating output #
-################################################
+def main():
+    init()
 
-jsondata = {}
-for dns in master:
-    jsondata[dns] = master[dns].__dict__
-with open('src/dns.json','w') as dns:
-    dns.write(json.dumps(jsondata, cls=utils.JSONEncoder, indent=2))
-del jsondata
+    master, ptr, ipsources = queries()
+    master = labels(master)
 
-    
-for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
-    if not os.path.exists(f'src/{type}.xml'):
-        with open(f'src/{type}.xml','w') as stream:
-            stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE {type} [
-<!ENTITY json SYSTEM "{type}.json">
-]>
-<{type}>&json;</{type}>""")
+    master = xo_vms(master)
+    master = icinga_labels(master)
+    master = license_keys(master)
 
-xslt = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
+    utils.handle(ip_inf.main)(ipsources, ptr)
+    screenshots()
 
-subprocess.run(f'{xslt} -xsl:dns.xsl -s:src/dns.xml', shell=True)
+    # Write DNS documents
+    xslt('dns.xsl', 'src/dns.xml')
+    # Write IP documents
+    xslt('ips.xsl', 'src/ips.xml')
+    # Write K8s documents
+    xslt('clusters.xsl', 'src/workers.xml')
+    xslt('workers.xsl', 'src/workers.xml')
+    xslt('apps.xsl', 'src/apps.xml')
+    # Write XO documents
+    xslt('pools.xsl', 'src/pools.xml')
+    xslt('hosts.xsl', 'src/hosts.xml')
+    xslt('vms.xsl', 'src/vms.xml')
 
-print('[INFO][generate.py] DNS documents done')
-
-import ip_inf
-ip_inf.main(ipdict, ptr)
-subprocess.run(f'{xslt} -xsl:ips.xsl -s:src/ips.xml', shell=True)
-
-print('[INFO][generate.py] IP documents done')
-
-subprocess.run(f'{xslt} -xsl:clusters.xsl -s:src/workers.xml', shell=True)
-subprocess.run(f'{xslt} -xsl:workers.xsl -s:src/workers.xml', shell=True)
-subprocess.run(f'{xslt} -xsl:apps.xsl -s:src/apps.xml', shell=True)
-
-print('[INFO][generate.py] Kubernetes documents done')
-
-subprocess.run(f'{xslt} -xsl:pools.xsl -s:src/pools.xml', shell=True)
-subprocess.run(f'{xslt} -xsl:hosts.xsl -s:src/hosts.xml', shell=True)
-subprocess.run(f'{xslt} -xsl:vms.xsl -s:src/vms.xml', shell=True)
-
-print('[INFO][generate.py] Xen Orchestra documents done')
-
-# print('[INFO][generate.py] Testing domains...')
-# try:
-#     subprocess.run('node screenshotCompare.js', shell=True)
-# except Exception as e:
-#     print('[ERROR][screenshotCompare.js] Screenshot compare module threw an exception:')
-#     print(e)
-#     print('[ERROR][screenshotCompare.js] ****END****')
-
-# load pageseeder properties and auth info
-with open('src/pageseeder.properties','r') as f: properties = f.read()
-with open('src/authentication.json','r') as f:
-    auth = json.load(f)['pageseeder']
-
-# if property is defined in authentication.json use that value
-with open('src/pageseeder.properties','w') as stream:
-    for line in properties.splitlines():
-        property = line.split('=')[0]
-        if property in auth:
-            stream.write(f'{property}={auth[property]}')
-        else:
-            stream.write(line)
-        stream.write('\n')
-
-with open('build.xml','r') as stream: soup = BeautifulSoup(stream, features='xml')
-with open('build.xml','w') as stream:
-    soup.find('ps:upload')['group'] = auth['group']
-    stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
+    utils.handle(cleanup.clean)()
 
 
-# subprocess.run(f'{xslt} -xsl:status.xsl -s:src/review.xml -o:out/status_update.psml', shell=True)
-# print('[INFO][generate.py] Status update generated')
-
-# import cleanup
-# cleanup.clean()
-
-subprocess.run('bash -c "cd /opt/app/out && zip -r -q netdox-src.zip * && cd /opt/app && ant -lib /opt/ant/lib"', shell=True)
-print('[INFO][generate.py] Pageseeder upload finished')
+if __name__ == '__main__':
+    main()
