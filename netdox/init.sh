@@ -17,4 +17,16 @@ done
 
 python3 generate.py 2>&1 | tee /var/log/netdox.log
 
+if [ $? -eq 0 ]
+    then
+        echo '[INFO][init.sh] Python exited successfully. Beginning PageSeeder upload...'
+        cd /opt/app/out
+        zip -r -q netdox-src.zip *
+        cd /opt/app
+        ant -lib /opt/ant/lib
+    else
+        echo '[ERROR][init.sh] Python exited with non-zero status. Cancelling upload...'
+fi
+
+echo '[INFO][init.sh] Done.'
 cp /var/log/netdox.log /etc/ext/log/$(date '+%Y-%m-%d_%H:%M:%S')
