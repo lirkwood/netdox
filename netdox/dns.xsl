@@ -63,6 +63,16 @@
                         <property name="license" title="License" value="—" />
                             </xsl:otherwise>
                         </xsl:choose>
+                        <xsl:choose>
+                            <xsl:when test="xpf:string[@key = 'org']">
+                        <property name="organization"     title="Organization"      datatype="xref" >
+                            <xref frag="default" uriid="{xpf:string[@key = 'org']}" reversetitle="Domain using license issued to this organization."/>
+                        </property>
+                            </xsl:when>
+                            <xsl:otherwise>
+                        <property name="organization" title="Organization" value="—" />
+                            </xsl:otherwise>
+                        </xsl:choose>
                     </properties-fragment>
 
                     <properties-fragment id="dest">
