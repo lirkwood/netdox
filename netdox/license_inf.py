@@ -5,7 +5,6 @@ import ps_api, utils
 
 license_pattern = re.compile(r'(REPLACED )?(?P<domain>[\w.-]+)\s+-\s+')
 
-@utils.handle
 def read(uri, dns):
     id = uri['id']
 

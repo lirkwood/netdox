@@ -120,12 +120,13 @@ class JSONEncoder(json.JSONEncoder):
 
 def critical(func):
     funcname = func.__name__
+    funcmodule = func.__module__
     def wrapper(*args, **kwargs):
-        print(f'[INFO][netdox.py] Function {funcname} at [{datetime.now()}]')
+        print(f'[INFO][netdox.py] Called function {funcname} in module {funcmodule} at [{datetime.now()}]')
         try:
             returned = func(*args, **kwargs)
         except Exception as e:
-            print(f'[WARNING][netdox.py] Essential function {funcname} threw an exception:\n')
+            print(f'[ERROR][netdox.py] Essential function {funcname} threw an exception:\n')
             raise e
         else:
             print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
@@ -134,8 +135,9 @@ def critical(func):
 
 def handle(func):
     funcname = func.__name__
+    funcmodule = func.__module__
     def wrapper(*args, **kwargs):
-        print(f'[INFO][netdox.py] Called function {funcname} at [{datetime.now()}]')
+        print(f'[INFO][netdox.py] Called function {funcname} in module {funcmodule} at [{datetime.now()}]')
         try:
             returned = func(*args, **kwargs)
         except Exception:
