@@ -95,9 +95,6 @@ def queries():
         integrate(source, master)
         del source
 
-    # Integrate NAT
-    master = nat(master)
-
     # VM/App queries
     utils.handle(xo_inf.main)(master)
     utils.handle(k8s_inf_new.main)()
@@ -151,6 +148,7 @@ def xo_vms(dns_set):
             xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
             for vm in json.loads(xo_query):
                 dns_set[dns].link(vm['uuid'], 'vm')
+    return dns_set
 
 @utils.handle
 def icinga_labels(dns_set):
@@ -187,6 +185,7 @@ def labels(dns_set):
         # Icinga
         if not dns_set[dns].icinga:
             dns_set[dns].labels.append('icinga_not_monitored')
+    return dns_set
 
 @utils.handle
 def exclude(dns_set, domain_set):
@@ -195,6 +194,7 @@ def exclude(dns_set, domain_set):
             del dns_set[domain]
         except KeyError:
             pass
+    return dns_set
 
 #############################
 # Writing data to json/psml #
@@ -240,21 +240,18 @@ def main():
     exclusions = init()
 
     master, ptr, ipsources = queries()
-
     master = exclude(master, exclusions)
+    master = nat(master)
     master = xo_vms(master)
     master = icinga_labels(master)
     master = license_keys(master)
     master = labels(master)
-
     write_dns(master)
-
-    ip_inf.main(ipsources, ptr)
-    screenshots()
 
     # Write DNS documents
     xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
+    ip_inf.main(ipsources, ptr)
     xslt('ips.xsl', 'src/ips.xml')
     # Write K8s documents
     xslt('clusters.xsl', 'src/workers.xml')
@@ -265,6 +262,7 @@ def main():
     xslt('hosts.xsl', 'src/hosts.xml')
     xslt('vms.xsl', 'src/vms.xml')
 
+    screenshots()
     cleanup.clean()
 
 
