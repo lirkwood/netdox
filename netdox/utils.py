@@ -142,7 +142,10 @@ def handle(func):
             returned = func(*args, **kwargs)
         except Exception:
             print(f'[WARNING][netdox.py] Function {funcname} threw an exception:\n\n {format_exc()}')
-            return None
+            if len(args) == 1:
+                return args[0]
+            else:
+                return args
         else:
             print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcname} returned')
             return returned
