@@ -17,13 +17,18 @@ done
 
 python3 generate.py 2>&1 | tee /var/log/netdox.log
 
-if [ $? -eq 0 ]
+if [ ${PIPESTATUS[0]} -eq 0 ]
     then
         echo '[INFO][init.sh] Python exited successfully. Beginning PageSeeder upload...'
         cd /opt/app/out
         zip -r -q netdox-src.zip *
         cd /opt/app
-        ant -lib /opt/ant/lib
+        if ant -lib /opt/ant/lib
+            then
+                echo '[INFO][init.sh] Upload successful.'
+            else
+                echo '[ERROR][init.sh] Upload exited with non-zero status.'
+        fi
     else
         echo '[ERROR][init.sh] Python exited with non-zero status. Cancelling upload...'
 fi
