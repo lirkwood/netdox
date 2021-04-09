@@ -20,7 +20,7 @@ def read(uri, dns):
         domains[0] = "[old] "+ domains[0]
     else:
         try:
-            for alias in (dns[domains[0]]['dest']['domains'] + dns[domains[0]]['dest']['nat']):
+            for alias in (dns[domains[0]].domains):
                 domains.append(alias)
                 # print(f'[INFO][license_inf.py] {domains[0]} matched on {alias}')
         except KeyError:
@@ -38,3 +38,11 @@ def fetch(dns):
         license_dict[uri_inf[0]] = uri_inf[1]
     
     return license_dict
+
+
+@utils.handle
+def org(license_id):
+    license_psml = BeautifulSoup(ps_api.get_fragment(license_id, '2'), 'lxml')
+    org_id = license_psml.find(title='Organization').xref["uriid"]
+    return org_id
+    

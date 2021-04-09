@@ -142,7 +142,7 @@ def nat(dns_set):
 @utils.handle
 def xo_vms(dns_set):
     """
-    Links Xen Orchestra VMs to domains with the same IP
+    Links domains to Xen Orchestra VMs with the same IP
     """
     for domain in dns_set:
         dns = dns_set[domain]
@@ -178,6 +178,18 @@ def license_keys(dns_set):
     return dns_set
 
 @utils.handle
+def license_orgs(dns_set):
+    """
+    Integrates organisations into a dns set inferred from associated license
+    """
+    for domain in dns_set:
+        dns = dns_set[domain]
+        if 'license' in dns.__dict__:
+            org_id = license_inf.org(dns.license)
+            if org_id:
+                dns.org = org_id
+
+@utils.handle
 def labels(dns_set):
     """
     Applies any relevant document labels
@@ -192,6 +204,9 @@ def labels(dns_set):
 
 @utils.handle
 def exclude(dns_set, domain_set):
+    """
+    Removes dns records with names in some set from some dns set
+    """
     for domain in domain_set:
         try:
             del dns_set[domain]
@@ -218,6 +233,9 @@ def write_dns(dns_set):
 
 @utils.critical
 def xslt(xsl, src, out=None):
+    """
+    Runs some xslt using Saxon
+    """
     xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
     if out:
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src} -o:{out}', shell=True)
@@ -231,6 +249,9 @@ def xslt(xsl, src, out=None):
 
 @utils.handle
 def screenshots():
+    """
+    Runs screenshotCompare node.js script and writes output using xslt
+    """
     subprocess.run('node screenshotCompare.js', shell=True)
     xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
 
@@ -248,6 +269,7 @@ def main():
     master = xo_vms(master)
     master = icinga_labels(master)
     master = license_keys(master)
+    master = license_orgs(master)
     master = labels(master)
     write_dns(master)
 
