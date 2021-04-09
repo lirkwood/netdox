@@ -50,7 +50,7 @@ def main():
 
 				name = name.replace('*.','_wildcard_.')
 				if name not in forward:
-					forward[name] = utils.dns(name, source='DNSMadeEasy')
+					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
 				forward[name].link(record['value'], 'ipv4')
 			
 			elif record['type'] == 'CNAME':
@@ -65,7 +65,7 @@ def main():
 				else:
 					value += '.'+ domain
 				if name not in forward:
-					forward[name] = utils.dns(name, source='DNSMadeEasy')
+					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
 				forward[name].link(record['value'], 'domain')
 
 			elif record['type'] == 'PTR':
