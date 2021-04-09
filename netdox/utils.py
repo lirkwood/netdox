@@ -122,14 +122,14 @@ def critical(func):
     funcname = func.__name__
     funcmodule = func.__module__
     def wrapper(*args, **kwargs):
-        print(f'[INFO][netdox.py] Called function {funcname} in module {funcmodule} at [{datetime.now()}]')
+        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcname} in module {funcmodule}')
         try:
             returned = func(*args, **kwargs)
         except Exception as e:
             print(f'[ERROR][netdox.py] Essential function {funcname} threw an exception:\n')
             raise e
         else:
-            print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
+            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcname} returned')
             return returned
     return wrapper
 
@@ -137,13 +137,13 @@ def handle(func):
     funcname = func.__name__
     funcmodule = func.__module__
     def wrapper(*args, **kwargs):
-        print(f'[INFO][netdox.py] Called function {funcname} in module {funcmodule} at [{datetime.now()}]')
+        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcname} in module {funcmodule}')
         try:
             returned = func(*args, **kwargs)
         except Exception:
             print(f'[WARNING][netdox.py] Function {funcname} threw an exception:\n\n {format_exc()}')
             return None
         else:
-            print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
+            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcname} returned')
             return returned
     return wrapper
