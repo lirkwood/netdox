@@ -34,7 +34,7 @@
         
             <properties-fragment id="addresses">
                 <property name="network"               title="Network"          value="{xpf:string[@key = 'network']}" />
-                <property name="subnet"               title="subnet"          value="{xpf:string[@key = 'subnet']}" />
+                <property name="subnet"               title="Subnet"          value="{xpf:string[@key = 'subnet']}" />
                 <property name="ipv4"               title="IP"          value="{@key}" /> 
                 <xsl:for-each select="xpf:string[@key = 'nat']">
                 <property name="nat_dest" title="NAT Destination" datatype="xref">
