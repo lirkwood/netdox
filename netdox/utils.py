@@ -116,8 +116,10 @@ class JSONEncoder(json.JSONEncoder):
 def critical(func):
     funcname = func.__name__
     funcmodule = func.__module__
+    if funcmodule == '__main__':
+        funcmodule = 'netdox'
     def wrapper(*args, **kwargs):
-        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcmodule}.{funcname}')
+        print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
         try:
             returned = func(*args, **kwargs)
         except Exception as e:
@@ -134,7 +136,7 @@ def handle(func):
     if funcmodule == '__main__':
         funcmodule = 'netdox'
     def wrapper(*args, **kwargs):
-        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcmodule}.{funcname}')
+        print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
         try:
             returned = func(*args, **kwargs)
         except Exception:
@@ -148,6 +150,8 @@ def handle(func):
 def silent(func):
     funcname = func.__name__
     funcmodule = func.__module__
+    if funcmodule == '__main__':
+        funcmodule = 'netdox'
     def wrapper(*args, **kwargs):
         try:
             returned = func(*args, **kwargs)
