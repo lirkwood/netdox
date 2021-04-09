@@ -130,11 +130,12 @@ def nat(dns_set):
     """
     Integrates IPs from NAT into a dns set
     """
-    for dns in dns_set:
-        for ip in dns_set[dns].ips:
+    for domain in dns_set:
+        dns = dns_set[domain]
+        for ip in dns.ips:
             ip_alias = nat_inf.lookup(ip)
             if ip_alias:
-                dns_set[dns].link(ip_alias, 'ipv4')
+                dns.link(ip_alias, 'ipv4')
 
     return dns_set
 
@@ -143,11 +144,12 @@ def xo_vms(dns_set):
     """
     Links Xen Orchestra VMs to domains with the same IP
     """
-    for dns in dns_set:
-        for ip in dns_set[dns].private_ips:
+    for domain in dns_set:
+        dns = dns_set[domain]
+        for ip in dns.private_ips:
             xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
             for vm in json.loads(xo_query):
-                dns_set[dns].link(vm['uuid'], 'vm')
+                dns.link(vm['uuid'], 'vm')
     return dns_set
 
 @utils.handle
@@ -155,11 +157,12 @@ def icinga_labels(dns_set):
     """
     Integrates icinga display labels into a dns set
     """
-    for dns in dns_set:
+    for domain in dns_set:
+        dns = dns_set[domain]
         # search icinga for objects with address == domain (or any private ip for that domain)
-        details = icinga_inf.lookup([dns] + list(dns_set[dns].private_ips))
+        details = icinga_inf.lookup([domain] + list(dns.private_ips))
         if details:
-            dns_set[dns].icinga = details['display_name']
+            dns.icinga = details['display_name']
     return dns_set
 
 @utils.handle
@@ -174,17 +177,17 @@ def license_keys(dns_set):
                 dns_set[domain].license = license_id
     return dns_set
 
-
 @utils.handle
 def labels(dns_set):
     """
     Applies any relevant document labels
     """
-    for dns in dns_set:
-        dns_set[dns].labels = []
+    for domain in dns_set:
+        dns = dns_set[domain]
+        dns.labels = []
         # Icinga
-        if not dns_set[dns].icinga:
-            dns_set[dns].labels.append('icinga_not_monitored')
+        if 'icinga' in dns.__dict__:
+            dns.labels.append('icinga_not_monitored')
     return dns_set
 
 @utils.handle
