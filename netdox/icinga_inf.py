@@ -21,7 +21,7 @@ for host in ('icinga.allette.com.au', 'icinga-sy4.allette.com.au'):
 with open('src/icinga_log.json','w') as stream:
     stream.write(json.dumps(response, indent=2))
 
-@utils.handle
+
 def lookup(list):
     for _obj in objects:
         obj = _obj['attrs']
