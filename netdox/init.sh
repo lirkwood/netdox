@@ -27,11 +27,12 @@ if [ ${PIPESTATUS[0]} -eq 0 ]
             then
                 echo '[INFO][init.sh] Upload successful.'
             else
-                echo '[ERROR][init.sh] Upload exited with non-zero status.'
+                echo '[ERROR][init.sh] Upload exited with non-zero status. Storing psml for debugging...'
+                cp /opt/app/out/netdox-src.zip /etc/ext/psml.zip
         fi
     else
         echo '[ERROR][init.sh] Python exited with non-zero status. Cancelling upload...'
 fi
 
-echo '[INFO][init.sh] Done.'
 cp /var/log/netdox.log /etc/ext/log/$(date '+%Y-%m-%d_%H:%M:%S')
+echo '[INFO][init.sh] Done.'
