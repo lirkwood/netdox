@@ -44,12 +44,6 @@
                 </xsl:for-each>
                 <property name="source" title="Source" value="{xpf:string[@key = 'source']}" />
             </properties-fragment>
-        
-            <properties-fragment id="ports">
-            <xsl:for-each select="xpf:map[@key = 'ports']/xpf:string">
-                <property name="port"               title="{.} port"          value="Port {@key}" />
-            </xsl:for-each>
-            </properties-fragment>
 
             <properties-fragment id="reversedns">
             <xsl:for-each select="xpf:array[@key = 'ptr']/xpf:string">

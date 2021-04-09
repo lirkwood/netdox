@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 import json
 import iptools, nat_inf
 
@@ -23,17 +22,6 @@ def main(ipdict, ptr):
         ipdict[ip]['subnet'] = _ip.subnet
         ipdict[ip]['network'] = f'{_ip.octets[0]}.{_ip.octets[1]}.0.0/16'
         ipdict[ip]['for-search'] = f"{ip.split('.')[2]}, {'.'.join(ip.split('.')[2:4])}"
-
-    with open('src/nmap.xml', 'r') as stream:
-        soup = BeautifulSoup(stream, features='xml')
-        for port in soup.find_all('port'):
-            ip = port.parent.parent.address['addr']
-            if ip not in ipdict:
-                ipdict[ip] = {}
-            if port.service:
-                if 'ports' not in ipdict[ip]:
-                    ipdict[ip]['ports'] = {}
-                ipdict[ip]['ports'][port['portid']] = port.service['name']
     
     with open('src/ips.json','w') as output:
         output.write(json.dumps(ipdict, indent=2))
