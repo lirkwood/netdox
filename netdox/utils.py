@@ -121,7 +121,7 @@ class JSONEncoder(json.JSONEncoder):
 def critical(func):
     funcname = func.__name__
     def wrapper(*args, **kwargs):
-        print(f'[INFO][netdox.py]  function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
+        print(f'[INFO][netdox.py] Function {funcname} at [{datetime.now()}]')
         try:
             returned = func(*args, **kwargs)
         except Exception as e:
@@ -135,7 +135,7 @@ def critical(func):
 def handle(func):
     funcname = func.__name__
     def wrapper(*args, **kwargs):
-        print(f'[INFO][netdox.py] Called function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
+        print(f'[INFO][netdox.py] Called function {funcname} at [{datetime.now()}]')
         try:
             returned = func(*args, **kwargs)
         except Exception:
