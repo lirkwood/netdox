@@ -247,7 +247,9 @@ def main():
     master = license_keys(master)
     master = labels(master)
 
-    utils.handle(ip_inf.main)(ipsources, ptr)
+    write_dns(master)
+
+    ip_inf.main(ipsources, ptr)
     screenshots()
 
     # Write DNS documents
@@ -263,7 +265,7 @@ def main():
     xslt('hosts.xsl', 'src/hosts.xml')
     xslt('vms.xsl', 'src/vms.xml')
 
-    utils.handle(cleanup.clean)()
+    cleanup.clean()
 
 
 if __name__ == '__main__':
