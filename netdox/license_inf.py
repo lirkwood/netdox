@@ -1,11 +1,11 @@
 from bs4 import BeautifulSoup
 import subprocess, re
-import ps_api
+import ps_api, utils
 
 
 license_pattern = re.compile(r'(REPLACED )?(?P<domain>[\w.-]+)\s+-\s+')
 
-
+@utils.handle
 def read(uri, dns):
     id = uri['id']
 
@@ -29,7 +29,7 @@ def read(uri, dns):
     finally:
         return (id, domains)
     
-
+@utils.handle
 def fetch(dns):
     license_dict = {}
     # 187062 is the uri of the license folder in operations-license shared to operations-network

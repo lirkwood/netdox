@@ -2,6 +2,7 @@ import utils
 import json
 import os
 
+@utils.critical
 def main():
     with open('src/apps.json','r') as stream:
         master = {}

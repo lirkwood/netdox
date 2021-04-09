@@ -1,6 +1,7 @@
 import json
-import iptools, nat_inf
+import iptools, nat_inf, utils
 
+@utils.critical
 def main(ipdict, ptr):
     tmp = {}
     for ip in ipdict:

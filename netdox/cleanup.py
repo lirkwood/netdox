@@ -2,8 +2,10 @@ from PIL import Image, UnidentifiedImageError
 import re, os, json, shutil
 
 from bs4 import BeautifulSoup
-import ps_api
+import ps_api, utils
 
+
+@utils.handle
 def getUrimap():
     urimap = {}
     # URI of website folder = 375156
@@ -17,6 +19,7 @@ global urimap
 urimap = getUrimap()
 
 # converts every file in a dir from png to 1024x576 jpg
+@utils.handle
 def png2jpg(path):
     for file in os.scandir(path):
         try:
@@ -30,6 +33,7 @@ def png2jpg(path):
             print(f'[WARNING][cleanup.py] Cannot open {file.name} as image file.')
 
 
+@utils.handle
 def placeholders():
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
     existing_screens = ps_api.get_files(urimap['screenshots'])  # get list of screenshots on pageseeder
@@ -41,6 +45,7 @@ def placeholders():
                 shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpg}')
 
 
+@utils.handle
 def compareFilesets():
     for folder in urimap:
         folder_uri = urimap[folder]
@@ -63,32 +68,10 @@ def alnum(string):
     return re.sub(r'[^a-zA-Z0-9 .]', '', string)
 
 
+@utils.handle
 def clean():
-    try:
-        png2jpg('out/screenshots')
-    except Exception as e:
-        print('[ERROR][cleanup.py] Converting screenshots to small jpg failed:')
-        print(e)
-        print('[ERROR][cleanup.py] ****END****')
-
-    try:
-        placeholders()
-    except Exception as e:
-        print('[ERROR][cleanup.py] Generating placeholders failed:')
-        print(e)
-        print('[ERROR][cleanup.py] ****END****')
-
-    try:
-        compareFilesets()
-    except Exception as e:
-        print('[ERROR][cleanup.py] Archiving old documents on PageSeeder failed:')
-        print(e)
-        print('[ERROR][cleanup.py] ****END****')
-    
+    png2jpg('out/screenshots')
+    placeholders()
+    compareFilesets()
     for folder in urimap:
-        try:
-            ps_api.version(urimap[folder])
-        except Exception as e:
-            print(f'[ERROR][cleanup.py] Versioning folder "{folder}" failed:')
-            print(e)
-            print('[ERROR][cleanup.py] ****END****')
+        ps_api.version(urimap[folder])

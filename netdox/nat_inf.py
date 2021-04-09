@@ -1,5 +1,6 @@
 import re
 import iptools
+import utils
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}).+?(?P<dest>(\d{1,3}\.){3}\d{1,3}).*')
 
@@ -13,6 +14,7 @@ with open('src/nat.txt','r') as stream:
             natDict[alias.ipv4] = dest.ipv4
             natDict[dest.ipv4] = alias.ipv4
 
+@utils.handle
 def lookup(ip):
     if ip in natDict:
         return natDict[ip]

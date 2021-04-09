@@ -11,6 +11,7 @@ import os
 # requests all domains from dnsme, and then all of their associated dns records. #
 ##################################################################################
 
+@utils.critical
 def main():
 	forward = {}
 	reverse = {}

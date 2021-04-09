@@ -3,16 +3,11 @@ import json
 import iptools
 import utils
 
+@utils.critical
 def main():
-    path = "src/records/"
-    master = extract(path)
-    return master
-
-
-def extract(path):
     forward = {}
     reverse = {}
-    for file in os.scandir(path):
+    for file in os.scandir("src/records/"):
         if file.name.endswith('.json'):
             try:
                 with open(file,'r') as source:
