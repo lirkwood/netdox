@@ -188,6 +188,7 @@ def license_orgs(dns_set):
             org_id = license_inf.org(dns.license)
             if org_id:
                 dns.org = org_id
+    return dns_set
 
 @utils.handle
 def labels(dns_set):
