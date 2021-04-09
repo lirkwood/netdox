@@ -2,11 +2,6 @@ import iptools, json, re
 from traceback import format_exc
 from datetime import datetime
 
-            # if iptools.valid_ip(string) or re.fullmatch('([a-zA-Z0-9_-]\.)+[a-zA-Z0-9_-]', string):
-            #     self._destinations.append(string)
-            # else:
-            #     raise TypeError('DNS destination must be one of: ip, domain')
-
 
 class dns:
     name: str
@@ -14,13 +9,13 @@ class dns:
     source: str
 
     """
-    Class representing a forward DNS record
+    Class representing some DNS record
     """
 
     def __init__(self, name, root=None, source=None):
         if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', name):
-            self.name = name
-            self.root = root
+            self.name = name.lower()
+            if root: self.root = root.lower()
             self.source = source
 
             # destinations
@@ -122,31 +117,43 @@ def critical(func):
     funcname = func.__name__
     funcmodule = func.__module__
     def wrapper(*args, **kwargs):
-        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcname} in module {funcmodule}')
+        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcmodule}.{funcname}')
         try:
             returned = func(*args, **kwargs)
         except Exception as e:
-            print(f'[ERROR][netdox.py] Essential function {funcname} threw an exception:\n')
+            print(f'[ERROR][netdox.py] Essential function {funcmodule}.{funcname} threw an exception:\n')
             raise e
         else:
-            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcname} returned')
+            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
             return returned
     return wrapper
 
 def handle(func):
     funcname = func.__name__
     funcmodule = func.__module__
+    if funcmodule == '__main__':
+        funcmodule = 'netdox'
     def wrapper(*args, **kwargs):
-        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcname} in module {funcmodule}')
+        print(f'[DEBUG][netdox.py] [{datetime.now()}] Called function {funcmodule}.{funcname}')
         try:
             returned = func(*args, **kwargs)
         except Exception:
-            print(f'[WARNING][netdox.py] Function {funcname} threw an exception:\n\n {format_exc()}')
-            if len(args) == 1:
-                return args[0]
-            else:
-                return args
+            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n\n {format_exc()}')
+            return None
         else:
-            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcname} returned')
+            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
+            return returned
+    return wrapper
+
+def silent(func):
+    funcname = func.__name__
+    funcmodule = func.__module__
+    def wrapper(*args, **kwargs):
+        try:
+            returned = func(*args, **kwargs)
+        except Exception:
+            print(f'[WARNING][netdox.py] Function {funcname} from module {funcmodule} threw an exception:\n\n {format_exc()}')
+            return None
+        else:
             return returned
     return wrapper
