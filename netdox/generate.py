@@ -88,19 +88,19 @@ def queries():
     master = {}
 
     # DNS queries
-    ad_f, ad_r = utils.handle(ad_domains.main)()
-    dnsme_f, dnsme_r = utils.handle(dnsme_domains.main)()
+    ad_f, ad_r = ad_domains.main()
+    dnsme_f, dnsme_r = dnsme_domains.main()
 
     for source in (ad_f, dnsme_f):
         integrate(source, master)
         del source
 
     # VM/App queries
-    utils.handle(xo_inf.main)(master)
-    utils.handle(k8s_inf_new.main)()
+    xo_inf.main(master)
+    k8s_inf_new.main()
 
     # More DNS (move this)
-    k8s = utils.handle(k8s_domains.main)()
+    k8s = k8s_domains.main()
     integrate(k8s, master)
 
     ptr = {}
