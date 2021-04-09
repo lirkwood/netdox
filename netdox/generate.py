@@ -5,6 +5,11 @@ import cleanup, utils
 import subprocess, json, os
 from bs4 import BeautifulSoup
 
+
+##################
+# Initialisation #
+##################
+
 @utils.critical
 def init():
     """
@@ -25,14 +30,14 @@ def init():
             <{type}>&json;</{type}>""")
 
     # load pageseeder properties and auth info
-    with open('pageseeder.properties','r') as f: 
+    with open('src/pageseeder.properties','r') as f: 
         psproperties = f.read()
     with open('src/authentication.json','r') as f:
         auth = json.load(f)
         psauth = auth['pageseeder']
 
     # overwrite ps properties with external values
-    with open('pageseeder.properties','w') as stream:
+    with open('src/pageseeder.properties','w') as stream:
         for line in psproperties.splitlines():
             property = line.split('=')[0]
             if property in psauth:
@@ -51,14 +56,16 @@ def init():
     try:
     # Remove manually excluded domains once all dns sources have been queried
         with open('src/exclusions.txt','r') as stream:
-            global exclusions
             exclusions = stream.read().splitlines()
     except FileNotFoundError:
         print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
 
-#####################
-# Gathering domains #
-#####################
+    return exclusions
+
+
+######################
+# Gathering DNS info #
+######################
 
 @utils.critical
 def integrate(dns_set, superset):
@@ -70,6 +77,56 @@ def integrate(dns_set, superset):
             superset[domain] = dns_set[domain]
         else:
             superset[domain] = utils.merge_sets(superset[domain], dns_set[domain])
+
+## All queries called from here
+@utils.critical
+def queries():
+    """
+    Makes all queries and returns complete dns set
+    """
+    # Main set of DNS records, dns_obj.name: dns_obj
+    master = {}
+
+    # DNS queries
+    ad_f, ad_r = utils.handle(ad_domains.main)()
+    dnsme_f, dnsme_r = utils.handle(dnsme_domains.main)()
+
+    for source in (ad_f, dnsme_f):
+        integrate(source, master)
+        del source
+
+    # Integrate NAT
+    master = nat(master)
+
+    # VM/App queries
+    utils.handle(xo_inf.main)(master)
+    utils.handle(k8s_inf_new.main)()
+
+    # More DNS (move this)
+    k8s = utils.handle(k8s_domains.main)()
+    integrate(k8s, master)
+
+    ptr = {}
+    for ip in ad_r:
+        ptr[ip] = ad_r[ip]
+    for ip in dnsme_r:
+        if ip in ptr:
+            ptr[ip].append(dnsme_r[ip])
+        else:
+            ptr[ip] = dnsme_r[ip]
+
+    # Describes source ips came from
+    ipsources = {}
+    for dns in master:
+        for ip in master[dns].ips:
+            ipsources[ip] = {'source': master[dns].source}
+
+    return (master, ptr, ipsources)
+
+
+###########################
+# Non-essential functions #
+###########################
 
 @utils.handle
 def nat(dns_set):
@@ -86,6 +143,9 @@ def nat(dns_set):
 
 @utils.handle
 def xo_vms(dns_set):
+    """
+    Links Xen Orchestra VMs to domains with the same IP
+    """
     for dns in dns_set:
         for ip in dns_set[dns].private_ips:
             xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
@@ -117,59 +177,6 @@ def license_keys(dns_set):
     return dns_set
 
 
-## All queries called from here
-@utils.critical
-def queries():
-    """
-    Makes all queries and returns complete dns set
-    """
-    # Main set of DNS records, dns_obj.name: dns_obj
-    master = {}
-
-    # DNS queries
-    ad_f, ad_r = utils.handle(ad_domains.main)()
-    dnsme_f, dnsme_r = utils.handle(dnsme_domains.main)()
-
-    for source in (ad_f, dnsme_f):
-        integrate(source, master)
-        del source
-
-    # Integrate NAT
-    master = nat(master)
-
-    # VM/App queries
-    utils.handle(xo_inf.main)(master)
-    utils.handle(k8s_inf_new.main)()
-
-    # More DNS (move this)
-    k8s = utils.handle(k8s_domains.main)()
-    integrate(k8s, master)
-
-    # Exclude specified domains
-    for domain in exclusions:
-        try:
-            del master[domain]
-        except KeyError:
-            pass
-
-    ptr = {}
-    for ip in ad_r:
-        ptr[ip] = ad_r[ip]
-    for ip in dnsme_r:
-        if ip in ptr:
-            ptr[ip].append(dnsme_r[ip])
-        else:
-            ptr[ip] = dnsme_r[ip]
-
-    # Describes source ips came from
-    ipsources = {}
-    for dns in master:
-        for ip in master[dns].ips:
-            ipsources[ip] = {'source': master[dns].source}
-
-    return (master, ptr, ipsources)
-
-
 @utils.handle
 def labels(dns_set):
     """
@@ -180,6 +187,18 @@ def labels(dns_set):
         # Icinga
         if not dns_set[dns].icinga:
             dns_set[dns].labels.append('icinga_not_monitored')
+
+@utils.handle
+def exclude(dns_set, domain_set):
+    for domain in domain_set:
+        try:
+            del dns_set[domain]
+        except KeyError:
+            pass
+
+#############################
+# Writing data to json/psml #
+#############################
 
 @utils.critical
 def write_dns(dns_set):
@@ -193,6 +212,7 @@ def write_dns(dns_set):
         dns.write(json.dumps(jsondata, cls=utils.JSONEncoder, indent=2))
     del jsondata
 
+
 @utils.critical
 def xslt(xsl, src, out=None):
     xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
@@ -201,21 +221,31 @@ def xslt(xsl, src, out=None):
     else:
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
 
+
+##################
+# Imgdiff script #
+##################
+
 @utils.handle
 def screenshots():
     subprocess.run('node screenshotCompare.js', shell=True)
     xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
 
 
+#############
+# Main flow #
+#############
+
 def main():
-    init()
+    exclusions = init()
 
     master, ptr, ipsources = queries()
-    master = labels(master)
 
+    master = exclude(master, exclusions)
     master = xo_vms(master)
     master = icinga_labels(master)
     master = license_keys(master)
+    master = labels(master)
 
     utils.handle(ip_inf.main)(ipsources, ptr)
     screenshots()
