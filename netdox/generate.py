@@ -1,12 +1,11 @@
 import ad_domains, dnsme_domains, k8s_domains
 import k8s_inf_new, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
-import cleanup, iptools, utils
+import cleanup, utils
 
-import subprocess, traceback, json, os
+import subprocess, json, os
 from bs4 import BeautifulSoup
-from datetime import datetime
 
-@utils.handle
+@utils.critical
 def init():
     """
     Creates dirs and template files, loads authentication data, excluded domains, etc...
@@ -61,7 +60,7 @@ def init():
 # Gathering domains #
 #####################
 
-@utils.handle
+@utils.critical
 def integrate(dns_set, superset):
     """
     Integrates some set of dns records into a master set
@@ -72,7 +71,7 @@ def integrate(dns_set, superset):
         else:
             superset[domain] = utils.merge_sets(superset[domain], dns_set[domain])
 
-@utils.handle(critical=False)
+@utils.handle
 def nat(dns_set):
     """
     Integrates IPs from NAT into a dns set
@@ -85,7 +84,7 @@ def nat(dns_set):
 
     return dns_set
 
-@utils.handle(critical=False)
+@utils.handle
 def xo_vms(dns_set):
     for dns in dns_set:
         for ip in dns_set[dns].private_ips:
@@ -93,7 +92,7 @@ def xo_vms(dns_set):
             for vm in json.loads(xo_query):
                 dns_set[dns].link(vm['uuid'], 'vm')
 
-@utils.handle(critical=False)
+@utils.handle
 def icinga_labels(dns_set):
     """
     Integrates icinga display labels into a dns set
@@ -105,7 +104,7 @@ def icinga_labels(dns_set):
             dns_set[dns].icinga = details['display_name']
     return dns_set
 
-@utils.handle(critical=False)
+@utils.handle
 def license_keys(dns_set):
     """
     Integrates license keys into a dns set
@@ -119,7 +118,7 @@ def license_keys(dns_set):
 
 
 ## All queries called from here
-@utils.handle
+@utils.critical
 def queries():
     """
     Makes all queries and returns complete dns set
@@ -171,7 +170,7 @@ def queries():
     return (master, ptr, ipsources)
 
 
-@utils.handle(critical=False)
+@utils.handle
 def labels(dns_set):
     """
     Applies any relevant document labels
@@ -182,7 +181,7 @@ def labels(dns_set):
         if not dns_set[dns].icinga:
             dns_set[dns].labels.append('icinga_not_monitored')
 
-@utils.handle
+@utils.critical
 def write_dns(dns_set):
     """
     Encodes dns set as json and writes to file
@@ -194,7 +193,7 @@ def write_dns(dns_set):
         dns.write(json.dumps(jsondata, cls=utils.JSONEncoder, indent=2))
     del jsondata
 
-@utils.handle
+@utils.critical
 def xslt(xsl, src, out=None):
     xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
     if out:
@@ -202,7 +201,7 @@ def xslt(xsl, src, out=None):
     else:
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
 
-@utils.handle(critical=False)
+@utils.handle
 def screenshots():
     subprocess.run('node screenshotCompare.js', shell=True)
     xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')

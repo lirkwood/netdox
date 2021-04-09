@@ -118,28 +118,30 @@ class JSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def handle(func, critical=True):
+def critical(func):
     funcname = func.__name__
-    if not critical:
-        def wrapper(*args, **kwargs):
-            print(f'[INFO][netdox.py] Called function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
-            try:
-                returned = func(*args, **kwargs)
-            except Exception as e:
-                print(f'[WARNING][netdox.py] Function {funcname} threw:\n\n {format_exc()}')
-                return None
-            else:
-                print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
-                return returned
-    else:
-        def wrapper(*args, **kwargs):
-            print(f'[INFO][netdox.py]  function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
-            try:
-                returned = func(*args, **kwargs)
-            except Exception as e:
-                print(f'[WARNING][netdox.py] Essential function {funcname} threw an exception:\n')
-                raise e
-            else:
-                print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
-                return returned
+    def wrapper(*args, **kwargs):
+        print(f'[INFO][netdox.py]  function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
+        try:
+            returned = func(*args, **kwargs)
+        except Exception as e:
+            print(f'[WARNING][netdox.py] Essential function {funcname} threw an exception:\n')
+            raise e
+        else:
+            print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
+            return returned
+    return wrapper
+
+def handle(func):
+    funcname = func.__name__
+    def wrapper(*args, **kwargs):
+        print(f'[INFO][netdox.py] Called function {funcname} at [{datetime.now()}] with args ({", ".join([str(arg) for arg in args])}) and kwargs ({", ".join([str(kwarg) for kwarg in kwargs])})')
+        try:
+            returned = func(*args, **kwargs)
+        except Exception:
+            print(f'[WARNING][netdox.py] Function {funcname} threw an exception:\n\n {format_exc()}')
+            return None
+        else:
+            print(f'[INFO][netdox.py] Function {funcname} returned at [{datetime.now()}]')
+            return returned
     return wrapper
