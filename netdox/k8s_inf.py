@@ -1,237 +1,255 @@
-import subprocess, json
+import subprocess, utils, json
 
+global selectorLabels
+selectorLabels = ('instance', 'app.kubernetes.io/instance', 'app')
 
-def ingress():
+# maps service to hostnames it is exposed on
+def getIngress():
+    serviceDomains = {}
     subprocess.run('./k8s_fetch.sh ingress', shell=True, stdout=subprocess.DEVNULL)
     with open('src/ingress.json', 'r') as stream:
-        jsondata = json.load(stream)
-        idict = {}
-        for c in jsondata:  #context either sandbox or production cluster
-            context = jsondata[c]
-            idict[c] = {}
-            for ingress in context['items']:
-                name = findService(ingress)
-                if name:
-                    hosts = []
-                    for h in ingress['spec']['rules']:
-                        host = h['host'].replace('.internal', '')
-                        hosts.append(host)
-
-                    hosts = list(dict.fromkeys(hosts))  #make unique
-                    idict[c][name] = hosts  #dict has structure 'service name' : ['host1', 'host2',...] etc
-                else:
-                    print('[WARNING][k8s_inf.py] Found ingress with no destination: '+ ingress['metadata']['name'])
-    return idict
+        allIngress = json.load(stream)
+        for c in allIngress:
+            cluster = allIngress[c]
+            serviceDomains[c] = {}
+            for ingress in cluster['items']:
+                for rule in ingress['spec']['rules']:
+                    host = rule['host']
+                    for path in rule['http']['paths']:
+                        serviceName = path['backend']['serviceName']
+                        if serviceName not in serviceDomains[c]:
+                            serviceDomains[c][serviceName] = []
+                        serviceDomains[c][serviceName].append(host)
+    return serviceDomains
 
 
-def findService(obj):
-    if isinstance(obj, dict):
-        for item in obj:
-            if item == 'serviceName':
-                return obj[item]
-            else:
-                test = findService(obj[item])
-                if test: return test
-    elif isinstance(obj, list):
-        for item in obj:
-            test = findService(item)
-            if test: return test
-    else:
-        return None
-
-
-def service(idict):
-    global links
-    ndict = {} #new dictionary
-    noingress = {}
-    links = {}
+# provides shortcut from service to its pod selectors
+def getServices():
+    serviceSelectors = {}
     subprocess.run('./k8s_fetch.sh services', shell=True, stdout=subprocess.DEVNULL)
     with open('src/services.json', 'r') as stream:
-        jsondata = json.load(stream)
-        for c in jsondata:
-            ndict[c] = {}
-            noingress[c] = {}
-            context = jsondata[c]
-            for service in context['items']:
-                name = service['metadata']['name']
-                try:
-                    if 'app.kubernetes.io/instance' in service['spec']['selector']: #grab app names, some services use older formatting style
-                        app = service['spec']['selector']['app.kubernetes.io/instance']
-                    elif 'app' in service['spec']['selector']:
-                        app = service['spec']['selector']['app']
+        allServices = json.load(stream)
+        for c in allServices:
+            cluster = allServices[c]
+            serviceSelectors[c] = {}
+            for service in cluster['items']:
+                serviceName = service['metadata']['name']
+                serviceSelectors[c][serviceName] = {}
+                if 'selector' in service['spec']:
+                    for selector in service['spec']['selector']:
+                        serviceSelectors[c][serviceName][selector] = service["spec"]["selector"][selector]
+                        # each selector is string in format: 'selector=matchValue'
+    return serviceSelectors
+
+    
+def getWorkers():
+    workers = {}
+    subprocess.run('./k8s_fetch.sh nodes "--selector=node-role.kubernetes.io/worker=true"', shell=True, stdout=subprocess.DEVNULL)
+    with open('src/nodes.json','r') as workerStream:
+        with open('src/vms.json','r') as vmStream:
+            allWorkers = json.load(workerStream)
+            allVms = json.load(vmStream)
+            for c in allWorkers:
+                cluster = allWorkers[c]
+                workers[c] = {}
+                for worker in cluster['items']:
+                    for address in worker['status']['addresses']:
+                        if address['type'] == 'InternalIP':
+                            workerIp = address['address']
+                            break
+                    
+                    if workerIp:
+                        for vm in allVms:
+                            try:
+                                if vm['mainIpAddress'] == workerIp:
+                                    workerUuid = vm['uuid']
+                            except KeyError:
+                                pass
+
+                        workers[c][worker['metadata']['name']] = {
+                        "ip": workerIp,
+                        "vm": workerUuid,
+                        "apps": []
+                    }
                     else:
-                        app = None
-                        print(f'[WARNING][k8s_inf.py] Found isolated service: {name}. Ignoring...')  #if has no link at all
-                    try:
-                        ndict[c][app] = idict[c][name]  #sdict is dict where ingress is key and associated domains are values
-                    except KeyError:
-                        print(f'[INFO][k8s_inf.py] Found service with no ingress: {name}. Attempting to find related service...')
-                        noingress[c][name] = app
-                except KeyError:
-                    print(f'[WARNING][k8s_inf.py] Found isolated service: {name}. Ignoring...')
-        for context in noingress:   #sandbox and production
-            for service in noingress[context]:  #for each service with no matching ingress
-                selector = noingress[context][service]  #value of the service in ndict is its selector; either its deployment or sibling service
-                if selector in ndict[context].keys():   #if its sibling service has an entry
-                    siblingsdom = ndict[context][selector]  #get its sibling service's domains
-                    ndict[context][service] = siblingsdom   #associate unmatched service with sibling's domains
-                    print(f'[INFO][k8s_inf.py] Service {service} matched on service {selector}')
-                    links[service] = selector   #record links
-
-    return ndict
+                        print(f'[WARNING][k8s_inf.py] Worker {worker["metadata"]["name"]} has no IP described in nodes.json. Ignoring...')
+    return workers
 
 
-
-def pods(sdict):
-    global workers
-    workers = []
-    pdict = {}
+def getPods():
     subprocess.run('./k8s_fetch.sh pods', shell=True, stdout=subprocess.DEVNULL)
     with open('src/pods.json', 'r') as stream:
-        jsondata = json.load(stream)
-        for c in jsondata:
-            pdict[c] = {}
-            context = jsondata[c]
-            for pod in context['items']:
-                labels = pod['metadata']['labels']
-                try:
-                    if 'app' in labels:
-                        appname = labels['app']
-                    else:
-                        appname = labels['app.kubernetes.io/instance']
-                except KeyError:
-                    # Discovered system pod. Ignoring...
-                    appname = None
-                podname = pod['metadata']['name']
-                if appname:
-                    if appname not in pdict[c]:
-                        pdict[c][appname] = {'pods': {}}
-                    pdict[c][appname]['pods'][podname] = {}
-                    _pod = pdict[c][appname]['pods'][podname]
-                    try:
-                        nodename = pod['spec']['nodeName']
-                        hostip = pod['status']['hostIP']
-                        workers.append(nodename)
-                    except KeyError as e:
-                        if pod['status']['phase'] != 'Running':
-                            print(f'[INFO][k8s_inf.py] Pod {podname} not running.')
-                        else:
-                            raise e
-                    try:
-                        pdict[c][appname]['nodename'] = nodename
-                        pdict[c][appname]['hostip'] = hostip
-                        pdict[c][appname]['domains'] = sdict[c][appname]
-                        containers = {}
-                        for container in pod['spec']['containers']:
-                            cname = container['name']
-                            image = container['image']
-                            containers[cname] = image
-                        _pod['containers'] = containers
-                            
-                    except KeyError:
-                        print('[WARNING][k8s_inf.py] Discovered pod with no service {0}. Ignoring...'.format(appname))
-    
-    return pdict
+        allPods = json.load(stream)
+        for c in allPods:
+            cluster = allPods[c]
+            for pod in cluster['items']:
+                podInf = {
+                    'name': pod['metadata']['name'],
+                    'cluster': c,
+                    'nodeName': pod['spec']['nodeName'],
+                    'hostip': pod['status']['hostIP']
+                    }
 
-
-
-def mapworkers(pdict, dns):
-    global workers
-    tmp = {}
-    for worker in workers:
-        for domain in dns:
-            if worker in domain:
-                tmp[worker] = domain
-    workers = dict(tmp)
-    with open('src/authentication.json','r') as authstream:
-        auth = json.load(authstream)['xenorchestra']
-        try:
-            register = subprocess.run(['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']], stdout=subprocess.PIPE)
-            register.check_returncode()
-            if str(register.stdout, encoding='utf-8') != f'Successfully logged with {auth["username"]}\n':
-                print(str(register.stdout, encoding='utf-8'))
-                print(f'Successfully logged with {auth["username"]}\n')
-                raise subprocess.CalledProcessError(register.returncode, ['xo-cli', '--register', 'https://xosy4.allette.com.au', auth['username'], auth['password']])
-        except subprocess.CalledProcessError:
-            print('[ERROR][k8s_inf.py] Xen Orchestra authentication failed.')
-        except Exception as e:
-            print(f'[ERROR][k8s_inf.py] While attempting Xen Orchestra authentication an exception was thrown:')
-            print(e)
-            print('[ERROR][k8s_inf.py] ****END****')
-        else:
-            for context in pdict:
-                for domain in pdict[context]:
-                    pdict[context][domain]['worker'] = workers[pdict[context][domain]['nodename']]
-
-                    xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={pdict[context][domain]["hostip"]}'], stdout=subprocess.PIPE)
-                    vm_inf = json.loads(xo_query.stdout)[0]
-                    pdict[context][domain]['vm'] = vm_inf['uuid']
-    
-    return pdict
-
-
-
-# def refresh():
-#     if len(sys.argv) == 2:
-#         if sys.argv[1] == '-r':
-#         else:
-#             print('Invalid argument. Accepted flags are: [-r]')
-#             exit()
-#     elif len(sys.argv) > 2:
-#         print('Too many arguments. Accepted flags are: [-r]')
-#         exit()
-#     else:
-#         return
-
-
-def podlink(master):
-    for context in master:
-        for deployment in master[context]:
-            dep = master[context][deployment]
-            if context == 'sandbox':
-                podlinkbase = 'https://rancher.allette.com.au/p/c-4c8qc:p-dtg8s/workloads/default:'
-            elif context == 'production':
-                podlinkbase = 'https://rancher-sy4.allette.com.au/p/c-57mj6:p-b8h5z/workloads/default:'
-            for pod in dep['pods']:
-                dep['pods'][pod]['rancher'] = podlinkbase + pod
-
-    return master
-
-
-
-def worker2app(master):
-    with open('src/workers.json','w') as stream:
-        workers = {}
-        for context in master:
-            workers[context] = {}
-            _workers = workers[context]
-            for app in master[context]:
-                appinf = master[context][app]
-                if appinf['nodename'] not in _workers:
-                    _workers[appinf['nodename']] = {'ip': appinf['hostip'], 'apps': []}
-                if app not in _workers[appinf['nodename']]['apps']:
-                    _workers[appinf['nodename']]['apps'].append(app)
-
-        for context in workers:
-            for _worker in workers[context]:
-                worker = workers[context][_worker]
-                response = subprocess.check_output('xo-cli --list-objects type=VM mainIpAddress='+ worker['ip'], shell=True)     #xo-cli query goes here
-                vm = json.loads(response)
-                if len(vm) != 1:
-                    print('[WARNING][k8s_inf.py] Multiple VMs with IP: {0}. Using first returned, name_label={1}'.format(worker['ip'], vm[0]['name_label']))
-                worker['vm'] = vm[0]['uuid']
+                # fetch labels
+                podInf['labels'] = {}
+                for label in pod['metadata']['labels']:
+                    podInf['labels'][label] = pod['metadata']['labels'][label]
                 
-        stream.write(json.dumps(workers, indent=2))
+                # fetch containers
+                podInf['containers'] = {}
+                for container in pod['spec']['containers']:
+                    podInf['containers'][container['name']] = container['image']
+                
+                yield podInf
 
 
+def service2pod(serviceSelectors):
+    servicePods = {}
+    for pod in getPods():
+        clusterServices = serviceSelectors[pod['cluster']]
+        if pod['cluster'] not in servicePods:
+            servicePods[pod['cluster']] = {}
 
-def main(dns):
-    idict = ingress()
-    sdict = service(idict)
-    pdict = pods(sdict)
-    master = mapworkers(pdict, dns)
-    master = podlink(master)
-    worker2app(master)
-    with open('src/apps.json', 'w') as out:
-        out.write(json.dumps(master, indent=2))
-    return master
+        for service in clusterServices:
+            match = False
+            for selector in clusterServices[service]:
+                if selector in pod['labels']:
+                    match = True  # If they share a key
+                    break
+                
+            if match:
+                try:
+                    compareDicts(pod['labels'], clusterServices[service])  # if pod labels and service selectors have no conflicts
+                except KeyError:
+                    pass
+                else:
+                    if not service in servicePods:
+                        servicePods[pod['cluster']][service] = {}
+                        servicePods[pod['cluster']][service][pod['name']] = pod
+    return servicePods
+
+
+def compareDicts(d1, d2):
+    intersection = d1.keys() & d2
+    if any(d1[shared] != d2[shared] for shared in intersection):
+        raise KeyError
+
+
+def groupServices(serviceSelectors):
+    groups = {}
+    for c in serviceSelectors:
+        groups[c] = {}
+        cluster = serviceSelectors[c]
+        for service in cluster:
+            for selector in selectorLabels:
+                if selector in cluster[service]:
+                    selectorValue = cluster[service][selector]
+                    if selectorValue not in groups:
+                        groups[c][selectorValue] = []
+                        groups[c][selectorValue].append(service)
+
+                    for _service in cluster:
+                        try:
+                            if  _service != service and cluster[_service][selector] == selectorValue:
+                                groups[c][selectorValue].append(_service)
+                        except KeyError:
+                            pass
+    return groups
+
+
+def podDomains(servicePods, serviceDomains):
+    for c in servicePods:
+        for service in servicePods[c]:
+            domains = []
+            try:
+                for domain in serviceDomains[c][service]:
+                    domains.append(domain)
+            except KeyError:
+                pass
+            for pod in servicePods[c][service]:
+                servicePods[c][service][pod]['domains'] = domains
+    return servicePods
+
+
+def groupPods(servicePods, serviceGroups):
+    apps = {}
+    for c in servicePods:
+        cluster = servicePods[c]
+        apps[c] = {}
+        for service in cluster:
+            for group in serviceGroups[c]:
+                if service in serviceGroups[c][group]:
+                    if group not in apps[c]:
+                        apps[c][group] = {"pods": {}}
+                    for pod in cluster[service]:
+                        apps[c][group]['pods'][pod] = cluster[service][pod]
+    return apps
+
+
+def podlink(pod):
+    if pod['cluster'] == 'sandbox':
+        podlinkbase = 'https://rancher.allette.com.au/p/c-4c8qc:p-dtg8s/workloads/default:'
+    elif pod['cluster'] == 'production':
+        podlinkbase = 'https://rancher-sy4.allette.com.au/p/c-57mj6:p-b8h5z/workloads/default:'
+    else:
+        print(f'[WARNING][k8s_inf.py] Unconfigured cluster {pod["cluster"]}. Unable to generate link to rancher.')
+
+    return podlinkbase + pod['name']
+
+
+def formatApps(apps, workers):
+    for c in apps:
+        cluster = apps[c]
+        for appName in cluster:
+            app = cluster[appName]
+
+            domains = set()
+            for podName in app['pods']:
+                pod = app['pods'][podName]
+                pod['rancher'] = podlink(pod)
+                pod['vm'] = workers[c][pod['nodeName']]['vm']
+
+                for domain in pod['domains']:
+                    domains.add(domain)
+
+                del pod['domains']
+                del pod['name']
+                del pod['cluster']
+            
+            app['domains'] = list(domains)
+    return apps
+
+
+def workerApps(apps, workers):
+    for c in apps:
+        cluster = apps[c]
+        for appName in cluster:
+            app = cluster[appName]
+            for pod in app['pods']:
+                workers[c][app['pods'][pod]['nodeName']]['apps'].append(appName)
+    
+        for worker in workers[c]:
+            workers[c][worker]['apps'] = list(dict.fromkeys(workers[c][worker]['apps']))
+    return workers
+
+
+@utils.critical
+def main():
+    serviceDomains = getIngress()  # map services to domains
+    serviceSelectors = getServices()   # map domains to relevant pod labels
+    workers = getWorkers()   # returns workername mapped to ip/vm uuid and resident apps
+    servicePods = service2pod(serviceSelectors)   # map services to pods
+    servicePods = podDomains(servicePods, serviceDomains)   # add domains to pod info
+    serviceGroups = groupServices(serviceSelectors)   # groups services based on selectors
+    apps = groupPods(servicePods, serviceGroups)    # groups pods based on their service and their service's group
+    apps = formatApps(apps, workers)   # adds to/cleans app info and updates workers with their apps
+    workers = workerApps(apps, workers)
+
+    with open('src/apps.json','w') as output:
+        output.write(json.dumps(apps, indent=2))
+    with open('src/workers.json','w') as output:
+        output.write(json.dumps(workers, indent=2))
+
+
+if __name__ == '__main__':
+    main()
