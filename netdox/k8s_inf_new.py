@@ -189,7 +189,7 @@ def groupPods(servicePods, serviceGroups):
 def podlink(pod):
     if pod['cluster'] == 'sandbox':
         podlinkbase = 'https://rancher.allette.com.au/p/c-4c8qc:p-dtg8s/workloads/default:'
-    elif pod['cluster']:
+    elif pod['cluster'] == 'production':
         podlinkbase = 'https://rancher-sy4.allette.com.au/p/c-57mj6:p-b8h5z/workloads/default:'
     else:
         print(f'[WARNING][k8s_inf.py] Unconfigured cluster {pod["cluster"]}. Unable to generate link to rancher.')
