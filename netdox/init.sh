@@ -15,9 +15,9 @@ for file in /etc/ext/*.bin; do
     -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/$(basename ${file%.bin})"
 done
 
-python3 generate.py 2>&1 | tee /var/log/netdox.log
 
-if [ ${PIPESTATUS[0]} -eq 0 ]
+
+if python3 generate.py
     then
         echo '[INFO][init.sh] Python exited successfully. Beginning PageSeeder upload...'
         cd /opt/app/out
@@ -34,5 +34,4 @@ if [ ${PIPESTATUS[0]} -eq 0 ]
         echo '[ERROR][init.sh] Python exited with non-zero status. Cancelling upload...'
 fi
 
-cp /var/log/netdox.log /etc/ext/log/$(date '+%Y-%m-%d_%H:%M:%S')
 echo '[INFO][init.sh] Done.'
