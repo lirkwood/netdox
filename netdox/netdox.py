@@ -195,12 +195,12 @@ def labels(dns_set):
     """
     Applies any relevant document labels
     """
-    for domain in dns_set:
-        dns = dns_set[domain]
-        dns.labels = []
-        # Icinga
-        if 'icinga' in dns.__dict__:
-            dns.labels.append('icinga_not_monitored')
+    # for domain in dns_set:
+    #     dns = dns_set[domain]
+    #     dns.labels = []
+    #     # Icinga
+    #     if 'icinga' in dns.__dict__:
+    #         dns.labels.append('icinga_not_monitored')
     return dns_set
 
 @utils.handle
