@@ -1,5 +1,6 @@
 import re
 import iptools
+import utils
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}).+?(?P<dest>(\d{1,3}\.){3}\d{1,3}).*')
 

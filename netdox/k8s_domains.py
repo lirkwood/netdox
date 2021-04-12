@@ -1,6 +1,8 @@
+import utils
 import json
 import os
 
+@utils.critical
 def main():
     with open('src/apps.json','r') as stream:
         master = {}
@@ -11,8 +13,8 @@ def main():
                 try:
                     for domain in app['domains']:
                         if domain not in master:
-                            master[domain] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': '', 'source': 'Kubernetes'}
-                        master[domain]['dest']['apps'].append(_app)
+                            master[domain] = utils.dns(domain, source='Kubernetes')
+                        master[domain].link(_app, 'app')
                 except KeyError:
                     pass
         

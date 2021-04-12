@@ -15,6 +15,23 @@ for file in /etc/ext/*.bin; do
     -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/$(basename ${file%.bin})"
 done
 
-python3 generate.py 2>&1 | tee /var/log/netdox.log
 
-cp /var/log/netdox.log /etc/ext/log/$(date '+%Y-%m-%d_%H:%M:%S')
+
+if python3 generate.py
+    then
+        echo '[INFO][init.sh] Python exited successfully. Beginning PageSeeder upload...'
+        cd /opt/app/out
+        zip -r -q netdox-src.zip *
+        cd /opt/app
+        if ant -lib /opt/ant/lib
+            then
+                echo '[INFO][init.sh] Upload successful.'
+            else
+                echo '[ERROR][init.sh] Upload exited with non-zero status. Storing psml for debugging...'
+                cp /opt/app/out/netdox-src.zip /etc/ext/psml.zip
+        fi
+    else
+        echo '[ERROR][init.sh] Python exited with non-zero status. Cancelling upload...'
+fi
+
+echo '[INFO][init.sh] Done.'

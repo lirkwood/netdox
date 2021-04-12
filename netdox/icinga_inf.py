@@ -1,4 +1,4 @@
-import requests, json
+import requests, utils, json
 
 headers = {
     "Accept": "application/json",
@@ -20,6 +20,7 @@ for host in ('icinga.allette.com.au', 'icinga-sy4.allette.com.au'):
 
 with open('src/icinga_log.json','w') as stream:
     stream.write(json.dumps(response, indent=2))
+
 
 def lookup(list):
     for _obj in objects:

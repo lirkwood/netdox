@@ -1,18 +1,13 @@
 import os
 import json
 import iptools
+import utils
 
+@utils.critical
 def main():
-    path = "src/records/"
-    master = extract(path)
-    return master
-
-
-def extract(path):
-    master = {'forward': {}, 'reverse': {}}
-    forward = master['forward']
-    reverse = master['reverse']
-    for file in os.scandir(path):
+    forward = {}
+    reverse = {}
+    for file in os.scandir("src/records/"):
         if file.name.endswith('.json'):
             try:
                 with open(file,'r') as source:
@@ -36,8 +31,8 @@ def extract(path):
                                     ip = item['Value'].strip('.')
 
                             if hostname not in forward:
-                                forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'ActiveDirectory'}
-                            forward[hostname]['dest']['ips'].append(ip)
+                                forward[hostname] = utils.dns(hostname, source='ActiveDirectory', root=domain)
+                            forward[hostname].link(ip, 'ipv4')
 
                         elif record['RecordType'] == 'CNAME':
                             domain = record['DistinguishedName'].split(',')[1].strip('DC=')
@@ -60,8 +55,8 @@ def extract(path):
                                         dest = dest.strip('.')
                         
                             if hostname not in forward:
-                                forward[hostname] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'ActiveDirectory'}
-                            forward[hostname]['dest']['domains'].append(dest)
+                                forward[hostname] = utils.dns(hostname, source='ActiveDirectory', root=domain)
+                            forward[hostname].link(dest, 'domain')
                         
                         elif record['RecordType'] == 'PTR':
                             zone = record['DistinguishedName'].split(',')[1].strip('DC=')
@@ -81,7 +76,7 @@ def extract(path):
                 print(f'[ERROR][ad_domains.py] Failed to parse file as json: {file.name}. Exception:')
                 print(e)
                 print('[ERROR][ad_domains.py] ****END****')
-    return master
+    return (forward, reverse)
 
 
 if __name__ == '__main__':

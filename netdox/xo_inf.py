@@ -1,5 +1,5 @@
 import re, sys, subprocess, json
-import iptools
+import iptools, utils
 
 authstream = open('src/authentication.json','r')
 auth = json.load(authstream)['xenorchestra']
@@ -14,6 +14,8 @@ pools = {}
 controllers = set()
 hosts = {}
 
+
+@utils.critical
 def main(dns):
     subprocess.run(args['register'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for type in ('pools', 'hosts', 'vms'): #temporarily removed 'aws'
@@ -51,7 +53,7 @@ def main(dns):
                     vm['domains'] = []
                     if 'mainIpAddress' in vm:
                         for domain in dns:
-                            if vm['mainIpAddress'] in dns[domain]['dest']['ips']:
+                            if vm['mainIpAddress'] in dns[domain].ips:
                                 vm['domains'].append(domain)
             
             for object in jsondata:

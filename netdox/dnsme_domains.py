@@ -1,9 +1,9 @@
-from getpass import getpass
 from json.decoder import JSONDecodeError
 from requests import get
 import hmac, hashlib
 import datetime
 import iptools
+import utils
 import json
 import os
 
@@ -11,20 +11,20 @@ import os
 # requests all domains from dnsme, and then all of their associated dns records. #
 ##################################################################################
 
+@utils.critical
 def main():
-	master = {'forward': {}, 'reverse': {}}
-	forward = master['forward']
-	reverse = master['reverse']
+	forward = {}
+	reverse = {}
 
 	header = genheader()
 	if not header:
-		return master
+		return (forward, reverse)
 
 	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
 	response = json.loads(r.text)
 	if "error" in response:
 		print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
-		return master
+		return (forward, reverse)
 	domains = {}
 	for record in response['data']:
 		if record['id'] not in domains:
@@ -51,8 +51,8 @@ def main():
 
 				name = name.replace('*.','_wildcard_.')
 				if name not in forward:
-					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'DNSMadeEasy'}
-				forward[name]['dest']['ips'].append(record['value'])
+					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
+				forward[name].link(record['value'], 'ipv4')
 			
 			elif record['type'] == 'CNAME':
 				name = record['name'] +'.'+ domain
@@ -66,8 +66,8 @@ def main():
 				else:
 					value += '.'+ domain
 				if name not in forward:
-					forward[name] = {'dest': {'ips': [], 'domains': [], 'apps': [], 'vms': [], 'nat': []}, 'root': domain, 'source': 'DNSMadeEasy'}
-				forward[name]['dest']['domains'].append(value)
+					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
+				forward[name].link(record['value'], 'domain')
 
 			elif record['type'] == 'PTR':
 				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])
@@ -79,7 +79,7 @@ def main():
 						reverse[ip.ipv4] = []
 					reverse[ip.ipv4].append(value)
 
-	return master
+	return (forward, reverse)
 
 
 def genheader():

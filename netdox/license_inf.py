@@ -1,10 +1,9 @@
 from bs4 import BeautifulSoup
 import subprocess, re
-import ps_api
+import ps_api, utils
 
 
 license_pattern = re.compile(r'(REPLACED )?(?P<domain>[\w.-]+)\s+-\s+')
-
 
 def read(uri, dns):
     id = uri['id']
@@ -21,7 +20,7 @@ def read(uri, dns):
         domains[0] = "[old] "+ domains[0]
     else:
         try:
-            for alias in (dns[domains[0]]['dest']['domains'] + dns[domains[0]]['dest']['nat']):
+            for alias in (dns[domains[0]].domains):
                 domains.append(alias)
                 # print(f'[INFO][license_inf.py] {domains[0]} matched on {alias}')
         except KeyError:
@@ -29,7 +28,7 @@ def read(uri, dns):
     finally:
         return (id, domains)
     
-
+@utils.handle
 def fetch(dns):
     license_dict = {}
     # 187062 is the uri of the license folder in operations-license shared to operations-network
@@ -39,3 +38,11 @@ def fetch(dns):
         license_dict[uri_inf[0]] = uri_inf[1]
     
     return license_dict
+
+
+@utils.handle
+def org(license_id):
+    license_psml = BeautifulSoup(ps_api.get_fragment(license_id, '2'), 'lxml')
+    org_id = license_psml.find(title='Organization').xref["uriid"]
+    return org_id
+    

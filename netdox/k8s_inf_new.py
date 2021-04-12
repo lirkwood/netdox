@@ -1,4 +1,4 @@
-import subprocess, json
+import subprocess, utils, json
 
 global selectorLabels
 selectorLabels = ('instance', 'app.kubernetes.io/instance', 'app')
@@ -233,6 +233,7 @@ def workerApps(apps, workers):
     return workers
 
 
+@utils.critical
 def main():
     serviceDomains = getIngress()  # map services to domains
     serviceSelectors = getServices()   # map domains to relevant pod labels

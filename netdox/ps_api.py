@@ -1,4 +1,4 @@
-import requests, json
+import requests, utils, json
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -12,6 +12,7 @@ defaultgroup = credentials['group']
 
 # Useful services
 
+@utils.critical
 def auth():
     try:
         print('[INFO][ps_api.py] Requesting new access token...')
@@ -32,11 +33,13 @@ def auth():
         quit()
 
 
+@utils.silent
 def get_uri(uri, group=defaultgroup):
     service = f'/groups/~{group}/uris/{uri}'
     r = requests.get(base+service, headers=header)
     return r.text
 
+@utils.silent
 def get_uris(uri, group=defaultgroup, params={}):
     if 'pagesize' not in params:
         params['pagesize'] = 9999
@@ -46,6 +49,7 @@ def get_uris(uri, group=defaultgroup, params={}):
     return r.text
 
 
+@utils.silent
 def get_files(uri, group=defaultgroup): # returns list of filenames in a folder on pageseeder
     files = []
     soup = BeautifulSoup(get_uris(uri, group, {'type': 'document'}), features='xml')
@@ -54,13 +58,21 @@ def get_files(uri, group=defaultgroup): # returns list of filenames in a folder 
     
     return files
 
-
-def export(uri, params={}):
-    service = f'/members/{credentials["username"]}/uris/{uri}/export'
+@utils.silent
+def get_fragment(uri, fragment_id, params={}):
+    service = f'/members/~{credentials["username"]}/groups/~{defaultgroup}/uris/{uri}/fragments/{fragment_id}'
     r = requests.get(base+service, headers=header, params=params)
     return r.text
 
 
+@utils.silent
+def export(uri, params={}):
+    service = f'/members/~{credentials["username"]}/uris/{uri}/export'
+    r = requests.get(base+service, headers=header, params=params)
+    return r.text
+
+
+@utils.silent
 def get_thread(id):
     service = f'/threads/{id}/progress'
     r = requests.get(base+service, headers=header)
@@ -68,14 +80,16 @@ def get_thread(id):
 
 
 
+@utils.silent
 def archive(uri):
-    service = f'/members/~{credentials["username"]}/groups/~network-documentation/uris/{uri}/archive'
+    service = f'/members/~{credentials["username"]}/groups/~{defaultgroup}/uris/{uri}/archive'
     r = requests.post(base+service, headers=header)
     return r
 
 
+@utils.silent
 def version(uri):
-    service = f'/members/~{credentials["username"]}/groups/~network-documentation/uris/{uri}/versions'
+    service = f'/members/~{credentials["username"]}/groups/~{defaultgroup}/uris/{uri}/versions'
     requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
 
 
