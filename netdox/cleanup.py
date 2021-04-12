@@ -1,7 +1,7 @@
 from PIL import Image, UnidentifiedImageError
-import re, os, json, shutil
-
 from bs4 import BeautifulSoup
+from datetime import datetime
+import re, os, json, shutil
 import ps_api, utils
 
 
@@ -17,8 +17,20 @@ def getUrimap(dir_uri):
     
     return urimap
 
-global urimap
-urimap = getUrimap('375156')
+
+def screenshotHistory():
+    """
+    If screenshotCompare found a different image or couldnt ss, save the base image as it will be overwritten.
+    """
+    global today
+    os.mkdir(f'/opt/app/out/{today}')
+    with open('src/review.json','r') as stream:
+        review = json.load(stream)
+        for image in review:
+            if review[image] == 'imgdiff' or review[image].startswith('no_ss'):
+                shutil.copyfile(f'/etc/ext/base/{image}', f'/opt/app/out/screenshot_history/{today}/{image}')
+
+
 
 # converts every file in a dir from png to 1024x576 jpg
 @utils.handle
@@ -81,7 +93,22 @@ def alnum(string):
 
 @utils.handle
 def clean():
-    png2jpg('out/screenshots')
+    global urimap
+    urimap = getUrimap('375156')
+    global today
+    today = str(datetime.now().date())
+
+    try:
+        screenshotHistory()
+    except Exception as e:
+        raise e
+    else:
+        os.rmdir('/etc/ext/base')
+        shutil.copytree('/opt/app/out/screenshots', '/etc/ext/base')
+
+    png2jpg('/opt/app/out/screenshots')
+    png2jpg(f'/opt/app/out/screenshot_history/{today}')
+
     placeholders()
     compareFilesets()
     for folder in urimap:
