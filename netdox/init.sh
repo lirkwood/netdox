@@ -17,7 +17,7 @@ done
 
 
 
-if python3 generate.py
+if python3 netdox.py
     then
         echo '[INFO][init.sh] Python exited successfully. Beginning PageSeeder upload...'
         cd /opt/app/out
