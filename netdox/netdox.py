@@ -17,7 +17,7 @@ def init():
     """
     # Put this in init.sh
     os.mkdir('out')
-    for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'review'):
+    for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'screenshot_history', 'review'):
         os.mkdir('out/'+path)
     
     for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'review'):
