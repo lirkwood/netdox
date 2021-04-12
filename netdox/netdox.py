@@ -144,12 +144,13 @@ def xo_vms(dns_set):
     """
     Links domains to Xen Orchestra VMs with the same IP
     """
-    for domain in dns_set:
-        dns = dns_set[domain]
-        for ip in dns.private_ips:
-            xo_query = subprocess.run(['xo-cli', '--list-objects', 'type=VM', f'mainIpAddress={ip}'], stdout=subprocess.PIPE).stdout
-            for vm in json.loads(xo_query):
-                dns.link(vm['uuid'], 'vm')
+    with open('src/vms.json', 'r') as stream:
+        vms = json.load(stream)
+        for domain in dns_set:
+            dns = dns_set[domain]
+            for vm in vms:
+                if vm['mainIpAddress'] in dns.ips:
+                    dns.link(vm['uuid'], 'vm')
     return dns_set
 
 @utils.handle
