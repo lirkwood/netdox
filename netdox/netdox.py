@@ -1,5 +1,5 @@
 import ad_domains, dnsme_domains, k8s_domains
-import k8s_inf_new, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
+import k8s_inf, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
 import cleanup, utils
 
 import subprocess, json, os
@@ -97,7 +97,7 @@ def queries():
 
     # VM/App queries
     xo_inf.main(master)
-    k8s_inf_new.main()
+    k8s_inf.main()
 
     # More DNS (move this)
     k8s = k8s_domains.main()
