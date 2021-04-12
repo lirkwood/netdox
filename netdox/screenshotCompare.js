@@ -13,8 +13,8 @@ async function imgdiff() {
     try {
       const { match, reason } = await compare(
         "/etc/ext/base/".concat(filename),
-        "out/screenshots/".concat(filename),
-        "out/review/".concat(filename)
+        "/opt/app/out/screenshots/".concat(filename),
+        "/opt/app/out/review/".concat(filename)
       );
       if (match == false) {
         review[filename] = 'imgdiff'
@@ -27,7 +27,7 @@ async function imgdiff() {
       }
     }
   }
-  fs.writeFileSync('src/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
+  fs.writeFileSync('/opt/app/src/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
 }
 
 async function try_ss(dmn, protocol, browser) {
