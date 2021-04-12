@@ -73,8 +73,9 @@ def integrate(dns_set, superset):
     Integrates some set of dns records into a master set
     """
     for domain in dns_set:
+        dns = dns_set[domain]
         if domain not in superset:
-            superset[domain] = dns_set[domain]
+            superset[dns.name] = dns
         else:
             superset[domain] = utils.merge_sets(superset[domain], dns_set[domain])
 
