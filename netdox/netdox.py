@@ -20,8 +20,7 @@ def init():
     for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'review'):
         os.mkdir('out/'+path)
     
-    # Use set template function for this before each call
-    for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools'):     #if xsl json import files dont exist, generate them
+    for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'review'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE {type} [
