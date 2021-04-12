@@ -22,7 +22,7 @@
         </properties-fragment>
     </section>
     <section id="review" title="Pages for Review">
-    <xsl:for-each select="json-to-xml(root)/xpf:map/xpf:string">
+    <xsl:for-each select="json-to-xml(review)/xpf:map/xpf:string">
         <properties-fragment id="{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
                 <xref frag="default" reversetitle="Status Update" docid="_nd_{substring-before(@key,'.png')}" />
