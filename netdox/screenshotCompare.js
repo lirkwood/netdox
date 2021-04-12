@@ -8,6 +8,7 @@ var success = []
 
 
 async function imgdiff() {
+  console.log('[INFO][screenshotCompare.js] Comparing screenshots to base images...')
   for (let index = 0; index < success.length; index++) {
     const filename = success[index]
     try {
@@ -40,7 +41,7 @@ async function try_ss(dmn, protocol, browser) {
     await page.screenshot({path: 'out/screenshots/'.concat(filename)});
     // if successful save img path and print
     success.push(filename)
-    console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
+    // console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
     await page.close()
   } catch (error) {
     // if failed due to cert error try with http
@@ -48,7 +49,7 @@ async function try_ss(dmn, protocol, browser) {
       try_ss(dmn, 'http://', browser)
     } else {
       review[filename] = `no_ss:${error}`
-      console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
+      // console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
     }
     await page.close()
   }
@@ -56,6 +57,7 @@ async function try_ss(dmn, protocol, browser) {
 
 (async () => {
   const browser = await puppeteer.launch({defaultViewport: {width: 1920, height: 1080}, args: ['--no-sandbox']});
+  console.log('[INFO][screenshotCompare.js] Taking screenshots...')
   for (let index = 0; index < domains.length; index++) {
     const dmn = domains[index]
     await try_ss(dmn, 'https://', browser)
