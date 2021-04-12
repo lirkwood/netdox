@@ -129,7 +129,7 @@
 
                     <properties-fragment id="for-search" labels="s-hide-content">
                         <xsl:variable name="octets">
-                            <xsl:for-each select="xpf:map/xpf:map[@key = 'ips']/xpf:array/xpf:string">
+                            <xsl:for-each select="xpf:array[matches(@key, '.*_ips$')]/xpf:string">
                                 <xsl:value-of select="concat(tokenize(.,'\.')[3], ', ', concat(tokenize(.,'\.')[3],'.',tokenize(.,'\.')[4]), ', ')"/>
                             </xsl:for-each>
                         </xsl:variable>
