@@ -6,21 +6,26 @@ import ps_api, utils
 
 
 @utils.handle
-def getUrimap():
+def getUrimap(dir_uri):
+    """
+    Generates dict with files in some dir as keys and their uris as values
+    """
     urimap = {}
-    # URI of website folder = 375156
-    soup = BeautifulSoup(ps_api.get_uris('375156', params={'type': 'folder'}), 'lxml')
+    soup = BeautifulSoup(ps_api.get_uris(dir_uri, params={'type': 'folder'}), 'lxml')
     for uri in soup.find_all('uri'):
         urimap[uri.displaytitle.string] = uri['id']
     
     return urimap
 
 global urimap
-urimap = getUrimap()
+urimap = getUrimap('375156')
 
 # converts every file in a dir from png to 1024x576 jpg
 @utils.handle
 def png2jpg(path):
+    """
+    Converts png images in some dir to fixed size jpgs
+    """
     for file in os.scandir(path):
         try:
             img = Image.open(path +'/'+ file.name)
@@ -35,6 +40,9 @@ def png2jpg(path):
 
 @utils.handle
 def placeholders():
+    """
+    Generates placeholder images for domains with no screenshot locally or on PageSeeder
+    """
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
     existing_screens = ps_api.get_files(urimap['screenshots'])  # get list of screenshots on pageseeder
     with open('src/review.json','r') as stream:
@@ -47,6 +55,9 @@ def placeholders():
 
 @utils.handle
 def compareFilesets():
+    """
+    Archives files present on pageseeder but not locally
+    """
     for folder in urimap:
         folder_uri = urimap[folder]
         remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={'type': 'document'}), features='xml')
