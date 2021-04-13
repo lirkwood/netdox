@@ -108,18 +108,19 @@ def clean():
     global today
     today = str(datetime.now().date())
 
-    try:
-        screenshotHistory()
-    except Exception as e:
-        raise e
-    else:
-        shutil.rmtree('/etc/ext/base')
-        shutil.copytree('/opt/app/out/screenshots', '/etc/ext/base')
+    # save any base imgs about to be overwritten
+    screenshotHistory()
+    # overwrite
+    shutil.rmtree('/etc/ext/base')
+    shutil.copytree('/opt/app/out/screenshots', '/etc/ext/base')
 
+    # scale down all exported img files
     png2jpg('/opt/app/out/screenshots')
     png2jpg(f'/opt/app/out/screenshot_history/{today}')
 
+    # generate placeholders where there is no ss locally or on ps
     placeholders()
-    compareFilesets()
-    for folder in urimap:
-        ps_api.version(urimap[folder])
+    
+    # compareFilesets()
+    # for folder in urimap:
+    #     ps_api.version(urimap[folder])
