@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const { compare } = require("odiff-bin");
+var { compare } = require("odiff-bin");
 const fs = require('fs');
 const dns = require('./src/dns.json');
 var domains = Object.keys(dns)
@@ -18,6 +18,7 @@ async function imgdiff() {
         "/opt/app/out/review/".concat(filename)
       );
       if (match == false) {
+        console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
         review[filename] = 'imgdiff'
       }
     } catch (error) {
