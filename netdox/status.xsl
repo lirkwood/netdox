@@ -6,6 +6,7 @@
 <xsl:output method="xml" indent="yes" />
 
 <xsl:template match="/">
+    <xsl:variable name="review" select="json-to-xml(review)"/>
 <document level="portable">
     <documentinfo>
         <uri title="Status Update" docid="_nd_status_update"><labels>show-reversexrefs</labels></uri>
@@ -15,14 +16,14 @@
             <heading level="1">Status Update on <xsl:value-of select="format-dateTime(adjust-dateTime-to-timezone(current-dateTime(), P11H), '[Y0001]-[M01]-[D01] at [H01]:[m01] [z]')"/></heading>
         </fragment>
         <properties-fragment id="stats">
-            <property name="total" title="No. of domains up for review" value="{count(json-to-xml(root)//xpf:string)}" />
-            <property name="imgdiff" title="No. of screenshots which did not match base image" value="{count(json-to-xml(root)//xpf:string[. = 'imgdiff'])}" />
-            <property name="no_base" title="No. of domains which did not have a base image" value="{count(json-to-xml(root)//xpf:string[. = 'no_base'])}" />
-            <property name="no_ss" title="No. of domains Puppeteer failed to screenshot" value="{count(json-to-xml(root)//xpf:string[contains(.,'no_ss')])}" />
+            <property name="total" title="No. of domains up for review" value="{count($review//xpf:string)}" />
+            <property name="imgdiff" title="No. of screenshots which did not match base image" value="{count($review//xpf:string[. = 'imgdiff'])}" />
+            <property name="no_base" title="No. of domains which did not have a base image" value="{count($review//xpf:string[. = 'no_base'])}" />
+            <property name="no_ss" title="No. of domains Puppeteer failed to screenshot" value="{count($review//xpf:string[contains(.,'no_ss')])}" />
         </properties-fragment>
     </section>
     <section id="review" title="Pages for Review">
-    <xsl:for-each select="json-to-xml(review)/xpf:map/xpf:string">
+    <xsl:for-each select="$review/xpf:map/xpf:string">
         <properties-fragment id="{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
                 <xref frag="default" reversetitle="Status Update" docid="_nd_{substring-before(@key,'.png')}" />
