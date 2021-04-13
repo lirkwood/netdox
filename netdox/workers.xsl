@@ -7,12 +7,17 @@
 
 <xsl:template match="/">
     <xsl:variable name="workers" select="json-to-xml(workers)"/>
-    <xsl:apply-templates select="$workers/xpf:map/xpf:map/xpf:map"/>
+    <xsl:for-each select="$workers/xpf:map/xpf:map">
+        <xsl:apply-templates select="xpf:map">
+            <xsl:with-param name="context" select="@key"/>
+        </xsl:apply-templates>
+    </xsl:for-each>
 </xsl:template>
 
 <xsl:template match="xpf:map">
+    <xsl:param name="context"/>
     <xsl:variable name="name" select="@key"/>
-    <xsl:result-document href="out/k8s/_nd_{translate($name,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/k8s/{$context}/{translate($name,'.','_')}.psml" method="xml" indent="yes">
         <document type="k8s_worker" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <documentinfo>

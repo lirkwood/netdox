@@ -16,8 +16,9 @@
 </xsl:template>
 
 <xsl:template match="xpf:map">
+    <xsl:param name="context"/>
     <xsl:try>
-        <xsl:result-document href="out/k8s/{@key}.psml">
+        <xsl:result-document href="out/k8s/{$context}/{@key}.psml">
             <document level="portable" type="k8s_app">
 
                 <documentinfo>
