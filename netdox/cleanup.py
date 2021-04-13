@@ -23,7 +23,7 @@ def screenshotHistory():
     If screenshotCompare found a different image or couldnt ss, save the base image as it will be overwritten.
     """
     global today
-    os.mkdir(f'/opt/app/out/{today}')
+    os.mkdir(f'/opt/app/out/screenshot_history/{today}')
     with open('src/review.json','r') as stream:
         review = json.load(stream)
         for image in review:
@@ -62,7 +62,11 @@ def placeholders():
     Generates placeholder images for domains with no screenshot locally or on PageSeeder
     """
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
-    existing_screens = ps_api.get_files(urimap['screenshots'])  # get list of screenshots on pageseeder
+    try:
+        existing_screens = ps_api.get_files(urimap['screenshots'])  # get list of screenshots on pageseeder
+    except KeyError:
+        existing_screens = []
+
     with open('src/review.json','r') as stream:
         review = json.load(stream)
         for png in review:
