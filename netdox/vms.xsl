@@ -24,7 +24,7 @@
         </xsl:variable>
 
         <documentinfo>
-          <uri title="vm: {xpf:string[@key='name_label']}" docid="_nd_{xpf:string[@key='uuid']}">
+          <uri title="xo_vm: {xpf:string[@key='name_label']}" docid="_nd_{xpf:string[@key='uuid']}">
             <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
           </uri>
         </documentinfo>
@@ -37,7 +37,7 @@
 	
         <section id="title">
         	<fragment id="title">
-            <heading level="1">vm: <xsl:value-of select="xpf:string[@key='name_label']" /></heading>
+            <heading level="1">xo_vm: <xsl:value-of select="xpf:string[@key='name_label']" /></heading>
         	</fragment>
         </section>
 

@@ -21,7 +21,7 @@
         <document type="k8s_worker" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <documentinfo>
-                <uri docid="_nd_{translate($name,'.','_')}" title="worker: {$name}"><labels>show-reversexrefs</labels></uri>
+                <uri docid="_nd_{translate($name,'.','_')}" title="k8s_worker: {$name}"><labels>show-reversexrefs</labels></uri>
             </documentinfo>
 
             <metadata>
@@ -32,7 +32,7 @@
 
             <section id="title">
                 <fragment id="title">
-                    <heading level="1">worker: <xsl:value-of select="$name"/></heading>
+                    <heading level="1">k8s_worker: <xsl:value-of select="$name"/></heading>
                 </fragment>
 
                 <properties-fragment id="vm">

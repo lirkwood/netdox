@@ -16,12 +16,12 @@
         <document type="k8s_cluster" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <documentinfo>
-                <uri docid="_nd_{translate($name,'.','_')}" title="cluster: {$name}"><labels>show-reversexrefs</labels></uri>
+                <uri docid="_nd_{translate($name,'.','_')}" title="k8s_cluster: {$name}"><labels>show-reversexrefs</labels></uri>
             </documentinfo>
 
             <section id="title">
                 <fragment id="1">
-                <heading level="1">cluster: <xsl:value-of select="$name"/></heading>
+                <heading level="1">k8s_cluster: <xsl:value-of select="$name"/></heading>
                 </fragment>
             </section>
 

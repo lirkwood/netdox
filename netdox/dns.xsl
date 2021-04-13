@@ -22,7 +22,7 @@
             </xsl:variable>
 
                 <documentinfo>
-                    <uri docid="_nd_{translate($name,'.','_')}" title="dns: {$name}">
+                    <uri docid="_nd_{translate($name,'.','_')}" title="{$name}">
                         <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
                     </uri>
                 </documentinfo>
@@ -37,10 +37,10 @@
                     <fragment id="title">
                     <xsl:choose>
                         <xsl:when test="contains($name, '_wildcard_')">
-                            <heading level="1">dns: <xsl:value-of select="replace($name,'_wildcard_','*.')"/></heading>
+                            <heading level="1"><xsl:value-of select="replace($name,'_wildcard_','*.')"/></heading>
                         </xsl:when>
                         <xsl:otherwise>
-                            <heading level="1">dns: <link href="https://{$name}"><xsl:value-of select="$name"/></link></heading>
+                            <heading level="1"><link href="https://{$name}"><xsl:value-of select="$name"/></link></heading>
                         </xsl:otherwise>
                     </xsl:choose>
                     </fragment>
@@ -78,19 +78,19 @@
                     <properties-fragment id="dest">
                     <xsl:for-each select="xpf:array[@key = 'private_ips']/xpf:string">
                         <property name="ipv4" title="Private IP" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"/>
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="."/></xref>
                         </property>
                     </xsl:for-each>
                     <xsl:for-each select="xpf:array[@key = 'public_ips']/xpf:string">
                         <property name="ipv4" title="Public IP" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"/>
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="."/></xref>
                         </property>
                     </xsl:for-each>
                     <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
                         <xsl:choose>
                             <xsl:when test="not(string-length(.) > 75)">
                         <property name="alias" title="Alias to" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this domain"/>
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this domain"><xsl:value-of select="."/></xref>
                         </property>
                             </xsl:when>
                             <xsl:otherwise>
@@ -100,17 +100,17 @@
                     </xsl:for-each>
                     <xsl:for-each select="xpf:array[@key = 'nat']/xpf:string">
                         <property name="nat_dest" title="NAT Destination" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="NAT alias"/>
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="NAT alias"><xsl:value-of select="."/></xref>
                         </property>
                     </xsl:for-each>
                     <xsl:for-each select="xpf:array[@key = 'apps']/xpf:string">
                         <property name="app" title="Application" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this app"/>
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this app"><xsl:value-of select="."/></xref>
                         </property>
                     </xsl:for-each>
                     <xsl:for-each select="xpf:array[@key = 'vms']/xpf:string">
                         <property name="vm" title="VM" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this VM"/>
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this VM"><xsl:value-of select="."/></xref>
                         </property>
                     </xsl:for-each>
                     </properties-fragment>

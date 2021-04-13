@@ -22,7 +22,7 @@
             <document level="portable" type="k8s_app">
 
                 <documentinfo>
-                    <uri title="app: {@key}" docid="_nd_{@key}" />
+                    <uri title="k8s_app: {@key}" docid="_nd_{@key}" />
                 </documentinfo>
 
                 <metadata>
@@ -33,7 +33,7 @@
     
                 <section id="title">
                     <fragment id="title">
-                        <heading level="1">app: <xsl:value-of select="@key"/></heading>
+                        <heading level="1">k8s_app: <xsl:value-of select="@key"/></heading>
                     </fragment>
                 </section>
                 

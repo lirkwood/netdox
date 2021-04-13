@@ -15,7 +15,7 @@
     <document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
         <documentinfo>
-            <uri docid="_nd_{translate(@key,'.','_')}" title="ip: {@key}"><labels>show-reversexrefs</labels></uri>
+            <uri docid="_nd_{translate(@key,'.','_')}" title="{@key}"><labels>show-reversexrefs</labels></uri>
         </documentinfo>
 
         <metadata>
