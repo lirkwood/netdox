@@ -106,7 +106,7 @@ def clean():
     except Exception as e:
         raise e
     else:
-        os.rmdir('/etc/ext/base')
+        shutil.rmtree('/etc/ext/base')
         shutil.copytree('/opt/app/out/screenshots', '/etc/ext/base')
 
     png2jpg('/opt/app/out/screenshots')
