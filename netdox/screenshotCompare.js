@@ -3,8 +3,8 @@ const { compare } = require("odiff-bin");
 const fs = require('fs');
 const dns = require('./src/dns.json');
 var domains = Object.keys(dns)
-var review = {}     //Keys are image filenames, vals are results
-var success = []    
+var success = []    // domains to be tested using imgdiff
+var review = {}     // domains that failed the imagdiff process in some way
 
 
 async function imgdiff() {
