@@ -72,6 +72,7 @@ def placeholders():
         for png in review:
             jpg = png.replace('.png','.jpg')
             if (jpg not in existing_screens) and review[png].startswith('no_ss'):
+                print(f'[INFO][cleanup.py] Generated placeholder image for {jpg}')
                 shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpg}')
 
 
@@ -120,7 +121,7 @@ def clean():
 
     # generate placeholders where there is no ss locally or on ps
     placeholders()
-    
+
     # compareFilesets()
     # for folder in urimap:
     #     ps_api.version(urimap[folder])
