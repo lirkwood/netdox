@@ -105,11 +105,11 @@ def merge_sets(dns1,dns2):
 
 class JSONEncoder(json.JSONEncoder):
     """
-    Default json encoder except set type is encoded as list
+    Default json encoder except set type is encoded as sorted list
     """
     def default(self, obj):
         if isinstance(obj, set):
-            return list(obj)
+            return sorted(obj)
         return json.JSONEncoder.default(self, obj)
 
 
