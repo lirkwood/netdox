@@ -4,7 +4,7 @@ WORKDIR /opt/app
 #install required node packages
 RUN npm install -g xo-cli
 RUN npm install bufferutil@4.0.3
-RUN npm install odiff-bin@2.0.0
+RUN npm install img-diff-js@0.5.2
 RUN npm install puppeteer@5.5.0
 RUN npm install utf-8-validate@5.0.4
 
