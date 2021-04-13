@@ -22,7 +22,7 @@ async function imgdiff() {
       }
     } catch (error) {
       if (error instanceof TypeError) {
-        fs.copyFile('out/screenshots/'.concat(filename), '/etc/ext/base/'.concat(filename), (err) => {if (err) throw (err);});
+        fs.copyFile('/opt/app/out/screenshots/'.concat(filename), '/etc/ext/base/'.concat(filename), (err) => {if (err) throw (err);});
         console.log(`[WARNING][screenshotCompare.js] No base image for ${filename}. Screenshot saved as base.`)
         review[filename] = 'no_base'
       }
@@ -38,10 +38,10 @@ async function try_ss(dmn, protocol, browser) {
   const page = await browser.newPage();
   try{
     await page.goto(url, {timeout: 3000});
-    await page.screenshot({path: 'out/screenshots/'.concat(filename)});
+    await page.screenshot({path: '/opt/app/out/screenshots/'.concat(filename)});
     // if successful save img path and print
     success.push(filename)
-    // console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
+    console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
     await page.close()
   } catch (error) {
     // if failed due to cert error try with http
@@ -49,19 +49,41 @@ async function try_ss(dmn, protocol, browser) {
       try_ss(dmn, 'http://', browser)
     } else {
       review[filename] = `no_ss:${error}`
-      // console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
+      console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
     }
     await page.close()
   }
 }
 
-(async () => {
+async function newBrowser(array) {
   const browser = await puppeteer.launch({defaultViewport: {width: 1920, height: 1080}, args: ['--no-sandbox']});
-  console.log('[INFO][screenshotCompare.js] Taking screenshots...')
-  for (let index = 0; index < domains.length; index++) {
-    const dmn = domains[index]
-    await try_ss(dmn, 'https://', browser)
+  for (let index = 0; index < array.length; index++) {
+    const domain = array[index]
+    try {
+      await try_ss(domain, 'https://', browser)
+    } catch (error) {
+      let retry = await newBrowser(array.slice(index))
+      return retry
+    }
   }
   await browser.close();
+  return true
+}
+
+(async () => {
+  console.log('[INFO][screenshotCompare.js] Taking screenshots...')
+
+  let thirdLength = domains.length / 3
+  let first = domains.slice(0, thirdLength)
+  let second = domains.slice(thirdLength, 2*thirdLength)
+  let third = domains.slice(2*thirdLength)
+
+  let firstReturned = newBrowser(first)
+  let secondReturned = newBrowser(second)
+  let thirdReturned = newBrowser(third)
+
+  await firstReturned
+  await secondReturned
+  await thirdReturned
   await imgdiff()
 })();
