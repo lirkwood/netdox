@@ -29,6 +29,7 @@ async function imgdiff() {
     }
   }
   fs.writeFileSync('/opt/app/src/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
+  fs.writeFileSync('/etc/ext/success.json', JSON.stringify(success, null, 2), (err) => {if (err) throw err;})
 }
 
 async function try_ss(dmn, protocol, browser) {
@@ -65,7 +66,6 @@ async function newBrowser(array) {
     const domain = array[index]
     let code = await try_ss(domain, 'https://', browser)
     if (code == false) {
-      console.log('[***DEBUG***][screenshotCompare.js] Descended')
       let retry = await newBrowser(array.slice(index))
       return retry
     }
