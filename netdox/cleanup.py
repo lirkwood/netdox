@@ -41,16 +41,19 @@ def png2jpg(path):
     """
     Converts png images in some dir to fixed size jpgs
     """
-    for file in os.scandir(path):
-        try:
-            img = Image.open(path +'/'+ file.name)
-            img_small = img.resize((1024, 576)).convert('RGB')
-            os.remove(file)
-            outfile = file.name.replace('.png','.jpg')
-            img_small.save(path +'/'+ outfile)
+    try:
+        for file in os.scandir(path):
+            try:
+                img = Image.open(path +'/'+ file.name)
+                img_small = img.resize((1024, 576)).convert('RGB')
+                os.remove(file)
+                outfile = file.name.replace('.png','.jpg')
+                img_small.save(path +'/'+ outfile)
 
-        except UnidentifiedImageError:
-            print(f'[WARNING][cleanup.py] Cannot open {file.name} as image file.')
+            except UnidentifiedImageError:
+                print(f'[WARNING][cleanup.py] Cannot open {file.name} as image file.')
+    except FileNotFoundError:
+        print(f'[WARNING][cleanup.py] Path {path} does not exist.')
 
 
 @utils.handle
