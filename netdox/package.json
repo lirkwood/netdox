@@ -1,7 +1,6 @@
 {
   "name": "imgdiff",
   "version": "1.0.0",
-  "description": "",
   "main": "screenshotCompare.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,8 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "bufferutil": "4.0.3",
-    "odiff-bin": "2.0.0",
+    "img-diff-js": "0.5.2",
     "puppeteer": "5.5.0",
     "utf-8-validate": "5.0.4"
-  }
+  },
+  "description": ""
 }

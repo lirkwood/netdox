@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-var { compare } = require("odiff-bin");
+var { imgDiff } = require("img-diff-js");
 const fs = require('fs');
 const dns = require('./src/dns.json');
 var domains = Object.keys(dns)
@@ -7,31 +7,26 @@ var success = []    // domains to be tested using imgdiff
 var review = {}     // domains that failed the imagdiff process in some way
 
 
-async function imgdiff() {
+async function diffScreens() {
   console.log('[INFO][screenshotCompare.js] Comparing screenshots to base images...')
   for (let index = 0; index < success.length; index++) {
     const filename = success[index]
-    try {
-      const { match, reason } = await compare(
-        "/etc/ext/base/".concat(filename),
-        "/opt/app/out/screenshots/".concat(filename),
-        "/opt/app/out/review/".concat(filename)
-      );
-      if (match == false) {
+    if (fs.existsSync("/etc/ext/base/".concat(filename))) {
+      let result = await imgDiff({
+        actualFilename: "/opt/app/out/screenshots/".concat(filename),
+        expectedFilename: "/etc/ext/base/".concat(filename),
+        diffFilename: "/opt/app/out/review/".concat(filename)
+      });
+      if (result['imagesAreSame'] == false) {
+        // 2do: add pixel threshold using result['diffCount']
         console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
         review[filename] = 'imgdiff'
       }
-    } catch (error) {
-      if (error instanceof TypeError) {
-        // console.log(`[WARNING][screenshotCompare.js] No base image for ${filename}. Screenshot saved as base.`)
-        review[filename] = 'no_base'
-      } else {
-        console.log(error)
-      }
+    } else {
+      review[filename] = 'no_base'
     }
   }
   fs.writeFileSync('/opt/app/src/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
-  fs.writeFileSync('/etc/ext/success.json', JSON.stringify(success, null, 2), (err) => {if (err) throw err;})
 }
 
 async function try_ss(dmn, protocol, browser) {
@@ -90,5 +85,5 @@ async function newBrowser(array) {
   await firstReturned
   await secondReturned
   await thirdReturned
-  await imgdiff()
+  await diffScreens()
 })();
