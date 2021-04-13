@@ -149,8 +149,11 @@ def xo_vms(dns_set):
         for domain in dns_set:
             dns = dns_set[domain]
             for vm in vms:
-                if vm['mainIpAddress'] in dns.ips:
-                    dns.link(vm['uuid'], 'vm')
+                try:
+                    if vm['mainIpAddress'] in dns.ips:
+                        dns.link(vm['uuid'], 'vm')
+                except KeyError:
+                    pass
     return dns_set
 
 @utils.handle
