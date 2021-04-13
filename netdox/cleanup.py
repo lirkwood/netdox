@@ -28,7 +28,10 @@ def screenshotHistory():
         review = json.load(stream)
         for image in review:
             if review[image] == 'imgdiff' or review[image].startswith('no_ss'):
-                shutil.copyfile(f'/etc/ext/base/{image}', f'/opt/app/out/screenshot_history/{today}/{image}')
+                try:
+                    shutil.copyfile(f'/etc/ext/base/{image}', f'/opt/app/out/screenshot_history/{today}/{image}')
+                except FileNotFoundError:
+                    pass
 
 
 
