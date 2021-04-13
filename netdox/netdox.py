@@ -167,6 +167,10 @@ def icinga_labels(dns_set):
         details = icinga_inf.lookup([domain] + list(dns.private_ips))
         if details:
             dns.icinga = details['display_name']
+        else:
+            for alias in dns.domains:
+                if (alias in dns_set) and ('icinga' in dns_set[alias].__dict__):
+                    dns.icinga = dns_set[alias].icinga
     return dns_set
 
 @utils.handle

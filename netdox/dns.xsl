@@ -52,7 +52,14 @@
                         <property name="domain"       title="Domain"        value="{$name}" />
                         <property name="root"       title="Root"        value="{xpf:string[@key = 'root']}" />
                         <property name="source"     title="Source"      value="{xpf:string[@key = 'source']}" />
-                        <property name="icinga"     title="Icinga Display Name"      value="{xpf:string[@key = 'icinga']}" />
+                        <xsl:choose>
+                            <xsl:when test="xpf:string[@key = 'icinga']">
+                        <property name="icinga"     title="Icinga Display Name"      value="{.}" />
+                            </xsl:when>
+                            <xsl:otherwise>
+                        <property name="icinga"     title="Icinga Display Name"      value="Not Monitored" />
+                            </xsl:otherwise>
+                        </xsl:choose>
                         <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'license']">
                         <property name="license"     title="License"      datatype="xref" >
