@@ -22,8 +22,7 @@ async function imgdiff() {
       }
     } catch (error) {
       if (error instanceof TypeError) {
-        fs.copyFile('/opt/app/out/screenshots/'.concat(filename), '/etc/ext/base/'.concat(filename), (err) => {if (err) throw (err);});
-        console.log(`[WARNING][screenshotCompare.js] No base image for ${filename}. Screenshot saved as base.`)
+        // console.log(`[WARNING][screenshotCompare.js] No base image for ${filename}. Screenshot saved as base.`)
         review[filename] = 'no_base'
       }
     }
@@ -40,20 +39,19 @@ async function try_ss(dmn, protocol, browser) {
   try{
     await page.goto(url, {timeout: 3000});
     await page.screenshot({path: '/opt/app/out/screenshots/'.concat(filename)});
-    // if successful save img path and print
     success.push(filename)
-    console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
+    // console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
     await page.close()
     return true
   } catch (error) {
-    // if failed due to cert error try with http
+    // if failed due to cert error on https try with http
     if (error.toString().includes('net::ERR_CERT') && (protocol == 'https://')) {
       await try_ss(dmn, 'http://', browser)
     } else if (error.toString().includes('Target closed')) {
       return false
     } else {
       review[filename] = `no_ss:${error}`
-      console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
+      // console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
     }
     await page.close()
     return true
