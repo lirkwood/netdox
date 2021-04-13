@@ -43,15 +43,19 @@ async function try_ss(dmn, protocol, browser) {
     success.push(filename)
     console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
     await page.close()
+    return true
   } catch (error) {
     // if failed due to cert error try with http
     if (error.toString().includes('net::ERR_CERT') && (protocol == 'https://')) {
-      try_ss(dmn, 'http://', browser)
+      await try_ss(dmn, 'http://', browser)
+    } else if (error.toString().includes('Target closed')) {
+      return false
     } else {
       review[filename] = `no_ss:${error}`
       console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
     }
     await page.close()
+    return true
   }
 }
 
@@ -59,9 +63,9 @@ async function newBrowser(array) {
   const browser = await puppeteer.launch({defaultViewport: {width: 1920, height: 1080}, args: ['--no-sandbox']});
   for (let index = 0; index < array.length; index++) {
     const domain = array[index]
-    try {
-      await try_ss(domain, 'https://', browser)
-    } catch (error) {
+    let code = await try_ss(domain, 'https://', browser)
+    if (code == false) {
+      console.log('[***DEBUG***][screenshotCompare.js] Descended')
       let retry = await newBrowser(array.slice(index))
       return retry
     }
