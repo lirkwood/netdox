@@ -50,10 +50,14 @@ class dns:
             elif type == 'nat':
                 if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', string):
                     self.nat.add(string)
+                else:
+                    raise ValueError(f'Domain {string} is not valid.')
 
             elif type == 'domain':
                 if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', string):
                     self.domains.add(string)
+                else:
+                    raise ValueError(f'Domain {string} is not valid.')
             
             elif type == 'vm':
                 self.vms.add(string)
@@ -62,7 +66,7 @@ class dns:
                 self.apps.add(string)
 
             else:
-                raise ValueError('Provide a valid destination type. One of: "ipv4", "domain')
+                raise ValueError('Provide a valid destination type. One of: "ipv4", "domain", "vm", or "app".')
 
         else:
             raise TypeError('DNS destination must be provided as string')
