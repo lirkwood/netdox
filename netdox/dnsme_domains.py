@@ -67,7 +67,7 @@ def main():
 					value += '.'+ domain
 				if name not in forward:
 					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
-				forward[name].link(record['value'], 'domain')
+				forward[name].link(value, 'domain')
 
 			elif record['type'] == 'PTR':
 				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])
