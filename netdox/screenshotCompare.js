@@ -25,6 +25,8 @@ async function imgdiff() {
       if (error instanceof TypeError) {
         // console.log(`[WARNING][screenshotCompare.js] No base image for ${filename}. Screenshot saved as base.`)
         review[filename] = 'no_base'
+      } else {
+        console.log(error)
       }
     }
   }
