@@ -19,7 +19,7 @@ async function diffScreens(array) {
     // if has a base image
     if (fs.existsSync("/etc/ext/base/".concat(filename))) {
       // diff images
-      let result = await imgDiff({
+      var result = await imgDiff({
         actualFilename: "/opt/app/out/screenshots/".concat(filename),
         expectedFilename: "/etc/ext/base/".concat(filename),
         diffFilename: "/opt/app/out/review/".concat(filename),
