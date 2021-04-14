@@ -117,6 +117,7 @@ def clean():
 
     # scale down all exported img files
     png2jpg('/opt/app/out/screenshots')
+    png2jpg('/opt/app/out/review')
     png2jpg(f'/opt/app/out/screenshot_history/{today}')
 
     # generate placeholders where there is no ss locally or on ps
