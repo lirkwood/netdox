@@ -1,5 +1,6 @@
 <xsl:stylesheet version="3.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:xs="http://www.w3.org/2001/XMLSchema"
                 xmlns:xpf="http://www.w3.org/2005/xpath-functions"
                 exclude-result-prefixes="#all">
 
@@ -8,13 +9,14 @@
 <xsl:template match="/">
     <xsl:variable name="review" select="json-to-xml(review)"/>
     <xsl:variable name="date" select="format-date(current-date(), '[Y0001]-[M01]-[D01]')"/>
+    <xsl:variable name="dateTime" select="format-dateTime(adjust-dateTime-to-timezone(current-dateTime(), xs:dayTimeDuration('PT10H')), '[Y0001]-[M01]-[D01] at [H01]:[m01] [z]')"/>
 <document level="portable">
     <documentinfo>
         <uri title="Status Update" docid="_nd_status_update"><labels>show-reversexrefs</labels></uri>
     </documentinfo>
     <section id="title">
         <fragment id="title">
-            <heading level="1">Status Update on <xsl:value-of select="format-dateTime(current-dateTime(), '[Y0001]-[M01]-[D01] at [H01]:[m01] [z]')"/></heading>
+            <heading level="1">Status Update on <xsl:value-of select="$dateTime"/></heading>
         </fragment>
         <properties-fragment id="stats">
             <property name="total" title="No. of domains up for review" value="{count($review//xpf:string)}" />
