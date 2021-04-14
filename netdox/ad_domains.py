@@ -1,8 +1,6 @@
 from json.decoder import JSONDecodeError
-import os
-import json
-import iptools
-import utils
+import os, json
+import iptools, utils
 
 @utils.critical
 def main():
@@ -16,65 +14,91 @@ def main():
                 print(f'[ERROR][ad_domains.py] Failed to parse file as json: {file.name}')
             else:
                 _forward, _reverse = extract(jsondata)
+                forward = _forward | forward
+                reverse = _reverse | reverse
+    
+    return (forward, reverse)
+
 
 def fetchJson():
     for file in os.scandir("src/records/"):
         if file.name.endswith('.json'):
             yield file
 
-@utils.critical
+
 def extract(jsondata):
     forward = {}
     reverse = {}
     for record in jsondata:
         if record['RecordType'] == 'A':
+            forward = add_A(record, forward)
 
         elif record['RecordType'] == 'CNAME':
-            domain = record['DistinguishedName'].split(',')[1].strip('DC=')
-            subdomain = record['DistinguishedName'].split(',')[0].strip('DC=')
-            
-            if subdomain == '@':
-                hostname = domain
-            elif subdomain == '*.':
-                hostname = '_wildcard_.'+ domain
-            else:
-                hostname = subdomain +'.'+ domain
-            
-            dest = ''
-            for item in record['RecordData']['CimInstanceProperties']:
-                if item['Name'] == "HostNameAlias":
-                    dest = item['Value']
-                    if not dest.endswith('.'):
-                        dest += '.'+ domain
-                    else:
-                        dest = dest.strip('.')
-        
-            if hostname not in forward:
-                forward[hostname] = utils.dns(hostname, source='ActiveDirectory', root=domain)
-            forward[hostname].link(dest, 'domain')
+            forward = add_CNAME(record, forward)
         
         elif record['RecordType'] == 'PTR':
-            zone = record['DistinguishedName'].split(',')[1].strip('DC=')
-            subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and fix...
-            address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
-            ip = iptools.ipv4(subnet +'.'+ address)
-
-            for item in record['RecordData']['CimInstanceProperties']:
-                if item['Name'] == 'PtrDomainName':
-                    dest = item['Value'].strip('.')
-
-            if ip.valid:
-                if ip.ipv4 not in reverse:
-                    reverse[ip.ipv4] = []
-                reverse[ip.ipv4].append(dest)
+            reverse = add_PTR(record, reverse)
     return (forward, reverse)
 
-def add_A(record, dns_set): 
-    hostnamestr = record['DistinguishedName'].split(',')    #get hostname
-    subdomain = hostnamestr[0].replace('DC=', '') #extract subdomain
-    root = hostnamestr[1].replace('DC=', '')    #extract root domain
 
-    # combine subdomain and root into fqdn
+def add_A(record, dns_set): 
+    # Get name
+    distinguished_name = record['DistinguishedName'].split(',')    #get hostname
+    subdomain = distinguished_name[0].replace('DC=', '') #extract subdomain
+    root = distinguished_name[1].replace('DC=', '')    #extract root domain
+    fqdn = assemble_fqdn(subdomain, root)
+
+    # Get value
+    for item in record['RecordData']['CimInstanceProperties']:
+        if item['Name'] == "IPv4Address":
+            dest = item['Value'].strip('.')
+
+    # Integrate
+    if fqdn not in dns_set:
+        dns_set[fqdn] = utils.dns(fqdn, source='ActiveDirectory', root=root)
+    dns_set[fqdn].link(dest, 'ipv4')
+
+    return dns_set
+
+def add_CNAME(record, dns_set):
+    distinguished_name = record['DistinguishedName'].split(',')
+    subdomain = distinguished_name[0].strip('DC=')
+    root = distinguished_name[1].strip('DC=')
+    fqdn = assemble_fqdn(subdomain, root)
+    
+    for item in record['RecordData']['CimInstanceProperties']:
+        if item['Name'] == "HostNameAlias":
+            dest = item['Value']
+            if not dest.endswith('.'):
+                dest += '.'+ root
+            else:
+                dest = dest.strip('.')
+
+    if fqdn not in dns_set:
+        dns_set[fqdn] = utils.dns(fqdn, source='ActiveDirectory', root=root)
+    dns_set[fqdn].link(dest, 'domain')
+
+    return dns_set
+
+def add_PTR(record, dns_set):
+    zone = record['DistinguishedName'].split(',')[1].strip('DC=')
+    subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
+    address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
+    ip = iptools.ipv4(subnet +'.'+ address)
+
+    for item in record['RecordData']['CimInstanceProperties']:
+        if item['Name'] == 'PtrDomainName':
+            dest = item['Value'].strip('.')
+
+    if ip.valid:
+        if ip.ipv4 not in dns_set:
+            dns_set[ip.ipv4] = []
+        dns_set[ip.ipv4].append(dest)
+    
+    return dns_set
+
+
+def assemble_fqdn(subdomain, root):
     if subdomain == '@':
         fqdn = root
     elif subdomain == '*':
@@ -83,14 +107,7 @@ def add_A(record, dns_set):
         fqdn = subdomain
     else:
         fqdn = subdomain + '.' + root
-
-    for item in record['RecordData']['CimInstanceProperties']:
-        if item['Name'] == "IPv4Address":
-            ip = item['Value'].strip('.')
-
-    if fqdn not in dns_set:
-        dns_set[fqdn] = utils.dns(fqdn, source='ActiveDirectory', root=root)
-    dns_set[fqdn].link(ip, 'ipv4')
+    return fqdn
 
 
 if __name__ == '__main__':
