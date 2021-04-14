@@ -18,18 +18,19 @@ async function diffScreens(array) {
     // if has a base image
     if (fs.existsSync("/etc/ext/base/".concat(filename))) {
       // diff images
-      var result = await imgDiff({
+      let result = await imgDiff({
         actualFilename: "/opt/app/out/screenshots/".concat(filename),
         expectedFilename: "/etc/ext/base/".concat(filename),
         diffFilename: "/opt/app/out/review/".concat(filename),
         generateOnlyDiffFile: true
       });
-      console.log(`[DEBUG][screenshotCompare.js] Diffing ${domain} found ${result['diffCount']}`)
-      if (result['imagesAreSame'] == false && result['diffCount'] > 207360) {
-        // if diff pixel count > 10% (where aspect ratio is 1920x1080)
+
+      // if diff pixel count > 10% (where aspect ratio is 1920x1080)
+      if (result['diffCount'] > 207360) {
         console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
         review[domain] = 'imgdiff'
       }
+
     } else {
       review[domain] = 'no_base'
     }
@@ -45,7 +46,7 @@ async function try_ss(domain, protocol, browser) {
   try{
     await page.goto(url, {timeout: 3000});
     await page.screenshot({path: '/opt/app/out/screenshots/'.concat(filename)});
-    // console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
+    console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
     await page.close()
     return true
   } catch (error) {
@@ -56,7 +57,7 @@ async function try_ss(domain, protocol, browser) {
       return false
     } else {
       review[domain] = `no_ss:${error}`
-      // console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
+      console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
     }
     await page.close()
     return true
@@ -79,6 +80,7 @@ async function newBrowser(array) {
   await browser.close();
   return success
 }
+
 
 (async () => {
   console.log('[INFO][screenshotCompare.js] Taking screenshots...')
