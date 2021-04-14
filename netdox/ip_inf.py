@@ -4,13 +4,17 @@ import iptools, nat_inf, utils
 @utils.critical
 def main(ipdict, ptr):
     tmp = {}
+    subnets = set()
     for ip in ipdict:
         _ip = iptools.ipv4(ip)
         if _ip.valid:
             if (not _ip.public) or _ip.in_subnet('103.127.18.0/24') or _ip.in_subnet('119.63.219.195/26'):
-                for sibling in iptools.subnet(f'{_ip.ipv4}/24').iterate():
-                    if sibling not in ipdict:
-                        tmp[sibling] = {'source': 'Generated'}
+                subnet = iptools.subnet(f'{_ip.ipv4}/24')
+                if subnet not in subnets:
+                    subnets.add(subnet)
+                    for sibling in subnet.iterate():
+                        if sibling not in ipdict:
+                            tmp[sibling] = {'source': 'Generated'}
     ipdict = tmp | ipdict   #populate ipdict with unused private ips
 
     for ip in ipdict:
