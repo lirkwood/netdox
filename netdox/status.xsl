@@ -39,7 +39,7 @@
                 <image src="/ps/operations/network/website/screenshot_history/{$date}/{substring-before(@key, '.png')}.jpg"/>
             </block>
         </fragment>
-        <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center,col-2-of-2">
+        <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Actual screenshot</para>
                 <image src="/ps/operations/network/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
