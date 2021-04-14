@@ -34,19 +34,19 @@
         <fragment id="imgdiff_{position()}_img_col1" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Expected screenshot</para>
-                <image src="/ps/network/documentation/website/screenshot_history/{$date}/{substring-before(@key, '.png')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshot_history/{$date}/{substring-before(@key, '.png')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center,col-2-of-2">
             <block label="border-2">
                 <para>Actual screenshot</para>
-                <image src="/ps/network/documentation/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_diff" labels="text-align-center">
             <block label="border-2">
                 <para>Expected screenshot with diff overlay</para>
-                <image src="/ps/network/documentation/website/review/{@key}"/>
+                <image src="/ps/operations/network/website/review/{@key}"/>
             </block>
         </fragment>
     </xsl:for-each>
@@ -61,7 +61,7 @@
         </properties-fragment>
         <fragment id="no_base_{position()}_img" labels="text-align-center">
             <block label="border-2">
-                <image src="/ps/network/documentation/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
