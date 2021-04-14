@@ -29,12 +29,12 @@
                 <xref frag="default" reversetitle="Status Update" docid="_nd_{substring-before(@key,'.png')}" />
             </property>
         </properties-fragment>
-        <fragment id="imgdiff_{position()}_img_col1" labels="text-align-center, col-1-of-2">
+        <fragment id="imgdiff_{position()}_img_col1" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <image src="/ps/network/documentation/website/review/{@key}"/>
             </block>
         </fragment>
-        <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center, col-1-of-2">
+        <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <image src="/ps/network/documentation/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
             </block>
