@@ -77,9 +77,9 @@ def placeholders():
 
 
 @utils.handle
-def compareFilesets():
+def sentenceStale():
     """
-    Archives files present on pageseeder but not locally
+    Adds 30-day timer to files present on pageseeder but not locally
     """
     for folder in urimap:
         folder_uri = urimap[folder]
@@ -122,6 +122,6 @@ def clean():
     # generate placeholders where there is no ss locally or on ps
     placeholders()
 
-    # compareFilesets()
+    # sentenceStale()
     # for folder in urimap:
     #     ps_api.version(urimap[folder])
