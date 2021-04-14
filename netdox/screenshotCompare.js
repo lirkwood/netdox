@@ -14,6 +14,7 @@ function docid(string) {
 async function diffScreens(array) {
   for (let index = 0; index < array.length; index++) {
     const domain = array[index]
+    console.log(`[DEBUG][screenshotCompare.js] Diffing ${domain}`)
     const filename = docid(domain).concat('.png')
     // if has a base image
     if (fs.existsSync("/etc/ext/base/".concat(filename))) {
@@ -38,6 +39,7 @@ async function diffScreens(array) {
       review[filename] = 'no_base'
     }
   }
+  return true
 }
 
 async function try_ss(dmn, protocol, browser) {
@@ -91,13 +93,9 @@ async function newBrowser(array) {
   let second = domains.slice(thirdLength, 2*thirdLength)
   let third = domains.slice(2*thirdLength)
 
-  let firstReturned = newBrowser(first)
-  let secondReturned = newBrowser(second)
-  let thirdReturned = newBrowser(third)
-
-  let firstDiff = diffScreens(firstReturned)
-  let secondDiff = diffScreens(secondReturned)
-  let thirdDiff = diffScreens(thirdReturned)
+  let firstDiff = newBrowser(first).then(success => {diffScreens(success)})
+  let secondDiff = newBrowser(second).then(success => {diffScreens(success)})
+  let thirdDiff = newBrowser(third).then(success => {diffScreens(success)})
 
   await firstDiff
   await secondDiff
