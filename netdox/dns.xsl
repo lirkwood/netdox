@@ -55,7 +55,7 @@
                         <property name="source"     title="DNS Source"      value="{xpf:string[@key = 'source']}" />
                         <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'icinga']">
-                        <property name="icinga"     title="Icinga Display Name"      value="{.}" />
+                        <property name="icinga"     title="Icinga Display Name"      value="{xpf:string[@key = 'icinga']}" />
                             </xsl:when>
                             <xsl:otherwise>
                         <property name="icinga"     title="Icinga Display Name"      value="Not Monitored" />
