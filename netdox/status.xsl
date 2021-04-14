@@ -24,7 +24,9 @@
         </properties-fragment>
     </section>
     <section id="imgdiff">
-        <heading level="2">Sites that look different today</heading>
+        <fragment id="imgdiff_title">
+            <heading level="2">Sites that look different today</heading>
+        </fragment>
     <xsl:for-each select="$review/xpf:map/xpf:string[. = 'imgdiff']">
         <properties-fragment id="imgdiff_{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
@@ -52,7 +54,9 @@
     </xsl:for-each>
     </section>
     <section id="no_base">
-        <heading level="2">Sites with no base image</heading>
+        <fragment id="nose_base_title">
+            <heading level="2">Sites with no base image</heading>
+        </fragment>
     <xsl:for-each select="$review/xpf:map/xpf:string[. = 'no_base']">
         <properties-fragment id="no_base_{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
@@ -67,7 +71,9 @@
     </xsl:for-each>
     </section>
     <section id="no_ss">
-        <heading level="2">Sites Puppeteer failed to screenshot</heading>
+        <fragment id="nose_ss_title">
+            <heading level="2">Sites Puppeteer failed to screenshot</heading>
+        </fragment>
     <xsl:for-each select="$review/xpf:map/xpf:string[substring-before(., ':') = 'no_ss']">
         <properties-fragment id="no_ss_{position()}">
             <property name="page" title="Webpage DNS Record" datatype="xref">
