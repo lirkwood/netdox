@@ -30,6 +30,8 @@ async function diffScreens(array) {
         if (result['diffCount'] > 207360) {
           console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
           review[filename] = 'imgdiff'
+        } else {
+          console.log(`[DEBUG][screenshotCompare.js] ${review['diffCount']} diff pixels for ${domain}`)
         }
       }
     } else {
@@ -92,8 +94,6 @@ async function newBrowser(array) {
   let firstReturned = newBrowser(first)
   let secondReturned = newBrowser(second)
   let thirdReturned = newBrowser(third)
-
-  console.log('[INFO][screenshotCompare.js] Comparing screenshots to base images...')
 
   let firstDiff = diffScreens(firstReturned)
   let secondDiff = diffScreens(secondReturned)
