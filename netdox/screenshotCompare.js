@@ -12,20 +12,25 @@ function docid(string) {
 
 
 async function diffScreens(array) {
-  console.log('[INFO][screenshotCompare.js] Comparing screenshots to base images...')
   for (let index = 0; index < array.length; index++) {
-    const filename = array[index]
+    const domain = array[index]
+    const filename = docid(domain).concat('.png')
+    // if has a base image
     if (fs.existsSync("/etc/ext/base/".concat(filename))) {
+      // diff images
       let result = await imgDiff({
         actualFilename: "/opt/app/out/screenshots/".concat(filename),
         expectedFilename: "/etc/ext/base/".concat(filename),
         diffFilename: "/opt/app/out/review/".concat(filename),
         generateOnlyDiffFile: true
       });
+
       if (result['imagesAreSame'] == false) {
-        // 2do: add pixel threshold using result['diffCount']
-        console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
-        review[filename] = 'imgdiff'
+        // if diff pixel count > 10% (where aspect ratio is 1920x1080)
+        if (result['diffCount'] > 207360) {
+          console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
+          review[filename] = 'imgdiff'
+        }
       }
     } else {
       review[filename] = 'no_base'
@@ -88,6 +93,8 @@ async function newBrowser(array) {
   let firstReturned = newBrowser(first)
   let secondReturned = newBrowser(second)
   let thirdReturned = newBrowser(third)
+
+  console.log('[INFO][screenshotCompare.js] Comparing screenshots to base images...')
 
   let firstDiff = diffScreens(firstReturned)
   let secondDiff = diffScreens(secondReturned)
