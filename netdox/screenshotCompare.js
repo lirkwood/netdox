@@ -3,7 +3,7 @@ var { imgDiff } = require("img-diff-js");
 const fs = require('fs');
 const dns = require('./src/dns.json');
 var domains = Object.keys(dns)
-var review = {}     // domains that failed the imagdiff process in some way
+var review = {}     // domains that failed the imagediff process in some way
 
 
 function docid(string) {
@@ -36,7 +36,6 @@ async function diffScreens(array) {
       review[filename] = 'no_base'
     }
   }
-  fs.writeFileSync('/opt/app/src/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
 }
 
 async function try_ss(dmn, protocol, browser) {
@@ -103,4 +102,6 @@ async function newBrowser(array) {
   await firstDiff
   await secondDiff
   await thirdDiff
+
+  fs.writeFileSync('/opt/app/src/review.json', JSON.stringify(review, null, 2), (err) => {if (err) throw err;})
 })();
