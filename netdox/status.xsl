@@ -48,7 +48,7 @@
         <fragment id="imgdiff_{position()}_img_diff" labels="text-align-center">
             <block label="border-2">
                 <para>Expected screenshot with diff overlay</para>
-                <image src="/ps/operations/network/website/review/{@key}"/>
+                <image src="/ps/operations/network/website/review/{substring-before(@key, '.png')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
