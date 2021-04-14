@@ -29,12 +29,13 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version"     title="Template version"   value="4.1" />
+                        <property name="template_version"     title="Template version"   value="5.0" />
                     </properties>
                 </metadata>
 
                 <section id="title">
                     <fragment id="title">
+                        <heading level="2">DNS Record</heading>
                     <xsl:choose>
                         <xsl:when test="contains($name, '_wildcard_')">
                             <heading level="1"><xsl:value-of select="replace($name,'_wildcard_','*.')"/></heading>
@@ -49,9 +50,9 @@
                 <section id="details" title="details">
 
                     <properties-fragment id="info">
-                        <property name="domain"       title="Domain"        value="{$name}" />
-                        <property name="root"       title="Root"        value="{xpf:string[@key = 'root']}" />
-                        <property name="source"     title="Source"      value="{xpf:string[@key = 'source']}" />
+                        <property name="name"       title="Name"        value="{$name}" />
+                        <property name="root"       title="Root Domain"        value="{xpf:string[@key = 'root']}" />
+                        <property name="source"     title="DNS Source"      value="{xpf:string[@key = 'source']}" />
                         <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'icinga']">
                         <property name="icinga"     title="Icinga Display Name"      value="{.}" />
@@ -62,22 +63,22 @@
                         </xsl:choose>
                         <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'license']">
-                        <property name="license"     title="License"      datatype="xref" >
+                        <property name="license"     title="PageSeeder License"      datatype="xref" >
                             <xref frag="default" uriid="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
                         </property>
                             </xsl:when>
                             <xsl:otherwise>
-                        <property name="license" title="License" value="—" />
+                        <property name="license" title="PageSeeder License" value="—" />
                             </xsl:otherwise>
                         </xsl:choose>
                         <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'org']">
-                        <property name="organization"     title="Organization"      datatype="xref" >
+                        <property name="organization"     title="Licensed Organization"      datatype="xref" >
                             <xref frag="default" uriid="{xpf:string[@key = 'org']}" reversetitle="Domain using license issued to this organization."/>
                         </property>
                             </xsl:when>
                             <xsl:otherwise>
-                        <property name="organization" title="Organization" value="—" />
+                        <property name="organization" title="Licensed Organization" value="—" />
                             </xsl:otherwise>
                         </xsl:choose>
                     </properties-fragment>
@@ -96,19 +97,14 @@
                     <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
                         <xsl:choose>
                             <xsl:when test="not(string-length(.) > 75)">
-                        <property name="alias" title="Alias to" datatype="xref">
+                        <property name="cname" title="CNAME" datatype="xref">
                             <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this domain"><xsl:value-of select="."/></xref>
                         </property>
                             </xsl:when>
                             <xsl:otherwise>
-                        <property name="alias" title="Alias to" value="{.}" />
+                        <property name="cname" title="CNAME" value="{.}" />
                             </xsl:otherwise>
                         </xsl:choose>
-                    </xsl:for-each>
-                    <xsl:for-each select="xpf:array[@key = 'nat']/xpf:string">
-                        <property name="nat_dest" title="NAT Destination" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="NAT alias"><xsl:value-of select="."/></xref>
-                        </property>
                     </xsl:for-each>
                     <xsl:for-each select="xpf:array[@key = 'apps']/xpf:string">
                         <property name="app" title="Application" datatype="xref">
@@ -144,8 +140,6 @@
                     </properties-fragment>
                     
                 </section>
-                
-                <section id="ansible" title="Ansible"/>
             
             </document>
         </xsl:result-document>

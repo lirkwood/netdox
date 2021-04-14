@@ -27,13 +27,14 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version" title="Template version" value="2.0" />
+                        <property name="template_version" title="Template version" value="2.1" />
                     </properties>
                 </metadata>
     
                 <section id="title">
                     <fragment id="title">
-                        <heading level="1">k8s_app: <xsl:value-of select="@key"/></heading>
+                        <heading level="2">Kubernetes App</heading>
+                        <heading level="1"><xsl:value-of select="@key"/></heading>
                     </fragment>
                 </section>
                 

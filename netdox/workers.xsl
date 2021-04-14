@@ -32,7 +32,8 @@
 
             <section id="title">
                 <fragment id="title">
-                    <heading level="1">k8s_worker: <xsl:value-of select="$name"/></heading>
+                    <heading level="2">Kubernetes Worker</heading>
+                    <heading level="1"><xsl:value-of select="$name"/></heading>
                 </fragment>
 
                 <properties-fragment id="vm">
@@ -53,6 +54,7 @@
                     reversetitle="Kubernetes worker running this app"/>
                 </xsl:for-each>
                 </xref-fragment>
+                
             </section>
 
         </document>

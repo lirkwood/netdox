@@ -23,14 +23,18 @@
 
         <metadata>
           <properties>
-            <property name="template-version"     title="Template version"   value="1.2" />
+            <property name="template-version"     title="Template version"   value="2.0" />
           </properties>
         </metadata>
-	
-	      <section id="details">
+
+        <section id="title">
         	<fragment id="title">
-			      <heading level="1">xo_pool: <xsl:value-of select="$label" /></heading>
+            <heading level="2">Xen Orchestra Pool</heading>
+			      <heading level="1"><xsl:value-of select="$label" /></heading>
         	</fragment>
+        </section>
+        
+	      <section id="details">
           <properties-fragment id="core">
             <property name="name-label"         title="Label"          value="{$label}" />
             <property name="name-description"   title="Description"              value="{xpf:string[@key='name_description']}" />

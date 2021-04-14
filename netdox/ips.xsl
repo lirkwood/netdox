@@ -20,12 +20,13 @@
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="1.6" />
+                <property name="template_version"     title="Template version"   value="2.0" />
             </properties>
         </metadata>
 
         <section id="title">
             <fragment id="title">
+                <heading level="2">IP Address</heading>
                 <heading level="1"><xsl:value-of select="@key"/></heading>
             </fragment>
         </section>
@@ -33,16 +34,16 @@
         <section id="details" title="details">
         
             <properties-fragment id="addresses">
-                <property name="network"               title="Network"          value="{xpf:string[@key = 'network']}" />
-                <property name="subnet"               title="Subnet"          value="{xpf:string[@key = 'subnet']}" />
                 <property name="ipv4"               title="IP"          value="{@key}" /> 
+                <property name="subnet"               title="Subnet"          value="{xpf:string[@key = 'subnet']}" />
+                <property name="location"               title="Location"          value="{xpf:string[@key = 'location']}" />
                 <xsl:for-each select="xpf:string[@key = 'nat']">
-                <property name="nat_dest" title="NAT Destination" datatype="xref">
+                <property name="nat" title="NAT Destination" datatype="xref">
                     <xref frag="default" docid="_nd_{translate(.,'.','_')}"
                     reversetitle="NAT alias" />
                 </property>
                 </xsl:for-each>
-                <property name="source" title="Source" value="{xpf:string[@key = 'source']}" />
+                <property name="source" title="DNS Source" value="{xpf:string[@key = 'source']}" />
             </properties-fragment>
 
             <properties-fragment id="reversedns">

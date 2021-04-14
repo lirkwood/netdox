@@ -31,13 +31,14 @@
 
         <metadata>
           <properties>
-            <property name="template-version"     title="Template version"   value="1.1" />
+            <property name="template-version"     title="Template version"   value="2.0" />
           </properties>
         </metadata>
 	
         <section id="title">
         	<fragment id="title">
-            <heading level="1">xo_vm: <xsl:value-of select="xpf:string[@key='name_label']" /></heading>
+            <heading level="2">Xen Orchestra VM</heading>
+            <heading level="1"><xsl:value-of select="xpf:string[@key='name_label']" /></heading>
         	</fragment>
         </section>
 
@@ -59,8 +60,7 @@
               <xref frag="default" docid="_nd_{translate(xpf:string[@key='mainIpAddress'], '.', '_')}" reversetitle="{xpf:string[@key='name_label']} in XO" />
             </xsl:if>
             </property>
-	    <property name="subnet" title="Subnet" value="{xpf:string[@key = 'subnet']}" />
-            <property name="ipv6"               title="IPv6"          value="{xpf:map[@key='addresses']/xpf:string[@key='0/ipv6/0']}" />
+            <property name="subnet" title="Subnet" value="{xpf:string[@key = 'subnet']}" />
           </properties-fragment>
           <properties-fragment id="os_version">
             <property name="os-name"            title="OS name"        value="{xpf:map[@key='os_version']/xpf:string[@key='name']}" />

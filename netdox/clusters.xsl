@@ -19,9 +19,16 @@
                 <uri docid="_nd_{translate($name,'.','_')}" title="k8s_cluster: {$name}"><labels>show-reversexrefs</labels></uri>
             </documentinfo>
 
+            <metadata>
+                <properties>
+                    <property name="template_version" title="Template version" value="1.0" />
+                </properties>
+            </metadata>
+
             <section id="title">
                 <fragment id="1">
-                <heading level="1">k8s_cluster: <xsl:value-of select="$name"/></heading>
+                <heading level="2">Kubernetes Cluster</heading>
+                <heading level="1"><xsl:value-of select="$name"/></heading>
                 </fragment>
             </section>
 
