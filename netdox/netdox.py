@@ -256,12 +256,12 @@ def xslt(xsl, src, out=None):
 # Imgdiff script #
 ##################
 
-@utils.handle
+@utils.critical
 def screenshots():
     """
     Runs screenshotCompare node.js script and writes output using xslt
     """
-    subprocess.run('node screenshotCompare.js', shell=True)
+    subprocess.run('node screenshotCompare.js', check=True, shell=True)
     xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
 
 
