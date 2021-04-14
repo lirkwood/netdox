@@ -28,18 +28,18 @@ async function diffScreens(array) {
       if (result['imagesAreSame'] == false && result['diffCount'] > 207360) {
         // if diff pixel count > 10% (where aspect ratio is 1920x1080)
         console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
-        review[filename] = 'imgdiff'
+        review[domain] = 'imgdiff'
       }
     } else {
-      review[filename] = 'no_base'
+      review[domain] = 'no_base'
     }
   }
   return true
 }
 
-async function try_ss(dmn, protocol, browser) {
-  var filename = docid(dmn).concat('.png')
-  var url = protocol.concat(dmn)
+async function try_ss(domain, protocol, browser) {
+  var filename = docid(domain).concat('.png')
+  var url = protocol.concat(domain)
 
   const page = await browser.newPage();
   try{
@@ -51,11 +51,11 @@ async function try_ss(dmn, protocol, browser) {
   } catch (error) {
     // if failed due to cert error on https try with http
     if (error.toString().includes('net::ERR_CERT') && (protocol == 'https://')) {
-      await try_ss(dmn, 'http://', browser)
+      await try_ss(domain, 'http://', browser)
     } else if (error.toString().includes('Target closed')) {
       return false
     } else {
-      review[filename] = `no_ss:${error}`
+      review[domain] = `no_ss:${error}`
       // console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
     }
     await page.close()
