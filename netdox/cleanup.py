@@ -26,10 +26,11 @@ def screenshotHistory():
     os.mkdir(f'/opt/app/out/screenshot_history/{today}')
     with open('src/review.json','r') as stream:
         review = json.load(stream)
-        for image in review:
-            if review[image] == 'imgdiff' or review[image].startswith('no_ss'):
+        for domain in review:
+            if review[domain] == 'imgdiff' or review[domain].startswith('no_ss'):
+                pngName = f"{domain.replace('.','_')}.png"
                 try:
-                    shutil.copyfile(f'/etc/ext/base/{image}', f'/opt/app/out/screenshot_history/{today}/{image}')
+                    shutil.copyfile(f'/etc/ext/base/{pngName}', f'/opt/app/out/screenshot_history/{today}/{pngName}')
                 except FileNotFoundError:
                     pass
 
@@ -69,11 +70,11 @@ def placeholders():
 
     with open('src/review.json','r') as stream:
         review = json.load(stream)
-        for png in review:
-            jpg = png.replace('.png','.jpg')
-            if (jpg not in existing_screens) and review[png].startswith('no_ss'):
-                print(f'[INFO][cleanup.py] Generated placeholder image for {jpg}')
-                shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpg}')
+        for domain in review:
+            jpgName = f"{domain.replace('.','_')}.jpg"
+            if (jpgName not in existing_screens) and review[domain].startswith('no_ss'):
+                print(f'[INFO][cleanup.py] Generated placeholder image for {jpgName}')
+                shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpgName}')
 
 
 @utils.handle

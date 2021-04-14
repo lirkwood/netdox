@@ -32,25 +32,25 @@
     <xsl:for-each select="$review/xpf:map/xpf:string[. = 'imgdiff']">
         <properties-fragment id="imgdiff_{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
-                <xref frag="default" reversetitle="Status Update" docid="_nd_{substring-before(@key,'.png')}" />
+                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
             </property>
         </properties-fragment>
         <fragment id="imgdiff_{position()}_img_col1" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Expected screenshot</para>
-                <image src="/ps/operations/network/website/screenshot_history/{$date}/{substring-before(@key, '.png')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshot_history/{$date}/{translate(@key, '.', '_')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Actual screenshot</para>
-                <image src="/ps/operations/network/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshots/{translate(@key, '.', '_')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_diff" labels="text-align-center">
             <block label="border-2">
                 <para>Expected screenshot with diff overlay</para>
-                <image src="/ps/operations/network/website/review/{substring-before(@key, '.png')}.jpg"/>
+                <image src="/ps/operations/network/website/review/{translate(@key, '.', '_')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
@@ -62,12 +62,12 @@
     <xsl:for-each select="$review/xpf:map/xpf:string[. = 'no_base']">
         <properties-fragment id="no_base_{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
-                <xref frag="default" reversetitle="Status Update" docid="_nd_{substring-before(@key,'.png')}" />
+                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
             </property>
         </properties-fragment>
         <fragment id="no_base_{position()}_img" labels="text-align-center">
             <block label="border-2">
-                <image src="/ps/operations/network/website/screenshots/{substring-before(@key, '.png')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshots/{translate(@key, '.', '_')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
@@ -79,7 +79,7 @@
     <xsl:for-each select="$review/xpf:map/xpf:string[substring-before(., ':') = 'no_ss']">
         <properties-fragment id="no_ss_{position()}">
             <property name="page" title="Webpage DNS Record" datatype="xref">
-                <xref frag="default" reversetitle="Status Update" docid="_nd_{substring-before(@key,'.png')}" />
+                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
             </property>
         </properties-fragment>
     </xsl:for-each>
