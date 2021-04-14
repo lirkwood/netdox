@@ -16,23 +16,7 @@ def main():
 	forward = {}
 	reverse = {}
 
-	header = genheader()
-	if not header:
-		return (forward, reverse)
-
-	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
-	response = json.loads(r.text)
-	if "error" in response:
-		print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
-		return (forward, reverse)
-	domains = {}
-	for record in response['data']:
-		if record['id'] not in domains:
-			domains[record['id']] = record['name']
-	
-	for id in domains:
-		domain = domains[id]
-
+	for id, domain in fetchDomains():
 		header = genheader()
 
 		r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=header)
@@ -82,38 +66,33 @@ def main():
 	return (forward, reverse)
 
 
-def genheader():
-	try:
-		with open('src/authentication.json','r') as stream:
-			try:
-				keys = json.load(stream)
-				api = keys['dnsmadeeasy']['api']
-				secret = keys['dnsmadeeasy']['secret']
-			except JSONDecodeError:
-				print('[ERROR][dnsme_domains.py] Incorrect formatting in src/authentication.json. Unable to read details.')
-				return None
-			except KeyError:
-				print('[ERROR][dnsme_domains.py] Missing or corrupted authentication details')
-				return None
-			else:
-				if api != '' and secret != '':
-					time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
-					hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
-					
-					header = {	#populate header
-					"x-dnsme-apiKey" : api,
-					"x-dnsme-requestDate" : time,
-					"x-dnsme-hmac" : hash,
-					"accept" : 'application/json'
-					}
-					
-					return header
-				else:
-					return None
+def fetchDomains():
+	response = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=genheader()).text
+	jsondata = json.loads(response)['data']
+	if "error" in response:
+		print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
+	else:
+		for record in jsondata:
+			yield (record['id'], record['name'])
 
-	except FileNotFoundError:
-		print('[ERROR][dnsme_domains.py] Missing or inaccessible src/authentication.json')
-		return None
+
+def genheader():
+	with open('src/authentication.json','r') as stream:
+		creds = json.load(stream)['dnsmadeeasy']
+		api = creds['api']
+		secret = creds['secret']
+
+		time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
+		hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+		
+		header = {	#populate header
+		"x-dnsme-apiKey" : api,
+		"x-dnsme-requestDate" : time,
+		"x-dnsme-hmac" : hash,
+		"accept" : 'application/json'
+		}
+		
+		return header
 
 
 	#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
