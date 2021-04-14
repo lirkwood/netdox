@@ -12,35 +12,30 @@ function pngName(string) {
 
 
 async function diffScreens(array) {
-	try {
-		for (let index = 0; index < array.length; index++) {
-			const domain = array[index]
-			const filename = pngName(domain)
-			// if has a base image
-			if (fs.existsSync("/etc/ext/base/".concat(filename))) {
-				// diff images
-				let { diffCount } = await imgDiff({
-					actualFilename: "/opt/app/out/screenshots/".concat(filename),
-					expectedFilename: "/etc/ext/base/".concat(filename),
-					diffFilename: "/opt/app/out/review/".concat(filename),
-					generateOnlyDiffFile: true
-				});
+	for (let index = 0; index < array.length; index++) {
+		const domain = array[index]
+		const filename = pngName(domain)
+		// if has a base image
+		if (fs.existsSync("/etc/ext/base/".concat(filename))) {
+			// diff images
+			let { diffCount } = await imgDiff({
+				actualFilename: "/opt/app/out/screenshots/".concat(filename),
+				expectedFilename: "/etc/ext/base/".concat(filename),
+				diffFilename: "/opt/app/out/review/".concat(filename),
+				generateOnlyDiffFile: true
+			});
 
-				// if diff pixel count > 10% (where aspect ratio is 1920x1080)
-				if (diffCount > 207360) {
-					console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
-					review[domain] = 'imgdiff'
-				}
-
-			} else {
-				review[domain] = 'no_base'
+			// if diff pixel count > 10% (where aspect ratio is 1920x1080)
+			if (diffCount > 207360) {
+				console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
+				review[domain] = 'imgdiff'
 			}
+
+		} else {
+			review[domain] = 'no_base'
 		}
-		return true
-	} catch (error) {
-		console.log(array)
-		throw error
 	}
+	return true
 }
 
 async function try_ss(domain, protocol, browser) {
