@@ -19,24 +19,12 @@ def main():
 	for id, domain in fetchDomains():
 		header = genheader()
 
-		r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=header)
-		records = json.loads(r.text)
+		response = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=header).text
+		records = json.loads(response)['data']
 
-		for record in records['data']:
+		for record in records:
 			if record['type'] == 'A':
-				name = record['name']
-
-				if len(name) == 0:
-					name = domain
-				elif domain in name:
-					pass
-				elif not name.endswith('.'):
-					name += '.'+ domain
-
-				name = name.replace('*.','_wildcard_.')
-				if name not in forward:
-					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
-				forward[name].link(record['value'], 'ipv4')
+				forward = add_A(record, domain, forward)
 			
 			elif record['type'] == 'CNAME':
 				name = record['name'] +'.'+ domain
@@ -66,6 +54,25 @@ def main():
 	return (forward, reverse)
 
 
+def genheader():
+	with open('src/authentication.json','r') as stream:
+		creds = json.load(stream)['dnsmadeeasy']
+		api = creds['api']
+		secret = creds['secret']
+
+		time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
+		hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+		
+		header = {
+		"x-dnsme-apiKey" : api,
+		"x-dnsme-requestDate" : time,
+		"x-dnsme-hmac" : hash,
+		"accept" : 'application/json'
+		}
+		
+		return header
+
+
 def fetchDomains():
 	response = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=genheader()).text
 	jsondata = json.loads(response)['data']
@@ -76,26 +83,30 @@ def fetchDomains():
 			yield (record['id'], record['name'])
 
 
-def genheader():
-	with open('src/authentication.json','r') as stream:
-		creds = json.load(stream)['dnsmadeeasy']
-		api = creds['api']
-		secret = creds['secret']
+def add_A(record, root, dns_set):
+	subdomain = record['name']
+	ip = record['value']
+	fqdn = assemble_fqdn(subdomain, root)
 
-		time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
-		hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
-		
-		header = {	#populate header
-		"x-dnsme-apiKey" : api,
-		"x-dnsme-requestDate" : time,
-		"x-dnsme-hmac" : hash,
-		"accept" : 'application/json'
-		}
-		
-		return header
+	if fqdn not in dns_set:
+		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
+	dns_set[fqdn].link(ip, 'ipv4')
+
+	return dns_set
 
 
-	#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
+def assemble_fqdn(subdomain, root):
+	if not subdomain:
+		fqdn = root
+	elif root in subdomain:
+		fqdn = subdomain
+	elif subdomain.endswith('.'):
+		fqdn = subdomain
+	elif subdomain == '*':
+		fqdn = '_wildcard_.' + root
+	else:
+		fqdn = subdomain +'.'+ root
+	return fqdn
 
 if __name__ == '__main__':
 	main()
