@@ -17,9 +17,7 @@ def main():
 	reverse = {}
 
 	for id, domain in fetchDomains():
-		header = genheader()
-
-		response = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=header).text
+		response = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=genheader()).text
 		records = json.loads(response)['data']
 
 		for record in records:
@@ -27,29 +25,10 @@ def main():
 				forward = add_A(record, domain, forward)
 			
 			elif record['type'] == 'CNAME':
-				name = record['name'] +'.'+ domain
-				value = record['value']
-				name = name.replace('*.','_wildcard_.')
-
-				if len(value) == 0:
-					value = domain
-				elif value.endswith('.'):
-					value = value.strip('.')
-				else:
-					value += '.'+ domain
-				if name not in forward:
-					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
-				forward[name].link(value, 'domain')
+				forward = add_CNAME(record, domain, forward)
 
 			elif record['type'] == 'PTR':
-				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])
-				ip = iptools.ipv4(subnet +'.'+ record['name'])
-				value = record['value'].strip('.')
-				
-				if ip.valid:
-					if ip.ipv4 not in reverse:
-						reverse[ip.ipv4] = []
-					reverse[ip.ipv4].append(value)
+				reverse = add_PTR(record, domain, reverse)
 
 	return (forward, reverse)
 
@@ -95,6 +74,34 @@ def add_A(record, root, dns_set):
 	return dns_set
 
 
+def add_CNAME(record, root, dns_set):
+	subdomain = record['name']
+	value = record['value']
+	fqdn = assemble_fqdn(subdomain, root)
+	dest = assemble_fqdn(value, root)
+
+	if fqdn not in dns_set:
+		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
+	dns_set[fqdn].link(dest, 'domain')	
+
+	return dns_set
+
+
+def add_PTR(record, root, dns_set):
+	subnet = '.'.join(root.replace('.in-addr.arpa','').split('.')[::-1])
+	addr = record['name']
+	value = record['value']
+	ip = addr +'.'+ subnet
+	fqdn = assemble_fqdn(value, root)
+	
+	if iptools.valid_ip(ip):
+		if ip not in dns_set:
+			dns_set[ip] = []
+		dns_set[ip].append(fqdn)
+	
+	return dns_set
+
+
 def assemble_fqdn(subdomain, root):
 	if not subdomain:
 		fqdn = root
@@ -107,6 +114,3 @@ def assemble_fqdn(subdomain, root):
 	else:
 		fqdn = subdomain +'.'+ root
 	return fqdn
-
-if __name__ == '__main__':
-	main()
