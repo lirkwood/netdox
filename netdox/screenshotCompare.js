@@ -14,7 +14,6 @@ function docid(string) {
 async function diffScreens(array) {
   for (let index = 0; index < array.length; index++) {
     const domain = array[index]
-    console.log(`[DEBUG][screenshotCompare.js] Diffing ${domain}`)
     const filename = docid(domain).concat('.png')
     // if has a base image
     if (fs.existsSync("/etc/ext/base/".concat(filename))) {
@@ -25,15 +24,11 @@ async function diffScreens(array) {
         diffFilename: "/opt/app/out/review/".concat(filename),
         generateOnlyDiffFile: true
       });
-
-      if (result['imagesAreSame'] == false) {
+      console.log(`[DEBUG][screenshotCompare.js] Diffing ${domain} found ${result['diffCount']}`)
+      if (result['imagesAreSame'] == false && result['diffCount'] > 207360) {
         // if diff pixel count > 10% (where aspect ratio is 1920x1080)
-        if (result['diffCount'] > 207360) {
-          console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
-          review[filename] = 'imgdiff'
-        } else {
-          console.log(`[DEBUG][screenshotCompare.js] ${review['diffCount']} diff pixels for ${domain}`)
-        }
+        console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
+        review[filename] = 'imgdiff'
       }
     } else {
       review[filename] = 'no_base'
