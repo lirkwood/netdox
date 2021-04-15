@@ -1,5 +1,6 @@
 import ad_domains, dnsme_domains, k8s_domains
 import k8s_inf, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
+from ps_api import get_fragment
 import cleanup, utils
 
 import subprocess, json, os
@@ -57,7 +58,7 @@ def init():
         with open('src/exclusions.txt','r') as stream:
             exclusions = stream.read().splitlines()
     except FileNotFoundError:
-        print('[INFO][generate.py] No exclusions.txt detected. All domains will be included.')
+        print('[INFO][netdox.py] No exclusions.txt detected. All domains will be included.')
 
     return exclusions
 
@@ -261,6 +262,19 @@ def screenshots():
     """
     Runs screenshotCompare node.js script and writes output using xslt
     """
+    from ps_api import get_uris, get_uri
+    config_files = BeautifulSoup(get_uris(cleanup.getUrimap('375156')['config']), features='xml')
+    for uri in config_files("uri"):
+        if uri["path"].endswith('exclusions.psml'):
+            exclusions_psml = BeautifulSoup(get_fragment(uri["id"], '2'))
+
+    exclusions = []
+    for fqdn in exclusions_psml("para"):
+        exclusions.append(fqdn.string)
+        
+    with open('src/screenshot_exclude.json','w') as stream:
+        stream.write(json.dumps(exclusions))
+
     subprocess.run('node screenshotCompare.js', check=True, shell=True)
     xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
 
