@@ -266,7 +266,7 @@ def screenshots():
     config_files = BeautifulSoup(get_uris(cleanup.getUrimap('375156')['config']), features='xml')
     for uri in config_files("uri"):
         if uri["path"].endswith('exclusions.psml'):
-            exclusions_psml = BeautifulSoup(get_fragment(uri["id"], '2'))
+            exclusions_psml = BeautifulSoup(get_fragment(uri["id"], '2'), features='xml')
 
     exclusions = []
     for fqdn in exclusions_psml("para"):
