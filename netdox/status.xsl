@@ -81,6 +81,7 @@
             <property name="page" title="Webpage DNS Record" datatype="xref">
                 <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
             </property>
+            <property name="error" title="Error Message" value="{.}" />
         </properties-fragment>
     </xsl:for-each>
     </section>
