@@ -18,6 +18,14 @@ def getUrimap(dir_uri):
     return urimap
 
 
+def cleanReview():
+    with open('src/review.json','r') as stream:
+        review = json.load(stream)
+        for image in os.scandir('/opt/app/out/review'):
+            # could potentially not match if domain has underscore :/
+            if image.name.replace('.png','').replace('_','.') not in review:
+                os.remove(image)
+
 def screenshotHistory():
     """
     If screenshotCompare found a different image or couldnt ss, save the base image as it will be overwritten.
@@ -111,6 +119,7 @@ def clean():
     today = str(datetime.now().date())
 
     # save any base imgs about to be overwritten
+    cleanReview()
     screenshotHistory()
     # overwrite
     shutil.rmtree('/etc/ext/base')
