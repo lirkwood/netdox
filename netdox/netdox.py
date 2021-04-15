@@ -1,6 +1,5 @@
 import ad_domains, dnsme_domains, k8s_domains
 import k8s_inf, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
-from ps_api import get_fragment
 import cleanup, utils
 
 import subprocess, json, os
@@ -262,7 +261,7 @@ def screenshots():
     """
     Runs screenshotCompare node.js script and writes output using xslt
     """
-    from ps_api import get_uris, get_uri
+    from ps_api import get_uris, get_fragment
     config_files = BeautifulSoup(get_uris(cleanup.getUrimap('375156')['config']), features='xml')
     for uri in config_files("uri"):
         if uri["path"].endswith('exclusions.psml'):
