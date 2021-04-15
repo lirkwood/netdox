@@ -27,7 +27,6 @@ async function diffScreens(array) {
 
 			// if diff pixel count > 10% (where aspect ratio is 1920x1080)
 			if (diffCount > 207360) {
-				console.log(`[DEBUG][screenshotCompare.js] Found imgdiff on ${filename}`)
 				review[domain] = 'imgdiff'
 			}
 
@@ -46,7 +45,6 @@ async function try_ss(domain, protocol, browser) {
 	try {
 		await page.goto(url, { timeout: 3000 });
 		await page.screenshot({ path: '/opt/app/out/screenshots/'.concat(filename) });
-		console.log(`[INFO][screenshotCompare.js] screenshot saved for ${url}`)
 	} catch (error) {
 		try { await page.close() } catch (err) {};
 		// if failed due to cert error on https try with http
@@ -60,7 +58,6 @@ async function try_ss(domain, protocol, browser) {
 
 		} else {
 			review[domain] = `no_ss:${error}`
-			console.log(`[WARNING][screenshotCompare.js] ${url} failed. ${error}`);
 			return
 		}
 
@@ -80,7 +77,6 @@ async function newBrowser(array) {
 			success.push(domain)
 		} else if (screenshot == 'crashed') {
 			// If puppeteer crashes, start new browser and retry
-			console.log(`[WARNING][screenshotCompare.js] Puppeteer crashed while trying ${domain}`)
 			try { await browser.close() } catch (err) { };
 			var browser = await puppeteer.launch({ defaultViewport: { width: 1920, height: 1080 }, args: ['--no-sandbox'] });
 			index--;
