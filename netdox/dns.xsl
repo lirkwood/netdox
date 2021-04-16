@@ -38,7 +38,7 @@
                         <heading level="2">DNS Record</heading>
                     <xsl:choose>
                         <xsl:when test="contains($name, '_wildcard_')">
-                            <heading level="1"><xsl:value-of select="replace($name,'_wildcard_','*.')"/></heading>
+                            <heading level="1"><xsl:value-of select="replace($name,'_wildcard_','*')"/></heading>
                         </xsl:when>
                         <xsl:otherwise>
                             <heading level="1"><link href="https://{$name}"><xsl:value-of select="$name"/></link></heading>
