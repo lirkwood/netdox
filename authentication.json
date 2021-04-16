@@ -1,0 +1,32 @@
+{
+    "dnsmadeeasy": {
+        "api": "",
+        "secret": ""
+    },
+    "xenorchestra": {
+        "username": "",
+        "password": ""
+    },
+    "pageseeder": {
+        "id": "",
+        "secret": "",
+        "username": "",
+        "password": "",
+        "host": "",
+        "group": ""
+    },
+    "icinga": {
+        "username": "",
+        "password": ""
+    },
+    "kubernetes": {
+        "sandbox": {
+            "server": "",
+            "token": ""
+        },
+        "production": {
+            "server": "",
+            "token": ""
+        }
+    }
+}
