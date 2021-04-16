@@ -1,65 +1,9 @@
 import ad_domains, dnsme_domains, k8s_domains
 import k8s_inf, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
-import cleanup, utils
+import cleanup, utils, init
 
-import subprocess, json, os
+import subprocess, json
 from bs4 import BeautifulSoup
-
-
-##################
-# Initialisation #
-##################
-
-@utils.critical
-def init():
-    """
-    Creates dirs and template files, loads authentication data, excluded domains, etc...
-    """
-    # Put this in init.sh
-    os.mkdir('out')
-    for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'screenshot_history', 'review'):
-        os.mkdir('out/'+path)
-    
-    for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'review'):
-        with open(f'src/{type}.xml','w') as stream:
-            stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE {type} [
-            <!ENTITY json SYSTEM "{type}.json">
-            ]>
-            <{type}>&json;</{type}>""")
-
-    # load pageseeder properties and auth info
-    with open('src/pageseeder.properties','r') as f: 
-        psproperties = f.read()
-    with open('src/authentication.json','r') as f:
-        auth = json.load(f)
-        psauth = auth['pageseeder']
-
-    # overwrite ps properties with external values
-    with open('src/pageseeder.properties','w') as stream:
-        for line in psproperties.splitlines():
-            property = line.split('=')[0]
-            if property in psauth:
-                stream.write(f'{property}={psauth[property]}')
-            else:
-                stream.write(line)
-            stream.write('\n')
-
-    # Specify ps group in Ant build.xml
-    with open('build.xml','r') as stream: 
-        soup = BeautifulSoup(stream, features='xml')
-    with open('build.xml','w') as stream:
-        soup.find('ps:upload')['group'] = psauth['group']
-        stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
-
-    try:
-    # Remove manually excluded domains once all dns sources have been queried
-        with open('src/exclusions.txt','r') as stream:
-            exclusions = stream.read().splitlines()
-    except FileNotFoundError:
-        print('[INFO][netdox.py] No exclusions.txt detected. All domains will be included.')
-
-    return exclusions
 
 
 ######################
@@ -268,7 +212,7 @@ def screenshots():
             exclusions_psml = BeautifulSoup(get_fragment(uri["id"], '2'), features='xml')
 
     exclusions = []
-    for fqdn in exclusions_psml("para"):
+    for fqdn in exclusions_psml.find_all(label='no-screenshot'):
         exclusions.append(fqdn.string)
         
     with open('src/screenshot_exclude.json','w') as stream:
@@ -283,7 +227,7 @@ def screenshots():
 #############
 
 def main():
-    exclusions = init()
+    exclusions = init.init()
 
     master, ptr, ipsources = queries()
     master = exclude(master, exclusions)

@@ -10,11 +10,8 @@ for file in /etc/nfs/*.bin; do
     -K ${OPENSSL_KEY} -iv $(cat '/etc/nfs/vector.txt') -out "/opt/app/src/records/$(basename ${file%.bin}).json" &> /dev/null
 done
 
-for file in /etc/ext/*.bin; do
-    openssl enc -aes-256-cbc -d -in "$file" \
-    -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/$(basename ${file%.bin})"
-done
-
+openssl enc -aes-256-cbc -d -in "/etc/ext/authentication.bin" \
+-K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/authentication.json"
 
 
 if python3 netdox.py
