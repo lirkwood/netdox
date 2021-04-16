@@ -27,11 +27,12 @@ def init():
         
         for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'review'):
             with open(f'src/{type}.xml','w') as stream:
-                stream.write(f"""<?xml version="1.0" encoding="UTF-8"?>
+                stream.write(dedent(f"""
+                <?xml version="1.0" encoding="UTF-8"?>
                 <!DOCTYPE {type} [
                 <!ENTITY json SYSTEM "{type}.json">
                 ]>
-                <{type}>&json;</{type}>""")
+                <{type}>&json;</{type}>"""))
 
         # load pageseeder properties and auth info
         with open('src/pageseeder.properties','r') as f: 
