@@ -122,7 +122,7 @@ def assemble_fqdn(subdomain, root):
 	elif root in subdomain:
 		fqdn = subdomain
 	elif subdomain.endswith('.'):
-		fqdn = subdomain
+		fqdn = subdomain.strip('.')
 	elif subdomain == '*':
 		fqdn = '_wildcard_.' + root
 	else:
