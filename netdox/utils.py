@@ -149,7 +149,7 @@ def handle(func):
         try:
             returned = func(*args, **kwargs)
         except Exception:
-            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n\n {format_exc()}')
+            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
             return None
         else:
             return returned
@@ -167,7 +167,7 @@ def dns_mod(func):
         try:
             returned = func(*args, **kwargs)
         except Exception:
-            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n\n {format_exc()}')
+            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
             return args[0]
         else:
             return returned
