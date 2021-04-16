@@ -1,4 +1,5 @@
 import utils, json, os
+from textwrap import dedent
 from bs4 import BeautifulSoup
 
 ##################
@@ -79,8 +80,8 @@ def kubeconfig(auth):
 
             users += f"""
             - name: {cluster}
-                user:
-                  token: {auth[cluster]['token']}
+              user:
+                token: {auth[cluster]['token']}
             """
 
             contexts += f"""
@@ -92,11 +93,12 @@ def kubeconfig(auth):
 
             current = cluster
 
-        stream.write(f"""apiVersion: v1
+        stream.write(dedent(f"""
+        apiVersion: v1
         Kind: Config
         current-context: {current}
         preferences: {{}}
         clusters: {clusters}
         users: {users}
         contexts: {contexts}
-        """)
+        """))
