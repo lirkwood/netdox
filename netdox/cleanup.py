@@ -81,7 +81,6 @@ def placeholders():
         for domain in review:
             jpgName = f"{domain.replace('.','_')}.jpg"
             if (jpgName not in existing_screens) and review[domain].startswith('no_ss'):
-                print(f'[INFO][cleanup.py] Generated placeholder image for {jpgName}')
                 shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpgName}')
 
 
