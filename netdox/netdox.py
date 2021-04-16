@@ -73,6 +73,7 @@ def nat(dns_set):
     """
     Integrates IPs from NAT into a dns set
     """
+    nat_inf.pfsense()
     for domain in dns_set:
         dns = dns_set[domain]
         for ip in dns.ips:
