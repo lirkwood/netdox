@@ -31,17 +31,18 @@ def extract(jsondata):
     reverse = {}
     for record in jsondata:
         if record['RecordType'] == 'A':
-            forward = add_A(record, forward)
+            forward = add_A(forward, record)
 
         elif record['RecordType'] == 'CNAME':
-            forward = add_CNAME(record, forward)
+            forward = add_CNAME(forward, record)
         
         elif record['RecordType'] == 'PTR':
-            reverse = add_PTR(record, reverse)
+            reverse = add_PTR(reverse, record)
     return (forward, reverse)
 
 
-def add_A(record, dns_set): 
+@utils.dns_mod
+def add_A(dns_set, record): 
     # Get name
     distinguished_name = record['DistinguishedName'].split(',')    #get hostname
     subdomain = distinguished_name[0].replace('DC=', '') #extract subdomain
@@ -60,7 +61,8 @@ def add_A(record, dns_set):
 
     return dns_set
 
-def add_CNAME(record, dns_set):
+@utils.dns_mod
+def add_CNAME(dns_set, record):
     distinguished_name = record['DistinguishedName'].split(',')
     subdomain = distinguished_name[0].strip('DC=')
     root = distinguished_name[1].strip('DC=')
@@ -80,7 +82,8 @@ def add_CNAME(record, dns_set):
 
     return dns_set
 
-def add_PTR(record, dns_set):
+@utils.dns_mod
+def add_PTR(dns_set, record):
     zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
     address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.

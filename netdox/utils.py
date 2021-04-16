@@ -118,6 +118,9 @@ class JSONEncoder(json.JSONEncoder):
 
 
 def critical(func):
+    """
+    For functions which are absolutely necessary. On fatal, entire app stops.
+    """
     funcname = func.__name__
     funcmodule = func.__module__
     if funcmodule == '__main__':
@@ -135,23 +138,27 @@ def critical(func):
     return wrapper
 
 def handle(func):
+    """
+    For functions that are not necessary. On fatal, return None and continue.
+    """
     funcname = func.__name__
     funcmodule = func.__module__
     if funcmodule == '__main__':
         funcmodule = 'netdox'
     def wrapper(*args, **kwargs):
-        print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
         try:
             returned = func(*args, **kwargs)
         except Exception:
             print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n\n {format_exc()}')
             return None
         else:
-            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
             return returned
     return wrapper
 
-def silent(func):
+def dns_mod(func):
+    """
+    For functions that add to some dns set, passed as first arg. On fatal, return dns set and continue.
+    """
     funcname = func.__name__
     funcmodule = func.__module__
     if funcmodule == '__main__':
@@ -161,7 +168,7 @@ def silent(func):
             returned = func(*args, **kwargs)
         except Exception:
             print(f'[WARNING][netdox.py] Function {funcname} from module {funcmodule} threw an exception:\n\n {format_exc()}')
-            return None
+            return args[0]
         else:
             return returned
     return wrapper

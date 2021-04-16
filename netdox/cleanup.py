@@ -111,7 +111,7 @@ def alnum(string):
     return re.sub(r'[^a-zA-Z0-9 .]', '', string)
 
 
-@utils.handle
+@utils.critical
 def clean():
     global urimap
     urimap = getUrimap('375156')

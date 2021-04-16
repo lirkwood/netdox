@@ -36,7 +36,7 @@ def auth():
         quit()
 
 
-@utils.silent
+@utils.handle
 def get_uri(locator, params={}, forurl=False, group=defaultgroup):
     """
     Returns some info on a uri
@@ -50,7 +50,7 @@ def get_uri(locator, params={}, forurl=False, group=defaultgroup):
     r = requests.get(base+service, headers=header, params=params)
     return r.text
 
-@utils.silent
+@utils.handle
 def get_uris(uri, group=defaultgroup, params={}):
     """
     Returns all uris with some relationship to a given uri
@@ -63,7 +63,7 @@ def get_uris(uri, group=defaultgroup, params={}):
     return r.text
 
 
-@utils.silent
+@utils.handle
 def get_files(uri, group=defaultgroup):
     """
     Returns a list of filenames with some relationship (default = child) for a given URI
@@ -75,7 +75,7 @@ def get_files(uri, group=defaultgroup):
     
     return files
 
-@utils.silent
+@utils.handle
 def get_fragment(uri, fragment_id, params={}):
     """
     Returns content of a fragment in some given uri
@@ -85,7 +85,7 @@ def get_fragment(uri, fragment_id, params={}):
     return r.text
 
 
-@utils.silent
+@utils.handle
 def export(uri, params={}):
     """
     Begins export process for some URI and returns relevant thread ID
@@ -95,7 +95,7 @@ def export(uri, params={}):
     return r.text
 
 
-@utils.silent
+@utils.handle
 def get_thread(id):
     """
     Returns information about some PageSeeder process thread
@@ -105,7 +105,7 @@ def get_thread(id):
     return r.text
 
 
-@utils.silent
+@utils.handle
 def archive(uri):
     """
     Begins archive process for some URI
@@ -115,7 +115,7 @@ def archive(uri):
     return r
 
 
-@utils.silent
+@utils.handle
 def version(uri):
     """
     Adds a version to some URI with name as current date/time
