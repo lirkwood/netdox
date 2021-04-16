@@ -1,11 +1,6 @@
-from json.decoder import JSONDecodeError
-from requests import get
-import hmac, hashlib
-import datetime
-import iptools
-import utils
-import json
-import os
+from datetime import datetime
+import hmac, json, hashlib, requests
+import iptools, utils
 
 ##################################################################################
 # requests all domains from dnsme, and then all of their associated dns records. #
@@ -13,110 +8,122 @@ import os
 
 @utils.critical
 def main():
+	"""
+	Returns tuple containing forward and reverse DNS records from DNSMadeEasy
+	"""
 	forward = {}
 	reverse = {}
 
-	header = genheader()
-	if not header:
-		return (forward, reverse)
+	for id, domain in fetchDomains():
+		response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=genheader()).text
+		records = json.loads(response)['data']
 
-	r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=header)
-	response = json.loads(r.text)
-	if "error" in response:
-		print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
-		return (forward, reverse)
-	domains = {}
-	for record in response['data']:
-		if record['id'] not in domains:
-			domains[record['id']] = record['name']
-	
-	for id in domains:
-		domain = domains[id]
-
-		header = genheader()
-
-		r = get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=header)
-		records = json.loads(r.text)
-
-		for record in records['data']:
+		for record in records:
 			if record['type'] == 'A':
-				name = record['name']
-
-				if len(name) == 0:
-					name = domain
-				elif domain in name:
-					pass
-				elif not name.endswith('.'):
-					name += '.'+ domain
-
-				name = name.replace('*.','_wildcard_.')
-				if name not in forward:
-					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
-				forward[name].link(record['value'], 'ipv4')
+				forward = add_A(record, domain, forward)
 			
 			elif record['type'] == 'CNAME':
-				name = record['name'] +'.'+ domain
-				value = record['value']
-				name = name.replace('*.','_wildcard_.')
-
-				if len(value) == 0:
-					value = domain
-				elif value.endswith('.'):
-					value = value.strip('.')
-				else:
-					value += '.'+ domain
-				if name not in forward:
-					forward[name] = utils.dns(name, source='DNSMadeEasy', root=domain)
-				forward[name].link(value, 'domain')
+				forward = add_CNAME(record, domain, forward)
 
 			elif record['type'] == 'PTR':
-				subnet = '.'.join(domain.replace('.in-addr.arpa','').split('.')[::-1])
-				ip = iptools.ipv4(subnet +'.'+ record['name'])
-				value = record['value'].strip('.')
-				
-				if ip.valid:
-					if ip.ipv4 not in reverse:
-						reverse[ip.ipv4] = []
-					reverse[ip.ipv4].append(value)
+				reverse = add_PTR(record, domain, reverse)
 
 	return (forward, reverse)
 
 
 def genheader():
-	try:
-		with open('src/authentication.json','r') as stream:
-			try:
-				keys = json.load(stream)
-				api = keys['dnsmadeeasy']['api']
-				secret = keys['dnsmadeeasy']['secret']
-			except JSONDecodeError:
-				print('[ERROR][dnsme_domains.py] Incorrect formatting in src/authentication.json. Unable to read details.')
-				return None
-			except KeyError:
-				print('[ERROR][dnsme_domains.py] Missing or corrupted authentication details')
-				return None
-			else:
-				if api != '' and secret != '':
-					time = datetime.datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
-					hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
-					
-					header = {	#populate header
-					"x-dnsme-apiKey" : api,
-					"x-dnsme-requestDate" : time,
-					"x-dnsme-hmac" : hash,
-					"accept" : 'application/json'
-					}
-					
-					return header
-				else:
-					return None
+	"""
+	Generates authentication header for DNSME api
+	"""
+	with open('src/authentication.json','r') as stream:
+		creds = json.load(stream)['dnsmadeeasy']
+		api = creds['api']
+		secret = creds['secret']
 
-	except FileNotFoundError:
-		print('[ERROR][dnsme_domains.py] Missing or inaccessible src/authentication.json')
-		return None
+		time = datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
+		hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+		
+		header = {
+		"x-dnsme-apiKey" : api,
+		"x-dnsme-requestDate" : time,
+		"x-dnsme-hmac" : hash,
+		"accept" : 'application/json'
+		}
+		
+		return header
 
 
-	#create hash using secret key as key (as a bytes literal), the time (encoded) in sha1 mode, output as hex
+def fetchDomains():
+	"""
+	Generator which returns a tuple containing one managed domain's ID and name
+	"""
+	response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=genheader()).text
+	jsondata = json.loads(response)['data']
+	if "error" in response:
+		print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
+	else:
+		for record in jsondata:
+			yield (record['id'], record['name'])
 
-if __name__ == '__main__':
-	main()
+
+def add_A(record, root, dns_set):
+	"""
+	Integrates one A record into a dns set from json returned by DNSME api
+	"""
+	subdomain = record['name']
+	ip = record['value']
+	fqdn = assemble_fqdn(subdomain, root)
+
+	if fqdn not in dns_set:
+		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
+	dns_set[fqdn].link(ip, 'ipv4')
+
+	return dns_set
+
+
+def add_CNAME(record, root, dns_set):
+	"""
+	Integrates one CNAME record into a dns set from json returned by DNSME api
+	"""
+	subdomain = record['name']
+	value = record['value']
+	fqdn = assemble_fqdn(subdomain, root)
+	dest = assemble_fqdn(value, root)
+
+	if fqdn not in dns_set:
+		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
+	dns_set[fqdn].link(dest, 'domain')	
+
+	return dns_set
+
+
+def add_PTR(record, root, dns_set):
+	"""
+	Integrates one PTR record into a dns set from json returned by DNSME api
+	"""
+	subnet = '.'.join(root.replace('.in-addr.arpa','').split('.')[::-1])
+	addr = record['name']
+	value = record['value']
+	ip = addr +'.'+ subnet
+	fqdn = assemble_fqdn(value, root)
+	
+	if iptools.valid_ip(ip):
+		if ip not in dns_set:
+			dns_set[ip] = []
+		dns_set[ip].append(fqdn)
+	
+	return dns_set
+
+
+def assemble_fqdn(subdomain, root):
+	if not subdomain:
+		fqdn = root
+	elif root in subdomain:
+		fqdn = subdomain
+	elif subdomain.endswith('.'):
+		fqdn = subdomain
+	elif subdomain == '*':
+		fqdn = '_wildcard_.' + root
+	else:
+		fqdn = subdomain +'.'+ root
+	return fqdn
