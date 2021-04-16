@@ -155,7 +155,7 @@ def handle(func):
             return returned
     return wrapper
 
-def dns_mod(func):
+def mod_set(func):
     """
     For functions that add to some dns set, passed as first arg. On fatal, return dns set and continue.
     """

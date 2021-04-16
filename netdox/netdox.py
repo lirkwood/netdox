@@ -68,7 +68,7 @@ def queries():
 # Non-essential functions #
 ###########################
 
-@utils.dns_mod
+@utils.mod_set
 def nat(dns_set):
     """
     Integrates IPs from NAT into a dns set
@@ -82,7 +82,7 @@ def nat(dns_set):
 
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def xo_vms(dns_set):
     """
     Links domains to Xen Orchestra VMs with the same IP
@@ -99,7 +99,7 @@ def xo_vms(dns_set):
                     pass
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def icinga_labels(dns_set):
     """
     Integrates icinga display labels into a dns set
@@ -116,7 +116,7 @@ def icinga_labels(dns_set):
                     dns.icinga = dns_set[alias].icinga
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def license_keys(dns_set):
     """
     Integrates license keys into a dns set
@@ -128,7 +128,7 @@ def license_keys(dns_set):
                 dns_set[domain].license = license_id
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def license_orgs(dns_set):
     """
     Integrates organisations into a dns set inferred from associated license
@@ -141,7 +141,7 @@ def license_orgs(dns_set):
                 dns.org = org_id
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def labels(dns_set):
     """
     Applies any relevant document labels
@@ -154,7 +154,7 @@ def labels(dns_set):
     #         dns.labels.append('icinga_not_monitored')
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def exclude(dns_set, domain_set):
     """
     Removes dns records with names in some set from some dns set

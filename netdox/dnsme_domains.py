@@ -66,7 +66,7 @@ def fetchDomains():
 			yield (record['id'], record['name'])
 
 
-@utils.dns_mod
+@utils.mod_set
 def add_A(dns_set, record, root):
 	"""
 	Integrates one A record into a dns set from json returned by DNSME api
@@ -81,7 +81,7 @@ def add_A(dns_set, record, root):
 
 	return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def add_CNAME(dns_set, record, root):
 	"""
 	Integrates one CNAME record into a dns set from json returned by DNSME api
@@ -97,7 +97,7 @@ def add_CNAME(dns_set, record, root):
 
 	return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def add_PTR(dns_set, record, root):
 	"""
 	Integrates one PTR record into a dns set from json returned by DNSME api

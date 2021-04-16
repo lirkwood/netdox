@@ -41,7 +41,7 @@ def extract(jsondata):
     return (forward, reverse)
 
 
-@utils.dns_mod
+@utils.mod_set
 def add_A(dns_set, record): 
     # Get name
     distinguished_name = record['DistinguishedName'].split(',')    #get hostname
@@ -61,7 +61,7 @@ def add_A(dns_set, record):
 
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def add_CNAME(dns_set, record):
     distinguished_name = record['DistinguishedName'].split(',')
     subdomain = distinguished_name[0].strip('DC=')
@@ -82,7 +82,7 @@ def add_CNAME(dns_set, record):
 
     return dns_set
 
-@utils.dns_mod
+@utils.mod_set
 def add_PTR(dns_set, record):
     zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
