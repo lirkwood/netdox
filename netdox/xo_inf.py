@@ -4,7 +4,7 @@ import iptools, utils
 authstream = open('src/authentication.json','r')
 auth = json.load(authstream)['xenorchestra']
 args = {
-    'register': ['xo-cli', '--register', 'https://xo.allette.com.au', auth['username'], auth['password']],
+    'register': ['xo-cli', '--register', f"https://{auth['host']}", auth['username'], auth['password']],
     'pools': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--master', 'type=pool'],
     'hosts': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--hostname', '--address', '--CPUs', '--$pool', '--power_state', 'type=host'],
     'vms': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--mainIpAddress', '--addresses', '--os_version', '--$container', '--$pool', '--power_state', 'type=VM'],
