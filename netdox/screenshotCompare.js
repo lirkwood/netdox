@@ -62,7 +62,7 @@ async function try_ss(domain, protocol, browser) {
 
 		} else {
 			review[domain] = `no_ss:${error}`
-			return
+			return false
 		}
 
 	}
