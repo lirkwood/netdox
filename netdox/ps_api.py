@@ -71,7 +71,7 @@ def get_files(uri, params={}, group=defaultgroup):
     files = []
     if 'type' not in params:
         params['type'] = 'document'
-    soup = BeautifulSoup(get_uris(uri, group, {'type': 'document'}), features='xml')
+    soup = BeautifulSoup(get_uris(uri, group, params), features='xml')
     for uri in soup.find_all('uri'):
         files.append(uri['path'].split('/')[-1])
     
