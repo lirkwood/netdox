@@ -1,4 +1,4 @@
-import utils, json, os
+import ps_api, utils, json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
 
@@ -55,14 +55,21 @@ def init():
             soup.find('ps:upload')['group'] = psauth['group']
             stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
-        try:
-        # Remove manually excluded domains once all dns sources have been queried
-            with open('src/exclusions.txt','r') as stream:
-                exclusions = stream.read().splitlines()
-        except FileNotFoundError:
-            print('[INFO][netdox.py] No exclusions.txt detected. All domains will be included.')
-
-    return exclusions
+        exclusions = {'dns': [], 'ss': []}
+        exclusions_psml = BeautifulSoup(ps_api.get_fragment('_nd_exclusions','2'), features='xml')
+        for line in exclusions_psml("para"):
+            no_ss_label = line.find(label='no-screenshot')
+            if no_ss_label:
+                line = no_ss_label
+            else:
+                exclusions['dns'].append(line.string.strip())
+            exclusions['ss'].append(line.string.strip())
+            
+        
+        with open('src/screenshot_exclude.json', 'w') as output:
+            output.write(json.dumps(exclusions['ss'], indent=2))
+            
+    return exclusions['dns']
 
 
 def kubeconfig(auth):

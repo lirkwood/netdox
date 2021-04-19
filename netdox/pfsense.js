@@ -18,7 +18,6 @@ const nat = {};
 
     let title = await page.$eval('.panel-title', title => title.textContent)
     if (title == 'NAT 1:1 Mappings') {
-        console.log(`[INFO][pfsense.js] Successfully logged into pfSense as "${auth['username']}"`)
         let rows = await page.$$('tr.ui-sortable-handle')
         for (let index = 0; index < rows.length; index++) {
             const row = rows[index];
