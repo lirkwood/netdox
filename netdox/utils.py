@@ -3,6 +3,24 @@ from traceback import format_exc
 from datetime import datetime
 
 
+_location_map = {
+    "Equinix": [
+        "192.168.7.0/24",
+        "192.168.10.0/24",
+        "192.168.12.0/24",
+        "192.168.13.0/24",
+        "192.168.14.0/24"
+    ],
+    "Pyrmont": [
+        "192.168.0.0/16"
+    ]
+}
+
+location_map = {}
+for location in _location_map:
+    for subnet in _location_map[location]:
+        location_map[subnet] = location
+
 class dns:
     name: str
     root: str
@@ -39,7 +57,6 @@ class dns:
             string = string.lower().strip()
             if type == 'ipv4' or type == 'ip':
                 if iptools.valid_ip(string):
-                    self.subnets.add(iptools.sort(string))
                     if iptools.public_ip(string):
                         self.public_ips.add(string)
                     else:
@@ -67,6 +84,8 @@ class dns:
 
             else:
                 raise ValueError('Provide a valid destination type. One of: "ipv4", "domain", "vm", or "app".')
+            
+            self.update()
 
         else:
             raise TypeError('DNS destination must be provided as string')
@@ -86,15 +105,37 @@ class dns:
     def ips(self):
         return self.public_ips.union(self.private_ips)
 
-    def fetch_subnets(self):
+    def update(self):
         for ip in self.ips:
             self.subnets.add(iptools.sort(ip))
+        # sort every declared subnet that matches one of self.subnets by mask size
+        matches = {}
+        masks = matches.keys()
+        for subnet in self.subnets:
+            for match in location_map:
+                if iptools.subn_contains(match, subnet):
+                    mask = int(match.split('/')[-1])
+                    if mask not in matches:
+                        matches[mask] = set()
+                    matches[mask].add(match)
+
+        matches = dict(sorted(matches.items(), reverse=True))
+
+        # if largest mask has multiple subnets
+        largest = matches[masks[0]]
+        if len(largest) > 1:
+            print(f'[WARNING][utils.py] Unable to set location for DNS record with name {self.name}')
+            self.location = None
+        else:
+            # use most specific match for location definition
+            self.location = location_map[largest[0]]
+        
 
 def merge_sets(dns1,dns2):
     """
     Simple merge of any sets of found in two dns objects
     """
-    if isinstance(dns1, dns) and isinstance(dns2,dns):
+    if isinstance(dns1, dns) and isinstance(dns2, dns):
         dns1_inf = dns1.__dict__
         dns2_inf = dns2.__dict__
         for attr in dns2_inf:
@@ -103,8 +144,6 @@ def merge_sets(dns1,dns2):
         return dns1
     else:
         raise TypeError(f'Arguments must be dns objects, not {type(dns1)}, {type(dns2)}')
-
-
 
 
 class JSONEncoder(json.JSONEncoder):
