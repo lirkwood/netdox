@@ -34,6 +34,9 @@ async function diffScreens(array) {
 			}
 
 		} else {
+			if (review.hasOwnProperty(domain)) {
+				console.log(`[DEBUG][screenshotCompare.js] no_base overwrote ${review[domain]}`)
+			}
 			review[domain] = 'no_base'
 		}
 	}
