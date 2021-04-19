@@ -51,7 +51,7 @@ def get_uri(locator, params={}, forurl=False, group=defaultgroup):
     return r.text
 
 @utils.handle
-def get_uris(uri, group=defaultgroup, params={}):
+def get_uris(uri, params={}, group=defaultgroup):
     """
     Returns all uris with some relationship to a given uri
     """
@@ -64,11 +64,13 @@ def get_uris(uri, group=defaultgroup, params={}):
 
 
 @utils.handle
-def get_files(uri, group=defaultgroup):
+def get_files(uri, params={}, group=defaultgroup):
     """
     Returns a list of filenames with some relationship (default = child) for a given URI
     """
     files = []
+    if 'type' not in params:
+        params['type'] = 'document'
     soup = BeautifulSoup(get_uris(uri, group, {'type': 'document'}), features='xml')
     for uri in soup.find_all('uri'):
         files.append(uri['path'].split('/')[-1])
@@ -76,11 +78,11 @@ def get_files(uri, group=defaultgroup):
     return files
 
 @utils.handle
-def get_fragment(uri, fragment_id, params={}):
+def get_fragment(uri, fragment_id, params={}, group=defaultgroup):
     """
     Returns content of a fragment in some given uri
     """
-    service = f'/members/~{credentials["username"]}/groups/~{defaultgroup}/uris/{uri}/fragments/{fragment_id}'
+    service = f'/members/~{credentials["username"]}/groups/~{group}/uris/{uri}/fragments/{fragment_id}'
     r = requests.get(base+service, headers=header, params=params)
     return r.text
 
@@ -106,23 +108,33 @@ def get_thread(id):
 
 
 @utils.handle
-def archive(uri):
+def archive(uri, params={}, group=defaultgroup):
     """
     Begins archive process for some URI
     """
-    service = f'/members/~{credentials["username"]}/groups/~{defaultgroup}/uris/{uri}/archive'
+    service = f'/members/~{credentials["username"]}/groups/~{group}/uris/{uri}/archive'
     r = requests.post(base+service, headers=header)
-    return r
+    return r.text
 
 
 @utils.handle
-def version(uri):
+def version(uri, params={}, group=defaultgroup):
     """
     Adds a version to some URI with name as current date/time
     """
-    service = f'/members/~{credentials["username"]}/groups/~{defaultgroup}/uris/{uri}/versions'
-    requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
+    service = f'/members/~{credentials["username"]}/groups/~{group}/uris/{uri}/versions'
+    r = requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
+    return r.text
 
+
+@utils.handle
+def get_versions(uri, group=defaultgroup):
+    """
+    Lists the versions 
+    """
+    service = f'/groups/{group}/uris/{uri}/versions'
+    r = requests.get(base+service, headers=header)
+    return r.text
 
 
 # Global vars
