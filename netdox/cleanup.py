@@ -4,31 +4,9 @@ from datetime import datetime
 import re, os, json, shutil
 import ps_api, utils
 
-
-@utils.handle
-def getUrimap(dir_uri):
+def review():
     """
-    Generates dict with files in some dir as keys and their uris as values
-    """
-    urimap = {}
-    soup = BeautifulSoup(ps_api.get_uris(dir_uri, params={'type': 'folder'}), 'lxml')
-    for uri in soup.find_all('uri'):
-        urimap[uri.displaytitle.string] = uri['id']
-    
-    return urimap
-
-
-def cleanReview():
-    with open('src/review.json','r') as stream:
-        review = json.load(stream)
-        for image in os.scandir('/opt/app/out/review'):
-            # could potentially not match if domain has underscore :/
-            if image.name.replace('.png','').replace('_','.') not in review:
-                os.remove(image)
-
-def screenshotHistory():
-    """
-    If screenshotCompare found a different image or couldnt ss, save the base image as it will be overwritten.
+    Perform various actions based on a domains value in review.json
     """
     global today
     os.mkdir(f'/opt/app/out/screenshot_history/{today}')
@@ -41,6 +19,9 @@ def screenshotHistory():
                     shutil.copyfile(f'/etc/ext/base/{pngName}', f'/opt/app/out/screenshot_history/{today}/{pngName}')
                 except FileNotFoundError:
                     pass
+            elif review[domain] == 'nodiff':
+                pngName = f"{domain.replace('.','_')}.png"
+                os.remove(f'/opt/app/out/review/{pngName}')
 
 
 
@@ -72,7 +53,7 @@ def placeholders():
     """
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
     try:
-        existing_screens = ps_api.get_files(urimap['screenshots'])  # get list of screenshots on pageseeder
+        existing_screens = ps_api.get_files(ps_api.urimap['screenshots'])  # get list of screenshots on pageseeder
     except KeyError:
         existing_screens = []
 
@@ -89,8 +70,8 @@ def sentenceStale():
     """
     Adds 30-day timer to files present on pageseeder but not locally
     """
-    for folder in urimap:
-        folder_uri = urimap[folder]
+    for folder in ps_api.urimap:
+        folder_uri = ps_api.urimap[folder]
         remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={'type': 'document'}), features='xml')
         if os.path.exists(f'out/{folder}'):
             _local = os.listdir(f'out/{folder}')
@@ -112,15 +93,13 @@ def alnum(string):
 
 @utils.critical
 def clean():
-    global urimap
-    urimap = getUrimap('375156')
     global today
     today = str(datetime.now().date())
 
-    # save any base imgs about to be overwritten
-    cleanReview()
-    screenshotHistory()
-    # overwrite
+    # act on values in review.json
+    review()
+
+    # overwrite base images
     shutil.rmtree('/etc/ext/base')
     shutil.copytree('/opt/app/out/screenshots', '/etc/ext/base')
 
@@ -131,7 +110,8 @@ def clean():
 
     # generate placeholders where there is no ss locally or on ps
     placeholders()
+    ps_api.archive(ps_api.urimap['review'])
 
     # sentenceStale()
-    # for folder in urimap:
-    #     ps_api.version(urimap[folder])
+    # for folder in ps_api.urimap:
+    #     ps_api.version(ps_api.urimap[folder])

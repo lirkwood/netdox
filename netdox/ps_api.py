@@ -127,11 +127,25 @@ def version(uri):
 
 # Global vars
 
+@utils.handle
+def getUrimap(dir_uri):
+    """
+    Generates dict with files in some dir as keys and their uris as values
+    """
+    urimap = {}
+    soup = BeautifulSoup(get_uris(dir_uri, params={'type': 'folder'}), 'lxml')
+    for uri in soup.find_all('uri'):
+        urimap[uri.displaytitle.string] = uri['id']
+    
+    return urimap
+
 header = {
     'authorization': f'Bearer {auth()}'
 }
 
 base = f'https://{credentials["host"]}/ps/service'
+
+urimap = getUrimap('375156')
 
 if __name__ == '__main__':
     print(header['authorization'])

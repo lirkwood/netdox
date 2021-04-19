@@ -29,6 +29,8 @@ async function diffScreens(array) {
 			// if diff pixel count > 10% (where aspect ratio is 1920x1080)
 			if (diffCount > 207360) {
 				review[domain] = 'imgdiff'
+			} else {
+				review[domain] = 'nodiff'
 			}
 
 		} else {
