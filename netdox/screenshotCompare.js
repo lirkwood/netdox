@@ -45,6 +45,7 @@ async function try_ss(domain, protocol, browser) {
 	const page = await browser.newPage();
 	try {
 		await page.goto(url, { timeout: 3000 });
+		await page.waitForTimeout('500')
 		await page.screenshot({ path: '/opt/app/out/screenshots/'.concat(filename) });
 	} catch (error) {
 		try { await page.close() } catch (err) {};
