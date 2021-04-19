@@ -32,7 +32,7 @@ def init():
                 <!DOCTYPE {type} [
                 <!ENTITY json SYSTEM "{type}.json">
                 ]>
-                <{type}>&json;</{type}>"""))
+                <{type}>&json;</{type}>""").strip())
 
         # load pageseeder properties and auth info
         with open('src/pageseeder.properties','r') as f: 
