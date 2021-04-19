@@ -2,20 +2,13 @@ import iptools, json, re
 from traceback import format_exc
 from datetime import datetime
 
-
-_location_map = {
-    "Equinix": [
-        "192.168.7.0/24",
-        "192.168.10.0/24",
-        "192.168.12.0/24",
-        "192.168.13.0/24",
-        "192.168.14.0/24"
-    ],
-    "Pyrmont": [
-        "192.168.0.0/16"
-    ]
-}
-
+try:
+    with open('src/locations.json', 'r') as stream:
+        _location_map = json.load(stream)
+except Exception as e:
+    print('[WARNING][utils.py] Unable to find or parse "/opt/app/src/locations.json"')
+    _location_map = {}
+    
 location_map = {}
 for location in _location_map:
     for subnet in _location_map[location]:
@@ -25,6 +18,7 @@ class dns:
     name: str
     root: str
     source: str
+    location: str
 
     """
     Class representing some DNS record
@@ -35,6 +29,7 @@ class dns:
             self.name = name.lower()
             if root: self.root = root.lower()
             self.source = source
+            self.location = None
 
             # destinations
             self.public_ips = set()

@@ -5,14 +5,10 @@ netdox/__pycache__
 netdox/logs
 
 netdox/src/*
-!netdox/src/base/
-!netdox/src/nmap.xml
-!netdox/src/prefixes.txt
 !netdox/src/exclusions.txt
 !netdox/src/placeholder.jpg
-!netdox/src/review.xml
-!netdox/src/nat.txt
 !netdox/src/pageseeder.properties
+!netdox/src/locations.json
 
 *.zip
 *log.txt
