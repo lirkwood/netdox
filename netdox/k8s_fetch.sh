@@ -2,7 +2,7 @@
 resource=$1
 options=$2
 echo "[INFO][k8s_fetch.sh] Fetching Kubernetes $resource..."
-contexts=( "sandbox" "production" )
+contexts=($(kubectl config get-clusters | tail -n +2))
 
 json='{'
 for context in ${contexts[@]}
