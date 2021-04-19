@@ -25,7 +25,7 @@ const nat = {};
             nat[columns[3]] = columns[4]
             nat[columns[4]] = columns[3]
         }
-        console.log(nat)
+        console.log(JSON.stringify(nat, null, 2))
     } else {
         console.log('[ERROR][pfsense.js] Failed to login to pfSense. Unable to retrieve NAT.')
     }
