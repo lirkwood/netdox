@@ -128,9 +128,9 @@ def subn_floor(subn):
     elif not isinstance(subn, str):
         raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
 
-    if re.fullmatch(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])', subnet):
-        mask = int(subnet.split('/')[-1])
-        addr = subnet.split('/')[0]
+    if re.fullmatch(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])', subn):
+        mask = int(subn.split('/')[-1])
+        addr = subn.split('/')[0]
         octets = addr.split('.')
         for octet in range(4):
             octets[octet] = int(octets[octet])
@@ -224,19 +224,19 @@ def subn_contains(subn: Union[str, subnet], object: Union[str, ipv4, subnet], ve
         subn = subn.subnet
     elif not isinstance(subn, str):
         raise TypeError(f'[ERROR][iptools.py] Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
-        
+
     # Validate input object
     if isinstance(object, ipv4):
         ip = object.ipv4
     elif isinstance(object, subnet):
         bounds = subn_bounds(object)
-        return (subn_contains(bounds['upper']) & subn_contains(bounds['lower']))
+        return (subn_contains(subn, bounds['upper']) & subn_contains(subn, bounds['lower']))
     elif isinstance(object, str):
         if valid_ip(object):
             ip = object
         elif valid_subnet(object):
             bounds = subn_bounds(object)
-            return (subn_contains(bounds['upper']) & subn_contains(bounds['lower']))
+            return (subn_contains(subn, bounds['upper']) & subn_contains(subn, bounds['lower']))
         else:
             raise ValueError(f'[ERROR][iptools.py] Object to be tested must be a valid ipv4 or subnet.')
     else:
