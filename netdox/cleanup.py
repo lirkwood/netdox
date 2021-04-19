@@ -13,15 +13,15 @@ def review():
     with open('src/review.json','r') as stream:
         review = json.load(stream)
         for domain in review:
-            if review[domain] == 'imgdiff' or review[domain].startswith('no_ss'):
-                pngName = f"{domain.replace('.','_')}.png"
-                try:
+            try:
+                if review[domain] == 'imgdiff' or review[domain].startswith('no_ss'):
+                    pngName = f"{domain.replace('.','_')}.png"
                     shutil.copyfile(f'/etc/ext/base/{pngName}', f'/opt/app/out/screenshot_history/{today}/{pngName}')
-                except FileNotFoundError:
-                    pass
-            elif review[domain] == 'nodiff':
-                pngName = f"{domain.replace('.','_')}.png"
-                os.remove(f'/opt/app/out/review/{pngName}')
+                elif review[domain] == 'nodiff':
+                    pngName = f"{domain.replace('.','_')}.png"
+                    os.remove(f'/opt/app/out/review/{pngName}')
+            except FileNotFoundError:
+                pass
 
 
 
@@ -70,6 +70,7 @@ def sentenceStale():
     """
     Adds 30-day timer to files present on pageseeder but not locally
     """
+    stale = set()
     for folder in ps_api.urimap:
         folder_uri = ps_api.urimap[folder]
         remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={'type': 'document'}), features='xml')
@@ -81,10 +82,11 @@ def sentenceStale():
 
             for file in remote("uri"):
                 filename = alnum(file["decodedpath"].split('/')[-1])
-                uri = file["id"]
 
                 if filename not in local:
-                    ps_api.archive(uri)
+                    labels = file.labels.string
+                    if not re.search('expires-[0-9]{4}-[0-9]{2}-[0-9]{2}', labels):
+                        stale.add(filename)
             
 
 def alnum(string):
@@ -112,6 +114,6 @@ def clean():
     placeholders()
     ps_api.archive(ps_api.urimap['review'])
 
-    # sentenceStale()
+    # stale = sentenceStale()
     # for folder in ps_api.urimap:
     #     ps_api.version(ps_api.urimap[folder])
