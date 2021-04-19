@@ -8,7 +8,7 @@ try:
 except Exception as e:
     print('[WARNING][utils.py] Unable to find or parse "/opt/app/src/locations.json"')
     _location_map = {}
-    
+
 location_map = {}
 for location in _location_map:
     for subnet in _location_map[location]:
@@ -37,7 +37,6 @@ class dns:
             self.domains = set()
             self.vms = set()
             self.apps = set()
-            self.nat = set()
 
             self.subnets = set()
         else:
@@ -58,12 +57,6 @@ class dns:
                         self.private_ips.add(string)
                 else:
                     raise ValueError(f'"{string}" is not a valid ipv4 address.')
-
-            elif type == 'nat':
-                if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', string):
-                    self.nat.add(string)
-                else:
-                    raise ValueError(f'Domain {string} is not valid.')
 
             elif type == 'domain':
                 if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', string):
@@ -92,8 +85,7 @@ class dns:
             'private_ips': self.private_ips,
             'domains': self.domains,
             'vms': self.vms,
-            'apps': self.apps,
-            'nat': self.nat
+            'apps': self.apps
         }
 
     @property
