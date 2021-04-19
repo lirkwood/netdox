@@ -110,25 +110,28 @@ class dns:
             self.subnets.add(iptools.sort(ip))
         # sort every declared subnet that matches one of self.subnets by mask size
         matches = {}
-        masks = matches.keys()
         for subnet in self.subnets:
             for match in location_map:
                 if iptools.subn_contains(match, subnet):
                     mask = int(match.split('/')[-1])
                     if mask not in matches:
-                        matches[mask] = set()
-                    matches[mask].add(match)
+                        matches[mask] = []
+                    matches[mask].append(match)
 
         matches = dict(sorted(matches.items(), reverse=True))
 
-        # if largest mask has multiple subnets
-        largest = matches[masks[0]]
-        if len(largest) > 1:
-            print(f'[WARNING][utils.py] Unable to set location for DNS record with name {self.name}')
+        # if largest mask has multiple unique subnets
+        try:
+            largest = list(dict.fromkeys(matches[list(matches.keys())[0]]))
+            if len(largest) > 1:
+                print(f'[WARNING][utils.py] Unable to set location for DNS record with name {self.name}')
+                self.location = None
+            else:
+                # use most specific match for location definition
+                self.location = location_map[largest[0]]
+        # if no subnets
+        except IndexError:
             self.location = None
-        else:
-            # use most specific match for location definition
-            self.location = location_map[largest[0]]
         
 
 def merge_sets(dns1,dns2):
