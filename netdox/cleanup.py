@@ -4,6 +4,7 @@ from datetime import datetime
 import re, os, json, shutil
 import ps_api, utils
 
+
 def review():
     """
     Perform various actions based on a domains value in review.json
@@ -24,9 +25,7 @@ def review():
                 pass
 
 
-
 # converts every file in a dir from png to 1024x576 jpg
-@utils.handle
 def png2jpg(path):
     """
     Converts png images in some dir to fixed size jpgs
@@ -81,16 +80,18 @@ def sentenceStale():
                 local.append(alnum(file))
 
             for file in remote("uri"):
-                filename = alnum(file["decodedpath"].split('/')[-1])
-
+                filename = file["decodedpath"].split('/')[-1]
+                uri = file["id"]
                 if filename not in local:
                     labels = file.labels.string
                     if not re.search('expires-[0-9]{4}-[0-9]{2}-[0-9]{2}', labels):
-                        stale.add(filename)
+                        stale.add(uri)
             
 
+# best guess at the transformation PageSeeder applies
 def alnum(string):
-    return re.sub(r'[^a-zA-Z0-9 .]', '', string)
+    string = re.sub(r'[/\\?%*:|<>^]', '_', string)
+    return re.sub(r'[^\x00-\x7F]', '_', string)
 
 
 @utils.critical
