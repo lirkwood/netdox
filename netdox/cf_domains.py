@@ -1,20 +1,12 @@
 import json, requests
 import utils
 
-base = "https://api.cloudflare.com/client/v4/"
-with open('src/authentication.json') as authstream:
-    creds = json.load(authstream)['cloudflare']
-
-header = {
-    "Authorization": f"Bearer {creds['token']}",
-    "Content-Type": "application/json"
-}
-
-@utils.critical
+@utils.handle
 def main():
     """
     Returns tuple containing forward and reverse DNS records from Cloudflare
     """
+    init()
     forward = {}
     reverse = {}
     for id in fetch_zones():
@@ -30,6 +22,20 @@ def main():
                 reverse = add_PTR(reverse, record)
     
     return (forward, reverse)
+
+
+def init():
+    global base
+    base = "https://api.cloudflare.com/client/v4/"
+
+    with open('src/authentication.json') as authstream:
+        creds = json.load(authstream)['cloudflare']
+
+    global header
+    header = {
+        "Authorization": f"Bearer {creds['token']}",
+        "Content-Type": "application/json"
+    }
 
 
 def fetch_zones():
