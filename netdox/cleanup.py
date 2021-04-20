@@ -103,7 +103,11 @@ def clean():
     review()
 
     # overwrite base images
-    shutil.rmtree('/etc/ext/base')
+    try:
+        shutil.rmtree('/etc/ext/base')
+    except FileNotFoundError:
+        pass
+    
     shutil.copytree('/opt/app/out/screenshots', '/etc/ext/base')
 
     # scale down all exported img files
