@@ -56,7 +56,7 @@
     </xsl:for-each>
     </section>
     <section id="no_base">
-        <fragment id="nose_base_title">
+        <fragment id="no_base_title">
             <heading level="2">Sites with no base image</heading>
         </fragment>
     <xsl:for-each select="$review/xpf:map/xpf:string[. = 'no_base']">
@@ -73,7 +73,7 @@
     </xsl:for-each>
     </section>
     <section id="no_ss">
-        <fragment id="nose_ss_title">
+        <fragment id="no_ss_title">
             <heading level="2">Sites Puppeteer failed to screenshot</heading>
         </fragment>
     <xsl:for-each select="$review/xpf:map/xpf:string[substring-before(., ':') = 'no_ss']">
