@@ -5,8 +5,6 @@
 
   <xsl:output method="xml" indent="yes" />
 
-  <xsl:param name="output" />
-
   <!-- default template -->
   <xsl:template match="/">
       <xsl:variable name="aws-oup" select="json-to-xml(aws-oup)" />
@@ -14,7 +12,7 @@
   </xsl:template>
 
   <xsl:template match="xpf:array/xpf:map">
-    <xsl:result-document href="out/aws/{xpf:string[@key = 'InstanceId']}.psml" method="xml" indent="yes">
+    <xsl:result-document href="/opt/app/out/aws/{xpf:string[@key = 'InstanceId']}.psml" method="xml" indent="yes" omit-xml-declaration="yes">
       <document type="ec2" level="portable">
         <documentinfo>
           <uri title="{xpf:string[@key='Name']}" docid="_nd_{xpf:string[@key = 'InstanceId']}" />
@@ -33,14 +31,12 @@
             <property name="instanceId" title="Instance Id" value="{xpf:string[@key='InstanceId']}"/>
             <property name="instanceType" title="Instance Type" value="{xpf:string[@key='InstanceType']}"/>
             <property name="availabilityZone" title="Availability Zone" value="{xpf:string[@key='AvailabilityZone']}"/>
-            <property name="privateIpAddress" title="Private IP" value="{xpf:string[@key='PrivateIpAddress']}"/>
-            <property name="publicIpAddress" title="Public IP" value="{xpf:string[@key='PublicIpAddress']}"/>
-          </properties-fragment>
-          <properties-fragment id="status">
-	  <!--  <property name="last-updated"       title="Last updated"   value="{current-date()}"    datatype="date"/> -->
+            <property name="ipv4" title="Public IP" value="{xpf:string[@key='PublicIpAddress']}"/>
+            <property name="ipv4" title="Private IP" datatype="xref">
+              <xref frag="default" docid="_nd_{xpf:string[@key='PrivateIpAddress']}" reversetitle="AWS EC2 instance on this IP"/>
+            </property>
           </properties-fragment>
         </section>
-
       </document>
     </xsl:result-document>
   </xsl:template>
