@@ -103,19 +103,21 @@ class dns:
                     mask = int(match.split('/')[-1])
                     if mask not in matches:
                         matches[mask] = []
-                    matches[mask].append(match)
+                    matches[mask].append(location_map[match])
 
         matches = dict(sorted(matches.items(), reverse=True))
 
-        # if largest mask has multiple unique subnets
+        # first key when keys are sorted by descending size is largest mask
         try:
-            largest = list(dict.fromkeys(matches[list(matches.keys())[0]]))
+            largest = matches[list(matches.keys())[0]]
+            largest = list(dict.fromkeys(largest))
+            # if multiple unique locations given by equally specific subnets
             if len(largest) > 1:
                 print(f'[WARNING][utils.py] Unable to set location for DNS record with name {self.name}')
                 self.location = None
             else:
                 # use most specific match for location definition
-                self.location = location_map[largest[0]]
+                self.location = largest[0]
         # if no subnets
         except IndexError:
             self.location = None
