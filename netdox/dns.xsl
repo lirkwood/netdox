@@ -124,6 +124,11 @@
                             <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this VM"><xsl:value-of select="."/></xref>
                         </property>
                     </xsl:for-each>
+                    <xsl:for-each select="xpf:array[@key = 'ec2s']/xpf:string">
+                        <property name="ec2" title="AWS EC2 Instance" datatype="xref">
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this instance"><xsl:value-of select="."/></xref>
+                        </property>
+                    </xsl:for-each>
                     </properties-fragment>
                     
                     <properties-fragment id="subnets">
