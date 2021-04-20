@@ -86,7 +86,7 @@
                         <property name="location" title="Location" value="{xpf:string[@key = 'location']}" />
                             </xsl:when>
                             <xsl:otherwise>
-                        <property name="location" title="Location" value="No subnet" />
+                        <property name="location" title="Location" value="—" />
                             </xsl:otherwise>
                         </xsl:choose>
                     </properties-fragment>
