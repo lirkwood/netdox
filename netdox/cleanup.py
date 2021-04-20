@@ -60,7 +60,7 @@ def placeholders():
         review = json.load(stream)
         for domain in review:
             jpgName = f"{domain.replace('.','_')}.jpg"
-            if (jpgName not in existing_screens) and review[domain].startswith('no_ss'):
+            if jpgName not in existing_screens and review[domain].startswith('no_ss:'):
                 shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpgName}')
 
 
