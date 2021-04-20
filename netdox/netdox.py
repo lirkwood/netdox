@@ -3,7 +3,6 @@ import k8s_inf, ip_inf, xo_inf, aws_inf, nat_inf, icinga_inf, license_inf
 import cleanup, utils, init
 
 import subprocess, json
-from bs4 import BeautifulSoup
 
 
 ######################
