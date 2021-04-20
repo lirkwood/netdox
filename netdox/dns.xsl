@@ -137,7 +137,11 @@
                             <image src="/ps/operations/network/website/screenshots/{translate($name,'.','_')}.jpg"/>
                         </block>
                     </fragment>
-
+                    
+                    <properties-fragment id="url-key">
+                        <property name="url-key" title="URL Key" value="" />
+                    </properties-fragment>
+    
                     <properties-fragment id="for-search" labels="s-hide-content">
                         <xsl:variable name="octets">
                             <xsl:for-each select="xpf:array[matches(@key, '.*_ips$')]/xpf:string">
