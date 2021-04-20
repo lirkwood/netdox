@@ -9,15 +9,12 @@
 
   <!-- default template -->
   <xsl:template match="/">
-    <pools>
       <xsl:variable name="aws-oup" select="json-to-xml(aws-oup)" />
       <xsl:apply-templates select="$aws-oup//xpf:array/xpf:map" />
-    </pools>
   </xsl:template>
 
   <xsl:template match="xpf:array/xpf:map">
-    <ec2 name="{xpf:string[@key='Name']}" file="{$output}/{xpf:string[@key='InstanceId']}.psml" />
-    <xsl:result-document href="file:///{$output}/{xpf:string[@key='InstanceId']}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/aws/{xpf:string[@key = 'InstanceId']}.psml" method="xml" indent="yes">
       <document type="ec2" level="portable">
         <documentinfo>
           <uri title="{xpf:string[@key='Name']}" docid="_nd_{xpf:string[@key = 'InstanceId']}" />
