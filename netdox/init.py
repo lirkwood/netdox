@@ -13,19 +13,23 @@ def init():
     """
     with open('src/authentication.json','r') as authstream:
         auth = json.load(authstream)
-        psauth = auth['pageseeder']
         k8sauth = auth['kubernetes']
+        psauth = auth['pageseeder']
+        awsauth = auth['aws']
 
+        # generate kubeconfig file
         kubeconfig(k8sauth)
 
+        # setting up dirs
         for path in ('out', '/etc/ext/base'):
             if not os.path.exists(path):
                 os.mkdir(path)
                 
-        for path in ('DNS', 'IPs', 'k8s', 'xo', 'screenshots', 'screenshot_history', 'review'):
+        for path in ('DNS', 'IPs', 'k8s', 'xo', 'aws', 'screenshots', 'screenshot_history', 'review'):
             os.mkdir('out/'+path)
         
-        for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'review'):
+        # generate xslt json import files
+        for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'aws', 'review'):
             with open(f'src/{type}.xml','w') as stream:
                 stream.write(dedent(f"""
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -55,6 +59,17 @@ def init():
             soup.find('ps:upload')['group'] = psauth['group']
             stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
+        # set up aws iam profile
+        with open('/opt/app/src/awsconfig', 'w') as stream:
+            stream.write(dedent(f"""
+            [default]
+            output = json
+            region = {awsauth['region']}
+            aws_access_key_id = {awsauth['aws_access_key_id']}
+            aws_secret_access_key = {awsauth['aws_secret_access_key']}
+            """).strip())
+
+        # load exclusions from pageseeder
         exclusions = {'dns': [], 'ss': []}
         exclusions_psml = BeautifulSoup(ps_api.get_fragment('_nd_exclusions','2'), features='xml')
         for line in exclusions_psml("para"):
@@ -65,7 +80,6 @@ def init():
                 exclusions['dns'].append(line.string.strip())
             exclusions['ss'].append(line.string.strip())
             
-        
         with open('src/screenshot_exclude.json', 'w') as output:
             output.write(json.dumps(exclusions['ss'], indent=2))
             

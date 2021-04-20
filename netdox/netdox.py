@@ -1,5 +1,5 @@
 import ad_domains, dnsme_domains, cf_domains, k8s_domains
-import k8s_inf, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
+import k8s_inf, ip_inf, xo_inf, aws_inf, nat_inf, icinga_inf, license_inf
 import cleanup, utils, init
 
 import subprocess, json
@@ -39,9 +39,10 @@ def queries():
         integrate(source, master)
         del source
 
-    # VM/App queries
+    # VM/App/AWS queries
     xo_inf.main(master)
     k8s_inf.main()
+    aws_inf.main()
 
     # More DNS (move this)
     k8s = k8s_domains.main()
@@ -230,6 +231,8 @@ def main():
     xslt('pools.xsl', 'src/pools.xml')
     xslt('hosts.xsl', 'src/hosts.xml')
     xslt('vms.xsl', 'src/vms.xml')
+    # Write AWS documents
+    xslt('aws.xsl', 'src/aws.xml')
 
     screenshots()
     cleanup.clean()

@@ -33,6 +33,9 @@ ENV PATH=${PATH}:${ANT_HOME}/bin
 # set kubeconfig path
 ENV KUBECONFIG=/opt/app/src/kubeconfig
 
+# set aws-cli config
+ENV AWS_CONFIG_FILE=/opt/app/src/awsconfig
+
 # set tz
 ENV TZ="Australia/Sydney"
 
@@ -74,11 +77,12 @@ COPY --from=node /usr/bin/kubectl /usr/bin
 COPY --from=node /usr/share/zoneinfo/${TZ} /etc/localtime
 RUN echo "$TZ" > /etc/timezone
 
-# import python deps
+# install any packages available through python-pip
 RUN pip install beautifulsoup4
 RUN pip install lxml
 RUN pip install requests
 RUN pip install Pillow
+RUN pip install awscli
 
 WORKDIR /opt/app
 
