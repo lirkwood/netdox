@@ -113,7 +113,12 @@ def clean():
 
     # generate placeholders where there is no ss locally or on ps
     placeholders()
-    ps_api.archive(ps_api.urimap['review'])
+
+    # archive last review if exist
+    try:
+        ps_api.archive(ps_api.urimap['review'])
+    except KeyError:
+        pass
 
     # stale = sentenceStale()
     # for folder in ps_api.urimap:
