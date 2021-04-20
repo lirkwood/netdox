@@ -83,10 +83,10 @@
                         </xsl:choose>
                         <xsl:choose>
                             <xsl:when test="not(xpf:string[@key='location']/text() = 'null')">
-                                <property name="location" title="Location" value="{xpf:string[@key = 'location']}" />
+                        <property name="location" title="Location" value="{xpf:string[@key = 'location']}" />
                             </xsl:when>
                             <xsl:otherwise>
-                                <property name="location" title="Location" value="No subnet" />
+                        <property name="location" title="Location" value="No subnet" />
                             </xsl:otherwise>
                         </xsl:choose>
                     </properties-fragment>
