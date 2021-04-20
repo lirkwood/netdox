@@ -98,6 +98,22 @@ def xo_vms(dns_set):
     return dns_set
 
 @utils.mod_set
+def aws_ec2(dns_set):
+    """
+    Links domains to AWS EC2 instances with the same IP
+    """
+    with open('src/aws.json', 'r') as stream:
+        reservations = json.load(stream)
+        for domain in dns_set:
+            dns = dns_set[domain]
+            for reservation in reservations:
+                instances = reservations[reservation]
+                for instance in instances:
+                    if instance['PrivateIpAddress'] in dns.ips:
+                        dns.link(instance['InstanceId'], 'ec2')
+    return dns_set
+
+@utils.mod_set
 def icinga_labels(dns_set):
     """
     Integrates icinga display labels into a dns set
