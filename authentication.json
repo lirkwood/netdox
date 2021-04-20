@@ -5,7 +5,8 @@
     },
     "xenorchestra": {
         "username": "",
-        "password": ""
+        "password": "",
+        "host": ""
     },
     "pageseeder": {
         "id": "",
@@ -20,13 +21,22 @@
         "password": ""
     },
     "kubernetes": {
-        "sandbox": {
-            "server": "",
-            "token": ""
-        },
-        "production": {
+        "<cluster-name>": {
             "server": "",
             "token": ""
         }
+    },
+    "pfsense": {
+        "username": "",
+        "password": "",
+        "host": ""
+    },
+    "cloudflare": {
+        "token": ""
+    },
+    "aws": {
+        "region": "",
+        "aws_access_key_id": "",
+        "aws_secret_access_key": ""
     }
 }
