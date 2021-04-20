@@ -1,4 +1,4 @@
-import ad_domains, dnsme_domains, k8s_domains
+import ad_domains, dnsme_domains, cf_domains, k8s_domains
 import k8s_inf, ip_inf, xo_inf, nat_inf, icinga_inf, license_inf
 import cleanup, utils, init
 
@@ -33,8 +33,9 @@ def queries():
     # DNS queries
     ad_f, ad_r = ad_domains.main()
     dnsme_f, dnsme_r = dnsme_domains.main()
+    cf_f, cf_r = cf_domains.main()
 
-    for source in (ad_f, dnsme_f):
+    for source in (ad_f, dnsme_f, cf_f):
         integrate(source, master)
         del source
 
@@ -46,16 +47,12 @@ def queries():
     k8s = k8s_domains.main()
     integrate(k8s, master)
 
+    # ptr
     ptr = {}
-    for ip in ad_r:
-        ptr[ip] = ad_r[ip]
-    for ip in dnsme_r:
-        if ip in ptr:
-            ptr[ip].append(dnsme_r[ip])
-        else:
-            ptr[ip] = dnsme_r[ip]
+    for source in (ad_r, dnsme_r, cf_r):
+        ptr = source | ptr
 
-    # Describes source ips came from
+    # declares dns source ips came from
     ipsources = {}
     for dns in master:
         for ip in master[dns].ips:
