@@ -20,7 +20,7 @@
     <xsl:result-document href="file:///{$output}/{xpf:string[@key='InstanceId']}.psml" method="xml" indent="yes">
       <document type="ec2" level="portable">
         <documentinfo>
-          <uri title="{xpf:string[@key='Name']}" />
+          <uri title="{xpf:string[@key='Name']}" docid="_nd_{xpf:string[@key = 'InstanceId']}" />
         </documentinfo>
 
         <metadata>
