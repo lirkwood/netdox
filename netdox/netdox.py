@@ -174,14 +174,10 @@ def exclude(dns_set, domain_set):
 @utils.critical
 def write_dns(dns_set):
     """
-    Encodes dns set as json and writes to file
+    Writes dns set to json file
     """
-    jsondata = {}
-    for dns in dns_set:
-        jsondata[dns] = dns_set[dns].__dict__
     with open('src/dns.json','w') as dns:
-        dns.write(json.dumps(jsondata, cls=utils.JSONEncoder, indent=2))
-    del jsondata
+        dns.write(json.dumps(dns_set, cls=utils.JSONEncoder, indent=2))
 
 
 def xslt(xsl, src, out=None):

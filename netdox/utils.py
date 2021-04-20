@@ -141,7 +141,9 @@ class JSONEncoder(json.JSONEncoder):
     Default json encoder except set type is encoded as sorted list
     """
     def default(self, obj):
-        if isinstance(obj, set):
+        if isinstance(obj, dns):
+            return obj.__dict__
+        elif isinstance(obj, set):
             return sorted(obj)
         return json.JSONEncoder.default(self, obj)
 
