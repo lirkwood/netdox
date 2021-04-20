@@ -37,6 +37,7 @@ class dns:
             self.domains = set()
             self.vms = set()
             self.apps = set()
+            self.ec2s = set()
 
             self.subnets = set()
         else:
@@ -70,6 +71,9 @@ class dns:
             elif type == 'app':
                 self.apps.add(string)
 
+            elif type == 'ec2':
+                self.ec2s.add(string)
+
             else:
                 raise ValueError('Provide a valid destination type. One of: "ipv4", "domain", "vm", or "app".')
             
@@ -85,7 +89,8 @@ class dns:
             'private_ips': self.private_ips,
             'domains': self.domains,
             'vms': self.vms,
-            'apps': self.apps
+            'apps': self.apps,
+            'ec2s': self.ec2s
         }
 
     @property
