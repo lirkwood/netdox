@@ -1,19 +1,23 @@
 FROM node:15.8.0-buster-slim AS node
 
 WORKDIR /opt/app
-#install required node packages
+# install required node packages
 RUN npm install -g xo-cli
 RUN npm install bufferutil@4.0.3
 RUN npm install img-diff-js@0.5.2
 RUN npm install puppeteer@5.5.0
 RUN npm install utf-8-validate@5.0.4
 
-#install kubectl
+# install kubectl
 RUN apt-get update && apt-get install -y apt-transport-https gnupg2 curl
 RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list
 RUN apt-get update
 RUN apt-get install -y kubectl
+
+# Timezone info
+RUN apt-get install -y tzdata
+
 
 ###################################
 FROM python:3.9.1-slim-buster AS py
@@ -28,6 +32,9 @@ ENV PATH=${PATH}:${ANT_HOME}/bin
 
 # set kubeconfig path
 ENV KUBECONFIG=/opt/app/src/kubeconfig
+
+# set tz
+ENV TZ="Australia/Sydney"
 
 # make dir for man page to stop jre postinstall script failing
 RUN mkdir -p /usr/share/man/man1
@@ -58,13 +65,16 @@ WORKDIR /usr/local/bin
 RUN curl -L https://sourceforge.net/projects/saxon/files/Saxon-HE/10/Java/SaxonHE10-3J.zip/download \
 -o /usr/local/bin/saxon.zip && unzip /usr/local/bin/saxon.zip
 
-#import node and global node modules
+# import node and global node modules
 COPY --from=node /usr/local/bin /usr/local/bin
 COPY --from=node /usr/local/lib /usr/local/lib
-#also import kubectl
+# import kubectl
 COPY --from=node /usr/bin/kubectl /usr/bin
+# import tz
+COPY --from=node /usr/share/zoneinfo/${TZ} /etc/localtime
+RUN echo "$TZ" > /etc/timezone
 
-#import python deps
+# import python deps
 RUN pip install beautifulsoup4
 RUN pip install lxml
 RUN pip install requests
