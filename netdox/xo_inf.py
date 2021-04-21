@@ -34,7 +34,7 @@ def main(dns):
                     try:
                         ipv4 = iptools.ipv4(host['address'])
                         host['subnet'] = ipv4.subnet
-                    except:
+                    except Exception:
                         print('[WARNING][xo_inf.py] Failed to allocate a subnet to IPv4 address: '+ ipv4.ipv4, file=sys.stderr)
 
             elif type == 'vms':
@@ -45,7 +45,7 @@ def main(dns):
                     try:
                         ipv4 = iptools.ipv4(vm['addresses']['0/ipv4/0'])
                         vm['subnet'] = ipv4.subnet
-                    except:
+                    except Exception:
                         if vm['power_state'] == 'Running':
                             print(f'[WARNING][xo_inf.py] VM {vm["name_label"]} has no ipv4.', file=sys.stderr)
 
