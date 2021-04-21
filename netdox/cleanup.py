@@ -1,6 +1,6 @@
+from datetime import timedelta, datetime, date
 from PIL import Image, UnidentifiedImageError
 from bs4 import BeautifulSoup
-from datetime import datetime
 import re, os, json, shutil
 import ps_api, utils
 
@@ -69,23 +69,29 @@ def sentenceStale():
     """
     Adds 30-day timer to files present on pageseeder but not locally
     """
-    stale = set()
+    today = datetime.now().date()
     for folder in ps_api.urimap:
         folder_uri = ps_api.urimap[folder]
         remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={'type': 'document'}), features='xml')
         if os.path.exists(f'out/{folder}'):
-            _local = os.listdir(f'out/{folder}')
-            local = []
-            for file in _local:
-                local.append(alnum(file))
+            local = os.listdir(f'out/{folder}')
+            local = [alnum(file) for file in local]
 
             for file in remote("uri"):
                 filename = file["decodedpath"].split('/')[-1]
                 uri = file["id"]
                 if filename not in local:
                     labels = file.labels.string
-                    if not re.search('expires-[0-9]{4}-[0-9]{2}-[0-9]{2}', labels):
-                        stale.add(uri)
+                    marked_stale = re.search(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})', labels)
+                    if marked_stale:
+                        expiry = date(*marked_stale['date'].split('-'))
+                        if expiry <= today:
+                            ps_api.archive(uri)
+                    else:
+                        if labels:
+                            labels += ','
+                        labels += f'expires-{today + timedelta(days = 30)}'
+                        ps_api.patch_uri(uri, {'labels':labels})
             
 
 # best guess at the transformation PageSeeder applies
@@ -124,6 +130,6 @@ def clean():
     except KeyError:
         pass
 
-    # stale = sentenceStale()
+    sentenceStale()
     # for folder in ps_api.urimap:
     #     ps_api.version(ps_api.urimap[folder])
