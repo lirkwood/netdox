@@ -36,7 +36,7 @@ def queries():
     cf_f, cf_r = cf_domains.main()
 
     for source in (ad_f, dnsme_f, cf_f):
-        master = integrate(master, source)
+        integrate(master, source)
         del source
 
     # VM/App/AWS queries
@@ -46,7 +46,7 @@ def queries():
 
     # More DNS (move this)
     k8s = k8s_domains.main()
-    master = integrate(master, k8s)
+    integrate(master, k8s)
 
     # ptr
     ptr = {}
