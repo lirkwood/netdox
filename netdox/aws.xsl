@@ -25,13 +25,17 @@
         </metadata>
 
         <section id="details" title="details">
-          <properties-fragment id="core">
+          <properties-fragment id="info">
             <property name="name" title="Name" value="{xpf:string[@key='Name']}"/>
             <property name="environemnt" title="Environment" value="{xpf:string[@key='Environment']}"/>
             <property name="instanceId" title="Instance Id" value="{xpf:string[@key='InstanceId']}"/>
             <property name="instanceType" title="Instance Type" value="{xpf:string[@key='InstanceType']}"/>
             <property name="availabilityZone" title="Availability Zone" value="{xpf:string[@key='AvailabilityZone']}"/>
-            <property name="ipv4" title="Public IP" value="{xpf:string[@key='PublicIpAddress']}"/>
+          </properties-fragment>
+          <properties-fragment id="ips">
+            <property name="ipv4" title="Public IP" datatype="xref">
+              <xref frag="default" docid="_nd_{translate(xpf:string[@key='PublicIpAddress'],'.','_')}" reversetitle="AWS EC2 instance on this IP"/>
+            </property>
             <property name="ipv4" title="Private IP" datatype="xref">
               <xref frag="default" docid="_nd_{translate(xpf:string[@key='PrivateIpAddress'],'.','_')}" reversetitle="AWS EC2 instance on this IP"/>
             </property>
