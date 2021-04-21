@@ -15,11 +15,11 @@ def main():
         records = json.loads(response)['result']
         for record in records:
             if record['type'] == 'A':
-                forward = add_A(forward, record)
+                add_A(forward, record)
             elif record['type'] == 'CNAME':
-                forward = add_CNAME(forward, record)
+                add_CNAME(forward, record)
             elif record['type'] == 'PTR':
-                reverse = add_PTR(reverse, record)
+                add_PTR(reverse, record)
     
     return (forward, reverse)
 
@@ -49,7 +49,7 @@ def fetch_zones():
         yield zone['id']
 
 
-@utils.mod_set
+@utils.handle
 def add_A(dns_set, record):
     """
     Integrates one A record into a dns set from json returned by Cloudflare api
@@ -62,9 +62,7 @@ def add_A(dns_set, record):
         dns_set[fqdn] = utils.dns(fqdn, root, 'Cloudflare')
     dns_set[fqdn].link(ip, 'ipv4')
 
-    return dns_set
-
-@utils.mod_set
+@utils.handle
 def add_CNAME(dns_set, record):
     """
     Integrates one CNAME record into a dns set from json returned by Cloudflare api
@@ -77,15 +75,12 @@ def add_CNAME(dns_set, record):
         dns_set[fqdn] = utils.dns(fqdn, root, 'Cloudflare')
     dns_set[fqdn].link(dest, 'domain')
 
-    return dns_set
-
-@utils.mod_set
+@utils.handle
 def add_PTR(dns_set, record):
     """
     Integrates one PTR record into a dns set from json returned by Cloudflare api
     """
-    # Not implemented - Cloudflare recommends against using PTR
-    return dns_set
+    # Not implemented - Cloudflare recommends against using PTR outside of PTR zones
 
 if __name__ == '__main__':
     forward, reverse = main()

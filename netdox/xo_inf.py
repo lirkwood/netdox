@@ -7,8 +7,7 @@ args = {
     'register': ['xo-cli', '--register', f"https://{auth['host']}", auth['username'], auth['password']],
     'pools': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--master', 'type=pool'],
     'hosts': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--hostname', '--address', '--CPUs', '--$pool', '--power_state', 'type=host'],
-    'vms': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--mainIpAddress', '--addresses', '--os_version', '--$container', '--$pool', '--power_state', 'type=VM'],
-    'aws': ['/usr/local/bin/aws','ec2','describe-instances','--profile','oup','--output','json','--query','Reservations[*].Instances[*].{Name:Tags[?Key==`Name`]|[0].Value,Environment:Tags[?Key==`environment`]|[0].Value,InstanceId:InstanceId,InstanceType:InstanceType,AvailabilityZone:Placement.AvailabilityZone,PrivateIpAddress:PrivateIpAddress,PublicIpAddress:PublicIpAddress}']
+    'vms': ['xo-cli', '--list-objects', '--name_label', '--name_description', '--uuid', '--mainIpAddress', '--addresses', '--os_version', '--$container', '--$pool', '--power_state', 'type=VM']
 }
 pools = {}
 controllers = set()

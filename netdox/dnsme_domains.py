@@ -20,13 +20,13 @@ def main():
 
 		for record in records:
 			if record['type'] == 'A':
-				forward = add_A(forward, record, domain)
+				add_A(forward, record, domain)
 			
 			elif record['type'] == 'CNAME':
-				forward = add_CNAME(forward, record, domain)
+				add_CNAME(forward, record, domain)
 
 			elif record['type'] == 'PTR':
-				reverse = add_PTR(reverse, record, domain)
+				add_PTR(reverse, record, domain)
 
 	return (forward, reverse)
 
@@ -66,7 +66,7 @@ def fetchDomains():
 			yield (record['id'], record['name'])
 
 
-@utils.mod_set
+@utils.handle
 def add_A(dns_set, record, root):
 	"""
 	Integrates one A record into a dns set from json returned by DNSME api
@@ -79,9 +79,7 @@ def add_A(dns_set, record, root):
 		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
 	dns_set[fqdn].link(ip, 'ipv4')
 
-	return dns_set
-
-@utils.mod_set
+@utils.handle
 def add_CNAME(dns_set, record, root):
 	"""
 	Integrates one CNAME record into a dns set from json returned by DNSME api
@@ -95,9 +93,7 @@ def add_CNAME(dns_set, record, root):
 		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
 	dns_set[fqdn].link(dest, 'domain')	
 
-	return dns_set
-
-@utils.mod_set
+@utils.handle
 def add_PTR(dns_set, record, root):
 	"""
 	Integrates one PTR record into a dns set from json returned by DNSME api
@@ -112,8 +108,6 @@ def add_PTR(dns_set, record, root):
 		if ip not in dns_set:
 			dns_set[ip] = []
 		dns_set[ip].append(fqdn)
-	
-	return dns_set
 
 
 def assemble_fqdn(subdomain, root):

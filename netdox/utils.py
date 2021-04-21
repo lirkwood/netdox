@@ -192,21 +192,3 @@ def handle(func):
         else:
             return returned
     return wrapper
-
-def mod_set(func):
-    """
-    For functions that add to some dns set, passed as first arg. On fatal, return dns set and continue.
-    """
-    funcname = func.__name__
-    funcmodule = func.__module__
-    if funcmodule == '__main__':
-        funcmodule = 'netdox'
-    def wrapper(*args, **kwargs):
-        try:
-            returned = func(*args, **kwargs)
-        except Exception:
-            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
-            return args[0]
-        else:
-            return returned
-    return wrapper

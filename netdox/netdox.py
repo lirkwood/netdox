@@ -9,7 +9,8 @@ import subprocess, json
 # Gathering DNS info #
 ######################
 
-def integrate(dns_set, superset):
+@utils.handle
+def integrate(superset, dns_set):
     """
     Integrates some set of dns records into a master set
     """
@@ -35,7 +36,7 @@ def queries():
     cf_f, cf_r = cf_domains.main()
 
     for source in (ad_f, dnsme_f, cf_f):
-        integrate(source, master)
+        master = integrate(master, source)
         del source
 
     # VM/App/AWS queries
@@ -45,7 +46,7 @@ def queries():
 
     # More DNS (move this)
     k8s = k8s_domains.main()
-    integrate(k8s, master)
+    master = integrate(master, k8s)
 
     # ptr
     ptr = {}
@@ -65,7 +66,18 @@ def queries():
 # Non-essential functions #
 ###########################
 
-@utils.mod_set
+@utils.handle
+def exclude(dns_set, domain_set):
+    """
+    Removes dns records with names in some set from some dns set
+    """
+    for domain in domain_set:
+        try:
+            del dns_set[domain]
+        except KeyError:
+            pass
+
+@utils.handle
 def nat(dns_set):
     """
     Integrates IPs from NAT into a dns set
@@ -78,9 +90,7 @@ def nat(dns_set):
             if ip_alias:
                 dns.link(ip_alias, 'ipv4')
 
-    return dns_set
-
-@utils.mod_set
+@utils.handle
 def xo_vms(dns_set):
     """
     Links domains to Xen Orchestra VMs with the same IP
@@ -95,9 +105,8 @@ def xo_vms(dns_set):
                         dns.link(vm['uuid'], 'vm')
                 except KeyError:
                     pass
-    return dns_set
 
-@utils.mod_set
+@utils.handle
 def aws_ec2(dns_set):
     """
     Links domains to AWS EC2 instances with the same IP
@@ -110,9 +119,8 @@ def aws_ec2(dns_set):
                 for instance in instances:
                     if instance['PrivateIpAddress'] in dns.ips:
                         dns.link(instance['InstanceId'], 'ec2')
-    return dns_set
 
-@utils.mod_set
+@utils.handle
 def icinga_labels(dns_set):
     """
     Integrates icinga display labels into a dns set
@@ -127,9 +135,8 @@ def icinga_labels(dns_set):
             for alias in dns.domains:
                 if (alias in dns_set) and ('icinga' in dns_set[alias].__dict__):
                     dns.icinga = dns_set[alias].icinga
-    return dns_set
 
-@utils.mod_set
+@utils.handle
 def license_keys(dns_set):
     """
     Integrates license keys into a dns set
@@ -139,9 +146,8 @@ def license_keys(dns_set):
         for domain in licenses[license_id]:
             if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
                 dns_set[domain].license = license_id
-    return dns_set
 
-@utils.mod_set
+@utils.handle
 def license_orgs(dns_set):
     """
     Integrates organisations into a dns set inferred from associated license
@@ -152,9 +158,8 @@ def license_orgs(dns_set):
             org_id = license_inf.org(dns.license)
             if org_id:
                 dns.org = org_id
-    return dns_set
 
-@utils.mod_set
+@utils.handle
 def labels(dns_set):
     """
     Applies any relevant document labels
@@ -165,19 +170,6 @@ def labels(dns_set):
     #     # Icinga
     #     if 'icinga' in dns.__dict__:
     #         dns.labels.append('icinga_not_monitored')
-    return dns_set
-
-@utils.mod_set
-def exclude(dns_set, domain_set):
-    """
-    Removes dns records with names in some set from some dns set
-    """
-    for domain in domain_set:
-        try:
-            del dns_set[domain]
-        except KeyError:
-            pass
-    return dns_set
 
 #############################
 # Writing data to json/psml #
@@ -220,17 +212,22 @@ def screenshots():
 #############
 
 def main():
+    # initialisation
     exclusions = init.init()
 
+    # get dns info
     master, ptr, ipsources = queries()
-    master = exclude(master, exclusions)
-    master = nat(master)
-    master = xo_vms(master)
-    master = aws_ec2(master)
-    master = icinga_labels(master)
-    master = license_keys(master)
-    master = license_orgs(master)
-    master = labels(master)
+
+    # apply additional info/filters
+    exclude(master, exclusions)
+    nat(master)
+    xo_vms(master)
+    aws_ec2(master)
+    icinga_labels(master)
+    license_keys(master)
+    license_orgs(master)
+    labels(master)
+
     write_dns(master)
 
     # Write DNS documents

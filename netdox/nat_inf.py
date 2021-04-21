@@ -13,12 +13,11 @@ with open('src/nat.txt','r') as stream:
             natDict[alias.ipv4] = dest.ipv4
             natDict[dest.ipv4] = alias.ipv4
 
-@utils.mod_set
+@utils.handle
 def _pfsense(nat_set):
     jsondata = subprocess.check_output('node pfsense.js', shell=True)
     pf_nat = json.loads(jsondata)
     nat_set = pf_nat | nat_set
-    return nat_set
 
 def pfsense():
     global natDict

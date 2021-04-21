@@ -31,17 +31,17 @@ def extract(jsondata):
     reverse = {}
     for record in jsondata:
         if record['RecordType'] == 'A':
-            forward = add_A(forward, record)
+            add_A(forward, record)
 
         elif record['RecordType'] == 'CNAME':
-            forward = add_CNAME(forward, record)
+            add_CNAME(forward, record)
         
         elif record['RecordType'] == 'PTR':
-            reverse = add_PTR(reverse, record)
+            add_PTR(reverse, record)
     return (forward, reverse)
 
 
-@utils.mod_set
+@utils.handle
 def add_A(dns_set, record): 
     # Get name
     distinguished_name = record['DistinguishedName'].split(',')    #get hostname
@@ -59,9 +59,8 @@ def add_A(dns_set, record):
         dns_set[fqdn] = utils.dns(fqdn, source='ActiveDirectory', root=root)
     dns_set[fqdn].link(dest, 'ipv4')
 
-    return dns_set
 
-@utils.mod_set
+@utils.handle
 def add_CNAME(dns_set, record):
     distinguished_name = record['DistinguishedName'].split(',')
     subdomain = distinguished_name[0].strip('DC=')
@@ -80,9 +79,8 @@ def add_CNAME(dns_set, record):
         dns_set[fqdn] = utils.dns(fqdn, source='ActiveDirectory', root=root)
     dns_set[fqdn].link(dest, 'domain')
 
-    return dns_set
 
-@utils.mod_set
+@utils.handle
 def add_PTR(dns_set, record):
     zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
@@ -97,8 +95,6 @@ def add_PTR(dns_set, record):
         if ip.ipv4 not in dns_set:
             dns_set[ip.ipv4] = []
         dns_set[ip.ipv4].append(dest)
-    
-    return dns_set
 
 
 def assemble_fqdn(subdomain, root):
