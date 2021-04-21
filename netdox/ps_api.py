@@ -120,10 +120,13 @@ def archive(uri, params={}, group=defaultgroup):
 @utils.handle
 def version(uri, params={}, group=defaultgroup):
     """
-    Adds a version to some URI with name as current date/time
+    Adds a version to some URI. Default name is current date/time
     """
+    if 'name' not in params:
+        params['name'] = datetime.now().replace(microsecond=0)
+        
     service = f'/members/~{credentials["username"]}/groups/~{group}/uris/{uri}/versions'
-    r = requests.post(base+service, headers=header, params={'name': datetime.now().replace(microsecond=0)})   # version all docs that are not archived => current
+    r = requests.post(base+service, headers=header, params=params)   # version all docs that are not archived => current
     return r.text
 
 
