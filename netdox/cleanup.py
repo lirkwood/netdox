@@ -86,7 +86,7 @@ def sentenceStale():
 
                     marked_stale = re.search(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})', labels)
                     if marked_stale:
-                        expiry = date(*marked_stale['date'].split('-'))
+                        expiry = date.fromisoformat(marked_stale['date'])
                         if expiry <= today:
                             ps_api.archive(uri)
                     else:
