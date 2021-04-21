@@ -106,8 +106,7 @@ def aws_ec2(dns_set):
         reservations = json.load(stream)
         for domain in dns_set:
             dns = dns_set[domain]
-            for reservation in reservations:
-                instances = reservations[reservation]
+            for instances in reservations:
                 for instance in instances:
                     if instance['PrivateIpAddress'] in dns.ips:
                         dns.link(instance['InstanceId'], 'ec2')
