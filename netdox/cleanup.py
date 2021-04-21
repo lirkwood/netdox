@@ -81,7 +81,9 @@ def sentenceStale():
                 filename = file["decodedpath"].split('/')[-1]
                 uri = file["id"]
                 if filename not in local:
-                    labels = file.labels.string
+                    if file.labels:
+                        labels = file.labels.string
+
                     marked_stale = re.search(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})', labels)
                     if marked_stale:
                         expiry = date(*marked_stale['date'].split('-'))
@@ -90,6 +92,8 @@ def sentenceStale():
                     else:
                         if labels:
                             labels += ','
+                        else:
+                            labels = ''
                         labels += f'expires-{today + timedelta(days = 30)}'
                         ps_api.patch_uri(uri, {'labels':labels})
             
