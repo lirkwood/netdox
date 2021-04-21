@@ -137,6 +137,16 @@ def get_versions(uri, group=defaultgroup):
     return r.text
 
 
+@utils.handle
+def patch_uri(uri, params={}, group=defaultgroup):
+    """
+    Sets the specified properties of a URI
+    """
+    service = f'/members/{credentials["username"]}/groups/{group}/uris/{uri}'
+    r = requests.patch(base+service, headers=header, params=params)
+    return r.text
+
+
 # Global vars
 
 @utils.handle
