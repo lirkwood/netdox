@@ -33,7 +33,7 @@
             <property name="availabilityZone" title="Availability Zone" value="{xpf:string[@key='AvailabilityZone']}"/>
             <property name="ipv4" title="Public IP" value="{xpf:string[@key='PublicIpAddress']}"/>
             <property name="ipv4" title="Private IP" datatype="xref">
-              <xref frag="default" docid="_nd_{xpf:string[@key='PrivateIpAddress']}" reversetitle="AWS EC2 instance on this IP"/>
+              <xref frag="default" docid="_nd_{translate(xpf:string[@key='PrivateIpAddress'],'.','_')}" reversetitle="AWS EC2 instance on this IP"/>
             </property>
           </properties-fragment>
         </section>
