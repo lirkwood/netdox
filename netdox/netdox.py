@@ -227,6 +227,7 @@ def main():
     master = exclude(master, exclusions)
     master = nat(master)
     master = xo_vms(master)
+    master = aws_ec2(master)
     master = icinga_labels(master)
     master = license_keys(master)
     master = license_orgs(master)
