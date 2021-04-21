@@ -117,7 +117,7 @@ def aws_ec2(dns_set):
             dns = dns_set[domain]
             for instances in reservations:
                 for instance in instances:
-                    if instance['PrivateIpAddress'] in dns.ips:
+                    if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
                         dns.link(instance['InstanceId'], 'ec2')
 
 @utils.handle
