@@ -74,8 +74,8 @@ def sentenceStale():
         folder_uri = ps_api.urimap[folder]
         remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={'type': 'document'}), features='xml')
         if os.path.exists(f'out/{folder}'):
-            local = os.listdir(f'out/{folder}')
-            local = [alnum(file) for file in local]
+            # alnum filenames for every file in local version of folder that is a file (not dir)
+            local = [alnum(file) for file in os.listdir(f'out/{folder}') if os.path.isfile(os.path.join(f'out/{folder}', file))]
 
             for file in remote("uri"):
                 filename = file["decodedpath"].split('/')[-1]
