@@ -21,7 +21,7 @@ def _pfsense(nat_set):
 
 def pfsense():
     global natDict
-    natDict = _pfsense(natDict)
+    _pfsense(natDict)
 
 def lookup(ip):
     if ip in natDict:
