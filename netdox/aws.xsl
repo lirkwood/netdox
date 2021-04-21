@@ -7,8 +7,8 @@
 
   <!-- default template -->
   <xsl:template match="/">
-      <xsl:variable name="aws-oup" select="json-to-xml(aws-oup)" />
-      <xsl:apply-templates select="$aws-oup//xpf:array/xpf:map" />
+      <xsl:variable name="aws" select="json-to-xml(aws)" />
+      <xsl:apply-templates select="$aws//xpf:array/xpf:map" />
   </xsl:template>
 
   <xsl:template match="xpf:array/xpf:map">
