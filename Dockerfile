@@ -105,4 +105,4 @@ COPY netdox /opt/app
 
 ENV FLASK_APP=/opt/app/serve.py
 
-CMD [ "flask", "run" ]
+CMD [ "flask", "run", "--host='0.0.0.0'", "--port=8080" ]
