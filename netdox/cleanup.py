@@ -13,14 +13,22 @@ def review():
     os.mkdir(f'/opt/app/out/screenshot_history/{today}')
     with open('src/review.json','r') as stream:
         review = json.load(stream)
-        for domain in review:
+        # check if any domains occur in multiple categories
+        all_domains = list(review['no_ss'].keys()) + review['no_base'] + review['imgdiff'] + review['nodiff']
+        if len(all_domains) > len(list(dict.fromkeys(all_domains))):
+            print('[WARNING][cleanup.py] Duplication detected in review.json')
+        # save base images that will be overwritten
+        for domain in (review['imgdiff'] + list(review['no_ss'].keys())):
             try:
-                if review[domain] == 'imgdiff' or review[domain].startswith('no_ss'):
-                    pngName = f"{domain.replace('.','_')}.png"
-                    shutil.copyfile(f'/etc/ext/base/{pngName}', f'/opt/app/out/screenshot_history/{today}/{pngName}')
-                elif review[domain] == 'nodiff':
-                    pngName = f"{domain.replace('.','_')}.png"
-                    os.remove(f'/opt/app/out/review/{pngName}')
+                pngName = f"{domain.replace('.','_')}.png"
+                shutil.copyfile(f'/etc/ext/base/{pngName}', f'/opt/app/out/screenshot_history/{today}/{pngName}')
+            except FileNotFoundError:
+                pass
+        # delete unnecessary imgdiff overlay images (e.g. <10% pixel diff)
+        for domain in review['nodiff']:
+            try:
+                pngName = f"{domain.replace('.','_')}.png"
+                os.remove(f'/opt/app/out/review/{pngName}')
             except FileNotFoundError:
                 pass
 
@@ -52,15 +60,15 @@ def placeholders():
     """
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
     try:
-        existing_screens = ps_api.get_files(ps_api.urimap['screenshots'])  # get list of screenshots on pageseeder
+        pageseeder_screens = ps_api.get_files(ps_api.urimap['screenshots'])  # get list of screenshots on pageseeder
     except KeyError:
-        existing_screens = []
+        pageseeder_screens = []
 
     with open('src/review.json','r') as stream:
-        review = json.load(stream)
-        for domain in review:
+        no_ss = json.load(stream)['no_ss']
+        for domain in no_ss:
             jpgName = f"{domain.replace('.','_')}.jpg"
-            if jpgName not in existing_screens and review[domain].startswith('no_ss:'):
+            if jpgName not in pageseeder_screens:
                 shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpgName}')
 
 

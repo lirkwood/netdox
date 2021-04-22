@@ -4,8 +4,12 @@ const fs = require('fs');
 const dns = require('./src/dns.json');
 const exclusions = require('./src/screenshot_exclude.json')
 var domains = Object.keys(dns)
-var review = {}     // domains that failed the imagediff process in some way
-
+var review = {
+	"no_ss": {},
+	"no_base": [],
+	"imgdiff": [],
+	"nodiff": []
+}
 
 function pngName(string) {
 	return string.replace(/\./g, '_').concat('.png')
@@ -28,13 +32,13 @@ async function diffScreens(array) {
 
 			// if diff pixel count > 10% (where aspect ratio is 1920x1080)
 			if (diffCount > 207360) {
-				review[domain] = 'imgdiff'
+				review['imgdiff'].push(domain)
 			} else {
-				review[domain] = 'nodiff'
+				review['nodiff'].push(domain)
 			}
 
 		} else {
-			review[domain] = 'no_base'
+			review['no_base'].push(domain)
 		}
 	}
 	return true
@@ -61,7 +65,7 @@ async function try_ss(domain, protocol, browser) {
 			return 'crashed'
 
 		} else {
-			review[domain] = `no_ss:${error}`
+			review['no_ss'][domain] = error.toString()
 			return false
 		}
 

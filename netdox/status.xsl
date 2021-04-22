@@ -20,37 +20,37 @@
         </fragment>
         <properties-fragment id="stats">
             <property name="total" title="No. of domains up for review" value="{count($review//xpf:string)}" />
-            <property name="imgdiff" title="No. of sites that look different today" value="{count($review//xpf:string[. = 'imgdiff'])}" />
-            <property name="no_base" title="No. of sites which did not have a base image" value="{count($review//xpf:string[. = 'no_base'])}" />
-            <property name="no_ss" title="No. of sites Puppeteer failed to screenshot" value="{count($review//xpf:string[contains(.,'no_ss')])}" />
+            <property name="imgdiff" title="No. of sites that look different today" value="{count($review//xpf:array[@key = 'imgdiff']/xpf:string)}" />
+            <property name="no_base" title="No. of sites which did not have a base image" value="{count($review//xpf:array[@key = 'no_base']/xpf:string)}" />
+            <property name="no_ss" title="No. of sites Puppeteer failed to screenshot" value="{count($review//xpf:array[@key = 'no_ss']/xpf:string)}" />
         </properties-fragment>
     </section>
     <section id="imgdiff">
         <fragment id="imgdiff_title">
             <heading level="2">Sites that look different today</heading>
         </fragment>
-    <xsl:for-each select="$review/xpf:map/xpf:string[. = 'imgdiff']">
+    <xsl:for-each select="$review//xpf:array[@key = 'imgdiff']/xpf:string">
         <properties-fragment id="imgdiff_{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
-                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
+                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(., '.', '_')}" />
             </property>
         </properties-fragment>
         <fragment id="imgdiff_{position()}_img_col1" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Expected screenshot</para>
-                <image src="/ps/operations/network/website/screenshot_history/{$date}/{translate(@key, '.', '_')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshot_history/{$date}/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Actual screenshot</para>
-                <image src="/ps/operations/network/website/screenshots/{translate(@key, '.', '_')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshots/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_diff" labels="text-align-center">
             <block label="border-2">
                 <para>Expected screenshot with diff overlay</para>
-                <image src="/ps/operations/network/website/review/{translate(@key, '.', '_')}.jpg"/>
+                <image src="/ps/operations/network/website/review/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
@@ -59,15 +59,15 @@
         <fragment id="no_base_title">
             <heading level="2">Sites with no base image</heading>
         </fragment>
-    <xsl:for-each select="$review/xpf:map/xpf:string[. = 'no_base']">
+    <xsl:for-each select="$review//xpf:array[@key = 'no_base']/xpf:string">
         <properties-fragment id="no_base_{position()}_xref">
             <property name="page" title="Webpage DNS Record" datatype="xref">
-                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
+                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(., '.', '_')}" />
             </property>
         </properties-fragment>
         <fragment id="no_base_{position()}_img" labels="text-align-center">
             <block label="border-2">
-                <image src="/ps/operations/network/website/screenshots/{translate(@key, '.', '_')}.jpg"/>
+                <image src="/ps/operations/network/website/screenshots/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
@@ -76,12 +76,12 @@
         <fragment id="no_ss_title">
             <heading level="2">Sites Puppeteer failed to screenshot</heading>
         </fragment>
-    <xsl:for-each select="$review/xpf:map/xpf:string[substring-before(., ':') = 'no_ss']">
+    <xsl:for-each select="$review//xpf:array[@key = 'no_ss']/xpf:string">
         <properties-fragment id="no_ss_{position()}">
             <property name="page" title="Webpage DNS Record" datatype="xref">
                 <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
             </property>
-            <property name="error" title="Error Message" value="{substring-after(., 'no_ss:')}" />
+            <property name="error" title="Error Message" value="{.}" />
         </properties-fragment>
     </xsl:for-each>
     </section>
