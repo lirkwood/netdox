@@ -103,4 +103,6 @@ RUN rm -rf /var/lib/apt/lists/* && \
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
 
-CMD [ "/bin/bash", "init.sh" ]
+ENV FLASK_APP=/opt/app/serve.py
+
+CMD [ "/bin/bash", "flask", "run" ]
