@@ -216,7 +216,7 @@ def formatApps(apps, workers):
                 del pod['name']
                 del pod['cluster']
             
-            app['domains'] = list(domains)
+            app['domains'] = list(domains).sort()
     return apps
 
 
