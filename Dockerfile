@@ -83,6 +83,7 @@ RUN pip install lxml
 RUN pip install requests
 RUN pip install Pillow
 RUN pip install awscli
+RUN pip install flask
 
 WORKDIR /opt/app
 
