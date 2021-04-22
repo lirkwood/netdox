@@ -37,7 +37,6 @@
 	
         <section id="title">
         	<fragment id="title">
-            <heading level="2">Xen Orchestra VM</heading>
             <heading level="1"><xsl:value-of select="xpf:string[@key='name_label']" /></heading>
         	</fragment>
         </section>

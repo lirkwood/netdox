@@ -29,7 +29,6 @@
 
         <section id="title">
         	<fragment id="title">
-            <heading level="2">Xen Orchestra Pool</heading>
 			      <heading level="1"><xsl:value-of select="$label" /></heading>
         	</fragment>
         </section>

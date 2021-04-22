@@ -32,7 +32,6 @@
 
             <section id="title">
                 <fragment id="title">
-                    <heading level="2">Kubernetes Worker</heading>
                     <heading level="1"><xsl:value-of select="$name"/></heading>
                 </fragment>
 

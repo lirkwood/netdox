@@ -33,7 +33,6 @@
     
                 <section id="title">
                     <fragment id="title">
-                        <heading level="2">Kubernetes App</heading>
                         <heading level="1"><xsl:value-of select="@key"/></heading>
                     </fragment>
                 </section>

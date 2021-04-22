@@ -27,7 +27,6 @@
 
             <section id="title">
                 <fragment id="1">
-                <heading level="2">Kubernetes Cluster</heading>
                 <heading level="1"><xsl:value-of select="$name"/></heading>
                 </fragment>
             </section>
