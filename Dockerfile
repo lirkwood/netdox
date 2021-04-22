@@ -105,4 +105,4 @@ COPY netdox /opt/app
 
 ENV FLASK_APP=/opt/app/serve.py
 
-CMD [ "/bin/bash", "flask", "run" ]
+CMD [ "flask", "run" ]
