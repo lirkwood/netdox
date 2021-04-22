@@ -110,12 +110,7 @@ def sentenceStale():
                         labels += f'expires-{plus_thirty}'
                         ps_api.patch_uri(uri, {'labels':labels})
                         stale[uri] = str(plus_thirty)
-    if stale:
-        with open('src/review.json', 'r') as stream:
-            review = json.load(stream)
-        with open('src/review.json', 'w') as stream:
-            review['stale'] = stale
-            stream.write(json.dumps(review, indent=2))
+    return stale
 
             
 
@@ -155,6 +150,13 @@ def clean():
     except KeyError:
         pass
 
-    sentenceStale()
+    stale = sentenceStale()
+    if stale:
+        with open('src/review.json', 'r') as stream:
+            review = json.load(stream)
+        with open('src/review.json', 'w') as stream:
+            review['stale'] = stale
+            stream.write(json.dumps(review, indent=2))
+    
     # for folder in ps_api.urimap:
     #     ps_api.version(ps_api.urimap[folder])
