@@ -23,7 +23,7 @@ def main(ipdict, ptr):
         if ipnat:
             ipdict[ip]['nat'] = ipnat
         if ip in ptr:
-            ipdict[ip]['ptr'] = ptr[ip]
+            ipdict[ip]['ptr'] = ptr[ip].sort()
         ipdict[ip]['subnet'] = _ip.subnet
         ipdict[ip]['network'] = f'{_ip.octets[0]}.{_ip.octets[1]}.0.0/16'
         ipdict[ip]['for-search'] = f"{ip.split('.')[2]}, {'.'.join(ip.split('.')[2:4])}"

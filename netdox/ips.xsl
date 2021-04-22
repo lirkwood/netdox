@@ -37,12 +37,10 @@
                 <property name="ipv4"               title="IP"          value="{@key}" /> 
                 <property name="subnet"               title="Subnet"          value="{xpf:string[@key = 'subnet']}" />
                 <property name="location"               title="Location"          value="{xpf:string[@key = 'location']}" />
-                <xsl:for-each select="xpf:string[@key = 'nat']">
                 <property name="nat" title="NAT Destination" datatype="xref">
-                    <xref frag="default" docid="_nd_{translate(.,'.','_')}"
+                    <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'nat'],'.','_')}"
                     reversetitle="NAT alias" />
                 </property>
-                </xsl:for-each>
                 <property name="source" title="DNS Source" value="{xpf:string[@key = 'source']}" />
             </properties-fragment>
 
