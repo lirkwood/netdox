@@ -13,7 +13,9 @@ def webhooks():
         jsondata = request.get_json()
         if jsondata:
             print('POST data inboud:')
-            print(json.dumps(jsondata))
+            print(json.dumps(jsondata, indent=2))
+            print('Headers:')
+            print(request.headers)
             try:
                 ps_webhooks_ping(request.headers['X-PS-Secret'])
             except KeyError:
