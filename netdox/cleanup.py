@@ -78,7 +78,7 @@ def sentenceStale():
     Adds 30-day timer to files present on pageseeder but not locally
     """
     today = datetime.now().date()
-    stale = set()
+    stale = {}
     # for every folder in context on pageseeder
     for folder in ps_api.urimap:
         folder_uri = ps_api.urimap[folder]
@@ -99,19 +99,22 @@ def sentenceStale():
                         expiry = date.fromisoformat(marked_stale['date'])
                         if expiry <= today:
                             ps_api.archive(uri)
+                        else:
+                            stale[uri] = marked_stale['date']
                     else:
                         if labels:
                             labels += ','
                         else:
                             labels = ''
-                        labels += f'expires-{today + timedelta(days = 30)}'
+                        plus_thirty = today + timedelta(days = 30)
+                        labels += f'expires-{plus_thirty}'
                         ps_api.patch_uri(uri, {'labels':labels})
-                        stale.add(uri)
+                        stale[uri] = str(plus_thirty)
     if stale:
         with open('src/review.json', 'r') as stream:
             review = json.load(stream)
         with open('src/review.json', 'w') as stream:
-            review['stale'] = list(stale)
+            review['stale'] = stale
             stream.write(json.dumps(review, indent=2))
 
             

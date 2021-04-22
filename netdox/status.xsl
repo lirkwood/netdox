@@ -55,6 +55,19 @@
         </fragment>
     </xsl:for-each>
     </section>
+    <section id="stale">
+        <fragment id="stale_title">
+            <heading level="2">Stale DNS records</heading>
+        </fragment>
+    <xsl:for-each select="$review//xpf:array[@key = 'stale']/xpf:string">
+        <properties-fragment id="stale_{position()}">
+            <property name="page" title="Webpage DNS Record" datatype="xref">
+                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
+            </property>
+            <property name="expiry" title="Expiry Date" value="{.}" />
+        </properties-fragment>
+    </xsl:for-each>
+    </section>
     <section id="no_base">
         <fragment id="no_base_title">
             <heading level="2">Sites with no base image</heading>
