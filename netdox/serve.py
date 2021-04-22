@@ -1,5 +1,6 @@
 from flask import Flask, request
 from flask.wrappers import Response
+import json
 app = Flask(__name__)
 
 @app.route('/')
@@ -8,12 +9,20 @@ def root():
 
 @app.route('/webhooks', methods=['POST', 'GET'])
 def webhooks():
-    params = request.args
     if request.content_length and request.content_length < 10**6:
         jsondata = request.get_json()
         if jsondata:
-            return Response('JSON Parsed', status=200)
-    return Response('No data', status=200)
+            print('POST data inboud:')
+            print(json.dumps(jsondata))
+            try:
+                ps_webhooks_ping(request.headers['X-PS-Secret'])
+            except KeyError:
+                pass
+    return Response(status=200)
+
+def ps_webhooks_ping(secret):
+    print(f'Responding to webhook.ping with {secret}')
+    return Response(status=200, headers={'X-PS-Secret': secret})
 
 
 # with app.test_request_context('/webhooks', method='POST'):
