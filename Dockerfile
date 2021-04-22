@@ -84,6 +84,7 @@ RUN pip install requests
 RUN pip install Pillow
 RUN pip install awscli
 RUN pip install flask
+RUN pip install gunicorn
 
 WORKDIR /opt/app
 
@@ -105,4 +106,4 @@ COPY netdox /opt/app
 
 ENV FLASK_APP=/opt/app/serve.py
 
-CMD [ "flask", "run", "--host='0.0.0.0'", "--port=8080" ]
+CMD [ "gunicorn", "-b", "0.0.0.0:8080", "serve:app" ]
