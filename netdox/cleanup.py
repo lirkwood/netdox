@@ -5,7 +5,7 @@ import re, os, json, shutil
 import ps_api, utils
 
 
-def review():
+def parseReview():
     """
     Perform various actions based on a domains value in review.json
     """
@@ -126,7 +126,7 @@ def clean():
     today = str(datetime.now().date())
 
     # act on values in review.json
-    review()
+    parseReview()
 
     # overwrite base images
     try:
