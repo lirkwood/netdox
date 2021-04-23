@@ -12,7 +12,7 @@
   </xsl:template>
 
   <xsl:template match="xpf:array/xpf:map">
-    <xsl:result-document href="out/xo/{xpf:string[@key='name_label']}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/xo/{xpf:string[@key='uuid']}.psml" method="xml" indent="yes">
       <document type="xo_vm" level="portable">
 
         <xsl:variable name="labels">
