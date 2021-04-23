@@ -27,20 +27,19 @@ def webhooks():
                 print(request.data)
                 body = request.get_json()
                 for event in body['webevents']:
-                    if event['event'][0]['name'] == psproperties['group']:
                         
-                        if event['type'] == 'webhook.ping':
-                            return ps_webhook_ping(request.headers['X-PS-Secret'])
+                    if event['type'] == 'webhook.ping':
+                        return ps_webhook_ping(request.headers['X-PS-Secret'])
 
-                        elif event['type'] == 'uri.modified':
-                            # return ps_uri_modified(event)
-                            pass
+                    elif event['type'] == 'uri.modified':
+                        # return ps_uri_modified(event)
+                        pass
 
-                        elif event['type'] == 'workflow.updated':
-                            return ps_workflow_updated(event)
-                        
-                        else:
-                            print(json.dumps(body, indent=4))
+                    elif event['type'] == 'workflow.updated':
+                        return ps_workflow_updated(event)
+                    
+                    else:
+                        print(json.dumps(body, indent=4))
                 else:
                     return Response(status=400)
         return Response(status=200)
