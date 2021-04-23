@@ -59,7 +59,7 @@ def ps_uri_modified(event):
 def ps_workflow_updated(event):
     status = event['workflow']['status']
     if status == 'Approved':
-        comment = event['comments'][0]
+        comment = event['workflow']['comments'][0]
         comment_details = json.loads(ps_api.get_comment(comment['id']))
         document_uri = comment_details['context']['uri']['id']
         document_type = comment_details['context']['uri']['documenttype']
