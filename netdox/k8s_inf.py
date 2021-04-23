@@ -1,8 +1,5 @@
 import subprocess, utils, json
 
-global selectorLabels
-selectorLabels = ('instance', 'app.kubernetes.io/instance', 'app')
-
 # maps service to hostnames it is exposed on
 def getIngress():
     serviceDomains = {}
@@ -141,12 +138,12 @@ def groupServices(serviceSelectors):
         groups[c] = {}
         cluster = serviceSelectors[c]
         for service in cluster:
-            for selector in selectorLabels:
+            for selector in ('instance', 'app.kubernetes.io/instance', 'app'):
                 if selector in cluster[service]:
                     selectorValue = cluster[service][selector]
                     if selectorValue not in groups:
                         groups[c][selectorValue] = []
-                        groups[c][selectorValue].append(service)
+                    groups[c][selectorValue].append(service)
 
                     for _service in cluster:
                         try:
@@ -154,6 +151,7 @@ def groupServices(serviceSelectors):
                                 groups[c][selectorValue].append(_service)
                         except KeyError:
                             pass
+                    break
     return groups
 
 
