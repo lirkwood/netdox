@@ -1,34 +1,6 @@
 from datetime import datetime
-import hmac, json, hashlib, requests
+import re, hmac, json, hashlib, requests
 import iptools, utils
-
-##################################################################################
-# requests all domains from dnsme, and then all of their associated dns records. #
-##################################################################################
-
-@utils.critical
-def main():
-	"""
-	Returns tuple containing forward and reverse DNS records from DNSMadeEasy
-	"""
-	forward = {}
-	reverse = {}
-
-	for id, domain in fetchDomains():
-		response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=genheader()).text
-		records = json.loads(response)['data']
-
-		for record in records:
-			if record['type'] == 'A':
-				add_A(forward, record, domain)
-			
-			elif record['type'] == 'CNAME':
-				add_CNAME(forward, record, domain)
-
-			elif record['type'] == 'PTR':
-				add_PTR(reverse, record, domain)
-
-	return (forward, reverse)
 
 
 def genheader():
@@ -64,6 +36,31 @@ def fetchDomains():
 	else:
 		for record in jsondata:
 			yield (record['id'], record['name'])
+
+
+@utils.critical
+def fetchDNS():
+	"""
+	Returns tuple containing forward and reverse DNS records from DNSMadeEasy
+	"""
+	forward = {}
+	reverse = {}
+
+	for id, domain in fetchDomains():
+		response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=genheader()).text
+		records = json.loads(response)['data']
+
+		for record in records:
+			if record['type'] == 'A':
+				add_A(forward, record, domain)
+			
+			elif record['type'] == 'CNAME':
+				add_CNAME(forward, record, domain)
+
+			elif record['type'] == 'PTR':
+				add_PTR(reverse, record, domain)
+
+	return (forward, reverse)
 
 
 @utils.handle
@@ -122,3 +119,21 @@ def assemble_fqdn(subdomain, root):
 	else:
 		fqdn = subdomain +'.'+ root
 	return fqdn.strip('.').strip()
+
+
+@utils.handle
+def create_A(name, zone, ip):
+    if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
+        with open('src/zones.json', 'r') as stream:
+            zones = json.load(stream)['dnsme']
+            if zone in zones:
+                endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
+                # r = requests.post(endpoint, headers=genheader())
+                # return r.text
+                print(endpoint)
+                return None
+            else:
+                raise ValueError(f'[ERROR][dnsme_api.py] Unknow zone for DNSMadeEasy: {zone}')
+
+    else:
+        raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or IPv4 ({ip})')
