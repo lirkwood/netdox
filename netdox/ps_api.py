@@ -2,12 +2,14 @@ import requests, utils, json
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-# Auth info
+# Loading config
 
 with open('src/authentication.json','r') as stream:
     credentials = json.load(stream)['pageseeder']
 
 defaultgroup = credentials['group']
+base = f'https://{credentials["host"]}/ps/service'
+member = credentials["username"]
 
 
 # Useful services
@@ -82,7 +84,7 @@ def get_fragment(uri, fragment_id, params={}, group=defaultgroup):
     """
     Returns content of a fragment in some given uri
     """
-    service = f'/members/~{credentials["username"]}/groups/~{group}/uris/{uri}/fragments/{fragment_id}'
+    service = f'/members/~{member}/groups/~{group}/uris/{uri}/fragments/{fragment_id}'
     r = requests.get(base+service, headers=header, params=params)
     return r.text
 
@@ -92,7 +94,7 @@ def export(uri, params={}):
     """
     Begins export process for some URI and returns relevant thread ID
     """
-    service = f'/members/~{credentials["username"]}/uris/{uri}/export'
+    service = f'/members/~{member}/uris/{uri}/export'
     r = requests.get(base+service, headers=header, params=params)
     return r.text
 
@@ -112,7 +114,7 @@ def archive(uri, params={}, group=defaultgroup):
     """
     Begins archive process for some URI
     """
-    service = f'/members/~{credentials["username"]}/groups/~{group}/uris/{uri}/archive'
+    service = f'/members/~{member}/groups/~{group}/uris/{uri}/archive'
     r = requests.post(base+service, headers=header)
     return r.text
 
@@ -125,7 +127,7 @@ def version(uri, params={}, group=defaultgroup):
     if 'name' not in params:
         params['name'] = datetime.now().replace(microsecond=0)
         
-    service = f'/members/~{credentials["username"]}/groups/~{group}/uris/{uri}/versions'
+    service = f'/members/~{member}/groups/~{group}/uris/{uri}/versions'
     r = requests.post(base+service, headers=header, params=params)   # version all docs that are not archived => current
     return r.text
 
@@ -145,14 +147,31 @@ def patch_uri(uri, params={}, group=defaultgroup):
     """
     Sets the specified properties of a URI
     """
-    service = f'/members/{credentials["username"]}/groups/{group}/uris/{uri}'
+    service = f'/members/{member}/groups/{group}/uris/{uri}'
     r = requests.patch(base+service, headers=header, params=params)
+    return r.text
+
+@utils.handle
+def get_groupfolder(id, params={}, group=defaultgroup):
+    """
+    Gets some groupfolder
+    """
+    service = f'/members/{member}/groups/{group}/groupfolders/{id}'
+    r = requests.get(base+service, headers=header, params=params)
+    return r.text
+
+@utils.handle
+def get_groupfolders(params={}, group=defaultgroup):
+    """
+    Gets the groupfolders for some group
+    """
+    service = f'/members/{member}/groups/{group}/groupfolders'
+    r = requests.get(base+service, headers=header, params=params)
     return r.text
 
 
 # Global vars
 
-@utils.handle
 def getUrimap(dir_uri):
     """
     Generates dict with files in some dir as keys and their uris as values
@@ -164,11 +183,10 @@ def getUrimap(dir_uri):
     
     return urimap
 
+
 header = {
     'authorization': f'Bearer {auth()}'
 }
-
-base = f'https://{credentials["host"]}/ps/service'
 
 urimap = getUrimap('375156')
 
