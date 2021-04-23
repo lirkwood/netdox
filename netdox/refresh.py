@@ -67,10 +67,12 @@ def queries():
 ###########################
 
 @utils.handle
-def exclude(dns_set, domain_set):
+def exclude(dns_set):
     """
     Removes dns records with names in some set from some dns set
     """
+    with open('src/exclusions.json', 'r') as stream:
+        domain_set = json.load(stream)['dns']
     for domain in domain_set:
         try:
             del dns_set[domain]
@@ -212,14 +214,11 @@ def screenshots():
 #############
 
 def main():
-    # initialisation
-    exclusions = init.init()
-
     # get dns info
     master, ptr, ipsources = queries()
 
     # apply additional info/filters
-    exclude(master, exclusions)
+    exclude(master)
     nat(master)
     xo_vms(master)
     aws_ec2(master)
