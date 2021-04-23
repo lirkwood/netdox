@@ -186,37 +186,28 @@ def groupPods(servicePods, serviceGroups):
     return apps
 
 
-def podlink(pod):
-    if pod['cluster'] == 'sandbox':
-        podlinkbase = 'https://rancher.allette.com.au/p/c-4c8qc:p-dtg8s/workloads/default:'
-    elif pod['cluster'] == 'production':
-        podlinkbase = 'https://rancher-sy4.allette.com.au/p/c-57mj6:p-b8h5z/workloads/default:'
-    else:
-        print(f'[WARNING][k8s_inf.py] Unconfigured cluster {pod["cluster"]}. Unable to generate link to rancher.')
-
-    return podlinkbase + pod['name']
-
-
 def formatApps(apps, workers):
-    for c in apps:
-        cluster = apps[c]
-        for appName in cluster:
-            app = cluster[appName]
+    with open('src/authentication.json', 'r') as stream:
+        creds = json.load(stream)['kubernetes']
+        for c in apps:
+            cluster = apps[c]
+            for appName in cluster:
+                app = cluster[appName]
 
-            domains = set()
-            for podName in app['pods']:
-                pod = app['pods'][podName]
-                pod['rancher'] = podlink(pod)
-                pod['vm'] = workers[c][pod['nodeName']]['vm']
+                domains = set()
+                for podName in app['pods']:
+                    pod = app['pods'][podName]
+                    pod['rancher'] = f'{creds[c]["server"]}/workloads/default:{podName}'
+                    pod['vm'] = workers[c][pod['nodeName']]['vm']
 
-                for domain in pod['domains']:
-                    domains.add(domain)
+                    for domain in pod['domains']:
+                        domains.add(domain)
 
-                del pod['domains']
-                del pod['name']
-                del pod['cluster']
-            
-            app['domains'] = sorted(list(domains))
+                    del pod['domains']
+                    del pod['name']
+                    del pod['cluster']
+                
+                app['domains'] = sorted(list(domains))
     return apps
 
 
