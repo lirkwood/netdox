@@ -122,3 +122,6 @@ def kubeconfig(auth):
         users: {users}
         contexts: {contexts}
         """))
+
+if __name__ == '__main__':
+    init()
