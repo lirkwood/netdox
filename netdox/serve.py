@@ -8,7 +8,7 @@ app = Flask(__name__)
 psproperties = {}
 with open('src/pageseeder.properties', 'r') as stream:
     for line in stream.read().splitlines():
-        property = re.match('(?P<key>.+?)=(?P<value>.+?)')
+        property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
         psproperties[property['key']] = property['value']
 
 
@@ -23,7 +23,7 @@ def webhooks():
             body = request.get_json()
             if body and body['webhook']['name'] == 'netdox-backend':
                 for event in body['webevents']:
-                    if event['path'].startswith(f"/ps/{psproperties['group'].replace('-','/')}"):
+                    if event['event'][0]['name'] == psproperties['group']:
                         
                         if event['type'] == 'webhook.ping':
                             return ps_webhook_ping(request.headers['X-PS-Secret'])
