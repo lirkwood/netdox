@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 var { imgDiff } = require("img-diff-js");
 const fs = require('fs');
 const dns = require('./src/dns.json');
-const exclusions = require('./src/screenshot_exclude.json')
+const exclusions = require('./src/exclusions.json')['ss']
 var domains = Object.keys(dns)
 var review = {
 	"no_ss": {},
