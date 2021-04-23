@@ -2,8 +2,9 @@ from flask import Flask, request
 from flask import Response
 
 from traceback import format_exc
+from bs4 import BeautifulSoup
 import json, re
-import ps_api
+import dnsme_api, ps_api
 
 app = Flask(__name__)
 
@@ -69,7 +70,16 @@ def ps_workflow_updated(event):
 
 
 def approved_dns(uri):
-    info = json.loads(ps_api.get_fragment(uri, 'info'))
-    destinations = json.loads(ps_api.get_fragment(uri, 'dest'))
-    print(destinations)
+    info_soup = BeautifulSoup(ps_api.get_fragment(uri, 'info'), features='xml')
+    destinations = BeautifulSoup(ps_api.get_fragment(uri, 'dest'), features='xml')
+    info = {}
+    for property in info_soup("property"):
+        info[property['name']] = property['value']
+    # if info has minimum details
+    if info['name'] and info['root'] and info['source']:
+        for destination in destinations("property"):
+            if destination['name'] == 'ipv4':
+                if info['source'] == 'DNSMadeEasy':
+                    dnsme_api.create_A(info['name'], info['root'], destination.xref.string)
+
     return Response(status=200)
