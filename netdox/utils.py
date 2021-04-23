@@ -14,6 +14,8 @@ for location in _location_map:
     for subnet in _location_map[location]:
         location_map[subnet] = location
 
+dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
+
 class dns:
     name: str
     root: str
@@ -60,7 +62,7 @@ class dns:
                     raise ValueError(f'"{string}" is not a valid ipv4 address.')
 
             elif type == 'domain':
-                if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', string):
+                if re.fullmatch(dns_name_pattern, string):
                     self.domains.add(string)
                 else:
                     raise ValueError(f'Domain {string} is not valid.')
