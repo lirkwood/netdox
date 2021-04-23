@@ -115,7 +115,7 @@ def archive(uri, params={}, group=defaultgroup):
     Begins archive process for some URI
     """
     service = f'/members/~{member}/groups/~{group}/uris/{uri}/archive'
-    r = requests.post(base+service, headers=header)
+    r = requests.post(base+service, headers=header, params=params)
     return r.text
 
 
