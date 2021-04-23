@@ -1,5 +1,7 @@
 from flask import Flask, request
 from flask import Response
+
+from traceback import format_exc
 import json, re
 import ps_api
 
@@ -19,24 +21,29 @@ def root():
 
 @app.route('/webhooks', methods=['POST'])
 def webhooks():
-    if request.method == 'POST':
-        if request.content_length < 10**6 and request.is_json:
-            body = request.get_json()
-            if body and body['webhook']['name'] == 'netdox-backend':
-                for event in body['webevents']:
-                    if event['event'][0]['name'] == psproperties['group']:
-                        
-                        if event['type'] == 'webhook.ping':
-                            return ps_webhook_ping(request.headers['X-PS-Secret'])
+    try:
+        if request.method == 'POST':
+            if request.content_length < 10**6 and request.is_json:
+                body = request.get_json()
+                if body and body['webhook']['name'] == 'netdox-backend':
+                    for event in body['webevents']:
+                        if event['event'][0]['name'] == psproperties['group']:
+                            
+                            if event['type'] == 'webhook.ping':
+                                return ps_webhook_ping(request.headers['X-PS-Secret'])
 
-                        elif event['type'] == 'uri.modified':
-                            return ps_uri_modified(event)
-                        
-                        else:
-                            print(json.dumps(body, indent=4))
-            else:
-                return Response(status=400)
-    return Response(status=200)
+                            elif event['type'] == 'uri.modified':
+                                return ps_uri_modified(event)
+                            
+                            else:
+                                print(json.dumps(body, indent=4))
+                else:
+                    return Response(status=400)
+        return Response(status=200)
+    except Exception:
+        print(f'[WARNING][serve.py] Threw exception:\n {format_exc()}')
+        return Response(status=500)
+
 
 def ps_webhook_ping(secret):
     response = Response(status=200, headers=[('X-Ps-Secret', secret)])
