@@ -1,4 +1,4 @@
-import ad_domains, dnsme_domains, cf_domains, k8s_domains
+import ad_domains, dnsme_api, cf_domains, k8s_domains
 import k8s_inf, ip_inf, xo_inf, aws_inf, nat_inf, icinga_inf, license_inf
 import cleanup, utils, init
 
@@ -32,7 +32,7 @@ def queries():
 
     # DNS queries
     ad_f, ad_r = ad_domains.main()
-    dnsme_f, dnsme_r = dnsme_domains.main()
+    dnsme_f, dnsme_r = dnsme_api.fetchDNS()
     cf_f, cf_r = cf_domains.main()
 
     for source in (ad_f, dnsme_f, cf_f):
