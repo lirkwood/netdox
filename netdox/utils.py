@@ -164,14 +164,14 @@ def critical(func):
     if funcmodule == '__main__':
         funcmodule = 'netdox'
     def wrapper(*args, **kwargs):
-        print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
+        print(f'[DEBUG][refresh.py] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
         try:
             returned = func(*args, **kwargs)
         except Exception as e:
-            print(f'[ERROR][netdox.py] Essential function {funcmodule}.{funcname} threw an exception:\n')
+            print(f'[ERROR][refresh.py] Essential function {funcmodule}.{funcname} threw an exception:\n')
             raise e
         else:
-            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
+            print(f'[DEBUG][refresh.py] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
             return returned
     return wrapper
 
@@ -187,7 +187,7 @@ def handle(func):
         try:
             returned = func(*args, **kwargs)
         except Exception:
-            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
+            print(f'[WARNING][refresh.py] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
             return None
         else:
             return returned
