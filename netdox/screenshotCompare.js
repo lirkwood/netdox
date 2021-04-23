@@ -24,9 +24,9 @@ async function diffScreens(array) {
 		if (fs.existsSync("/etc/ext/base/".concat(filename))) {
 			// diff images
 			let { diffCount } = await imgDiff({
-				actualFilename: "/opt/app/out/screenshots/".concat(filename),
+				actualFilename: "out/screenshots/".concat(filename),
 				expectedFilename: "/etc/ext/base/".concat(filename),
-				diffFilename: "/opt/app/out/review/".concat(filename),
+				diffFilename: "out/review/".concat(filename),
 				generateOnlyDiffFile: true
 			});
 
@@ -52,7 +52,7 @@ async function try_ss(domain, protocol, browser) {
 	try {
 		await page.goto(url, { timeout: 5000 });
 		await page.waitForTimeout(1000)
-		await page.screenshot({ path: '/opt/app/out/screenshots/'.concat(filename) });
+		await page.screenshot({ path: 'out/screenshots/'.concat(filename) });
 	} catch (error) {
 		try { await page.close() } catch (err) {};
 		// if failed due to cert error on https try with http
@@ -113,5 +113,5 @@ async function newBrowser(array) {
 	await secondDiff
 	await thirdDiff
 
-	fs.writeFileSync('/opt/app/src/review.json', JSON.stringify(review, null, 2), (err) => { if (err) throw err; })
+	fs.writeFileSync('src/review.json', JSON.stringify(review, null, 2), (err) => { if (err) throw err; })
 })();

@@ -60,7 +60,7 @@ def init():
             stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
         # set up aws iam profile
-        with open('/opt/app/src/awsconfig', 'w') as stream:
+        with open('src/awsconfig', 'w') as stream:
             stream.write(dedent(f"""
             [default]
             output = json
@@ -90,7 +90,7 @@ def kubeconfig(auth):
     """
     Generate kubeconfig file
     """
-    with open('/opt/app/src/kubeconfig', 'w') as stream:
+    with open('src/kubeconfig', 'w') as stream:
         clusters = ''
         users = ''
         contexts = ''

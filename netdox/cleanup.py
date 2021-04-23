@@ -10,7 +10,7 @@ def parseReview():
     Perform various actions based on a domains value in review.json
     """
     global today
-    os.mkdir(f'/opt/app/out/screenshot_history/{today}')
+    os.mkdir(f'out/screenshot_history/{today}')
     with open('src/review.json','r') as stream:
         review = json.load(stream)
         # check if any domains occur in multiple categories
@@ -21,14 +21,14 @@ def parseReview():
         for domain in (review['imgdiff'] + list(review['no_ss'].keys())):
             try:
                 pngName = f"{domain.replace('.','_')}.png"
-                shutil.copyfile(f'/etc/ext/base/{pngName}', f'/opt/app/out/screenshot_history/{today}/{pngName}')
+                shutil.copyfile(f'/etc/ext/base/{pngName}', f'out/screenshot_history/{today}/{pngName}')
             except FileNotFoundError:
                 pass
         # delete unnecessary imgdiff overlay images (e.g. <10% pixel diff)
         for domain in review['nodiff']:
             try:
                 pngName = f"{domain.replace('.','_')}.png"
-                os.remove(f'/opt/app/out/review/{pngName}')
+                os.remove(f'out/review/{pngName}')
             except FileNotFoundError:
                 pass
 
@@ -134,12 +134,12 @@ def clean():
     except FileNotFoundError:
         pass
     
-    shutil.copytree('/opt/app/out/screenshots', '/etc/ext/base')
+    shutil.copytree('out/screenshots', '/etc/ext/base')
 
     # scale down all exported img files
-    png2jpg('/opt/app/out/screenshots')
-    png2jpg('/opt/app/out/review')
-    png2jpg(f'/opt/app/out/screenshot_history/{today}')
+    png2jpg('out/screenshots')
+    png2jpg('out/review')
+    png2jpg(f'out/screenshot_history/{today}')
 
     # generate placeholders where there is no ss locally or on ps
     placeholders()
