@@ -1,6 +1,7 @@
 import ps_api, utils, json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
+import dnsme_api
 
 ##################
 # Initialisation #
@@ -122,6 +123,21 @@ def kubeconfig(auth):
         users: {users}
         contexts: {contexts}
         """))
+
+def fetchZones():
+    zones = {
+        "dnsme": {},
+        "ad": {},
+        "k8s": {},
+        "cf": {}
+    }    
+
+    for id, domain in dnsme_api.fetchDomains():
+        zones['dnsme'][domain] = id
+    
+    with open('src/zones.json', 'w') as stream:
+        stream.write(json.dumps(zones, indent=2))
+
 
 if __name__ == '__main__':
     init()
