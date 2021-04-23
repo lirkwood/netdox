@@ -150,6 +150,16 @@ def patch_uri(uri, params={}, group=defaultgroup):
     return r.text
 
 
+@utils.handle
+def get_comment(commentid, params={}):
+    """
+    Gets some comment
+    """
+    service = f'/members/{credentials["username"]}/comments/{commentid}'
+    r = requests.get(base+service, headers=header, params=params)
+    return r.text
+
+
 # Global vars
 
 @utils.handle
@@ -165,7 +175,8 @@ def getUrimap(dir_uri):
     return urimap
 
 header = {
-    'authorization': f'Bearer {auth()}'
+    'authorization': f'Bearer {auth()}',
+    'Accept': 'application/json'
 }
 
 base = f'https://{credentials["host"]}/ps/service'
