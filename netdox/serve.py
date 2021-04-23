@@ -23,15 +23,16 @@ def webhooks():
             body = request.get_json()
             if body and body['webhook']['name'] == 'netdox-backend':
                 for event in body['webevents']:
-                    
-                    if event['type'] == 'webhook.ping':
-                        return ps_webhook_ping(request.headers['X-PS-Secret'])
+                    if event['path'].startswith(f"/ps/{psproperties['group'].replace('-','/')}"):
+                        
+                        if event['type'] == 'webhook.ping':
+                            return ps_webhook_ping(request.headers['X-PS-Secret'])
 
-                    elif event['type'] == 'uri.modified':
-                        return ps_uri_modified(event)
-                    
-                    else:
-                        print(json.dumps(body, indent=4))
+                        elif event['type'] == 'uri.modified':
+                            return ps_uri_modified(event)
+                        
+                        else:
+                            print(json.dumps(body, indent=4))
             else:
                 return Response(status=400)
     return Response(status=200)
