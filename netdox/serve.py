@@ -1,7 +1,16 @@
 from flask import Flask, request
 from flask import Response
-import json
+import json, re
+import ps_api
+
 app = Flask(__name__)
+
+psproperties = {}
+with open('src/pageseeder.properties', 'r') as stream:
+    for line in stream.read().splitlines():
+        property = re.match('(?P<key>.+?)=(?P<value>.+?)')
+        psproperties[property['key']] = property['value']
+
 
 @app.route('/')
 def root():
@@ -14,10 +23,15 @@ def webhooks():
             body = request.get_json()
             if body and body['webhook']['name'] == 'netdox-backend':
                 for event in body['webevents']:
+                    
                     if event['type'] == 'webhook.ping':
                         return ps_webhook_ping(request.headers['X-PS-Secret'])
+
+                    elif event['type'] == 'uri.modified':
+                        return ps_uri_modified(event)
+                    
                     else:
-                        print(json.dumps(body, indent=2))
+                        print(json.dumps(body, indent=4))
             else:
                 return Response(status=400)
     return Response(status=200)
@@ -25,3 +39,7 @@ def webhooks():
 def ps_webhook_ping(secret):
     response = Response(status=200, headers=[('X-Ps-Secret', secret)])
     return response
+
+def ps_uri_modified(event):
+    uri = event['uri']
+    return Response(status=200)
