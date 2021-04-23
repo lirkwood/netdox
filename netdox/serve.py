@@ -9,7 +9,8 @@ psproperties = {}
 with open('src/pageseeder.properties', 'r') as stream:
     for line in stream.read().splitlines():
         property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
-        psproperties[property['key']] = property['value']
+        if property:
+            psproperties[property['key']] = property['value']
 
 
 @app.route('/')
