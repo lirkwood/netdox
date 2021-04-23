@@ -80,10 +80,8 @@ def init():
                 exclusions['dns'].append(line.string.strip())
             exclusions['ss'].append(line.string.strip())
             
-        with open('src/screenshot_exclude.json', 'w') as output:
-            output.write(json.dumps(exclusions['ss'], indent=2))
-            
-    return exclusions['dns']
+        with open('src/exclusions.json', 'w') as output:
+            output.write(json.dumps(exclusions, indent=2))
 
 
 def kubeconfig(auth):

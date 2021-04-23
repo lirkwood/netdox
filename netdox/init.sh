@@ -13,6 +13,14 @@ done
 openssl enc -aes-256-cbc -d -in "/etc/ext/authentication.bin" \
 -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/authentication.json"
 
+if python3 init.py
+    then
+        echo '[INFO][init.sh] Python initialisation successful.'
+    else
+        echo '[ERROR][init.sh] Python initialisation unsuccessful. Terminating...'
+        exit 1
+fi
+
 crontab <<< '0 8 * * * ./refresh.sh'
 
 echo '[IMNFO][init.sh] Starting gunicorn server on 8080'
