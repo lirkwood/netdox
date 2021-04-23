@@ -106,4 +106,4 @@ COPY netdox /opt/app
 
 ENV FLASK_APP=/opt/app/serve.py
 
-CMD [ "gunicorn", "--reload", "-b", "0.0.0.0:8080", "serve:app" ]
+CMD [ "/bin/bash", "init.sh" ]

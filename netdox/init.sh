@@ -13,22 +13,8 @@ done
 openssl enc -aes-256-cbc -d -in "/etc/ext/authentication.bin" \
 -K ${OPENSSL_KEY} -iv $(printf authivpassphrase | xxd -p) -out "/opt/app/src/authentication.json"
 
+crontab <<< '0 8 * * * ./refresh.sh'
 
-if python3 netdox.py
-    then
-        echo '[INFO][init.sh] Python exited successfully. Beginning PageSeeder upload...'
-        cd /opt/app/out
-        zip -r -q netdox-src.zip *
-        cd /opt/app
-        if ant -lib /opt/ant/lib
-            then
-                echo '[INFO][init.sh] Upload successful.'
-            else
-                echo '[ERROR][init.sh] Upload exited with non-zero status. Storing psml for debugging...'
-                cp /opt/app/out/netdox-src.zip /etc/ext/psml.zip
-        fi
-    else
-        echo '[ERROR][init.sh] Python exited with non-zero status. Cancelling upload...'
-fi
+echo '[IMNFO][init.sh] Starting gunicorn server on 8080'
 
-echo '[INFO][init.sh] Done.'
+gunicorn --reload -b '0.0.0.0:8080' serve:app
