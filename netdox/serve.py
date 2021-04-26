@@ -25,7 +25,6 @@ def webhooks():
     try:
         if request.method == 'POST':
             if  request.content_length and request.content_length < 10**6 and request.is_json:
-                print(request.data)
                 body = request.get_json()
                 for event in body['webevents']:
                         
@@ -81,5 +80,9 @@ def approved_dns(uri):
             if destination['name'] == 'ipv4':
                 if info['source'] == 'DNSMadeEasy':
                     dnsme_api.create_A(info['name'], info['root'], destination.xref.string)
+
+            elif destination['name'] == 'cname':
+                if info['source'] == 'DNSMadeEasy':
+                    dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
 
     return Response(status=200)
