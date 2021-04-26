@@ -21,6 +21,9 @@ def init():
         # generate kubeconfig file
         kubeconfig(k8sauth)
 
+        # generate map of all dns zones
+        fetchZones()
+
         # setting up dirs
         for path in ('out', '/etc/ext/base'):
             if not os.path.exists(path):
