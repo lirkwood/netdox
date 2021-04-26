@@ -14,7 +14,7 @@ def main(ipdict, ptr):
                     subnets.add(subnet)
                     for sibling in subnet.iterate():
                         if sibling not in ipdict:
-                            tmp[sibling] = {'source': 'Generated'}
+                            tmp[sibling] = {'source': 'Generated', 'labels': 'unused'}
     ipdict = tmp | ipdict   #populate ipdict with unused private ips
 
     for ip in ipdict:
