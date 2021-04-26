@@ -1,4 +1,6 @@
 .kube
+.dockerignore
+netdox-src
 netdox/out
 netdox/node_modules
 netdox/__pycache__
