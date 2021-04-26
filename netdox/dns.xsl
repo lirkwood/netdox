@@ -82,7 +82,7 @@
                             </xsl:otherwise>
                         </xsl:choose>
                         <xsl:choose>
-                            <xsl:when test="not(xpf:string[@key='location']/text() = 'null')">
+                            <xsl:when test="not(xpf:string[@key='location']/text() = null)">
                         <property name="location" title="Location" value="{xpf:string[@key = 'location']}" />
                             </xsl:when>
                             <xsl:otherwise>
