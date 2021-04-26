@@ -123,17 +123,71 @@ def assemble_fqdn(subdomain, root):
 
 @utils.handle
 def create_A(name, zone, ip):
-    if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-        with open('src/zones.json', 'r') as stream:
-            zones = json.load(stream)['dnsme']
-            if zone in zones:
-                endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
-                # r = requests.post(endpoint, headers=genheader())
-                # return r.text
-                print(endpoint)
-                return None
-            else:
-                raise ValueError(f'[ERROR][dnsme_api.py] Unknow zone for DNSMadeEasy: {zone}')
+	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
+		with open('src/zones.json', 'r') as stream:
+			zones = json.load(stream)['dnsme']
+			if zone in zones:
+				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
+				data = {
+					"name": name,
+					"type": "A",
+					"value": ip,
+					"gtdLocation": "DEFAULT",
+					"ttl": 1800
+				}
+				# r = requests.post(endpoint, headers=genheader(), data=data)
+				# return r.text
+				print(endpoint)
+				return None
+			else:
+				raise ValueError(f'[ERROR][dnsme_api.py] Unknown zone for DNSMadeEasy: {zone}')
+	else:
+		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or IPv4 ({ip})')
 
-    else:
-        raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or IPv4 ({ip})')
+@utils.handle
+def create_CNAME(name, zone, value):
+	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
+		with open('src/zones.json', 'r') as stream:
+			zones = json.load(stream)['dnsme']
+			if zone in zones:
+				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
+				data = {
+					"name": name,
+					"type": "CNAME",
+					"value": value,
+					"gtdLocation": "DEFAULT",
+					"ttl": 1800
+				}
+				# r = requests.post(endpoint, headers=genheader(), data=data)
+				# return r.text
+				print(endpoint)
+				return None
+
+			else:
+				raise ValueError(f'[ERROR][dnsme_api.py] Unknown zone for DNSMadeEasy: {zone}')
+	else:
+		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or ({value})')
+
+@utils.handle
+def create_PTR(addr, zone, value):
+	if int(addr) and re.fullmatch(utils.dns_name_pattern, value):
+		with open('src/zones.json', 'r') as stream:
+			zones = json.load(stream)['dnsme']
+			if zone in zones:
+				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
+				data = {
+					"name": addr,
+					"type": "CNAME",
+					"value": value,
+					"gtdLocation": "DEFAULT",
+					"ttl": 3600
+				}
+				# r = requests.post(endpoint, headers=genheader(), data=data)
+				# return r.text
+				print(endpoint)
+				return None
+
+			else:
+				raise ValueError(f'[ERROR][dnsme_api.py] Unknown zone for DNSMadeEasy: {zone}')
+	else:
+		raise ValueError(f'[ERROR][dnsme_api.py] Invalid address ({addr}) or hostname ({value})')
