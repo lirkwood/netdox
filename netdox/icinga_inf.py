@@ -1,8 +1,4 @@
-import requests, utils, json
-
-headers = {
-    "Accept": "application/json",
-}
+import requests, json
 
 with open('src/authentication.json','r') as stream:
     hosts = json.load(stream)['icinga']
