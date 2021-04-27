@@ -11,11 +11,14 @@ def fetchObjects():
         response = json.loads(r.text)
         try:
             for obj in response["results"]:
-                name = obj['attrs']['__name']
-                addr = obj['attrs']
-                objects[addr] = name
-                for vhost in obj['attrs']['vars']['http_vhosts'].keys():
-                    objects[vhost] = name
+                try:
+                    name = obj['attrs']['__name']
+                    addr = obj['attrs']
+                    objects[addr] = name
+                    for vhost in obj['attrs']['vars']['http_vhosts'].keys():
+                        objects[vhost] = name
+                except KeyError:
+                    pass
         except KeyError:
             print(f'[WARNING][icinga_inf.py] Icinga query on host {host} failed. Proceeding anyway...')
     return objects
