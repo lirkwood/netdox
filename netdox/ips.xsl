@@ -11,7 +11,8 @@
 </xsl:template>
 
 <xsl:template match="xpf:map">
-    <xsl:result-document href="out/IPs/{translate(@key,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:variable name="subnetdir" select="translate(xpf:string[@key = 'subnet'],'/','_')"/>
+    <xsl:result-document href="out/IPs/{$subnetdir}/{translate(@key,'.','_')}.psml" method="xml" indent="yes">
     <document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
         <documentinfo>
