@@ -4,7 +4,8 @@ from flask import Response
 from traceback import format_exc
 from bs4 import BeautifulSoup
 import json, re
-import dnsme_api, ps_api
+
+import dnsme_api, ps_api, iptools
 
 app = Flask(__name__)
 
@@ -66,28 +67,53 @@ def ps_workflow_updated(event):
 
         if document_type == 'dns':
             return approved_dns(document_uri)
+        elif document_type == 'xo_vm':
+            return approved_vm(document_uri)
 
 
 def approved_dns(uri):
     info_soup = BeautifulSoup(ps_api.get_fragment(uri, 'info'), features='xml')
     destinations = BeautifulSoup(ps_api.get_fragment(uri, 'dest'), features='xml')
+
     info = {}
     for property in info_soup("property"):
         info[property['name']] = property['value']
-    # if info has minimum details
-    if info['name'] and info['root'] and info['source']:
+        
+    if info['name'] and info['root']:
         if info['icinga'] in ('Paused', 'Unpaused'):
             icinga_generate(info['name'], info['location'], info['icinga'])
 
         for destination in destinations("property"):
             if destination['name'] == 'ipv4':
-                if info['source'] == 'DNSMadeEasy':
-                    dnsme_api.create_A(info['name'], info['root'], destination.xref.string)
+                ip = destination.xref.string
+                if iptools.public_ip(ip):
+                    dnsme_api.create_A(info['name'], info['root'], ip)
+                else:
+                    # ad_api.create_A(info['name'], info['root'], ip)
+                    pass
 
             elif destination['name'] == 'cname':
                 if info['source'] == 'DNSMadeEasy':
                     dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
             
+    return Response(status=200)
+
+def approved_vm(uri):
+    os_soup = BeautifulSoup(ps_api.get_fragment(uri, 'os_version'), features='xml')
+    addr_soup = BeautifulSoup(ps_api.get_fragment(uri, 'addresses'), features='xml')
+
+    os_inf = {}
+    for property in os_soup("property"):
+        os_inf[property['name']] = property['value']
+    addrs = set()
+    for property in addr_soup("property"):
+        if iptools.valid_ip(property.xref.string):
+            addrs.add(property.xref.string)
+
+    if os_inf['os-distro'] and os_inf['os-major'] and os_inf['os-minor']:
+        # xo make vm
+        pass
+
     return Response(status=200)
 
 
