@@ -76,6 +76,9 @@ def approved_dns(uri):
         info[property['name']] = property['value']
     # if info has minimum details
     if info['name'] and info['root'] and info['source']:
+        if info['icinga'] in ('Paused', 'Unpaused'):
+            icinga_generate(info['name'], info['location'], info['icinga'])
+
         for destination in destinations("property"):
             if destination['name'] == 'ipv4':
                 if info['source'] == 'DNSMadeEasy':
@@ -84,5 +87,16 @@ def approved_dns(uri):
             elif destination['name'] == 'cname':
                 if info['source'] == 'DNSMadeEasy':
                     dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
-
+            
     return Response(status=200)
+
+
+def icinga_generate(name, location):
+    if location == 'Pyrmont':
+        # ansible call
+        pass
+    elif location == 'Equinix':
+        # ansible call
+        pass
+    else:
+        print(f'[WARNING][serve.py] Unable to create icinga object for location {location}.')
