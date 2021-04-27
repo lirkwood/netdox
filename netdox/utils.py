@@ -36,7 +36,7 @@ class dns:
             # destinations
             self.public_ips = set()
             self.private_ips = set()
-            self.domains = set()
+            self.cnames = set()
             self.vms = set()
             self.apps = set()
             self.ec2s = set()
@@ -48,7 +48,7 @@ class dns:
     # switch to case match on 2021-04-10
     def link(self, string, type):
         """
-        Adds a destination which this DNS record points to
+        Adds a link to the given object.
         """
         if isinstance(string, str):
             string = string.lower().strip()
@@ -63,7 +63,7 @@ class dns:
 
             elif type == 'domain':
                 if re.fullmatch(dns_name_pattern, string):
-                    self.domains.add(string)
+                    self.cnames.add(string)
                 else:
                     raise ValueError(f'Domain {string} is not valid.')
             
