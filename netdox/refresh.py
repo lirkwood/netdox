@@ -123,7 +123,7 @@ def aws_ec2(dns_set):
                         dns.link(instance['InstanceId'], 'ec2')
 
 @utils.handle
-def icinga_labels(dns_set):
+def icinga_services(dns_set):
     """
     Integrates icinga display labels into a dns set
     """
@@ -135,8 +135,8 @@ def icinga_labels(dns_set):
             for icinga_host in objects:
                 if selector in objects[icinga_host]:
                     if icinga_host not in dns.icinga:
-                        dns.icinga[icinga_host] = []
-                    dns.icinga[icinga_host].append(objects[icinga_host][selector])
+                        dns.icinga[icinga_host] = {}
+                    dns.icinga[icinga_host] = objects[icinga_host][selector] | dns.icinga[icinga_host]
 
 @utils.handle
 def license_keys(dns_set):
