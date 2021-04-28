@@ -80,7 +80,7 @@ def approved_dns(uri):
         info[property['name']] = property['value']
         
     if info['name'] and info['root']:
-        if info['icinga'] in ('Paused', 'Unpaused'):
+        if info['icinga'] != 'Not Monitored':
             icinga_generate(info['name'], info['location'], info['icinga'])
 
         for destination in destinations("property"):
@@ -117,7 +117,7 @@ def approved_vm(uri):
     return Response(status=200)
 
 
-def icinga_generate(name, location):
+def icinga_generate(name, location, display_name):
     if location == 'Pyrmont':
         # ansible call
         pass
