@@ -222,7 +222,7 @@ def main():
     nat(master)
     xo_vms(master)
     aws_ec2(master)
-    icinga_labels(master)
+    icinga_services(master)
     license_keys(master)
     license_orgs(master)
     labels(master)
