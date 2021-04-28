@@ -15,7 +15,7 @@
   <xsl:template match="xpf:array/xpf:map">
     <xsl:variable name="uuid" select="xpf:string[@key='uuid']"/>
     <xsl:variable name="label" select="xpf:string[@key='name_label']"/>
-    <xsl:result-document href="out/xo/{translate($label,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/xo/{$uuid}.psml" method="xml" indent="yes">
       <document type="xo_pool" level="portable">
         <documentinfo>
           <uri title="xo_pool: {$label}" docid="_nd_{$uuid}"><labels>show-reversexrefs</labels></uri>
