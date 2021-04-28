@@ -166,7 +166,7 @@ def critical(func):
     funcname = func.__name__
     funcmodule = func.__module__
     if funcmodule == '__main__':
-        funcmodule = argv[1]
+        funcmodule = argv[0]
     def wrapper(*args, **kwargs):
         print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
         try:
@@ -186,7 +186,7 @@ def handle(func):
     funcname = func.__name__
     funcmodule = func.__module__
     if funcmodule == '__main__':
-        funcmodule = argv[1]
+        funcmodule = argv[0]
     def wrapper(*args, **kwargs):
         try:
             returned = func(*args, **kwargs)
