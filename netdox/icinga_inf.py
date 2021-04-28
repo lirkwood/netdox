@@ -13,7 +13,7 @@ def fetchObjects():
             for obj in response["results"]:
                 try:
                     name = obj['attrs']['__name']
-                    addr = obj['attrs']
+                    addr = obj['attrs']['address']
                     objects[addr] = name
                     for vhost in obj['attrs']['vars']['http_vhosts'].keys():
                         objects[vhost] = name
