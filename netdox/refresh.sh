@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if python3 netdox.py
+if python3 refresh.py
     then
         echo '[INFO][refresh.sh] Python exited successfully. Beginning PageSeeder upload...'
         cd /opt/app/out
