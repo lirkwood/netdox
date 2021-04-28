@@ -1,5 +1,5 @@
 from json.decoder import JSONDecodeError
-import os, json
+import os, re, json, subprocess
 import iptools, utils
 
 @utils.critical
@@ -109,6 +109,22 @@ def assemble_fqdn(subdomain, root):
     return fqdn
 
 
-if __name__ == '__main__':
-    main()
-    
+def create_record(name, ip, zone, type):
+    if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
+        try:
+            subprocess.run('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin src/scheduled.json', shell=True)
+            with open('src/scheduled.json', 'r') as stream:
+                existing = json.load(stream)
+        except subprocess.CalledProcessError:
+            existing = []
+        finally:
+            new = {
+                "name": name,
+                "value": ip,
+                "zone": zone,
+                "type": type
+            }
+            existing.append(new)
+            with open('src/scheduled.json', 'w') as stream:
+                stream.write(json.dumps(existing))
+            subprocess.run('./crypto.sh encrypt /etc/nfs/vector.txt src/scheduled.json /etc/nfs/scheduled.bin')
