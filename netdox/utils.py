@@ -7,7 +7,7 @@ try:
     with open('src/locations.json', 'r') as stream:
         _location_map = json.load(stream)
 except Exception as e:
-    print('[WARNING][utils.py] Unable to find or parse "/opt/app/src/locations.json"')
+    print('[WARNING][utils.py] Unable to find or parse locations.json')
     _location_map = {}
 
 location_map = {}
@@ -101,7 +101,7 @@ class dns:
         return self.public_ips.union(self.private_ips)
 
     def update(self):
-        for ip in self.ips:
+        for ip in self.private_ips:
             self.subnets.add(iptools.sort(ip))
         # sort every declared subnet that matches one of self.subnets by mask size
         matches = {}
