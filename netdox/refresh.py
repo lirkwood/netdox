@@ -1,6 +1,6 @@
 import ad_domains, dnsme_api, cf_domains, k8s_domains
-import k8s_inf, ip_inf, xo_inf, aws_inf, nat_inf, icinga_inf, license_inf
-import cleanup, utils, init
+import k8s_inf, ip_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf
+import cleanup, utils
 
 import subprocess, json
 
@@ -40,7 +40,7 @@ def queries():
         del source
 
     # VM/App/AWS queries
-    xo_inf.main(master)
+    xo_api.fetchObjects(master)
     k8s_inf.main()
     aws_inf.main()
 
@@ -134,6 +134,9 @@ def icinga_labels(dns_set):
         for selector in [domain] + list(dns.private_ips) + list(dns.cnames):
             if selector in objects:
                 dns.icinga = objects[selector]
+            else:
+                # ansible call using selector
+                pass
 
 @utils.handle
 def license_keys(dns_set):
