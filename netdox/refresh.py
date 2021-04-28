@@ -131,12 +131,12 @@ def icinga_labels(dns_set):
     for domain in dns_set:
         dns = dns_set[domain]
         # search icinga for objects with address == domain (or any private ip for that domain)
-        for selector in [domain] + list(dns.private_ips) + list(dns.cnames):
-            if selector in objects:
-                dns.icinga = objects[selector]
-            else:
-                # ansible call using selector
-                pass
+        for selector in [domain] + list(dns.ips):
+            for icinga_host in objects:
+                if selector in objects[icinga_host]:
+                    if icinga_host not in dns.icinga:
+                        dns.icinga[icinga_host] = []
+                    dns.icinga[icinga_host].append(objects[icinga_host][selector])
 
 @utils.handle
 def license_keys(dns_set):

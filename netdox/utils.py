@@ -33,6 +33,7 @@ class dns:
             if root: self.root = root.lower()
             self.source = source
             self.location = None
+            self.icinga = {}
 
             # destinations
             self.public_ips = set()
