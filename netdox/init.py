@@ -1,7 +1,7 @@
-import ps_api, utils, json, os
+import json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
-import dnsme_api
+import dnsme_api, ps_api, xo_api, utils
 
 ##################
 # Initialisation #
@@ -23,6 +23,9 @@ def init():
 
         # generate map of all dns zones
         fetchZones()
+
+        # register with xen orchestra
+        xo_api.register()
 
         # setting up dirs
         for path in ('out', '/etc/ext/base'):
