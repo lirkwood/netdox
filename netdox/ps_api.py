@@ -14,7 +14,6 @@ member = credentials['username']
 
 # Useful services
 
-@utils.critical
 def auth():
     """
     Returns authentication token for PageSeeder API
