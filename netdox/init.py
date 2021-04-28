@@ -1,6 +1,7 @@
-import ps_api, utils, json, os
+import json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
+import dnsme_api, ps_api, xo_api, utils
 
 ##################
 # Initialisation #
@@ -19,6 +20,12 @@ def init():
 
         # generate kubeconfig file
         kubeconfig(k8sauth)
+
+        # generate map of all dns zones
+        fetchZones()
+
+        # register with xen orchestra
+        xo_api.register()
 
         # setting up dirs
         for path in ('out', '/etc/ext/base'):
@@ -80,10 +87,8 @@ def init():
                 exclusions['dns'].append(line.string.strip())
             exclusions['ss'].append(line.string.strip())
             
-        with open('src/screenshot_exclude.json', 'w') as output:
-            output.write(json.dumps(exclusions['ss'], indent=2))
-            
-    return exclusions['dns']
+        with open('src/exclusions.json', 'w') as output:
+            output.write(json.dumps(exclusions, indent=2))
 
 
 def kubeconfig(auth):
@@ -124,3 +129,21 @@ def kubeconfig(auth):
         users: {users}
         contexts: {contexts}
         """))
+
+def fetchZones():
+    zones = {
+        "dnsme": {},
+        "ad": {},
+        "k8s": {},
+        "cf": {}
+    }    
+
+    for id, domain in dnsme_api.fetchDomains():
+        zones['dnsme'][domain] = id
+    
+    with open('src/zones.json', 'w') as stream:
+        stream.write(json.dumps(zones, indent=2))
+
+
+if __name__ == '__main__':
+    init()

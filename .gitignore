@@ -1,6 +1,6 @@
 .kube
 .dockerignore
-netdox-src/
+netdox-src
 netdox/out
 netdox/node_modules
 netdox/__pycache__
@@ -11,6 +11,7 @@ netdox/src/*
 !netdox/src/placeholder.jpg
 !netdox/src/pageseeder.properties
 !netdox/src/locations.json
+!netdox/src/nat.txt
 
 *.zip
 *log.txt

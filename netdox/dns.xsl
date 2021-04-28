@@ -54,14 +54,6 @@
                         <property name="root"       title="Root Domain"        value="{xpf:string[@key = 'root']}" />
                         <property name="source"     title="DNS Source"      value="{xpf:string[@key = 'source']}" />
                         <xsl:choose>
-                            <xsl:when test="xpf:string[@key = 'icinga']">
-                        <property name="icinga"     title="Icinga Display Name"      value="{xpf:string[@key = 'icinga']}" />
-                            </xsl:when>
-                            <xsl:otherwise>
-                        <property name="icinga"     title="Icinga Display Name"      value="Not Monitored" />
-                            </xsl:otherwise>
-                        </xsl:choose>
-                        <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'license']">
                         <property name="license"     title="PageSeeder License"      datatype="xref" >
                             <xref frag="default" uriid="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
@@ -134,6 +126,20 @@
                     <properties-fragment id="subnets">
                     <xsl:for-each select="xpf:array[@key = 'subnets']/xpf:string">
                         <property name="subnet" title="Subnet" value="{.}" />
+                    </xsl:for-each>
+                    </properties-fragment>
+
+                    <properties-fragment id="icinga">
+                    <xsl:for-each select="xpf:map[@key = 'icinga']/xpf:map">
+                        <property name="icinga" title="Icinga Hostname" datatype="xref">
+                            <xref frag="default" docid="{translate(@key,'.','_')}" />
+                        </property>
+                        <xsl:for-each select="xpf:array">
+                        <property name="host" title="Host Display Name" value="{@key}" />
+                            <xsl:for-each select="xpf:string">
+                        <property name="service" title="Service Display Name" value="{substring-after(., '!')}" />
+                            </xsl:for-each>
+                        </xsl:for-each>
                     </xsl:for-each>
                     </properties-fragment>
 

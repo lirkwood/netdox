@@ -1,15 +1,15 @@
-import requests, utils, json
+import requests, utils, json, os
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# Loading config
+# Setting global vars
 
 with open('src/authentication.json','r') as stream:
     credentials = json.load(stream)['pageseeder']
 
 defaultgroup = credentials['group']
 base = f'https://{credentials["host"]}/ps/service'
-member = credentials["username"]
+member = credentials['username']
 
 
 # Useful services
@@ -20,7 +20,22 @@ def auth():
     Returns authentication token for PageSeeder API
     """
     try:
+        with open('src/pstoken.json', 'r') as stream:
+            details = json.load(stream)
+            token = details['token']
+            issued = details['issued']
+
+            if datetime.fromisoformat(issued) > (datetime.now() - timedelta(hours=1)):
+                return token
+            else:
+                return refreshToken()
+    except FileNotFoundError:
+        refreshToken()
+
+def refreshToken():
+    with open('src/pstoken.json', 'w') as stream:
         print('[INFO][ps_api.py] Requesting new access token...')
+
         url = f'https://{credentials["host"]}/ps/oauth/token'
         refresh_header = {
             'grant_type': 'client_credentials',
@@ -30,12 +45,13 @@ def auth():
 
         r = requests.post(url, params=refresh_header)
         token = json.loads(r.text)['access_token']
+        issued = datetime.isoformat(datetime.now())
+        stream.write(json.dumps({
+            'token': token,
+            'issued': str(issued)
+        }, indent=2))
 
-        return token
-
-    except KeyError:
-        print('[ERROR][ps_api.py] PageSeeder authentication failed.')
-        quit()
+    return token
 
 
 @utils.handle
@@ -170,7 +186,15 @@ def get_groupfolders(params={}, group=defaultgroup):
     return r.text
 
 
-# Global vars
+@utils.handle
+def get_comment(commentid, params={}):
+    """
+    Gets some comment
+    """
+    service = f'/members/{credentials["username"]}/comments/{commentid}'
+    r = requests.get(base+service, headers=header, params=params)
+    return r.text
+
 
 def getUrimap(dir_uri):
     """
@@ -183,12 +207,14 @@ def getUrimap(dir_uri):
     
     return urimap
 
+# some global vars
 
 header = {
-    'authorization': f'Bearer {auth()}'
+    'authorization': f'Bearer {auth()}',
+    'Accept': 'application/json'
 }
 
 urimap = getUrimap('375156')
 
 if __name__ == '__main__':
-    print(header['authorization'])
+    print(auth())

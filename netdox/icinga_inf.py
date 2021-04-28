@@ -1,37 +1,39 @@
-import requests, utils, json
-
-headers = {
-    "Accept": "application/json",
-}
+import requests, json
 
 with open('src/authentication.json','r') as stream:
-    credentials = json.load(stream)['icinga']
+    icingas = json.load(stream)['icinga']
 
-objects = []
-for host in ('icinga.allette.com.au', 'icinga-sy4.allette.com.au'):
-    r = requests.get(f'https://{host}:5665/v1/objects/hosts', auth=(credentials["username"], credentials["password"]), verify=False)
-    response = json.loads(r.text)
-    try:
-        for obj in response["results"]:
-            objects.append(obj)
-    except KeyError:
-        print(f'[ERROR][icinga_inf.py] Icinga query on host {host} failed. Proceeding anyway...')
-    
+def fetchObjects():
+    objects = {}
+    for icinga in icingas:
+        objects[icinga] = {}
 
-with open('src/icinga_log.json','w') as stream:
-    stream.write(json.dumps(response, indent=2))
+        hosts = fetchType('hosts', icinga)
+        services = fetchType('services', icinga)
+
+        hostServices = {}
+        for service in services['results']:
+            host = service['attrs']['host_name']
+            if host not in hostServices:
+                hostServices[host] = []
+            hostServices[host].append(service['name'])
+
+        for host in hosts['results']:
+            name = host['name']
+            addr = host['attrs']['address']
+            if addr not in objects[icinga]:
+                objects[icinga][addr] = {}
+            if name in hostServices:
+                objects[icinga][addr][name] = hostServices[name]
+            else:
+                objects[icinga][addr][name] = []
+                print(f'[WARNING][icinga_inf.py] Host object {name} has no services.')
+
+    return objects
 
 
-def lookup(list):
-    for _obj in objects:
-        obj = _obj['attrs']
-        # if any host object in icinga has value present in <list> return obj
-        if obj['address'] in list:
-            return obj
-        # if any host object has http service on a value presetn in <list> return obj
-        elif ('vars' in obj) and ('http_vhosts' in obj['vars']):
-            for _vhost in obj['vars']['http_vhosts']:
-                vhost = obj['vars']['http_vhosts'][_vhost]
-                if ("http_address" in vhost) and (vhost["http_address"] in list):
-                    return obj
-    return None
+def fetchType(type, icinga_host):
+    creds = icingas[icinga_host]
+    r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(creds["username"], creds["password"]), verify=False)
+    jsondata = json.loads(r.text)
+    return jsondata

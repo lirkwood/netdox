@@ -1,18 +1,21 @@
 import iptools, json, re
 from traceback import format_exc
 from datetime import datetime
+from sys import argv
 
 try:
     with open('src/locations.json', 'r') as stream:
         _location_map = json.load(stream)
 except Exception as e:
-    print('[WARNING][utils.py] Unable to find or parse "/opt/app/src/locations.json"')
+    print('[WARNING][utils.py] Unable to find or parse locations.json')
     _location_map = {}
 
 location_map = {}
 for location in _location_map:
     for subnet in _location_map[location]:
         location_map[subnet] = location
+
+dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
 class dns:
     name: str
@@ -30,11 +33,12 @@ class dns:
             if root: self.root = root.lower()
             self.source = source
             self.location = None
+            self.icinga = {}
 
             # destinations
             self.public_ips = set()
             self.private_ips = set()
-            self.domains = set()
+            self.cnames = set()
             self.vms = set()
             self.apps = set()
             self.ec2s = set()
@@ -46,7 +50,7 @@ class dns:
     # switch to case match on 2021-04-10
     def link(self, string, type):
         """
-        Adds a destination which this DNS record points to
+        Adds a link to the given object.
         """
         if isinstance(string, str):
             string = string.lower().strip()
@@ -60,8 +64,8 @@ class dns:
                     raise ValueError(f'"{string}" is not a valid ipv4 address.')
 
             elif type == 'domain':
-                if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', string):
-                    self.domains.add(string)
+                if re.fullmatch(dns_name_pattern, string):
+                    self.cnames.add(string)
                 else:
                     raise ValueError(f'Domain {string} is not valid.')
             
@@ -98,7 +102,7 @@ class dns:
         return self.public_ips.union(self.private_ips)
 
     def update(self):
-        for ip in self.ips:
+        for ip in self.private_ips:
             self.subnets.add(iptools.sort(ip))
         # sort every declared subnet that matches one of self.subnets by mask size
         matches = {}
@@ -162,16 +166,16 @@ def critical(func):
     funcname = func.__name__
     funcmodule = func.__module__
     if funcmodule == '__main__':
-        funcmodule = 'netdox'
+        funcmodule = argv[0]
     def wrapper(*args, **kwargs):
-        print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
+        print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
         try:
             returned = func(*args, **kwargs)
         except Exception as e:
-            print(f'[ERROR][netdox.py] Essential function {funcmodule}.{funcname} threw an exception:\n')
+            print(f'[ERROR][utils] Essential function {funcmodule}.{funcname} threw an exception:\n')
             raise e
         else:
-            print(f'[DEBUG][netdox.py] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
+            print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
             return returned
     return wrapper
 
@@ -182,12 +186,12 @@ def handle(func):
     funcname = func.__name__
     funcmodule = func.__module__
     if funcmodule == '__main__':
-        funcmodule = 'netdox'
+        funcmodule = argv[0]
     def wrapper(*args, **kwargs):
         try:
             returned = func(*args, **kwargs)
         except Exception:
-            print(f'[WARNING][netdox.py] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
+            print(f'[WARNING][utils] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
             return None
         else:
             return returned

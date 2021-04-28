@@ -1,6 +1,6 @@
-import ad_domains, dnsme_domains, cf_domains, k8s_domains
-import k8s_inf, ip_inf, xo_inf, aws_inf, nat_inf, icinga_inf, license_inf
-import cleanup, utils, init
+import ad_domains, dnsme_api, cf_domains, k8s_domains
+import k8s_inf, ip_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf
+import cleanup, utils
 
 import subprocess, json
 
@@ -32,7 +32,7 @@ def queries():
 
     # DNS queries
     ad_f, ad_r = ad_domains.main()
-    dnsme_f, dnsme_r = dnsme_domains.main()
+    dnsme_f, dnsme_r = dnsme_api.fetchDNS()
     cf_f, cf_r = cf_domains.main()
 
     for source in (ad_f, dnsme_f, cf_f):
@@ -40,7 +40,7 @@ def queries():
         del source
 
     # VM/App/AWS queries
-    xo_inf.main(master)
+    xo_api.fetchObjects(master)
     k8s_inf.main()
     aws_inf.main()
 
@@ -67,10 +67,12 @@ def queries():
 ###########################
 
 @utils.handle
-def exclude(dns_set, domain_set):
+def exclude(dns_set):
     """
     Removes dns records with names in some set from some dns set
     """
+    with open('src/exclusions.json', 'r') as stream:
+        domain_set = json.load(stream)['dns']
     for domain in domain_set:
         try:
             del dns_set[domain]
@@ -121,20 +123,20 @@ def aws_ec2(dns_set):
                         dns.link(instance['InstanceId'], 'ec2')
 
 @utils.handle
-def icinga_labels(dns_set):
+def icinga_services(dns_set):
     """
     Integrates icinga display labels into a dns set
     """
+    objects = icinga_inf.fetchObjects()
     for domain in dns_set:
         dns = dns_set[domain]
         # search icinga for objects with address == domain (or any private ip for that domain)
-        details = icinga_inf.lookup([domain] + list(dns.private_ips))
-        if details:
-            dns.icinga = details['display_name']
-        else:
-            for alias in dns.domains:
-                if (alias in dns_set) and ('icinga' in dns_set[alias].__dict__):
-                    dns.icinga = dns_set[alias].icinga
+        for selector in [domain] + list(dns.ips):
+            for icinga_host in objects:
+                if selector in objects[icinga_host]:
+                    if icinga_host not in dns.icinga:
+                        dns.icinga[icinga_host] = {}
+                    dns.icinga[icinga_host] = objects[icinga_host][selector] | dns.icinga[icinga_host]
 
 @utils.handle
 def license_keys(dns_set):
@@ -212,18 +214,15 @@ def screenshots():
 #############
 
 def main():
-    # initialisation
-    exclusions = init.init()
-
     # get dns info
     master, ptr, ipsources = queries()
 
     # apply additional info/filters
-    exclude(master, exclusions)
+    exclude(master)
     nat(master)
     xo_vms(master)
     aws_ec2(master)
-    icinga_labels(master)
+    icinga_services(master)
     license_keys(master)
     license_orgs(master)
     labels(master)
