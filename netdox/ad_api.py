@@ -127,4 +127,4 @@ def create_record(name, ip, zone, type):
             existing.append(new)
             with open('src/scheduled.json', 'w') as stream:
                 stream.write(json.dumps(existing))
-            subprocess.run('./crypto.sh encrypt /etc/nfs/vector.txt src/scheduled.json /etc/nfs/scheduled.bin')
+            # subprocess.run('./crypto.sh encrypt /etc/nfs/vector.txt src/scheduled.json /etc/nfs/scheduled.bin')
