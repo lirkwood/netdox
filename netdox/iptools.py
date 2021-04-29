@@ -263,7 +263,7 @@ def subn_iter(subn):
     upper = int(bounds['upper'], 2)
     lower = int(bounds['lower'], 2)
     for ip in range((upper - lower)+ 1):    #+1 to include upper bound as bounds are inclusive
-        yield binary2cidr(int2binary(ip+lower))
+        yield int2cidr(ip+lower)
 
 ## Conversion functions
 
