@@ -20,7 +20,7 @@ if python3 init.py
         exit 1
 fi
 
-crontab <<< '0 8 * * * ./refresh.sh'
+crontab <<< '0 8 * * * ./refresh.sh | tee /var/log/refresh-$(date +%F-T%T).log'
 
 echo -e '[INFO][init.sh] Starting gunicorn server on 8080\n'
 
