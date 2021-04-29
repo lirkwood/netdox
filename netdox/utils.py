@@ -1,3 +1,4 @@
+from typing import Iterable
 import iptools, json, re
 from traceback import format_exc
 from datetime import datetime
@@ -14,6 +15,50 @@ location_map = {}
 for location in _location_map:
     for subnet in _location_map[location]:
         location_map[subnet] = location
+
+def locate(ip_set):
+    if isinstance(ip_set, Iterable):
+        for ip in ip_set:
+            if not iptools.valid_ip(ip):
+                raise ValueError(f'Invalid IP in set: {ip}')
+    elif isinstance(ip_set, iptools.ipv4):
+        if ip_set.valid:
+            ip_set = [ip_set.ipv4]
+        else:
+            raise ValueError(f'Invalid IP in set: {ip_set.raw}')
+    elif isinstance(ip_set, str):
+        if iptools.valid_ip(ip_set):
+            ip_set = [ip_set]
+        else:
+            raise ValueError(f'Invalid IP in set: {ip_set}')
+
+    # sort every declared subnet that matches one of ips by mask size
+    matches = {}
+    for subnet in ip_set:
+        for match in location_map:
+            if iptools.subn_contains(match, subnet):
+                mask = int(match.split('/')[-1])
+                if mask not in matches:
+                    matches[mask] = []
+                matches[mask].append(location_map[match])
+
+    matches = dict(sorted(matches.items(), reverse=True))
+
+    # first key when keys are sorted by descending size is largest mask
+    try:
+        largest = matches[list(matches.keys())[0]]
+        largest = list(dict.fromkeys(largest))
+        # if multiple unique locations given by equally specific subnets
+        if len(largest) > 1:
+            return None
+        else:
+            # use most specific match for location definition
+            return largest[0]
+    # if no subnets
+    except IndexError:
+        return None
+
+
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
@@ -104,33 +149,37 @@ class dns:
     def update(self):
         for ip in self.private_ips:
             self.subnets.add(iptools.sort(ip))
-        # sort every declared subnet that matches one of self.subnets by mask size
-        matches = {}
-        for subnet in self.subnets:
-            for match in location_map:
-                if iptools.subn_contains(match, subnet):
-                    mask = int(match.split('/')[-1])
-                    if mask not in matches:
-                        matches[mask] = []
-                    matches[mask].append(location_map[match])
+        self.location = locate(self.private_ips)
 
-        matches = dict(sorted(matches.items(), reverse=True))
 
-        # first key when keys are sorted by descending size is largest mask
-        try:
-            largest = matches[list(matches.keys())[0]]
-            largest = list(dict.fromkeys(largest))
-            # if multiple unique locations given by equally specific subnets
-            if len(largest) > 1:
-                print(f'[WARNING][utils.py] Unable to set location for DNS record with name {self.name}')
-                self.location = None
-            else:
-                # use most specific match for location definition
-                self.location = largest[0]
-        # if no subnets
-        except IndexError:
-            self.location = None
-        
+class ptr:
+    ipv4: str
+    subnet: str
+    root: str
+    source: str
+    location: str
+    unused: bool
+    nat: str
+
+    def __init__(self, ip, root=None, source=None, unused=False):
+        if iptools.valid_ip(ip):
+            self.ipv4 = ip
+            self.subnet = iptools.sort(ip)
+            if root: self.root = root.lower()
+            self.source = source
+            self.unused = unused
+            self.location = locate(self.ipv4)
+
+            self.ptrs = set()
+            self.nat = None
+        else:
+            raise ValueError('Must provide a valid name for ptr record (some IPv4)')
+
+    def link(self, name):
+        if re.fullmatch(dns_name_pattern, name):
+            self.ptrs.add(name)
+
+
 
 def merge_sets(dns1,dns2):
     """
@@ -152,7 +201,7 @@ class JSONEncoder(json.JSONEncoder):
     Default json encoder except set type is encoded as sorted list
     """
     def default(self, obj):
-        if isinstance(obj, dns):
+        if isinstance(obj, dns) or isinstance(obj, ptr):
             return obj.__dict__
         elif isinstance(obj, set):
             return sorted(obj)
