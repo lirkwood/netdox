@@ -17,6 +17,7 @@
 
         <xsl:variable name="labels">
             <xsl:for-each select="xpf:array[@key = 'labels']/xpf:string">,<xsl:value-of select="."/></xsl:for-each>
+            <xsl:if test="xpf:boolean[@key = 'unused'] = true()">,unused</xsl:if>
         </xsl:variable>
 
         <documentinfo>
