@@ -103,8 +103,8 @@ def add_PTR(dns_set, record, root):
 	
 	if iptools.valid_ip(ip):
 		if ip not in dns_set:
-			dns_set[ip] = []
-		dns_set[ip].append(fqdn)
+			dns_set[ip] = utils.ptr(ip, source='DNSMadeEasy', root=root)
+		dns_set[ip].link(fqdn)
 
 
 def assemble_fqdn(subdomain, root):

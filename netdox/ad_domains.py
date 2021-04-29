@@ -93,8 +93,8 @@ def add_PTR(dns_set, record):
 
     if ip.valid:
         if ip.ipv4 not in dns_set:
-            dns_set[ip.ipv4] = []
-        dns_set[ip.ipv4].append(dest)
+            dns_set[ip.ipv4] = utils.ptr(ip.ipv4, source='ActiveDirectory', root=zone)
+        dns_set[ip.ipv4].link(dest)
 
 
 def assemble_fqdn(subdomain, root):
