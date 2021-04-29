@@ -154,6 +154,7 @@ class dns:
 
 class ptr:
     ipv4: str
+    name: str
     subnet: str
     root: str
     source: str
@@ -164,6 +165,7 @@ class ptr:
     def __init__(self, ip, root=None, source=None, unused=False):
         if iptools.valid_ip(ip):
             self.ipv4 = ip
+            self.name = ip
             self.subnet = iptools.sort(ip)
             if root: self.root = root.lower()
             self.source = source
