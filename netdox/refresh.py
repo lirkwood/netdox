@@ -1,6 +1,6 @@
-import ad_domains, dnsme_api, cf_domains, k8s_domains
-import k8s_inf, ip_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf
-import cleanup, iptools, utils
+import ad_domains, dnsme_api, cf_domains, k8s_domains   # dns query scripts
+import k8s_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf   # other info
+import cleanup, iptools, utils   # utility scripts
 
 import subprocess, json
 
@@ -245,7 +245,7 @@ def main():
     # Write DNS documents
     xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
-    ip_inf.main(forward, reverse)
+    ips(forward, reverse)
     xslt('ips.xsl', 'src/ips.xml')
     # Write K8s documents
     xslt('clusters.xsl', 'src/workers.xml')
