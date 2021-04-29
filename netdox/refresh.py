@@ -1,4 +1,4 @@
-import ad_domains, dnsme_api, cf_domains, k8s_domains   # dns query scripts
+import ad_api, dnsme_api, cf_domains, k8s_domains   # dns query scripts
 import k8s_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf   # other info
 import cleanup, iptools, utils   # utility scripts
 
@@ -32,7 +32,7 @@ def queries():
     reverse = {}
 
     # DNS queries
-    ad_f, ad_r = ad_domains.main()
+    ad_f, ad_r = ad_api.fetchDNS()
     dnsme_f, dnsme_r = dnsme_api.fetchDNS()
     cf_f, cf_r = cf_domains.main()
 

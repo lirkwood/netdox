@@ -1,48 +1,47 @@
-from json.decoder import JSONDecodeError
 import os, re, json, subprocess
 import iptools, utils
 
 @utils.critical
-def main():
+def fetchDNS():
+    """
+	Returns tuple containing forward and reverse DNS records from ActiveDirectory
+    """
     forward = {}
     reverse = {}
     for file in fetchJson():
         with open(file, 'r') as stream:
             try:
                 jsondata = json.load(stream)
-            except JSONDecodeError:
+            except json.decoder.JSONDecodeError:
                 print(f'[ERROR][ad_domains.py] Failed to parse file as json: {file.name}')
             else:
-                _forward, _reverse = extract(jsondata)
-                forward = _forward | forward
-                reverse = _reverse | reverse
+                for record in jsondata:
+                    if record['RecordType'] == 'A':
+                        add_A(forward, record)
+
+                    elif record['RecordType'] == 'CNAME':
+                        add_CNAME(forward, record)
+                    
+                    elif record['RecordType'] == 'PTR':
+                        add_PTR(reverse, record)
     
     return (forward, reverse)
 
 
 def fetchJson():
+    """
+    Generator which yields a json file containing some DNS records
+    """
     for file in os.scandir("src/records/"):
         if file.name.endswith('.json'):
             yield file
 
 
-def extract(jsondata):
-    forward = {}
-    reverse = {}
-    for record in jsondata:
-        if record['RecordType'] == 'A':
-            add_A(forward, record)
-
-        elif record['RecordType'] == 'CNAME':
-            add_CNAME(forward, record)
-        
-        elif record['RecordType'] == 'PTR':
-            add_PTR(reverse, record)
-    return (forward, reverse)
-
-
 @utils.handle
-def add_A(dns_set, record): 
+def add_A(dns_set, record):
+    """
+	Integrates one A record into a dns set from json returned by AD api
+    """
     # Get name
     distinguished_name = record['DistinguishedName'].split(',')    #get hostname
     subdomain = distinguished_name[0].replace('DC=', '') #extract subdomain
@@ -62,6 +61,9 @@ def add_A(dns_set, record):
 
 @utils.handle
 def add_CNAME(dns_set, record):
+    """
+	Integrates one CNAME record into a dns set from json returned by AD api
+    """
     distinguished_name = record['DistinguishedName'].split(',')
     subdomain = distinguished_name[0].strip('DC=')
     root = distinguished_name[1].strip('DC=')
@@ -82,6 +84,9 @@ def add_CNAME(dns_set, record):
 
 @utils.handle
 def add_PTR(dns_set, record):
+    """
+	Integrates one PTR record into a dns set from json returned by AD api
+    """
     zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
     address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
@@ -110,6 +115,9 @@ def assemble_fqdn(subdomain, root):
 
 
 def create_record(name, ip, zone, type):
+    """
+    Schedules a DNS record for creation in ActiveDirectory
+    """
     if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
         try:
             subprocess.run('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin src/scheduled.json', shell=True)
@@ -127,4 +135,4 @@ def create_record(name, ip, zone, type):
             existing.append(new)
             with open('src/scheduled.json', 'w') as stream:
                 stream.write(json.dumps(existing))
-            # subprocess.run('./crypto.sh encrypt /etc/nfs/vector.txt src/scheduled.json /etc/nfs/scheduled.bin')
+            # subprocess.run('./crypto.sh encrypt /etc/nfs/vector.txt src/scheduled.json /etc/nfs/scheduled.bin', shell=True)
