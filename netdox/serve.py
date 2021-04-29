@@ -132,7 +132,7 @@ def approved_vm(uri):
     return Response(status=200)
 
 
-def icinga_generate(name, location, display_name):
+def icinga_generate(address, location, display_name):
     if location == 'Pyrmont':
         # ansible call
         pass
