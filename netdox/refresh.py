@@ -1,6 +1,6 @@
 import ad_domains, dnsme_api, cf_domains, k8s_domains
 import k8s_inf, ip_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf
-import cleanup, utils
+import cleanup, iptools, utils
 
 import subprocess, json
 
@@ -27,8 +27,9 @@ def queries():
     """
     Makes all queries and returns complete dns set
     """
-    # Main set of DNS records, dns_obj.name: dns_obj
-    master = {}
+    # Main sets of DNS records, dns_obj.name: dns_obj
+    forward = {}
+    reverse = {}
 
     # DNS queries
     ad_f, ad_r = ad_domains.main()
@@ -36,31 +37,43 @@ def queries():
     cf_f, cf_r = cf_domains.main()
 
     for source in (ad_f, dnsme_f, cf_f):
-        integrate(master, source)
+        integrate(forward, source)
+        del source
+    for source in (ad_r, dnsme_r, cf_r):
+        integrate(reverse, source)
         del source
 
     # VM/App/AWS queries
-    xo_api.fetchObjects(master)
+    xo_api.fetchObjects(forward)
     k8s_inf.main()
     aws_inf.main()
 
     # More DNS (move this)
     k8s = k8s_domains.main()
-    integrate(master, k8s)
+    integrate(forward, k8s)
 
-    # ptr
-    ptr = {}
-    for source in (ad_r, dnsme_r, cf_r):
-        ptr = source | ptr
+    return (forward, reverse)
 
-    # declares dns source ips came from
-    ipsources = {}
-    for dns in master:
-        for ip in master[dns].ips:
-            ipsources[ip] = {'source': master[dns].source}
 
-    return (master, ptr, ipsources)
+@utils.critical
+def ips(forward, reverse):
+    """
+    Assembles unique set of all ips referenced in the dns and writes it
+    """
+    subnets = set()
+    for domain in forward:
+        dns = forward[domain]
+        for ip in dns.ips:
+            if ip not in reverse:
+                reverse[ip] = utils.ptr(ip, source=dns.source)
+            subnets.add(reverse[ip].subnet)
+    
+    for subnet in subnets:
+        for ip in iptools.subn_iter(subnet):
+            if ip not in reverse:
+                reverse[ip] = utils.ptr(ip, source='Generated', unused=True)
 
+    write_dns(reverse, 'ips')
 
 ###########################
 # Non-essential functions #
@@ -178,11 +191,11 @@ def labels(dns_set):
 #############################
 
 @utils.critical
-def write_dns(dns_set):
+def write_dns(dns_set, name='dns'):
     """
     Writes dns set to json file
     """
-    with open('src/dns.json','w') as dns:
+    with open(f'src/{name}.json', 'w') as dns:
         dns.write(json.dumps(dns_set, cls=utils.JSONEncoder, indent=2))
 
 
@@ -215,24 +228,24 @@ def screenshots():
 
 def main():
     # get dns info
-    master, ptr, ipsources = queries()
+    forward, reverse = queries()
 
     # apply additional info/filters
-    exclude(master)
-    nat(master)
-    xo_vms(master)
-    aws_ec2(master)
-    icinga_services(master)
-    license_keys(master)
-    license_orgs(master)
-    labels(master)
+    exclude(forward)
+    nat(forward)
+    xo_vms(forward)
+    aws_ec2(forward)
+    icinga_services(forward)
+    license_keys(forward)
+    license_orgs(forward)
+    labels(forward)
 
-    write_dns(master)
+    write_dns(forward)
 
     # Write DNS documents
     xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
-    ip_inf.main(ipsources, ptr)
+    ip_inf.main(forward, reverse)
     xslt('ips.xsl', 'src/ips.xml')
     # Write K8s documents
     xslt('clusters.xsl', 'src/workers.xml')
