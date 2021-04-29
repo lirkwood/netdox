@@ -119,12 +119,13 @@ def create_record(name, ip, zone, type):
     Schedules a DNS record for creation in ActiveDirectory
     """
     if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
+        existing = []
         try:
-            subprocess.run('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin src/scheduled.json', shell=True)
+            subprocess.check_call('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin src/scheduled.json', shell=True)
             with open('src/scheduled.json', 'r') as stream:
                 existing = json.load(stream)
         except subprocess.CalledProcessError:
-            existing = []
+            pass
         finally:
             new = {
                 "name": name,
