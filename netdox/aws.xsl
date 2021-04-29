@@ -20,7 +20,7 @@
 
         <metadata>
           <properties>
-            <property name="template-version"     title="Template version"   value="1.0" />
+            <property name="template-version"     title="Template version"   value="1.1" />
           </properties>
         </metadata>
 
