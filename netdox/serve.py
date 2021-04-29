@@ -28,7 +28,7 @@ def webhooks():
     """
     try:
         if request.method == 'POST':
-            if  request.content_length and request.content_length < 10**6 and request.is_json:
+            if request.content_length and request.content_length < 10**6 and request.is_json:
                 body = request.get_json()
                 for event in body['webevents']:
                         
@@ -88,29 +88,31 @@ def approved_dns(uri):
             icinga_generate(info['name'], info['location'], info['icinga'])
 
         for destination in destinations("property"):
+
             if destination['name'] == 'ipv4':
                 ip = destination.xref.string
                 if iptools.public_ip(ip):
                     dnsme_api.create_A(info['name'], info['root'], ip)
                     print(f'[INFO][serve.py] Created A record in DNSMadeEasy with name {info["name"]} and value {ip}')
+                
                 else:
                     ad_api.create_record(info['name'], ip, info['root'], 'A')
                     print(f'[INFO][serve.py] Created A record in ActiveDirectory with name {info["name"]} and value {ip}')
 
             elif destination['name'] == 'cname':
-                if info['source']:
-                    if info['source'] == 'DNSMadeEasy':
-                        dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
-                        print(f'[INFO][serve.py] Created CNAME record in DNSMadeEasy with name {info["name"]} and value {destination.xref.string}')
-                    else:
-                        ad_api.create_record(info['name'], destination.xref.string, info['root'], 'CNAME')
-                        print(f'[INFO][serve.py] Created CNAME record in ActiveDirectory with name {info["name"]} and value {destination.xref.string}')
+                if info['source'] == 'DNSMadeEasy':
+                    dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
+                    print(f'[INFO][serve.py] Created CNAME record in DNSMadeEasy with name {info["name"]} and value {destination.xref.string}')
+                
+                elif info['source'] == 'ActiveDirectory':
+                    ad_api.create_record(info['name'], destination.xref.string, info['root'], 'CNAME')
+                    print(f'[INFO][serve.py] Created CNAME record in ActiveDirectory with name {info["name"]} and value {destination.xref.string}')
 
     return Response(status=200)
 
 def approved_vm(uri):
     """
-    Handles documents with 'xo_vm' type and worflow 'Approved'.
+    Handles documents with 'xo_vm' type and workflow 'Approved'.
     """
     os_soup = BeautifulSoup(ps_api.get_fragment(uri, 'os_version'), features='xml')
     addr_soup = BeautifulSoup(ps_api.get_fragment(uri, 'addresses'), features='xml')
