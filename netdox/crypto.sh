@@ -21,7 +21,7 @@ elif [[ ! -f $src ]]; then
 fi
 
 if [[ -f $iv ]]; then
-    iv=$(cat $iv)
+    iv="$(cat $iv)"
 fi
 
 if [[ $method = "decrypt" ]]
