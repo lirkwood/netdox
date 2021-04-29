@@ -17,11 +17,7 @@ for location in _location_map:
         location_map[subnet] = location
 
 def locate(ip_set):
-    if isinstance(ip_set, Iterable):
-        for ip in ip_set:
-            if not iptools.valid_ip(ip):
-                raise ValueError(f'Invalid IP in set: {ip}')
-    elif isinstance(ip_set, iptools.ipv4):
+    if isinstance(ip_set, iptools.ipv4):
         if ip_set.valid:
             ip_set = [ip_set.ipv4]
         else:
@@ -31,6 +27,10 @@ def locate(ip_set):
             ip_set = [ip_set]
         else:
             raise ValueError(f'Invalid IP in set: {ip_set}')
+    elif isinstance(ip_set, Iterable):
+        for ip in ip_set:
+            if not iptools.valid_ip(ip):
+                raise ValueError(f'Invalid IP in set: {ip}')
 
     # sort every declared subnet that matches one of ips by mask size
     matches = {}
