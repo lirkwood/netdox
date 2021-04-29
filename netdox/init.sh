@@ -22,6 +22,6 @@ fi
 
 crontab <<< '0 8 * * * ./refresh.sh'
 
-echo '[IMNFO][init.sh] Starting gunicorn server on 8080'
+echo -e '[INFO][init.sh] Starting gunicorn server on 8080\n'
 
 gunicorn --reload -b '0.0.0.0:8080' serve:app
