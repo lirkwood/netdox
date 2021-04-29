@@ -29,7 +29,7 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version"     title="Template version"   value="5.0" />
+                        <property name="template_version"     title="Template version"   value="5.1" />
                     </properties>
                 </metadata>
 
