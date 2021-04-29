@@ -1,4 +1,4 @@
-import json, os
+import subprocess, json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
 import dnsme_api, ps_api, xo_api, utils
@@ -17,6 +17,7 @@ def init():
         k8sauth = auth['kubernetes']
         psauth = auth['pageseeder']
         awsauth = auth['aws']
+        ansibleauth = auth['ansible']
 
         # generate kubeconfig file
         kubeconfig(k8sauth)
@@ -89,6 +90,9 @@ def init():
             
         with open('src/exclusions.json', 'w') as output:
             output.write(json.dumps(exclusions, indent=2))
+
+        # save ansible public key as trusted
+        subprocess.check_call(f'ssh-keyscan {ansibleauth["host"]} > ~/.ssh/known_hosts')
 
 
 def kubeconfig(auth):

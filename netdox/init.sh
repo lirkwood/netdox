@@ -9,8 +9,11 @@ for file in /etc/nfs/*.bin; do
     ./crypto.sh decrypt '/etc/nfs/vector.txt' "$file" "/opt/app/src/records/$(basename ${file%.bin}).json" &> /dev/null
 done
 
-
 ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/authentication.bin" "/opt/app/src/authentication.json"
+
+mkdir ~/.ssh
+cp /etc/ssh/ssh-publickey ~/.ssh/id_rsa.pub
+cp /etc/ssh/ssh-privatekey ~/.ssh/id_rsa
 
 if python3 init.py
     then
