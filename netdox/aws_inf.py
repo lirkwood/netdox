@@ -6,8 +6,12 @@ query = {
     "InstanceId": "InstanceId",
     "InstanceType": "InstanceType",
     "AvailabilityZone": "Placement.AvailabilityZone",
+    "PrivateDnsName": "PrivateDnsName",
+    "PublicDnsName": "PublicDnsName",
     "PrivateIpAddress": "PrivateIpAddress",
-    "PublicIpAddress": "PublicIpAddress"
+    "PublicIpAddress": "PublicIpAddress",
+    "Monitoring": "Monitoring.State",
+    "State": "State.Name"
 }
 
 @utils.critical

@@ -30,6 +30,8 @@
             <property name="environemnt" title="Environment" value="{xpf:string[@key='Environment']}"/>
             <property name="instanceId" title="Instance Id" value="{xpf:string[@key='InstanceId']}"/>
             <property name="instanceType" title="Instance Type" value="{xpf:string[@key='InstanceType']}"/>
+            <property name="monitoring" title="Monitoring" value="{xpf:string[@key='Monitoring']}" />
+            <property name="state" title="State" value="{xpf:string[@key='State']}" />
             <property name="availabilityZone" title="Availability Zone" value="{xpf:string[@key='AvailabilityZone']}"/>
           </properties-fragment>
           <properties-fragment id="ips">
@@ -39,6 +41,10 @@
             <property name="ipv4" title="Private IP" datatype="xref">
               <xref frag="default" docid="_nd_{translate(xpf:string[@key='PrivateIpAddress'],'.','_')}" reversetitle="AWS EC2 instance on this IP"/>
             </property>
+          </properties-fragment>
+          <properties-fragment id="domains">
+            <property name="domain" title="Public Domain" value="{xpf:string[@key='PublicDnsName']}" />
+            <property name="domain" title="Private Domain" value="{xpf:string[@key='PrivateDnsName']}" />
           </properties-fragment>
         </section>
       </document>
