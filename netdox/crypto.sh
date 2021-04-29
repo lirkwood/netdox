@@ -1,9 +1,10 @@
+#!/bin/bash
 method=$1
 iv=$2
 src=$3
 dst=$4
 
-methods=("encrypt" "decrypt")
+methods=( "encrypt" "decrypt" )
 
 # input validation
 if [[ ! ${methods[@]} =~ $method ]]; then
