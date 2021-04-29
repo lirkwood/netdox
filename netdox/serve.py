@@ -5,7 +5,7 @@ from traceback import format_exc
 from bs4 import BeautifulSoup
 import json, re
 
-import dnsme_api, ps_api, iptools
+import dnsme_api, ad_api, ps_api, iptools
 
 app = Flask(__name__)
 
@@ -88,14 +88,20 @@ def approved_dns(uri):
                 ip = destination.xref.string
                 if iptools.public_ip(ip):
                     dnsme_api.create_A(info['name'], info['root'], ip)
+                    print(f'[INFO][serve.py] Created A record in DNSMadeEasy with name {info["name"]} and value {ip}')
                 else:
-                    # ad_api.create_A(info['name'], info['root'], ip)
-                    pass
+                    ad_api.create_record(info['name'], ip, info['root'], 'A')
+                    print(f'[INFO][serve.py] Created A record in ActiveDirectory with name {info["name"]} and value {ip}')
 
             elif destination['name'] == 'cname':
-                if info['source'] == 'DNSMadeEasy':
-                    dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
-            
+                if info['source']:
+                    if info['source'] == 'DNSMadeEasy':
+                        dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
+                        print(f'[INFO][serve.py] Created CNAME record in DNSMadeEasy with name {info["name"]} and value {destination.xref.string}')
+                    else:
+                        ad_api.create_record(info['name'], destination.xref.string, info['root'], 'CNAME')
+                        print(f'[INFO][serve.py] Created CNAME record in ActiveDirectory with name {info["name"]} and value {destination.xref.string}')
+
     return Response(status=200)
 
 def approved_vm(uri):
