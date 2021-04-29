@@ -23,6 +23,9 @@ def root():
 
 @app.route('/webhooks', methods=['POST'])
 def webhooks():
+    """
+    Main route for PageSeeder webhooks. Sorts events and sends them to downstream functions
+    """
     try:
         if request.method == 'POST':
             if  request.content_length and request.content_length < 10**6 and request.is_json:
@@ -30,11 +33,10 @@ def webhooks():
                 for event in body['webevents']:
                         
                     if event['type'] == 'webhook.ping':
-                        return ps_webhook_ping(request.headers['X-PS-Secret'])
+                        return Response(status=200, headers=[('X-Ps-Secret', request.headers['X-PS-Secret'])])
 
                     elif event['type'] == 'uri.modified':
-                        # return ps_uri_modified(event)
-                        pass
+                        return ps_uri_modified(event)
 
                     elif event['type'] == 'workflow.updated':
                         return ps_workflow_updated(event)
@@ -49,15 +51,14 @@ def webhooks():
         return Response(status=500)
 
 
-def ps_webhook_ping(secret):
-    response = Response(status=200, headers=[('X-Ps-Secret', secret)])
-    return response
-
 def ps_uri_modified(event):
     uri = event['uri']
     return Response(status=200)
 
 def ps_workflow_updated(event):
+    """
+    Main route. If workflow is 'Approved' netdox attempts to realise the links in the document.
+    """
     status = event['workflow']['status']
     if status == 'Approved':
         comment = event['workflow']['comments'][0]
@@ -72,6 +73,9 @@ def ps_workflow_updated(event):
 
 
 def approved_dns(uri):
+    """
+    Handles documents with 'dns' type and worflow 'Approved'.
+    """
     info_soup = BeautifulSoup(ps_api.get_fragment(uri, 'info'), features='xml')
     destinations = BeautifulSoup(ps_api.get_fragment(uri, 'dest'), features='xml')
 
@@ -105,6 +109,9 @@ def approved_dns(uri):
     return Response(status=200)
 
 def approved_vm(uri):
+    """
+    Handles documents with 'xo_vm' type and worflow 'Approved'.
+    """
     os_soup = BeautifulSoup(ps_api.get_fragment(uri, 'os_version'), features='xml')
     addr_soup = BeautifulSoup(ps_api.get_fragment(uri, 'addresses'), features='xml')
 
