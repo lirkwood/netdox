@@ -206,6 +206,22 @@ def getUrimap(dir_uri):
     
     return urimap
 
+
+def pfrag2dict(fragment):
+    if isinstance(fragment, str):
+        fragment = BeautifulSoup(fragment, features='xml')
+    elif not isinstance(fragment, BeautifulSoup):
+        raise TypeError(f'[ERROR][ps_api.py] Fragment but be one of: str, BeautifulSoup. Not {type(fragment)}')
+    
+    d = {}
+    for property in fragment("property"):
+        if property.xref:
+            d[property['name']] = property.xref.string
+        else:
+            d[property['name']] = property['value']
+    
+    return d
+
 # some global vars
 
 header = {
