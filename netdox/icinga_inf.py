@@ -1,11 +1,11 @@
 import requests, json
 
 with open('src/authentication.json','r') as stream:
-    icingas = json.load(stream)['icinga']
+    icinga_hosts = json.load(stream)['icinga']
 
 def fetchObjects():
     objects = {}
-    for icinga in icingas:
+    for icinga in icinga_hosts:
         objects[icinga] = {}
 
         hosts = fetchType('hosts', icinga)
@@ -33,7 +33,7 @@ def fetchObjects():
 
 
 def fetchType(type, icinga_host):
-    creds = icingas[icinga_host]
-    r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(creds["username"], creds["password"]), verify=False)
+    auth = icinga_hosts[icinga_host]
+    r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(auth["username"], auth["password"]), verify=False)
     jsondata = json.loads(r.text)
     return jsondata
