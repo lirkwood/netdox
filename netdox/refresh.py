@@ -1,6 +1,6 @@
 import ad_api, dnsme_api, cf_domains, k8s_domains   # dns query scripts
 import k8s_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf   # other info
-import cleanup, iptools, utils   # utility scripts
+import cleanup, ansible, iptools, utils   # utility scripts
 
 import subprocess, json
 
@@ -150,6 +150,9 @@ def icinga_services(dns_set):
                     if icinga_host not in dns.icinga:
                         dns.icinga[icinga_host] = {}
                     dns.icinga[icinga_host] = objects[icinga_host][selector] | dns.icinga[icinga_host]
+
+        if not dns.icinga:
+            ansible.icinga_add_generic(domain, location=dns.location)
 
 @utils.handle
 def license_keys(dns_set):
