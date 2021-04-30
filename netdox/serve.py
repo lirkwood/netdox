@@ -5,7 +5,8 @@ from traceback import format_exc
 from bs4 import BeautifulSoup
 import json, re
 
-import dnsme_api, ad_api, ps_api, iptools
+import ansible, dnsme_api, ad_api, ps_api
+import utils, iptools
 
 app = Flask(__name__)
 
@@ -76,16 +77,12 @@ def approved_dns(uri):
     """
     Handles documents with 'dns' type and worflow 'Approved'.
     """
-    info_soup = BeautifulSoup(ps_api.get_fragment(uri, 'info'), features='xml')
+    info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
+    icinga = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'icinga'))
     destinations = BeautifulSoup(ps_api.get_fragment(uri, 'dest'), features='xml')
-
-    info = {}
-    for property in info_soup("property"):
-        info[property['name']] = property['value']
         
     if info['name'] and info['root']:
-        if info['icinga'] != 'Not Monitored':
-            icinga_generate(info['name'], info['location'], info['icinga'])
+        icinga_eval(info, icinga)
 
         for destination in destinations("property"):
 
@@ -132,12 +129,12 @@ def approved_vm(uri):
     return Response(status=200)
 
 
-def icinga_generate(address, location, display_name):
-    if location == 'Pyrmont':
-        # ansible call
-        pass
-    elif location == 'Equinix':
-        # ansible call
-        pass
-    else:
-        print(f'[WARNING][serve.py] Unable to create icinga object for location {location}.')
+@utils.handle
+def icinga_eval(info, icinga):
+    try:
+        if 'host' in icinga:
+            ansible.icinga_add_generic(info['name'], info['location'], icinga['host'])
+        else:
+            ansible.icinga_add_generic(info['name'], info['location'])
+    except KeyError:
+        raise AttributeError(f'[ERROR][serve.py] Unable to confirm monitor status for {info["name"]}; Missing mandatory values.')
