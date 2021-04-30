@@ -92,7 +92,7 @@ def init():
             output.write(json.dumps(exclusions, indent=2))
 
         # save ansible public key as trusted
-        subprocess.check_call(f'ssh-keyscan {ansibleauth["host"]} > ~/.ssh/known_hosts')
+        subprocess.check_call(f'ssh-keyscan {ansibleauth["host"]} > ~/.ssh/known_hosts', shell=True)
 
 
 def kubeconfig(auth):
