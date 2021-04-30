@@ -11,10 +11,10 @@ done
 
 ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/authentication.bin" "/opt/app/src/authentication.json"
 
-mkdir ~/.ssh
-cp /etc/ssh-inf/ssh-publickey ~/.ssh/id_rsa.pub
-cp /etc/ssh-inf/ssh-privatekey ~/.ssh/id_rsa
-chmod 600 ~/.ssh/*
+mkdir /root/.ssh
+cp /etc/ssh-inf/ssh-publickey /root/.ssh/id_rsa.pub
+cp /etc/ssh-inf/ssh-privatekey /root/.ssh/id_rsa
+chmod 600 /root/.ssh/*
 
 if python3 init.py
     then
