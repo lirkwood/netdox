@@ -10,7 +10,8 @@ def parseReview():
     Perform various actions based on a domains value in review.json
     """
     global today
-    os.mkdir(f'out/screenshot_history/{today}')
+    if not os.path.exists(f'out/screenshot_history/{today}'):
+        os.mkdir(f'out/screenshot_history/{today}')
     with open('src/review.json','r') as stream:
         review = json.load(stream)
         # check if any domains occur in multiple categories
