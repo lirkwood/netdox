@@ -91,9 +91,6 @@ def init():
         with open('src/exclusions.json', 'w') as output:
             output.write(json.dumps(exclusions, indent=2))
 
-        # save ansible public key as trusted
-        subprocess.check_call(f'ssh-keyscan {ansibleauth["host"]} > ~/.ssh/known_hosts', shell=True)
-
 
 def kubeconfig(auth):
     """
