@@ -2,7 +2,6 @@ FROM node:15.8.0-buster-slim AS node
 
 WORKDIR /opt/app
 # install required node packages
-RUN npm install -g xo-cli
 RUN npm install bufferutil@4.0.3
 RUN npm install img-diff-js@0.5.2
 RUN npm install puppeteer@5.5.0
@@ -77,15 +76,16 @@ COPY --from=node /usr/bin/kubectl /usr/bin
 COPY --from=node /usr/share/zoneinfo/${TZ} /etc/localtime
 RUN echo "$TZ" > /etc/timezone
 
-# install any packages available through python-pip
+# install any packages available through pip
 RUN pip install beautifulsoup4
 RUN pip install lxml
 RUN pip install requests
 RUN pip install Pillow
-RUN pip install awscli
 RUN pip install flask
 RUN pip install gunicorn
 RUN pip install paramiko
+RUN pip install websockets
+RUN pip install boto3
 
 WORKDIR /opt/app
 
