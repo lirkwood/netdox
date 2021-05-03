@@ -16,7 +16,7 @@ def build_jsonrpc(method, params={}):
         "id": 1
     })
 
-async def signFirst(func):
+def signFirst(func):
     async def wrapper(*args, **kwargs):
         global websocket
         async with websockets.connect(url) as websocket:
@@ -27,29 +27,32 @@ async def signFirst(func):
                 raise RuntimeError(f'[ERROR][xo_api.py] Failed to sign in with user {creds["username"]}')
             else:
                 return await func(*args, **kwargs)
-    return await wrapper
+    return wrapper
 
-
+@utils.critical
 @signFirst
 async def fetchObjects(dns):
     controllers = set()
     poolHosts = {}
-    pools = fetchType('pool')
-    for pool in pools:
-        poolHosts[pool['uuid']] = []
+    pools = await fetchType('pool')
+    for poolId in pools:
+        pool = pools[poolId]
+        poolHosts[poolId] = []
         controllers.add(pool['master'])
     writeJson(pools, 'pools')
 
-    hosts = fetchType('host')
-    for host in hosts:
-        if host['uuid'] not in controllers:
-            poolHosts[host['$pool']].append(host['uuid'])
+    hosts = await fetchType('host')
+    for hostId in hosts:
+        host = hosts[hostId]
+        if hostId not in controllers:
+            poolHosts[host['$pool']].append(hostId)
             host['subnet'] = iptools.sort(host['address'])
     writeJson(hosts, 'hosts')
 
     hostVMs = {}
-    vms = fetchType('VM')
-    for vm in vms:
+    vms = await fetchType('VM')
+    for vmId in vms:
+        vm = vms[vmId]
         vm['name_label'] = re.sub(r'[/\\]','', vm['name_label'])
         
         if vm['$container'] not in hostVMs:
@@ -79,9 +82,13 @@ async def fetchType(type):
         'type': type
     }})
     await websocket.send(request)
-    return json.loads(await websocket.recv())
+    resp = json.loads(await websocket.recv())
+    return resp['result']
     
 def writeJson(data, type):
     with open(f'src/{type}.json', 'w') as stream:
         stream.write(json.dumps(data, indent=2))
     del data
+
+if __name__ == '__main__':
+    asyncio.run(fetchObjects())
