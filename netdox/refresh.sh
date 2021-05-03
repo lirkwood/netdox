@@ -1,5 +1,9 @@
 #!/bin/bash
 
+for dir in /opt/app/out/*; do
+    rm -rf ${dir}/*
+done
+
 if python3 refresh.py
     then
         echo '[INFO][refresh.sh] Python exited successfully. Beginning PageSeeder upload...'
