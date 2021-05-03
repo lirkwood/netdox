@@ -2,7 +2,7 @@ import ad_api, dnsme_api, cf_domains, k8s_domains   # dns query scripts
 import k8s_inf, xo_api, nat_inf, icinga_inf, license_inf   # other info
 import cleanup, ansible, iptools, utils   # utility scripts
 
-import subprocess, boto3, json
+import subprocess, asyncio, boto3, json
 
 
 ######################
@@ -196,6 +196,35 @@ def labels(dns_set):
     #     if 'icinga' in dns.__dict__:
     #         dns.labels.append('icinga_not_monitored')
 
+@utils.handle
+async def template_map():
+    """
+    Generates json with all vms/snapshots/templates
+    """
+    vmSource = {
+        'vms': {},
+        'snapshots': {},
+        'templates': {}
+    }
+    async with open('src/vms.json', 'r') as stream:
+        vms = json.load(stream)
+    snapshots = xo_api.fetchType('VM-snapshot')
+    templates = xo_api.fetchType('VM-template')
+
+    for vm in (await vms):
+        name = vms[vm]['name_label']
+        vmSource['vms'][name] = vm
+    for snapshot in (await snapshots):
+        name = snapshots[snapshot]['name_label']
+        vmSource['snapshots'][name] = snapshot
+    for template in (await templates):
+        name = templates[template]['name_label']
+        vmSource['templates'][name] = template
+
+    with open('src/templates.json', 'w') as stream:
+        stream.write(json.dumps(vmSource, indent=2))
+    
+
 #############################
 # Writing data to json/psml #
 #############################
@@ -249,6 +278,9 @@ def main():
     license_keys(forward)
     license_orgs(forward)
     labels(forward)
+
+    # gather config data (XO templates etc.)
+    asyncio.run(template_map())
 
     write_dns(forward)
 
