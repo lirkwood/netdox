@@ -83,12 +83,13 @@ async def fetchObjects(dns):
             
 async def fetchType(type):
     global websocket
-    request = build_jsonrpc(f'xo.getAllObjects', {
+    request = build_jsonrpc('xo.getAllObjects', {
     'filter': {
         'type': type
     }})
     await websocket.send(request)
     resp = json.loads(await websocket.recv())
+    print(resp)
     return resp['result']
     
 def writeJson(data, type):
@@ -96,5 +97,39 @@ def writeJson(data, type):
         stream.write(json.dumps(data, indent=2))
     del data
 
+
+@utils.handle
+@signFirst
+async def createVM(template, name):
+    request = build_jsonrpc('xo.getAllObjects', {
+    'filter': {
+        'uuid': template
+    }})
+    await websocket.send(request)
+    info = json.loads(await websocket.recv())['result']
+    if len(info.keys()) > 1:
+        raise ValueError(f'[ERROR][xo_api.py] Ambiguous UUID {template}')
+    else:
+
+        object = info[list(info)[0]]
+        if object['type'] == 'VM' or object['type'] == 'VM-snapshot':
+            request = build_jsonrpc('vm.clone', {
+                'id': template,
+                'name': name,
+                'full_copy': True
+            })
+        elif object['type'] == 'VM-template':
+            request = build_jsonrpc('vm.create', {
+                'bootAfterCreate': True,
+                'template': template,
+                'name_label': name
+            })
+        else:
+            raise ValueError(f'[ERROR][xo_api.py] Invalid template type {object["type"]}')
+
+        await websocket.send(request)
+        resp = json.loads(await websocket.recv())
+        return resp
+
 if __name__ == '__main__':
-    asyncio.run(fetchObjects())
+    asyncio.run(createVM('01a5ca9f-6fbd-afac-4c59-a506bb1dcb85','api test'))
