@@ -8,11 +8,12 @@
   <!-- default template -->
   <xsl:template match="/">
       <xsl:variable name="vms" select="json-to-xml(vms)" />
-      <xsl:apply-templates select="$vms//xpf:array/xpf:map" />
+      <xsl:apply-templates select="$vms/xpf:map/xpf:map" />
   </xsl:template>
 
-  <xsl:template match="xpf:array/xpf:map">
-    <xsl:result-document href="out/xo/{xpf:string[@key='uuid']}.psml" method="xml" indent="yes">
+  <xsl:template match="xpf:map/xpf:map">
+
+    <xsl:result-document href="out/xo/{@key}.psml" method="xml" indent="yes">
       <document type="xo_vm" level="portable">
 
         <xsl:variable name="labels">
@@ -24,7 +25,7 @@
         </xsl:variable>
 
         <documentinfo>
-          <uri title="xo_vm: {xpf:string[@key='name_label']}" docid="_nd_{xpf:string[@key='uuid']}">
+          <uri title="xo_vm: {xpf:string[@key='name_label']}" docid="_nd_{@key}">
             <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
           </uri>
         </documentinfo>
@@ -45,7 +46,7 @@
           <properties-fragment id="core">
             <property name="name-label"         title="Label"          value="{xpf:string[@key='name_label']}" />
             <property name="name-description"   title="Description"   value="{xpf:string[@key='name_description']}" />
-            <property name="uuid"               title="UUID"          value="{xpf:string[@key='uuid']}" />
+            <property name="uuid"               title="UUID"          value="{@key}" />
             <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
               <property name="domain" title="Domain" datatype="xref">
                 <xref frag="default" docid="_nd_{translate(.,'.','_')}"

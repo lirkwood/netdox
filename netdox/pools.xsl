@@ -9,11 +9,11 @@
   <!-- default template -->
   <xsl:template match="/">
       <xsl:variable name="pools" select="json-to-xml(pools)" />
-      <xsl:apply-templates select="$pools//xpf:array/xpf:map" />
+      <xsl:apply-templates select="$pools/xpf:map/xpf:map" />
   </xsl:template>
 
-  <xsl:template match="xpf:array/xpf:map">
-    <xsl:variable name="uuid" select="xpf:string[@key='uuid']"/>
+  <xsl:template match="xpf:map/xpf:map">
+    <xsl:variable name="uuid" select="@key"/>
     <xsl:variable name="label" select="xpf:string[@key='name_label']"/>
     <xsl:result-document href="out/xo/{$uuid}.psml" method="xml" indent="yes">
       <document type="xo_pool" level="portable">
