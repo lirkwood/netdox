@@ -8,14 +8,14 @@
   <!-- default template -->
   <xsl:template match="/">
       <xsl:variable name="aws" select="json-to-xml(aws)" />
-      <xsl:apply-templates select="$aws//xpf:array/xpf:map" />
+      <xsl:apply-templates select="$aws/xpf:map/xpf:array[@key = 'Reservations']/xpf:map/xpf:array[@key = 'Instances']/xpf:map" />
   </xsl:template>
 
-  <xsl:template match="xpf:array/xpf:map">
-    <xsl:result-document href="/opt/app/out/aws/{xpf:string[@key = 'InstanceId']}.psml" method="xml" indent="yes" omit-xml-declaration="yes">
+  <xsl:template match="xpf:array[@key = 'Instances']/xpf:map">
+    <xsl:result-document href="out/aws/{xpf:string[@key = 'InstanceId']}.psml" method="xml" indent="yes" omit-xml-declaration="yes">
       <document type="ec2" level="portable">
         <documentinfo>
-          <uri title="{xpf:string[@key='Name']}" docid="_nd_{xpf:string[@key = 'InstanceId']}" />
+          <uri title="{xpf:string[@key='KeyName']}" docid="_nd_{xpf:string[@key = 'InstanceId']}" />
         </documentinfo>
 
         <metadata>
@@ -26,13 +26,13 @@
 
         <section id="details" title="details">
           <properties-fragment id="info">
-            <property name="name" title="Name" value="{xpf:string[@key='Name']}"/>
-            <property name="environemnt" title="Environment" value="{xpf:string[@key='Environment']}"/>
+            <property name="name" title="Name" value="{xpf:string[@key='KeyName']}"/>
+            <property name="environment" title="Environment" value="{xpf:array[@key='Tags']/xpf:map/xpf:string[preceding-sibling::*[. = 'environment']]}"/>
             <property name="instanceId" title="Instance Id" value="{xpf:string[@key='InstanceId']}"/>
             <property name="instanceType" title="Instance Type" value="{xpf:string[@key='InstanceType']}"/>
-            <property name="monitoring" title="Monitoring" value="{xpf:string[@key='Monitoring']}" />
-            <property name="state" title="State" value="{xpf:string[@key='State']}" />
-            <property name="availabilityZone" title="Availability Zone" value="{xpf:string[@key='AvailabilityZone']}"/>
+            <property name="monitoring" title="Monitoring" value="{xpf:map[@key='Monitoring']/xpf:string}" />
+            <property name="state" title="State" value="{xpf:map[@key='State']/xpf:string}" />
+            <property name="availabilityZone" title="Availability Zone" value="{xpf:map[@key = 'Placement']/xpf:string[@key='AvailabilityZone']}"/>
           </properties-fragment>
           <properties-fragment id="ips">
             <property name="ipv4" title="Public IP" datatype="xref">

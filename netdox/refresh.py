@@ -1,8 +1,8 @@
 import ad_api, dnsme_api, cf_domains, k8s_domains   # dns query scripts
-import k8s_inf, xo_api, aws_inf, nat_inf, icinga_inf, license_inf   # other info
+import k8s_inf, xo_api, nat_inf, icinga_inf, license_inf   # other info
 import cleanup, ansible, iptools, utils   # utility scripts
 
-import subprocess, json
+import subprocess, boto3, json
 
 
 ######################
@@ -46,7 +46,7 @@ def queries():
     # VM/App/AWS queries
     xo_api.fetchObjects(forward)
     k8s_inf.main()
-    aws_inf.main()
+    aws_inf()
 
     # More DNS (move this)
     k8s = k8s_domains.main()
@@ -75,6 +75,12 @@ def ips(forward, reverse):
                 reverse[ip] = utils.ptr(ip, source='Generated', unused=True)
 
     write_dns(reverse, 'ips')
+
+@utils.critical
+def aws_inf():
+    client = boto3.client('ec2')
+    instances = client.describe_instances()
+    write_dns(instances, 'aws')
 
 ###########################
 # Non-essential functions #
