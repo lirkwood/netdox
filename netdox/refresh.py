@@ -66,7 +66,8 @@ def ips(forward, reverse):
         for ip in dns.ips:
             if ip not in reverse:
                 reverse[ip] = utils.ptr(ip, source=dns.source)
-            subnets.add(reverse[ip].subnet)
+            if not iptools.public_ip(ip):
+                subnets.add(reverse[ip].subnet)
     
     for subnet in subnets:
         for ip in iptools.subn_iter(subnet):
