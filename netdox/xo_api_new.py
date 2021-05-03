@@ -9,6 +9,9 @@ global url
 url = f"wss://{creds['host']}/api/"
 
 def build_jsonrpc(method, params={}):
+    """
+    Constructs a JSONRPC query based on some method and its params
+    """
     return json.dumps({
         "jsonrpc": "2.0",
         "method": method,
@@ -17,6 +20,9 @@ def build_jsonrpc(method, params={}):
     })
 
 def signFirst(func):
+    """
+    Decorator used to call session.singInWithPassword and establish a websocket before doing some operation.
+    """
     async def wrapper(*args, **kwargs):
         global websocket
         async with websockets.connect(url) as websocket:
@@ -34,15 +40,16 @@ def signFirst(func):
 async def fetchObjects(dns):
     controllers = set()
     poolHosts = {}
-    pools = await fetchType('pool')
-    for poolId in pools:
+    pools = fetchType('pool')
+    hosts = fetchType('host')
+    vms = fetchType('VM')
+    for poolId in (await pools):
         pool = pools[poolId]
         poolHosts[poolId] = []
         controllers.add(pool['master'])
     writeJson(pools, 'pools')
 
-    hosts = await fetchType('host')
-    for hostId in hosts:
+    for hostId in (await hosts):
         host = hosts[hostId]
         if hostId not in controllers:
             poolHosts[host['$pool']].append(hostId)
@@ -50,8 +57,7 @@ async def fetchObjects(dns):
     writeJson(hosts, 'hosts')
 
     hostVMs = {}
-    vms = await fetchType('VM')
-    for vmId in vms:
+    for vmId in (await vms):
         vm = vms[vmId]
         vm['name_label'] = re.sub(r'[/\\]','', vm['name_label'])
         
