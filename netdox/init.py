@@ -17,16 +17,12 @@ def init():
         k8sauth = auth['kubernetes']
         psauth = auth['pageseeder']
         awsauth = auth['aws']
-        ansibleauth = auth['ansible']
 
         # generate kubeconfig file
         kubeconfig(k8sauth)
 
         # generate map of all dns zones
         fetchZones()
-
-        # register with xen orchestra
-        xo_api.register()
 
         # setting up dirs
         for path in ('out', '/etc/ext/base'):

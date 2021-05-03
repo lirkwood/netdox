@@ -1,32 +1,64 @@
-import subprocess, json, re
+import websockets, asyncio, json, re
 import iptools, utils
 
+## Utility functions
+
+with open('src/authentication.json', 'r') as stream:
+    creds = json.load(stream)['xenorchestra']
+global url
+url = f"wss://{creds['host']}/api/"
+
+def build_jsonrpc(method, params={}):
+    """
+    Constructs a JSONRPC query based on some method and its params
+    """
+    return json.dumps({
+        "jsonrpc": "2.0",
+        "method": method,
+        "params": params,
+        "id": 1
+    })
+
+def signFirst(func):
+    """
+    Decorator used to call session.singInWithPassword and establish a websocket before doing some operation.
+    """
+    async def wrapper(*args, **kwargs):
+        global websocket
+        async with websockets.connect(url) as websocket:
+            request = build_jsonrpc('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']})
+            await websocket.send(request)
+            resp = json.loads(await websocket.recv())
+            if 'error' in resp:
+                raise RuntimeError(f'[ERROR][xo_api.py] Failed to sign in with user {creds["username"]}')
+            else:
+                return await func(*args, **kwargs)
+    return wrapper
+
 @utils.critical
-def register():
-    with open('src/authentication.json', 'r') as stream:
-        creds = json.load(stream)['xenorchestra']
-    subprocess.check_call(f"xo-cli --register https://{creds['host']} {creds['username']} {creds['password']}", shell=True)
-
-
-def fetchObjects(dns):
+@signFirst
+async def fetchObjects(dns):
     controllers = set()
     poolHosts = {}
     pools = fetchType('pool')
-    for pool in pools:
-        poolHosts[pool['uuid']] = []
+    hosts = fetchType('host')
+    vms = fetchType('VM')
+    for poolId in (await pools):
+        pool = pools[poolId]
+        poolHosts[poolId] = []
         controllers.add(pool['master'])
     writeJson(pools, 'pools')
 
-    hosts = fetchType('host')
-    for host in hosts:
-        if host['uuid'] not in controllers:
-            poolHosts[host['$pool']].append(host['uuid'])
+    for hostId in (await hosts):
+        host = hosts[hostId]
+        if hostId not in controllers:
+            poolHosts[host['$pool']].append(hostId)
             host['subnet'] = iptools.sort(host['address'])
     writeJson(hosts, 'hosts')
 
     hostVMs = {}
-    vms = fetchType('VM')
-    for vm in vms:
+    for vmId in (await vms):
+        vm = vms[vmId]
         vm['name_label'] = re.sub(r'[/\\]','', vm['name_label'])
         
         if vm['$container'] not in hostVMs:
@@ -48,17 +80,21 @@ def fetchObjects(dns):
     writeJson(vms, 'vms')
     writeJson(poolHosts, 'devices')
     writeJson(hostVMs, 'residents')
-
-def fetchType(type):
-    stdout = subprocess.check_output(f'xo-cli --list-objects type={type}', shell=True)
-    jsondata = json.loads(stdout)
-    return jsondata
-
+            
+async def fetchType(type):
+    global websocket
+    request = build_jsonrpc(f'xo.getAllObjects', {
+    'filter': {
+        'type': type
+    }})
+    await websocket.send(request)
+    resp = json.loads(await websocket.recv())
+    return resp['result']
+    
 def writeJson(data, type):
     with open(f'src/{type}.json', 'w') as stream:
         stream.write(json.dumps(data, indent=2))
     del data
 
-
-def createVM(name, desc, template):
-    subprocess.check_call(f'xo-cli vm.create name_label={name} name_description={desc} template={template}')
+if __name__ == '__main__':
+    asyncio.run(fetchObjects())
