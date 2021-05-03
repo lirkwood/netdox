@@ -207,6 +207,8 @@ class JSONEncoder(json.JSONEncoder):
             return obj.__dict__
         elif isinstance(obj, set):
             return sorted(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
 
 
