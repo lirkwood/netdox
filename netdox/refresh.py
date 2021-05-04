@@ -196,8 +196,14 @@ def labels(dns_set):
     #     if 'icinga' in dns.__dict__:
     #         dns.labels.append('icinga_not_monitored')
 
+
+#####################################
+# Generating config files for users #
+#####################################
+
 @utils.handle
-async def template_map():
+@xo_api.authenticate
+async def template_map(websocket):
     """
     Generates json with all vms/snapshots/templates
     """
@@ -206,23 +212,25 @@ async def template_map():
         'snapshots': {},
         'templates': {}
     }
-    async with open('src/vms.json', 'r') as stream:
-        vms = json.load(stream)
-    snapshots = xo_api.fetchType('VM-snapshot')
-    templates = xo_api.fetchType('VM-template')
+    vms = await xo_api.fetchType('VM', websocket)
+    templates = await xo_api.fetchType('VM-template', websocket)
+    snapshots = await xo_api.fetchType('VM-snapshot', websocket)
 
-    for vm in (await vms):
+    for vm in vms:
         name = vms[vm]['name_label']
         vmSource['vms'][name] = vm
-    for snapshot in (await snapshots):
+
+    for snapshot in snapshots:
         name = snapshots[snapshot]['name_label']
         vmSource['snapshots'][name] = snapshot
-    for template in (await templates):
+        
+    for template in templates:
         name = templates[template]['name_label']
         vmSource['templates'][name] = template
 
-    with open('src/templates.json', 'w') as stream:
-        stream.write(json.dumps(vmSource, indent=2))
+    with open('src/templates.json', 'w', encoding='utf-8') as stream:
+        stream.write(json.dumps(vmSource, indent=2, ensure_ascii=False))
+    xslt('templates.xsl', 'src/templates.xml', 'out/config/templates.psml')
     
 
 #############################
