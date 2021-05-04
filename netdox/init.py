@@ -1,7 +1,7 @@
 import subprocess, json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
-import dnsme_api, ps_api, xo_api, utils
+import dnsme_api, ps_api, xo_api, refresh, utils
 
 ##################
 # Initialisation #
@@ -24,6 +24,9 @@ def init():
         # generate map of all dns zones
         fetchZones()
 
+        # generate config files
+        refresh.template_map()
+
         # setting up dirs
         for path in ('out', '/etc/ext/base'):
             if not os.path.exists(path):
@@ -33,7 +36,7 @@ def init():
             os.mkdir('out/'+path)
         
         # generate xslt json import files
-        for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'aws', 'review'):
+        for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'aws', 'review', 'templates'):
             with open(f'src/{type}.xml','w') as stream:
                 stream.write(dedent(f"""
                 <?xml version="1.0" encoding="UTF-8"?>
