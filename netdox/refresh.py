@@ -158,7 +158,7 @@ def icinga_services(dns_set):
                         dns.icinga[icinga_host] = {}
                     dns.icinga[icinga_host] = objects[icinga_host][selector] | dns.icinga[icinga_host]
 
-        if not dns.icinga:
+        if not dns.icinga and dns.location:
             ansible.icinga_add_generic(domain, location=dns.location)
 
 @utils.handle
