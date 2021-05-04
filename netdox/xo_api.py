@@ -31,10 +31,8 @@ def authenticate(func):
     """
     async def wrapper(*args, **kwargs):
         async with websockets.connect(url, max_size=3000000) as websocket:
-            print('auth start')
             request, id = build_jsonrpc('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']})
             await websocket.send(request)
-            print('sent')
             resp = json.loads(await websocket.recv())
             if 'error' in resp:
                 raise RuntimeError(f'[ERROR][xo_api.py] Failed to sign in with user {creds["username"]}')
