@@ -24,9 +24,6 @@ def init():
         # generate map of all dns zones
         fetchZones()
 
-        # generate config files
-        asyncio.run(refresh.template_map())
-
         # setting up dirs
         for path in ('out', '/etc/ext/base'):
             if not os.path.exists(path):
@@ -90,6 +87,9 @@ def init():
             
         with open('src/exclusions.json', 'w') as output:
             output.write(json.dumps(exclusions, indent=2))
+
+        # Run refresh on startup
+        refresh.main()
 
 
 def kubeconfig(auth):
