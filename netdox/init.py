@@ -1,4 +1,4 @@
-import subprocess, json, os
+import subprocess, asyncio, json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
 import dnsme_api, ps_api, xo_api, refresh, utils
@@ -25,7 +25,7 @@ def init():
         fetchZones()
 
         # generate config files
-        refresh.template_map()
+        asyncio.run(refresh.template_map())
 
         # setting up dirs
         for path in ('out', '/etc/ext/base'):
