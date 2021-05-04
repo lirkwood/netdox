@@ -1,49 +1,72 @@
-import websockets, asyncio, json, re
+import websockets, asyncio, random, json, re
 import iptools, utils
-
-## Utility functions
 
 with open('src/authentication.json', 'r') as stream:
     creds = json.load(stream)['xenorchestra']
 global url
 url = f"wss://{creds['host']}/api/"
 
-def build_jsonrpc(method, params={}):
+def build_jsonrpc(method, params={}, notification=False):
     """
     Constructs a JSONRPC query based on some method and its params
     """
-    return json.dumps({
-        "jsonrpc": "2.0",
-        "method": method,
-        "params": params,
-        "id": 1
-    })
+    if notification:
+        return json.dumps({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params
+        })
+    else:
+        id = f"netdox-{random.randint(0, 99)}"
+        return json.dumps({
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": id
+        }), id
 
-def signFirst(func):
+def authenticate(func):
     """
     Decorator used to call session.singInWithPassword and establish a websocket before doing some operation.
     """
     async def wrapper(*args, **kwargs):
-        global websocket
-        async with websockets.connect(url) as websocket:
-            request = build_jsonrpc('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']})
+        async with websockets.connect(url, max_size=3000000) as websocket:
+            print('auth start')
+            request, id = build_jsonrpc('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']})
             await websocket.send(request)
+            print('sent')
             resp = json.loads(await websocket.recv())
             if 'error' in resp:
                 raise RuntimeError(f'[ERROR][xo_api.py] Failed to sign in with user {creds["username"]}')
             else:
-                return await func(*args, **kwargs)
+                return await func(*args, **kwargs, websocket=websocket)
     return wrapper
 
+global frames
+frames = {}
+async def reciever(id, websocket):
+    if id in frames:
+        return frames[id]
+    async for message in websocket:
+        message = json.loads(message)
+        if 'id' not in message:
+            pass
+        elif message['id'] == id:
+            return message
+        else:
+            frames[message['id']] = message
+
+
 @utils.critical
-@signFirst
-async def fetchObjects(dns):
+@authenticate
+async def fetchObjects(dns, websocket):
     controllers = set()
     poolHosts = {}
-    pools = fetchType('pool')
-    hosts = fetchType('host')
-    vms = fetchType('VM')
-    for poolId in (await pools):
+    pools = fetchType('pool', websocket)
+    hosts = fetchType('host', websocket)
+    vms = fetchType('VM', websocket)
+    pools = await pools
+    for poolId in pools:
         pool = pools[poolId]
         poolHosts[poolId] = []
         controllers.add(pool['master'])
@@ -81,17 +104,20 @@ async def fetchObjects(dns):
     writeJson(poolHosts, 'devices')
     writeJson(hostVMs, 'residents')
             
-async def fetchType(type):
-    global websocket
-    request = build_jsonrpc('xo.getAllObjects', {
+
+async def fetchType(type, websocket):
+    request, id = build_jsonrpc('xo.getAllObjects', {
     'filter': {
         'type': type
     }})
     await websocket.send(request)
-    resp = json.loads(await websocket.recv())
-    print(resp)
-    return resp['result']
+    resp = await reciever(id, websocket)
+    try:
+        return resp['result']
+    except KeyError:
+        raise KeyError('caught')
     
+
 def writeJson(data, type):
     with open(f'src/{type}.json', 'w') as stream:
         stream.write(json.dumps(data, indent=2))
@@ -99,8 +125,8 @@ def writeJson(data, type):
 
 
 @utils.handle
-@signFirst
-async def createVM(template, name):
+@authenticate
+async def createVM(template, name, websocket):
     request = build_jsonrpc('xo.getAllObjects', {
     'filter': {
         'uuid': template
@@ -130,6 +156,3 @@ async def createVM(template, name):
         await websocket.send(request)
         resp = json.loads(await websocket.recv())
         return resp
-
-if __name__ == '__main__':
-    asyncio.run(createVM('01a5ca9f-6fbd-afac-4c59-a506bb1dcb85','api test'))
