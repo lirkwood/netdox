@@ -1,48 +1,65 @@
+from requests.api import request
 import websockets, asyncio, random, json, re
 import iptools, utils
+
+## Some initialisation
 
 with open('src/authentication.json', 'r') as stream:
     creds = json.load(stream)['xenorchestra']
 global url
 url = f"wss://{creds['host']}/api/"
 
-def build_jsonrpc(method, params={}, notification=False):
+def writeJson(data, name):
     """
-    Constructs a JSONRPC query based on some method and its params
+    Writes some data to a json file and then deletes it from memory
+    """
+    with open(f'src/{name}.json', 'w') as stream:
+        stream.write(json.dumps(data, indent=2))
+    del data
+
+##################################
+# Generic websocket interactions #
+##################################
+
+async def call(method, params={}, notification=False):
+    """
+    Makes a call with some given method and params, returns a JSON object
     """
     if notification:
-        return json.dumps({
+        await websocket.send(json.dumps({
             "jsonrpc": "2.0",
             "method": method,
             "params": params
-        })
+        }))
     else:
         id = f"netdox-{random.randint(0, 99)}"
-        return json.dumps({
+        await websocket.send(json.dumps({
             "jsonrpc": "2.0",
             "method": method,
             "params": params,
             "id": id
-        }), id
+        }))
+        return await reciever(id)
 
 def authenticate(func):
     """
-    Decorator used to call session.singInWithPassword and establish a websocket before doing some operation.
+    Decorator used to establish a WSS connection before the function runs
     """
     async def wrapper(*args, **kwargs):
+        global websocket
         async with websockets.connect(url, max_size=3000000) as websocket:
-            request, id = build_jsonrpc('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']})
-            await websocket.send(request)
-            resp = json.loads(await websocket.recv())
-            if 'error' in resp:
+            if 'error' in await call('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']}):
                 raise RuntimeError(f'[ERROR][xo_api.py] Failed to sign in with user {creds["username"]}')
             else:
-                return await func(*args, **kwargs, websocket=websocket)
+                return await func(*args, **kwargs)
     return wrapper
 
 global frames
 frames = {}
-async def reciever(id, websocket):
+async def reciever(id):
+    """
+    Consumes responses sent by websocket server, returns the one with the specified ID.
+    """
     if id in frames:
         return frames[id]
     async for message in websocket:
@@ -55,22 +72,52 @@ async def reciever(id, websocket):
             frames[message['id']] = message
 
 
+#########################
+# Convenience functions #
+#########################
+
+async def fetchType(type):
+    """
+    Fetches all objects of a given type
+    """
+    return (await call('xo.getAllObjects', {
+    'filter': {
+        'type': type
+    }}))['result']
+    
+async def fetchObj(uuid):
+    """
+    Fetches an object by UUID
+    """
+    return (await call('xo.getAllObjects', {
+    'filter': {
+        'uuid': uuid
+    }}))['result']
+
+
+##################
+# User functions #
+##################
+
 @utils.critical
 @authenticate
-async def fetchObjects(dns, websocket):
+async def fetchObjects(dns):
+    """
+    Fetches info about pools, hosts, and VMs
+    """
     controllers = set()
     poolHosts = {}
-    pools = fetchType('pool', websocket)
-    hosts = fetchType('host', websocket)
-    vms = fetchType('VM', websocket)
-    pools = await pools
+    pools = await fetchType('pool')
+    hosts = await fetchType('host')
+    vms = await fetchType('VM')
+    
     for poolId in pools:
         pool = pools[poolId]
         poolHosts[poolId] = []
         controllers.add(pool['master'])
     writeJson(pools, 'pools')
 
-    for hostId in (await hosts):
+    for hostId in hosts:
         host = hosts[hostId]
         if hostId not in controllers:
             poolHosts[host['$pool']].append(hostId)
@@ -78,7 +125,7 @@ async def fetchObjects(dns, websocket):
     writeJson(hosts, 'hosts')
 
     hostVMs = {}
-    for vmId in (await vms):
+    for vmId in vms:
         vm = vms[vmId]
         vm['name_label'] = re.sub(r'[/\\]','', vm['name_label'])
         
@@ -101,56 +148,36 @@ async def fetchObjects(dns, websocket):
     writeJson(vms, 'vms')
     writeJson(poolHosts, 'devices')
     writeJson(hostVMs, 'residents')
-            
-
-async def fetchType(type, websocket):
-    request, id = build_jsonrpc('xo.getAllObjects', {
-    'filter': {
-        'type': type
-    }})
-    await websocket.send(request)
-    resp = await reciever(id, websocket)
-    try:
-        return resp['result']
-    except KeyError:
-        raise KeyError('caught')
-    
-
-def writeJson(data, type):
-    with open(f'src/{type}.json', 'w') as stream:
-        stream.write(json.dumps(data, indent=2))
-    del data
 
 
 @utils.handle
 @authenticate
-async def createVM(template, name, websocket):
-    request = build_jsonrpc('xo.getAllObjects', {
-    'filter': {
-        'uuid': template
-    }})
-    await websocket.send(request)
-    info = json.loads(await websocket.recv())['result']
+async def createVM(uuid, name=None):
+    """
+    Given the UUID of some VM-like object, creates a clone VM
+    """
+    info = await fetchObj(uuid)
     if len(info.keys()) > 1:
-        raise ValueError(f'[ERROR][xo_api.py] Ambiguous UUID {template}')
+        raise ValueError(f'[ERROR][xo_api.py] Ambiguous UUID {uuid}')
     else:
 
         object = info[list(info)[0]]
+        if not name:
+            name = f"{object['name_label']} CLONE"
+        # if given
         if object['type'] == 'VM' or object['type'] == 'VM-snapshot':
-            request = build_jsonrpc('vm.clone', {
-                'id': template,
+            return await call('vm.clone', {
+                'id': uuid,
                 'name': name,
                 'full_copy': True
             })
+
         elif object['type'] == 'VM-template':
-            request = build_jsonrpc('vm.create', {
+            return await call('vm.create', {
                 'bootAfterCreate': True,
-                'template': template,
+                'template': uuid,
                 'name_label': name
             })
+
         else:
             raise ValueError(f'[ERROR][xo_api.py] Invalid template type {object["type"]}')
-
-        await websocket.send(request)
-        resp = json.loads(await websocket.recv())
-        return resp
