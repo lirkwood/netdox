@@ -5,7 +5,7 @@ from traceback import format_exc
 from bs4 import BeautifulSoup
 import json, re
 
-import ansible, dnsme_api, ad_api, ps_api
+import ansible, dnsme_api, ad_api, ps_api, xo_api
 import utils, iptools
 
 app = Flask(__name__)
@@ -111,20 +111,19 @@ def approved_vm(uri):
     """
     Handles documents with 'xo_vm' type and workflow 'Approved'.
     """
-    os_soup = BeautifulSoup(ps_api.get_fragment(uri, 'os_version'), features='xml')
+    core_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'core'))
+    os_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'os_version'))
     addr_soup = BeautifulSoup(ps_api.get_fragment(uri, 'addresses'), features='xml')
 
-    os_inf = {}
-    for property in os_soup("property"):
-        os_inf[property['name']] = property['value']
     addrs = set()
     for property in addr_soup("property"):
         if iptools.valid_ip(property.xref.string):
             addrs.add(property.xref.string)
 
-    if os_inf['os-distro'] and os_inf['os-major'] and os_inf['os-minor']:
-        # xo make vm
-        pass
+    if os_inf['template']:
+        xo_api.createVM(os_inf['template'], core_inf['name'])
+    else:
+        raise ValueError('[ERROR][server.py] Must provide a UUID to use as template.')
 
     return Response(status=200)
 
