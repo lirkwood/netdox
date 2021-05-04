@@ -4,6 +4,9 @@ from icinga_inf import icinga_hosts
 ## Main functions
 
 def exec(cmd):
+    """
+    Executes a command on the ansible machine
+    """
     sshclient = client.SSHClient()
     sshclient.set_missing_host_key_policy(AutoAddPolicy())
     sshclient.connect('ansiblesy4.allette.com.au', username='root', key_filename='src/ssh/ssh-privatekey')
@@ -14,6 +17,9 @@ def exec(cmd):
     return (stdout, stderr)
 
 def playbook(path, tags=[], vars={}):
+    """
+    Runs a playbook with optional tags and extra vars
+    """
     # encode dict as extra vars
     varstring = ''
     for key in vars:
@@ -42,6 +48,9 @@ def playbook(path, tags=[], vars={}):
 ## Functions for specific plays
 
 def icinga_add_generic(address, location=None, icinga=None, display_name=None):
+    """
+    Addes a generic host to a specified Icinga if it does not already exist
+    """
     if not location and not icinga:
         raise ValueError('[ERROR][ansible.py] Either location or icinga must be defined.')
     elif location and not icinga:
@@ -49,7 +58,7 @@ def icinga_add_generic(address, location=None, icinga=None, display_name=None):
             if location == icinga_hosts[host]['location']:
                 icinga = host
         if not icinga:
-            raise ValueError('[ERROR][ansible.py] Unrecognised location {location}')
+            raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
             
     tags = ['add-generic']
     vars = {
