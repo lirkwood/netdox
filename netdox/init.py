@@ -87,9 +87,8 @@ def init():
             
         with open('src/exclusions.json', 'w') as output:
             output.write(json.dumps(exclusions, indent=2))
-
-        # Run refresh on startup
-        refresh.main()
+        
+        
 
 
 def kubeconfig(auth):
@@ -148,3 +147,4 @@ def fetchZones():
 
 if __name__ == '__main__':
     init()
+    refresh.main()
