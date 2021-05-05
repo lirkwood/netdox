@@ -1,5 +1,6 @@
 from paramiko import client, AutoAddPolicy
 from icinga_inf import icinga_hosts
+import utils
 
 ## Main functions
 
@@ -47,9 +48,10 @@ def playbook(path, tags=[], vars={}):
 
 ## Functions for specific plays
 
-def icinga_add_generic(address, location=None, icinga=None, display_name=None):
+@utils.handle
+def icinga_add_host(address, location=None, icinga=None, template="generic-host", display_name=None):
     """
-    Addes a generic host to a specified Icinga if it does not already exist
+    Adds host to a specified Icinga if it does not already exist
     """
     if not location and not icinga:
         raise ValueError('[ERROR][ansible.py] Either location or icinga must be defined.')
@@ -63,11 +65,72 @@ def icinga_add_generic(address, location=None, icinga=None, display_name=None):
     tags = ['add-generic']
     vars = {
         "icinga": icinga,
-        "host": address
+        "host": address,
+        "template": template
         }
     if display_name:
         vars['display_name'] = display_name
     else:
         vars['display_name'] = address
     
+    print(f'[INFO][ansible.py] Created {template} for {address}')
     return playbook('/etc/ansible/icinga.yml', tags, vars)
+
+
+@utils.handle
+def icinga_pause(address, location=None, icinga=None):
+    """
+    Pauses the monitoring of the host object with a given address
+    """
+    if not location and not icinga:
+        raise ValueError('[ERROR][ansible.py] Either location or icinga must be defined.')
+    elif location and not icinga:
+        for host in icinga_hosts:
+            if location == icinga_hosts[host]['location']:
+                icinga = host
+        if not icinga:
+            raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
+            
+    tags = ['pause-host']
+    vars = {
+        "icinga": icinga,
+        "host": address
+        }
+    
+    return playbook('/etc/ansible/icinga.yml', tags, vars)
+
+@utils.handle
+def icinga_unpause(address, location=None, icinga=None):
+    """
+    Unpauses the monitoring of the host object with a given address
+    """
+    if not location and not icinga:
+        raise ValueError('[ERROR][ansible.py] Either location or icinga must be defined.')
+    elif location and not icinga:
+        for host in icinga_hosts:
+            if location == icinga_hosts[host]['location']:
+                icinga = host
+        if not icinga:
+            raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
+            
+    tags = ['unpause-host']
+    vars = {
+        "icinga": icinga,
+        "host": address,
+        }
+    
+    return playbook('/etc/ansible/icinga.yml', tags, vars)
+
+
+def copy(host, path):
+    tags = ['copy-file']
+
+    pathArr = path.split('/')
+    basepath = '/'.join(pathArr[:-1])
+    filename = pathArr[-1]
+    vars = {
+        "dir": basepath,
+        "filename": filename
+    }
+
+    return playbook('/etc/ansible/utils.yml', tags, vars)
