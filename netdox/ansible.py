@@ -49,7 +49,7 @@ def playbook(path, tags=[], vars={}):
 ## Functions for specific plays
 
 @utils.handle
-def icinga_add_host(address, location=None, icinga=None, template="generic-host", display_name=None):
+def icinga_set_host(address, location=None, icinga=None, template="generic-host", display_name=None):
     """
     Adds host to a specified Icinga if it does not already exist
     """
@@ -62,7 +62,7 @@ def icinga_add_host(address, location=None, icinga=None, template="generic-host"
         if not icinga:
             raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
             
-    tags = ['add-generic']
+    tags = ['set-host']
     vars = {
         "icinga": icinga,
         "host": address,
@@ -73,8 +73,12 @@ def icinga_add_host(address, location=None, icinga=None, template="generic-host"
     else:
         vars['display_name'] = address
     
-    print(f'[INFO][ansible.py] Created {template} for {address}')
-    return playbook('/etc/ansible/icinga.yml', tags, vars)
+    print(f'[INFO][ansible.py] Set {template} for {address} in {icinga}')
+    stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
+    if stderr:
+        raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
+    else:
+        return stdout
 
 
 @utils.handle
