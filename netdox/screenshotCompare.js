@@ -1,9 +1,7 @@
 const puppeteer = require('puppeteer');
 var { imgDiff } = require("img-diff-js");
 const fs = require('fs');
-const dns = require('./src/dns.json');
-const exclusions = require('./src/exclusions.json')['ss']
-var domains = Object.keys(dns)
+const domains = require('./src/config.json')['website']
 var review = {
 	"no_ss": {},
 	"no_base": [],
@@ -79,17 +77,15 @@ async function newBrowser(array) {
 	var browser = await puppeteer.launch({ defaultViewport: { width: 1920, height: 1080 }, args: ['--no-sandbox'] });
 	for (let index = 0; index < array.length; index++) {
 		var domain = array[index]
-		if (!exclusions.includes(domain)) {
-			let screenshot = await try_ss(domain, 'https://', browser)
-	
-			if (screenshot == true) {
-				success.push(domain)
-			} else if (screenshot == 'crashed') {
-				// If puppeteer crashes, start new browser and retry
-				try { await browser.close() } catch (err) { };
-				var browser = await puppeteer.launch({ defaultViewport: { width: 1920, height: 1080 }, args: ['--no-sandbox'] });
-				index--;
-			}
+		let screenshot = await try_ss(domain, 'https://', browser)
+
+		if (screenshot == true) {
+			success.push(domain)
+		} else if (screenshot == 'crashed') {
+			// If puppeteer crashes, start new browser and retry
+			try { await browser.close() } catch (err) { };
+			var browser = await puppeteer.launch({ defaultViewport: { width: 1920, height: 1080 }, args: ['--no-sandbox'] });
+			index--;
 		}
 	}
 	await browser.close();
