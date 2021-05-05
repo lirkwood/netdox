@@ -33,7 +33,23 @@ def fetchObjects():
 
 
 def fetchType(type, icinga_host):
+    """
+    Returns all instances of a given object type
+    """
     auth = icinga_hosts[icinga_host]
     r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(auth["username"], auth["password"]), verify=False)
+    jsondata = json.loads(r.text)
+    return jsondata
+
+
+def fetchTemplates(type, icinga_host=None):
+    """
+    Returns all templates for a given object type
+    """
+    if not icinga_host:
+        icinga_host = list(icinga_hosts)[0]
+        
+    auth = icinga_hosts[icinga_host]
+    r = requests.get(f'https://{icinga_host}:5665/v1/templates/{type}', auth=(auth['username'], auth['password']), verify=False)
     jsondata = json.loads(r.text)
     return jsondata
