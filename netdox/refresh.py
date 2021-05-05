@@ -1,8 +1,49 @@
-import ad_api, dnsme_api, cf_domains, k8s_domains   # dns query scripts
+import ps_api, ad_api, cf_domains, k8s_domains, dnsme_api   # dns query scripts
 import k8s_inf, xo_api, nat_inf, icinga_inf, license_inf   # other info
 import cleanup, ansible, iptools, utils   # utility scripts
 
-import subprocess, asyncio, boto3, json, os
+import subprocess, asyncio, shutil, boto3, json, os
+from bs4 import BeautifulSoup
+
+##################
+# Initialisation #
+##################
+
+@utils.critical
+def init():
+    """
+    Some init commands to run every time the DNS data is refreshed
+    """
+    # remove old output files
+    for folder in os.scandir('out'):
+        if folder.is_dir():
+            for file in os.scandir(folder):
+                if file.is_file():
+                    os.remove(file)
+                else:
+                    shutil.rmtree(file)
+        else:
+            os.remove(folder)
+    # load dns roles
+    config = {
+        "website": [],
+        "website-no-ssl": [],
+        "storage": [],
+        "unmonitored": [],
+        "exclude": []
+    }
+    configSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', '2'), features='xml')
+    for para in configSoup("para"):
+        if para.inline and hasattr(para.inline, 'label'):
+            try:
+                config[para.inline['label']].append(para.inline.string)
+            except KeyError:
+                print(f'[WARNING][init.py] Unknown DNS role {para.inline["label"]}')
+            except AttributeError:
+                print(f'[WARNING][init.py] Malformed role specification in config document.')
+
+    with open('src/config.json', 'w') as stream:
+        stream.write(json.dumps(config, indent=2))
 
 
 ######################
@@ -88,17 +129,23 @@ def aws_inf():
 ###########################
 
 @utils.handle
-def exclude(dns_set):
+def apply_roles(dns_set):
     """
-    Removes dns records with names in some set from some dns set
+    Applies custom roles defined in _nd_config
     """
-    with open('src/exclusions.json', 'r') as stream:
-        domain_set = json.load(stream)['dns']
-    for domain in domain_set:
-        try:
+    with open('src/config.json', 'r') as stream:
+        config = json.load(stream)
+    excluded = []
+    for domain in dns_set:
+        for role in config:
+            if domain in config[role]:
+                dns_set[domain].role = role
+                if role == 'exclude':
+                    excluded.append(domain)
+
+    for domain in excluded:
+        if domain in dns_set:
             del dns_set[domain]
-        except KeyError:
-            pass
 
 @utils.handle
 def nat(dns_set):
@@ -146,33 +193,47 @@ def aws_ec2(dns_set):
 
 @utils.handle
 def icinga_services(dns_set):
-    """
-    Integrates icinga display labels into a dns set
-    """
-    objects = icinga_inf.fetchObjects()
+    manual, generated = icinga_inf.manualObjectsByDomain()
     for domain in dns_set:
         dns = dns_set[domain]
-        # search icinga for objects with address == domain (or any private ip for that domain)
-        for selector in [domain] + list(dns.ips):
-            for icinga_host in objects:
-                if selector in objects[icinga_host]:
-                    if icinga_host not in dns.icinga:
-                        dns.icinga[icinga_host] = {}
-                    dns.icinga[icinga_host] = objects[icinga_host][selector] | dns.icinga[icinga_host]
+        # search icinga for objects with address == domain (or any ip for that domain)
+        for selector in [domain] + list(dns.ips) + list(dns.cnames):
+            for icinga_host in manual:
+                # if has a manually created monitor, just load info
+                if selector in manual[icinga_host]:
+                    if icinga_host in dns.icinga:
+                        print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors in {icinga_host}')
+                    dns.icinga[icinga_host] = manual[icinga_host][selector]
+            
+        for icinga_host in generated:
+            if domain in generated[icinga_host]:
+                # if generated, verify template against role
+                template_name = generated[icinga_host][domain]['templates'][0]
+                if dns.role == 'website' and 'website' not in template_name:
+                    print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
+                    ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-website")
+                elif dns.role == 'storage' and 'storage' not in template_name:
+                    print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
+                    ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-storage")
+                elif dns.role == 'unmonitored':
+                    print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but has a generated monitor object. Removing...')
+                    ansible.icinga_pause(dns.name, icinga=icinga_host)
 
+                # same as for manual, add info to obj for docs
+                ## this doesnt work, gets old info. move this to not clobber display name aswell
+                if 'info' in generated[icinga_host][domain]:
+                    if icinga_host in dns.icinga:
+                        print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors in {icinga_host}')
+                    dns.icinga[icinga_host] = generated[icinga_host][domain]['info']
+
+        # if has no monitor, assign one
         if not dns.icinga and dns.location:
-            if os.path.exists('src/config.json'):
-                with open('src/config.json', 'r') as stream:
-                    config = json.load(stream)
-                    if dns.name not in config['exclude']:
-                        if dns.name in config['website']:
-                            ansible.icinga_add_host(dns.name, dns.location, template="generic-website")
-                        elif dns.name in config['storage']:
-                            ansible.icinga_add_host(dns.name, dns.location, template="generic-storage")
-                        else:
-                            ansible.icinga_add_host(dns.name, dns.location)
-            else:
-                ansible.icinga_add_host(dns.name, dns.location)
+            if dns.role == 'website':
+                ansible.icinga_set_host(dns.name, dns.location, template="generic-website")
+            elif dns.role == 'storage':
+                ansible.icinga_set_host(dns.name, dns.location, template="generic-storage")
+            elif dns.role != 'unmonitored':
+                ansible.icinga_set_host(dns.name, dns.location)
 
 @utils.handle
 def license_keys(dns_set):
@@ -288,11 +349,13 @@ def screenshots():
 #############
 
 def main():
+    # init() commented due to bad config.json generation
+
     # get dns info
     forward, reverse = queries()
 
-    # apply additional info/filters
-    exclude(forward)
+    # apply additional modifications/filters
+    apply_roles(forward)
     nat(forward)
     xo_vms(forward)
     aws_ec2(forward)
