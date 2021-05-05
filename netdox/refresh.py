@@ -44,7 +44,7 @@ def queries():
         del source
 
     # VM/App/AWS queries
-    xo_api.fetchObjects(forward)
+    asyncio.run(xo_api.fetchObjects(forward))
     k8s_inf.main()
     aws_inf()
 
@@ -81,6 +81,7 @@ def aws_inf():
     client = boto3.client('ec2')
     instances = client.describe_instances()
     write_dns(instances, 'aws')
+
 
 ###########################
 # Non-essential functions #
@@ -121,10 +122,11 @@ def xo_vms(dns_set):
         vms = json.load(stream)
         for domain in dns_set:
             dns = dns_set[domain]
-            for vm in vms:
+            for uuid in vms:
+                vm = vms[uuid]
                 try:
                     if vm['mainIpAddress'] in dns.ips:
-                        dns.link(vm['uuid'], 'vm')
+                        dns.link(uuid, 'vm')
                 except KeyError:
                     pass
 
@@ -134,11 +136,11 @@ def aws_ec2(dns_set):
     Links domains to AWS EC2 instances with the same IP
     """
     with open('src/aws.json', 'r') as stream:
-        reservations = json.load(stream)
+        aws = json.load(stream)
         for domain in dns_set:
             dns = dns_set[domain]
-            for instances in reservations:
-                for instance in instances:
+            for reservation in aws['Reservations']:
+                for instance in reservation['Instances']:
                     if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
                         dns.link(instance['InstanceId'], 'ec2')
 
@@ -159,7 +161,8 @@ def icinga_services(dns_set):
                     dns.icinga[icinga_host] = objects[icinga_host][selector] | dns.icinga[icinga_host]
 
         if not dns.icinga and dns.location:
-            ansible.icinga_add_generic(domain, location=dns.location)
+            # ansible.icinga_add_generic(domain, location=dns.location)
+            pass
 
 @utils.handle
 def license_keys(dns_set):
@@ -203,7 +206,7 @@ def labels(dns_set):
 
 @utils.handle
 @xo_api.authenticate
-async def template_map(websocket):
+async def template_map():
     """
     Generates json with all vms/snapshots/templates
     """
@@ -212,9 +215,9 @@ async def template_map(websocket):
         'snapshots': {},
         'templates': {}
     }
-    vms = await xo_api.fetchType('VM', websocket)
-    templates = await xo_api.fetchType('VM-template', websocket)
-    snapshots = await xo_api.fetchType('VM-snapshot', websocket)
+    vms = await xo_api.fetchType('VM')
+    templates = await xo_api.fetchType('VM-template')
+    snapshots = await xo_api.fetchType('VM-snapshot')
 
     for vm in vms:
         name = vms[vm]['name_label']
@@ -261,6 +264,7 @@ def xslt(xsl, src, out=None):
 # Imgdiff script #
 ##################
 
+@utils.critical
 def screenshots():
     """
     Runs screenshotCompare node.js script and writes output using xslt
