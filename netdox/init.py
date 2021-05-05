@@ -1,7 +1,7 @@
-import subprocess, asyncio, json, os
+import json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
-import dnsme_api, ps_api, xo_api, refresh, utils
+import dnsme_api, ps_api, refresh, utils
 
 ##################
 # Initialisation #
@@ -10,7 +10,7 @@ import dnsme_api, ps_api, xo_api, refresh, utils
 @utils.critical
 def init():
     """
-    Creates dirs and template files, loads authentication data, excluded domains, etc...
+    Initialises container and makes it usable for serve and refresh
     """
     with open('src/authentication.json','r') as authstream:
         auth = json.load(authstream)
@@ -73,22 +73,6 @@ def init():
             aws_access_key_id = {awsauth['aws_access_key_id']}
             aws_secret_access_key = {awsauth['aws_secret_access_key']}
             """).strip())
-
-        # load exclusions from pageseeder
-        exclusions = {'dns': [], 'ss': []}
-        exclusions_psml = BeautifulSoup(ps_api.get_fragment('_nd_exclusions','2'), features='xml')
-        for line in exclusions_psml("para"):
-            no_ss_label = line.find(label='no-screenshot')
-            if no_ss_label:
-                line = no_ss_label
-            else:
-                exclusions['dns'].append(line.string.strip())
-            exclusions['ss'].append(line.string.strip())
-            
-        with open('src/exclusions.json', 'w') as output:
-            output.write(json.dumps(exclusions, indent=2))
-        
-        
 
 
 def kubeconfig(auth):
