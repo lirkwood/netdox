@@ -41,6 +41,7 @@ async def call(method, params={}, notification=False):
         }))
         return await reciever(id)
 
+
 def authenticate(func):
     """
     Decorator used to establish a WSS connection before the function runs
@@ -53,6 +54,7 @@ def authenticate(func):
             else:
                 return await func(*args, **kwargs)
     return wrapper
+
 
 global frames
 frames = {}
@@ -84,6 +86,7 @@ async def fetchType(type):
     'filter': {
         'type': type
     }}))['result']
+    
     
 async def fetchObj(uuid):
     """
