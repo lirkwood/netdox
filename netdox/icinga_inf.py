@@ -3,10 +3,15 @@ import requests, json
 with open('src/authentication.json','r') as stream:
     icinga_hosts = json.load(stream)['icinga']
 
-def fetchObjects():
-    objects = {}
+def objectsByDomain():
+    """
+    Returns a dictionary of all hosts and their services, where addr is the key
+    """
+    manual = {}
+    generated = {}
     for icinga in icinga_hosts:
-        objects[icinga] = {}
+        manual[icinga] = {}
+        generated[icinga] = {}
 
         hosts = fetchType('hosts', icinga)
         services = fetchType('services', icinga)
@@ -21,15 +26,31 @@ def fetchObjects():
         for host in hosts['results']:
             name = host['name']
             addr = host['attrs']['address']
-            if addr not in objects[icinga]:
-                objects[icinga][addr] = {}
-            if name in hostServices:
-                objects[icinga][addr][name] = hostServices[name]
+            # if generated load template name
+            if 'conf.d/hosts/generated/' in host['attrs']['source_location']['path']:
+                if addr not in generated[icinga]:
+                    generated[icinga][addr] = {"templates": host['attrs']['templates']}
+                    if name in hostServices:
+                        generated[icinga][addr]['info'] = hostServices[name]
+                    # remove top template; should be specific to host
+                    if generated[icinga][addr]['templates'][0] == name:
+                        del generated[icinga][addr]['templates'][0]
+                    else:
+                        # remove this
+                        print(f'[WARNING][icinga_inf.py] Unexpected behaviour: Top level template has name {generated[icinga][addr][0]} for host {name}')
+                else:
+                    print(f'[WARNING][icinga_inf.py] Duplicate monitor for {name} in {icinga}')
+            # if manually specified load services
             else:
-                objects[icinga][addr][name] = []
-                print(f'[WARNING][icinga_inf.py] Host object {name} has no services.')
+                if addr not in manual[icinga]:
+                    manual[icinga][addr] = {}
+                if name in hostServices:
+                    manual[icinga][addr][name] = hostServices[name]
+                else:
+                    manual[icinga][addr][name] = []
 
-    return objects
+
+    return manual, generated
 
 
 def fetchType(type, icinga_host):
