@@ -56,10 +56,11 @@ def getWorkers():
                             break
                     
                     if workerIp:
-                        for vm in allVms:
+                        for uuid in allVms:
+                            vm = allVms[uuid]
                             try:
                                 if vm['mainIpAddress'] == workerIp:
-                                    workerUuid = vm['uuid']
+                                    workerUuid = uuid
                             except KeyError:
                                 pass
 
