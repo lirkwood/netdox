@@ -120,6 +120,10 @@ def approved_vm(uri):
         if iptools.valid_ip(property.xref.string):
             addrs.add(property.xref.string)
 
+    location = utils.locate(addrs)
+    if location:
+        icinga_eval(addrs[0], location)
+
     if os_inf['template']:
         xo_api.createVM(os_inf['template'], core_inf['name'])
     else:
@@ -129,11 +133,8 @@ def approved_vm(uri):
 
 
 @utils.handle
-def icinga_eval(info, icinga):
+def icinga_eval(addr, location=None, icinga=None):
     try:
-        if 'host' in icinga:
-            ansible.icinga_add_generic(info['name'], info['location'], icinga['host'])
-        else:
-            ansible.icinga_add_generic(info['name'], info['location'])
+        ansible.icinga_add_generic(addr, location, icinga)
     except KeyError:
-        raise AttributeError(f'[ERROR][serve.py] Unable to confirm monitor status for {info["name"]}; Missing mandatory values.')
+        raise AttributeError(f'[ERROR][serve.py] Unable to confirm monitor status for {addr}; Missing mandatory values.')
