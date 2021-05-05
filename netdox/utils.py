@@ -79,6 +79,7 @@ class dns:
             self.source = source
             self.location = None
             self.icinga = {}
+            self.role = None
 
             # destinations
             self.public_ips = set()
