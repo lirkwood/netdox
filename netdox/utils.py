@@ -4,6 +4,11 @@ from traceback import format_exc
 from datetime import datetime
 from sys import argv
 
+with open('src/authentication.json', 'r') as stream:
+    global auth
+    auth = json.load(stream)
+    
+
 try:
     with open('src/locations.json', 'r') as stream:
         _location_map = json.load(stream)
