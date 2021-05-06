@@ -1,6 +1,6 @@
 import ps_api, ad_api, cf_domains, k8s_domains, dnsme_api   # dns query scripts
 import k8s_inf, xo_api, nat_inf, icinga_inf, license_inf   # other info
-import cleanup, ansible, iptools, utils   # utility scripts
+import cleanup, iptools, utils   # utility scripts
 
 import subprocess, asyncio, shutil, boto3, json, os
 from bs4 import BeautifulSoup
@@ -33,6 +33,7 @@ def init():
         "exclude": []
     }
     configSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', '2'), features='xml')
+    print(configSoup.prettify())
     for para in configSoup("para"):
         if para.inline and hasattr(para.inline, 'label'):
             try:
@@ -193,47 +194,15 @@ def aws_ec2(dns_set):
 
 @utils.handle
 def icinga_services(dns_set):
-    manual, generated = icinga_inf.manualObjectsByDomain()
+    icinga_inf.objectsByDomain()
+    tmp = {}
     for domain in dns_set:
         dns = dns_set[domain]
         # search icinga for objects with address == domain (or any ip for that domain)
-        for selector in [domain] + list(dns.ips) + list(dns.cnames):
-            for icinga_host in manual:
-                # if has a manually created monitor, just load info
-                if selector in manual[icinga_host]:
-                    if icinga_host in dns.icinga:
-                        print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors in {icinga_host}')
-                    dns.icinga[icinga_host] = manual[icinga_host][selector]
-            
-        for icinga_host in generated:
-            if domain in generated[icinga_host]:
-                # if generated, verify template against role
-                template_name = generated[icinga_host][domain]['templates'][0]
-                if dns.role == 'website' and 'website' not in template_name:
-                    print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
-                    ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-website")
-                elif dns.role == 'storage' and 'storage' not in template_name:
-                    print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
-                    ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-storage")
-                elif dns.role == 'unmonitored':
-                    print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but has a generated monitor object. Removing...')
-                    ansible.icinga_pause(dns.name, icinga=icinga_host)
-
-                # same as for manual, add info to obj for docs
-                ## this doesnt work, gets old info. move this to not clobber display name aswell
-                if 'info' in generated[icinga_host][domain]:
-                    if icinga_host in dns.icinga:
-                        print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors in {icinga_host}')
-                    dns.icinga[icinga_host] = generated[icinga_host][domain]['info']
-
-        # if has no monitor, assign one
-        if not dns.icinga and dns.location:
-            if dns.role == 'website':
-                ansible.icinga_set_host(dns.name, dns.location, template="generic-website")
-            elif dns.role == 'storage':
-                ansible.icinga_set_host(dns.name, dns.location, template="generic-storage")
-            elif dns.role != 'unmonitored':
-                ansible.icinga_set_host(dns.name, dns.location)
+        if not icinga_inf.dnsLookup(dns):
+            tmp[domain] = dns
+    # if some objects had invalid monitors, refresh and retest.
+    if tmp: icinga_services(tmp)
 
 @utils.handle
 def license_keys(dns_set):
@@ -349,7 +318,7 @@ def screenshots():
 #############
 
 def main():
-    # init() commented due to bad config.json generation
+    init()
 
     # get dns info
     forward, reverse = queries()

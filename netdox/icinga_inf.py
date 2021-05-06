@@ -1,12 +1,34 @@
 import requests, json
+import ansible, utils
 
-with open('src/authentication.json','r') as stream:
-    icinga_hosts = json.load(stream)['icinga']
+auth = utils.auth['icinga']
+icinga_hosts = list(auth.keys())
+
+
+def fetchType(type: str, icinga_host: str):
+    """
+    Returns all instances of a given object type
+    """
+    auth = icinga_hosts[icinga_host]
+    r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(auth["username"], auth["password"]), verify=False)
+    jsondata = json.loads(r.text)
+    return jsondata
+
+def fetchTemplates(type: str, icinga_host: str):
+    """
+    Returns all templates for a given object type
+    """ 
+    auth = icinga_hosts[icinga_host]
+    r = requests.get(f'https://{icinga_host}:5665/v1/templates/{type}', auth=(auth['username'], auth['password']), verify=False)
+    jsondata = json.loads(r.text)
+    return jsondata
+
 
 def objectsByDomain():
     """
     Returns a dictionary of all hosts and their services, where addr is the key
     """
+    global manual, generated
     manual = {}
     generated = {}
     for icinga in icinga_hosts:
@@ -49,28 +71,81 @@ def objectsByDomain():
                 else:
                     manual[icinga][addr][name] = []
 
-
     return manual, generated
 
 
-def fetchType(type, icinga_host):
+def dnsLookup(dns: utils.dns):
     """
-    Returns all instances of a given object type
-    """
-    auth = icinga_hosts[icinga_host]
-    r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(auth["username"], auth["password"]), verify=False)
-    jsondata = json.loads(r.text)
-    return jsondata
+    Add details of any Icinga objects monitoring the host a record resolves to (through name, IP, or CNAME).
+    If the monitoring is managed by Netdox, validate current template against the record's role.
+    If the validation fails, the template will be updated and the function will return False. The record will not be changed.
+    If the record is not currently monitored, one will be applied and the function will return False. The record will not be changed.
+    """ 
+    manual_monitor = lookupManual(dns)
+    for icinga_host in generated:
+        if dns.name in generated[icinga_host]:
+            if manual_monitor:
+                print(f'[WARNING][refresh.py] {dns.name} has manual and generated monitor object. Removing generated object...')
+                ansible.icinga_pause(dns.name, icinga=icinga_host)
+            else:
+                # if template already valid, load service info
+                if validateTemplate(dns, icinga_host):
+                    if 'info' in generated[icinga_host][dns.name]:
+                        if dns.icinga:
+                            print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors')
+                        dns.icinga = generated[icinga_host][dns.name]['info']
+                else:
+                    return False
+
+    # if has no monitor, assign one
+    if not dns.icinga and dns.location:
+        if dns.role == 'website':
+            ansible.icinga_set_host(dns.name, dns.location, template="generic-website")
+        elif dns.role == 'storage':
+            ansible.icinga_set_host(dns.name, dns.location, template="generic-storage")
+        elif dns.role != 'unmonitored':
+            ansible.icinga_set_host(dns.name, dns.location)
+        else:
+            return True
+        return False
+
+def lookupManual(dns: utils.dns):
+    global manual
+    manual_monitor = False
+    for selector in [dns.name] + list(dns.ips) + list(dns.cnames):
+        for icinga_host in manual:
+            # if has a manually created monitor, just load info
+            if selector in manual[icinga_host]:
+                manual_monitor = True
+                if dns.icinga:
+                    print(f'[WARNING][refresh.py] {dns.name} has duplicate manual monitors in {icinga_host}')
+                dns.icinga = manual[icinga_host][selector]
+
+    return manual_monitor
 
 
-def fetchTemplates(type, icinga_host=None):
+def validateTemplate(dns: utils.dns, icinga_host: str):
     """
-    Returns all templates for a given object type
+    Validates the template of a dns record against its role, modifies if necessary. Returns True if already valid.
     """
-    if not icinga_host:
-        icinga_host = list(icinga_hosts)[0]
-        
-    auth = icinga_hosts[icinga_host]
-    r = requests.get(f'https://{icinga_host}:5665/v1/templates/{type}', auth=(auth['username'], auth['password']), verify=False)
-    jsondata = json.loads(r.text)
-    return jsondata
+    global generated
+    template_name = generated[icinga_host][dns.name]['templates'][0]
+
+    if dns.role == 'website' and 'website' not in template_name:
+        print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
+        ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-website")
+
+    elif dns.role == 'storage' and 'storage' not in template_name:
+        print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
+        ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-storage")
+
+    elif dns.role == 'unmonitored':
+        print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but has a generated monitor object. Removing...')
+        ansible.icinga_pause(dns.name, icinga=icinga_host)
+
+    elif not dns.role and template_name != 'generic-host':
+        print(f'[WARNING][refresh.py] {dns.name} has no role but is using Icinga template {template_name}. Replacing...')
+        ansible.icinga_set_host(dns.name, icinga=icinga_host)
+    else:
+        return True
+    return False
