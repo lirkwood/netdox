@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 
 # Setting global vars
 
-with open('src/authentication.json','r') as stream:
-    credentials = json.load(stream)['pageseeder']
+credentials = utils.auth['pageseeder']
 
 defaultgroup = credentials['group']
 base = f'https://{credentials["host"]}/ps/service'
