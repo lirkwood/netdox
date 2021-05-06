@@ -4,8 +4,7 @@ import iptools, utils
 
 ## Some initialisation
 
-with open('src/authentication.json', 'r') as stream:
-    creds = json.load(stream)['xenorchestra']
+creds = utils.auth['xenorchestra']
 global url
 url = f"wss://{creds['host']}/api/"
 
