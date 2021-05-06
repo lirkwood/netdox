@@ -7,22 +7,21 @@ def genheader():
 	"""
 	Generates authentication header for DNSME api
 	"""
-	with open('src/authentication.json','r') as stream:
-		creds = json.load(stream)['dnsmadeeasy']
-		api = creds['api']
-		secret = creds['secret']
+	creds = utils.auth['dnsmadeeasy']
+	api = creds['api']
+	secret = creds['secret']
 
-		time = datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
-		hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
-		
-		header = {
-		"x-dnsme-apiKey" : api,
-		"x-dnsme-requestDate" : time,
-		"x-dnsme-hmac" : hash,
-		"accept" : 'application/json'
-		}
-		
-		return header
+	time = datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
+	hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+	
+	header = {
+	"x-dnsme-apiKey" : api,
+	"x-dnsme-requestDate" : time,
+	"x-dnsme-hmac" : hash,
+	"accept" : 'application/json'
+	}
+	
+	return header
 
 
 def fetchDomains():
