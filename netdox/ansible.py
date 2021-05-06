@@ -1,6 +1,7 @@
 from paramiko import client, AutoAddPolicy
-from icinga_inf import icinga_hosts
 import utils
+
+icinga_hosts = utils.auth['icinga']
 
 ## Main functions
 
