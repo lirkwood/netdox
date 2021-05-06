@@ -28,12 +28,9 @@ def init():
     global base
     base = "https://api.cloudflare.com/client/v4/"
 
-    with open('src/authentication.json') as authstream:
-        creds = json.load(authstream)['cloudflare']
-
     global header
     header = {
-        "Authorization": f"Bearer {creds['token']}",
+        "Authorization": f"Bearer {utils.auth['cloudflare']['token']}",
         "Content-Type": "application/json"
     }
 
