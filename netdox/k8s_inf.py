@@ -186,27 +186,26 @@ def groupPods(servicePods, serviceGroups):
 
 
 def formatApps(apps, workers):
-    with open('src/authentication.json', 'r') as stream:
-        creds = json.load(stream)['kubernetes']
-        for c in apps:
-            cluster = apps[c]
-            for appName in cluster:
-                app = cluster[appName]
+    creds = utils.auth['kubernetes']
+    for c in apps:
+        cluster = apps[c]
+        for appName in cluster:
+            app = cluster[appName]
 
-                domains = set()
-                for podName in app['pods']:
-                    pod = app['pods'][podName]
-                    pod['rancher'] = f'{creds[c]["server"]}/workloads/default:{podName}'
-                    pod['vm'] = workers[c][pod['nodeName']]['vm']
+            domains = set()
+            for podName in app['pods']:
+                pod = app['pods'][podName]
+                pod['rancher'] = f'{creds[c]["server"]}/workloads/default:{podName}'
+                pod['vm'] = workers[c][pod['nodeName']]['vm']
 
-                    for domain in pod['domains']:
-                        domains.add(domain)
+                for domain in pod['domains']:
+                    domains.add(domain)
 
-                    del pod['domains']
-                    del pod['name']
-                    del pod['cluster']
-                
-                app['domains'] = sorted(list(domains))
+                del pod['domains']
+                del pod['name']
+                del pod['cluster']
+            
+            app['domains'] = sorted(list(domains))
     return apps
 
 
