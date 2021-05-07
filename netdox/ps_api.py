@@ -1,4 +1,4 @@
-import requests, utils, json, os
+import requests, utils, json
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
@@ -194,15 +194,15 @@ def get_comment(commentid, params={}):
     return r.text
 
 
+@utils.handle
 def getUrimap(dir_uri):
     """
-    Generates dict with files in some dir as keys and their uris as values
+    Maps the directories in a URI to their URIs
     """
     urimap = {}
-    soup = BeautifulSoup(get_uris(dir_uri, params={'type': 'folder'}), 'lxml')
-    for uri in soup.find_all('uri'):
-        urimap[uri.displaytitle.string] = uri['id']
-    
+    uris = json.loads(get_uris(dir_uri, params={'type': 'folder'}))
+    for uri in uris['uris']:
+        urimap[uri['displaytitle']] = uri['id']
     return urimap
 
 
