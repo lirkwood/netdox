@@ -93,7 +93,7 @@ def approved_dns(uri):
                     print(f'[INFO][serve.py] Created A record in DNSMadeEasy with name {info["name"]} and value {ip}')
                 
                 else:
-                    ad_api.create_record(info['name'], ip, info['root'], 'A')
+                    ad_api.create_forward(info['name'], ip, info['root'], 'A')
                     print(f'[INFO][serve.py] Created A record in ActiveDirectory with name {info["name"]} and value {ip}')
 
             elif destination['name'] == 'cname':
@@ -102,7 +102,7 @@ def approved_dns(uri):
                     print(f'[INFO][serve.py] Created CNAME record in DNSMadeEasy with name {info["name"]} and value {destination.xref.string}')
                 
                 elif info['source'] == 'ActiveDirectory':
-                    ad_api.create_record(info['name'], destination.xref.string, info['root'], 'CNAME')
+                    ad_api.create_forward(info['name'], destination.xref.string, info['root'], 'CNAME')
                     print(f'[INFO][serve.py] Created CNAME record in ActiveDirectory with name {info["name"]} and value {destination.xref.string}')
 
     return Response(status=200)
