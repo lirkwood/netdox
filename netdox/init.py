@@ -1,7 +1,7 @@
 import json, os
 from textwrap import dedent
 from bs4 import BeautifulSoup
-import dnsme_api, ps_api, refresh, utils
+import dnsme_api, utils
 
 ##################
 # Initialisation #
@@ -129,4 +129,3 @@ def fetchZones():
 
 if __name__ == '__main__':
     init()
-    refresh.main()
