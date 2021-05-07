@@ -123,8 +123,13 @@ def assemble_fqdn(subdomain, root):
 @utils.handle
 def create_A(name, zone, ip):
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-		with open('src/zones.json', 'r') as stream:
-			zones = json.load(stream)['dnsme']
+		with open('src/dns.json', 'r') as dnsstream:
+			dns = json.load(dnsstream)
+			if ip in dns[name]['public_ips']:
+				return None
+
+		with open('src/zones.json', 'r') as zonestream:
+			zones = json.load(zonestream)['dnsme']
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
 				data = {
@@ -146,6 +151,11 @@ def create_A(name, zone, ip):
 @utils.handle
 def create_CNAME(name, zone, value):
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
+		with open('src/dns.json', 'r') as dnsstream:
+			dns = json.load(dnsstream)
+			if value in dns[name]['cnames']:
+				return None
+
 		with open('src/zones.json', 'r') as stream:
 			zones = json.load(stream)['dnsme']
 			if zone in zones:
@@ -170,6 +180,13 @@ def create_CNAME(name, zone, value):
 @utils.handle
 def create_PTR(addr, zone, value):
 	if int(addr) and re.fullmatch(utils.dns_name_pattern, value):
+		zoneArr = zone.split('.')
+		ip = '.'.join(zoneArr[-3::-1] + [str(addr)])
+		with open('src/ips.json', 'r') as dnsstream:
+			dns = json.load(dnsstream)
+			if value in dns[ip]['ptrs']:
+				return None
+
 		with open('src/zones.json', 'r') as stream:
 			zones = json.load(stream)['dnsme']
 			if zone in zones:
