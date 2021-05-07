@@ -20,3 +20,5 @@ if python3 refresh.py
     else
         echo '[ERROR][refresh.sh] Python exited with non-zero status. Cancelling upload...'
 fi
+
+cp /opt/app/src/dns.json /etc/ext/dns.json &> /dev/null

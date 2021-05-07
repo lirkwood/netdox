@@ -10,10 +10,12 @@ for file in /etc/nfs/*.bin; do
 done
 
 ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/authentication.bin" "/opt/app/src/authentication.json"
+cp /etc/ext/dns.json /opt/app/src/dns.json &> /dev/null
 
 if python3 init.py
     then
         echo '[INFO][init.sh] Python initialisation successful.'
+        ./refresh.sh 2>&1 | tee /var/log/refresh-$(date +%F-T%T).log
     else
         echo '[ERROR][init.sh] Python initialisation unsuccessful. Terminating...'
         exit 1
