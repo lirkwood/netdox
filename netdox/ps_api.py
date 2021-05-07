@@ -195,6 +195,16 @@ def get_comment(commentid, params={}):
 
 
 @utils.handle
+def get_xrefs(uri, params={}, group=defaultgroup):
+    """
+    Gets the xrefs of some uri
+    """
+    service = f'/groups/{group}/uris/{uri}/xrefs'
+    r = requests.get(base+service, headers=header, params=params)
+    return r.text
+
+
+@utils.handle
 def getUrimap(dir_uri):
     """
     Maps the directories in a URI to their URIs
