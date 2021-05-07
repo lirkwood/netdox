@@ -24,16 +24,16 @@ def init():
                     shutil.rmtree(file)
         else:
             os.remove(folder)
+
     # load dns roles
     config = {
         "website": [],
-        "website-no-ssl": [],
         "storage": [],
+        "pageseeder": [],
         "unmonitored": [],
         "exclude": []
     }
     configSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', '2'), features='xml')
-    print(configSoup.prettify())
     for para in configSoup("para"):
         if para.inline and hasattr(para.inline, 'label'):
             try:
@@ -318,8 +318,6 @@ def screenshots():
 #############
 
 def main():
-    init()
-
     # get dns info
     forward, reverse = queries()
 
@@ -359,4 +357,5 @@ def main():
 
 
 if __name__ == '__main__':
+    init()
     main()
