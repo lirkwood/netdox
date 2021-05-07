@@ -255,3 +255,13 @@ def handle(func):
         else:
             return returned
     return wrapper
+
+
+@critical
+def loadConfig():
+    global config
+    try:
+        with open('src/config.json', 'r') as stream:
+            config = json.load(stream)
+    except FileNotFoundError:
+        config = {'exclusions': []}
