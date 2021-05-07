@@ -114,11 +114,18 @@ def assemble_fqdn(subdomain, root):
     return fqdn
 
 
-def create_record(name, ip, zone, type):
+def create_forward(name, ip, zone, type):
     """
     Schedules a DNS record for creation in ActiveDirectory
     """
     if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
+        with open('src/dns.json', 'r') as dnsstream:
+            dns = json.load(dnsstream)
+            if ip in dns[name]['private_ips']:
+                return None
+            else:
+                print(dns[name])
+
         existing = []
         try:
             subprocess.check_call('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin src/scheduled.json', shell=True)
