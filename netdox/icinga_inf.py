@@ -1,8 +1,7 @@
 import requests, json
 import ansible, utils
 
-auth = utils.auth['icinga']
-icinga_hosts = list(auth.keys())
+icinga_hosts = utils.auth['icinga']
 
 
 def fetchType(type: str, icinga_host: str):
@@ -49,7 +48,7 @@ def objectsByDomain():
             name = host['name']
             addr = host['attrs']['address']
             # if generated load template name
-            if 'conf.d/hosts/generated/' in host['attrs']['source_location']['path']:
+            if host['attrs']['groups'] == ['generated']:
                 if addr not in generated[icinga]:
                     generated[icinga][addr] = {"templates": host['attrs']['templates']}
                     if name in hostServices:
@@ -99,15 +98,15 @@ def dnsLookup(dns: utils.dns):
 
     # if has no monitor, assign one
     if not dns.icinga and dns.location:
-        if dns.role == 'website':
-            ansible.icinga_set_host(dns.name, dns.location, template="generic-website")
-        elif dns.role == 'storage':
-            ansible.icinga_set_host(dns.name, dns.location, template="generic-storage")
-        elif dns.role != 'unmonitored':
+        if dns.role and dns.role != 'unmonitored':
+            ansible.icinga_set_host(dns.name, dns.location, template=f"generic-{dns.role}")
+        elif not dns.role:
             ansible.icinga_set_host(dns.name, dns.location)
         else:
             return True
         return False
+
+    return True
 
 def lookupManual(dns: utils.dns):
     global manual
@@ -131,21 +130,22 @@ def validateTemplate(dns: utils.dns, icinga_host: str):
     global generated
     template_name = generated[icinga_host][dns.name]['templates'][0]
 
-    if dns.role == 'website' and 'website' not in template_name:
-        print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
-        ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-website")
+    if dns.role:
+        if dns.role != 'unmonitored' and dns.role not in template_name:
+            print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
+            ansible.icinga_set_host(dns.name, icinga=icinga_host, template=f"generic-{dns.role}")
 
-    elif dns.role == 'storage' and 'storage' not in template_name:
-        print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
-        ansible.icinga_set_host(dns.name, icinga=icinga_host, template="generic-storage")
-
-    elif dns.role == 'unmonitored':
-        print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but has a generated monitor object. Removing...')
-        ansible.icinga_pause(dns.name, icinga=icinga_host)
+        elif dns.role == 'unmonitored':
+            print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but has a generated monitor object. Removing...')
+            ansible.icinga_pause(dns.name, icinga=icinga_host)
+        
+        else:
+            return True
 
     elif not dns.role and template_name != 'generic-host':
         print(f'[WARNING][refresh.py] {dns.name} has no role but is using Icinga template {template_name}. Replacing...')
         ansible.icinga_set_host(dns.name, icinga=icinga_host)
+
     else:
         return True
     return False
