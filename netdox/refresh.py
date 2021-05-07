@@ -3,6 +3,7 @@ import k8s_inf, xo_api, nat_inf, icinga_inf, license_inf   # other info
 import cleanup, iptools, utils   # utility scripts
 
 import subprocess, asyncio, shutil, boto3, json, os
+from distutils.util import strtobool
 from bs4 import BeautifulSoup
 
 ##################
@@ -25,26 +26,41 @@ def init():
         else:
             os.remove(folder)
 
-    # load dns roles
-    config = {
-        "website": [],
-        "storage": [],
-        "pageseeder": [],
-        "unmonitored": [],
-        "exclude": []
-    }
-    configSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', '2'), features='xml')
-    for para in configSoup("para"):
-        if para.inline and hasattr(para.inline, 'label'):
-            try:
-                config[para.inline['label']].append(para.inline.string)
-            except KeyError:
-                print(f'[WARNING][init.py] Unknown DNS role {para.inline["label"]}')
-            except AttributeError:
-                print(f'[WARNING][init.py] Malformed role specification in config document.')
+    # load dns config from pageseeder
+    config = {"exclusions": []}
+    psConfigInf = json.loads(ps_api.get_uri('_nd_config'))
+    if psConfigInf['title'] == 'DNS Config':
+        # load roles
+        roleFrag = BeautifulSoup(ps_api.get_fragment('_nd_config', 'roles'), features='xml')
+        for xref in roleFrag("xref"):
+            roleConfig = ps_api.pfrag2dict(ps_api.get_fragment(xref['docid'], 'config'))
 
-    with open('src/config.json', 'w') as stream:
-        stream.write(json.dumps(config, indent=2))
+            # load domains with this role
+            domains = []
+            revXrefs = BeautifulSoup(ps_api.get_xrefs(xref['docid']), features='xml')
+            for revXref in revXrefs("reversexref"):
+                if revXref['type'] == 'dns':
+                    domains.append(revXref['urititle'])
+            
+            config[roleConfig['name']] = {
+                "template": roleConfig['template'],
+                "screenshot": strtobool(roleConfig['screenshot']),
+                "domains": []
+            }
+
+        # load exclusions
+        exclusionSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', 'exclusions'), features='xml')
+        for para in exclusionSoup("para"):
+            config['exclusions'].append(para.string)
+
+        with open('src/config.json', 'w') as stream:
+            stream.write(json.dumps(config, indent=2))
+    else:
+        # make defaultconfig
+        for file in os.scandir('src/defconf'):
+            shutil.copyfile(file, f'out/config/{file}')
+    
+    utils.loadConfig()
 
 
 ######################
@@ -134,17 +150,14 @@ def apply_roles(dns_set):
     """
     Applies custom roles defined in _nd_config
     """
-    with open('src/config.json', 'r') as stream:
-        config = json.load(stream)
-    excluded = []
+    config = utils.config
+
     for domain in dns_set:
         for role in config:
             if domain in config[role]:
                 dns_set[domain].role = role
-                if role == 'exclude':
-                    excluded.append(domain)
-
-    for domain in excluded:
+        
+    for domain in config['exclusions']:
         if domain in dns_set:
             del dns_set[domain]
 
@@ -209,11 +222,13 @@ def license_keys(dns_set):
     """
     Integrates license keys into a dns set
     """
-    licenses = license_inf.fetch(dns_set)
-    for license_id in licenses:
-        for domain in licenses[license_id]:
-            if isinstance(domain, str) and not (domain.startswith('[old]') or domain.startswith('[ext]')):
-                dns_set[domain].license = license_id
+    licenses = license_inf.fetch()
+    for domain in licenses:
+        if domain in dns_set:
+            dns = dns_set[domain]
+            dns.license = licenses[domain]
+            if dns.role != 'pageseeder':
+                print(f'[WARNING][refresh.py] {dns.name} has a PageSeeder license but is using role {dns.role}')
 
 @utils.handle
 def license_orgs(dns_set):
