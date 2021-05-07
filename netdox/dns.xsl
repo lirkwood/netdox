@@ -53,6 +53,9 @@
                         <property name="name"       title="Name"        value="{$name}" />
                         <property name="root"       title="Root Domain"        value="{xpf:string[@key = 'root']}" />
                         <property name="source"     title="DNS Source"      value="{xpf:string[@key = 'source']}" />
+                        <property name="role"       title="DNS Role"    datatype="xref">
+                            <xref frag="default" docid="{xpf:string[@key = 'role']}" />
+                        </property>
                         <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'license']">
                         <property name="license"     title="PageSeeder License"      datatype="xref" >
