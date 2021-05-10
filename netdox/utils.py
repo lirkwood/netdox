@@ -77,8 +77,15 @@ class dns:
     Class representing some DNS record
     """
 
-    def __init__(self, name, root=None, source=None):
-        if re.fullmatch('([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+', name):
+    def __init__(self, name, root=None, source=None, constructor=None):
+        if constructor:
+            for k, v in constructor.items():
+                setattr(self, k, v)
+            for type, value in self.destinations.items():
+                setattr(self, type, set(value))
+            self.subnets = set(self.subnets)
+
+        elif re.fullmatch(dns_name_pattern, name):
             self.name = name.lower()
             if root: self.root = root.lower()
             self.source = source
@@ -95,8 +102,9 @@ class dns:
             self.ec2s = set()
 
             self.subnets = set()
+
         else:
-            raise ValueError('Must provide a valid name for dns record (some FQDN)')
+            raise ValueError('Must provide a valid name for dns record (some FQDN) or a valid constructor dict.')
 
     # switch to case match on 2021-04-10
     def link(self, string, type):
@@ -142,7 +150,7 @@ class dns:
         return {
             'public_ips': self.public_ips,
             'private_ips': self.private_ips,
-            'domains': self.domains,
+            'cnames': self.cnames,
             'vms': self.vms,
             'apps': self.apps,
             'ec2s': self.ec2s
