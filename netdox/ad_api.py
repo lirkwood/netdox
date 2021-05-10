@@ -123,8 +123,6 @@ def create_forward(name, ip, zone, type):
             dns = json.load(dnsstream)
             if ip in dns[name]['private_ips']:
                 return None
-            else:
-                print(dns[name])
 
         existing = []
         try:
