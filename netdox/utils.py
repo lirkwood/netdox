@@ -4,10 +4,51 @@ from traceback import format_exc
 from datetime import datetime
 from sys import argv
 
+## Global
+
 with open('src/authentication.json', 'r') as stream:
     global auth
     auth = json.load(stream)
-    
+
+
+def critical(func):
+    """
+    For functions which are absolutely necessary. On fatal, entire app stops.
+    """
+    funcname = func.__name__
+    funcmodule = func.__module__
+    if funcmodule == '__main__':
+        funcmodule = argv[0].replace('.py','')
+    def wrapper(*args, **kwargs):
+        print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
+        try:
+            returned = func(*args, **kwargs)
+        except Exception as e:
+            print(f'[ERROR][utils] Essential function {funcmodule}.{funcname} threw an exception:\n')
+            raise e
+        else:
+            print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
+            return returned
+    return wrapper
+
+def handle(func):
+    """
+    For functions that are not necessary. On fatal, return None and continue.
+    """
+    funcname = func.__name__
+    funcmodule = func.__module__
+    if funcmodule == '__main__':
+        funcmodule = argv[0].replace('.py','')
+    def wrapper(*args, **kwargs):
+        try:
+            returned = func(*args, **kwargs)
+        except Exception:
+            print(f'[WARNING][utils] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
+            return None
+        else:
+            return returned
+    return wrapper
+
 
 try:
     with open('src/locations.json', 'r') as stream:
@@ -196,6 +237,15 @@ class ptr:
             self.ptrs.add(name)
 
 
+@handle
+def loadDNS(file):
+    d = {}
+    with open(file, 'r') as stream:
+        jsondata = json.load(stream)
+        for key, constructor in jsondata.items():
+            d[key] = dns(key, constructor=constructor)
+    return d
+
 
 def merge_sets(dns1,dns2):
     """
@@ -224,45 +274,6 @@ class JSONEncoder(json.JSONEncoder):
         elif isinstance(obj, datetime):
             return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
-
-
-def critical(func):
-    """
-    For functions which are absolutely necessary. On fatal, entire app stops.
-    """
-    funcname = func.__name__
-    funcmodule = func.__module__
-    if funcmodule == '__main__':
-        funcmodule = argv[0].replace('.py','')
-    def wrapper(*args, **kwargs):
-        print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
-        try:
-            returned = func(*args, **kwargs)
-        except Exception as e:
-            print(f'[ERROR][utils] Essential function {funcmodule}.{funcname} threw an exception:\n')
-            raise e
-        else:
-            print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
-            return returned
-    return wrapper
-
-def handle(func):
-    """
-    For functions that are not necessary. On fatal, return None and continue.
-    """
-    funcname = func.__name__
-    funcmodule = func.__module__
-    if funcmodule == '__main__':
-        funcmodule = argv[0].replace('.py','')
-    def wrapper(*args, **kwargs):
-        try:
-            returned = func(*args, **kwargs)
-        except Exception:
-            print(f'[WARNING][utils] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
-            return None
-        else:
-            return returned
-    return wrapper
 
 
 @critical
