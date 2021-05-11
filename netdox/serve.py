@@ -80,6 +80,7 @@ def approved_dns(uri):
     info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
     icinga = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'icinga'))
     destinations = BeautifulSoup(ps_api.get_fragment(uri, 'dest'), features='xml')
+    dns = utils.loadDNS('src/dns.json')
         
     if info['name'] and info['root']:
         icinga_eval(info, icinga)
@@ -88,22 +89,25 @@ def approved_dns(uri):
 
             if destination['name'] == 'ipv4':
                 ip = destination.xref.string
-                if iptools.public_ip(ip):
-                    dnsme_api.create_A(info['name'], info['root'], ip)
-                    print(f'[INFO][serve.py] Created A record in DNSMadeEasy with name {info["name"]} and value {ip}')
-                
-                else:
-                    ad_api.create_forward(info['name'], ip, info['root'], 'A')
-                    print(f'[INFO][serve.py] Created A record in ActiveDirectory with name {info["name"]} and value {ip}')
+                if ip not in dns[info['name']].ips:
+                    if iptools.public_ip(ip):
+                        dnsme_api.create_A(info['name'], info['root'], ip)
+                        print(f'[INFO][serve.py] Created A record in DNSMadeEasy with name {info["name"]} and value {ip}')
+                    
+                    else:
+                        ad_api.create_forward(info['name'], ip, info['root'], 'A')
+                        print(f'[INFO][serve.py] Created A record in ActiveDirectory with name {info["name"]} and value {ip}')
 
             elif destination['name'] == 'cname':
-                if info['source'] == 'DNSMadeEasy':
-                    dnsme_api.create_CNAME(info['name'], info['root'], destination.xref.string)
-                    print(f'[INFO][serve.py] Created CNAME record in DNSMadeEasy with name {info["name"]} and value {destination.xref.string}')
-                
-                elif info['source'] == 'ActiveDirectory':
-                    ad_api.create_forward(info['name'], destination.xref.string, info['root'], 'CNAME')
-                    print(f'[INFO][serve.py] Created CNAME record in ActiveDirectory with name {info["name"]} and value {destination.xref.string}')
+                value = destination.xref.string
+                if ip not in dns[info['name']].ips:
+                    if info['source'] == 'DNSMadeEasy':
+                        dnsme_api.create_CNAME(info['name'], info['root'], value)
+                        print(f'[INFO][serve.py] Created CNAME record in DNSMadeEasy with name {info["name"]} and value {value}')
+                    
+                    elif info['source'] == 'ActiveDirectory':
+                        ad_api.create_forward(info['name'], value, info['root'], 'CNAME')
+                        print(f'[INFO][serve.py] Created CNAME record in ActiveDirectory with name {info["name"]} and value {value}')
 
     return Response(status=200)
 
