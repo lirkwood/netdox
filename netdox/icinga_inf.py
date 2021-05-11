@@ -50,9 +50,9 @@ def objectsByDomain():
             # if generated load template name
             if host['attrs']['groups'] == ['generated']:
                 if addr not in generated[icinga]:
-                    generated[icinga][addr] = {"templates": host['attrs']['templates']}
+                    generated[icinga][addr] = {"templates": host['attrs']['templates'], "services": [host['attrs']['check_command']]}
                     if name in hostServices:
-                        generated[icinga][addr]['info'] = hostServices[name]
+                        generated[icinga][addr]['services'] += hostServices[name]
                     # remove top template; should be specific to host
                     if generated[icinga][addr]['templates'][0] == name:
                         del generated[icinga][addr]['templates'][0]
@@ -89,10 +89,9 @@ def dnsLookup(dns: utils.dns):
             else:
                 # if template already valid, load service info
                 if validateTemplate(dns, icinga_host):
-                    if 'info' in generated[icinga_host][dns.name]:
-                        if dns.icinga:
-                            print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors')
-                        dns.icinga = generated[icinga_host][dns.name]['info']
+                    if dns.icinga:
+                        print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors')
+                    dns.icinga = generated[icinga_host][dns.name]['services']
                 else:
                     return False
 
