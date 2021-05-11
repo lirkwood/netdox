@@ -206,16 +206,19 @@ def aws_ec2(dns_set):
                         dns.link(instance['InstanceId'], 'ec2')
 
 @utils.handle
-def icinga_services(dns_set):
-    icinga_inf.objectsByDomain()
-    tmp = {}
-    for domain in dns_set:
-        dns = dns_set[domain]
-        # search icinga for objects with address == domain (or any ip for that domain)
-        if not icinga_inf.dnsLookup(dns):
-            tmp[domain] = dns
-    # if some objects had invalid monitors, refresh and retest.
-    if tmp: icinga_services(tmp)
+def icinga_services(dns_set, depth=0):
+    if depth <= 1:
+        icinga_inf.objectsByDomain()
+        tmp = {}
+        for domain in dns_set:
+            dns = dns_set[domain]
+            # search icinga for objects with address == domain (or any ip for that domain)
+            if not icinga_inf.dnsLookup(dns):
+                tmp[domain] = dns
+        # if some objects had invalid monitors, refresh and retest.
+        if tmp: icinga_services(tmp, depth+1)
+    else:
+        print(f'[WARNING][refresh.py] Abandoning domains without proper monitor: {dns_set.keys()}')
 
 @utils.handle
 def license_keys(dns_set):
