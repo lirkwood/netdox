@@ -28,7 +28,7 @@ def auth():
             else:
                 return refreshToken()
     except FileNotFoundError:
-        refreshToken()
+        return refreshToken()
 
 def refreshToken():
     with open('src/pstoken.json', 'w') as stream:
