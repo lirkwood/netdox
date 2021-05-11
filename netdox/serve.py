@@ -83,7 +83,7 @@ def approved_dns(uri):
     dns = utils.loadDNS('src/dns.json')
         
     if info['name'] and info['root']:
-        icinga_eval(info, icinga)
+        ansible.icinga_set_host(info['name'], info['location'])
 
         for destination in destinations("property"):
 
@@ -126,19 +126,11 @@ def approved_vm(uri):
 
     location = utils.locate(addrs)
     if location:
-        icinga_eval(addrs[0], location)
+        ansible.icinga_set_host(addrs[0], location)
 
     if os_inf['template']:
         xo_api.createVM(os_inf['template'], core_inf['name'])
     else:
-        raise ValueError('[ERROR][server.py] Must provide a UUID to use as template.')
+        raise ValueError('[ERROR][server.py] Must provide a valid template/VM/snapshot UUID.')
 
     return Response(status=200)
-
-
-@utils.handle
-def icinga_eval(addr, location=None, icinga=None):
-    try:
-        ansible.icinga_add_generic(addr, location, icinga)
-    except KeyError:
-        raise AttributeError(f'[ERROR][serve.py] Unable to confirm monitor status for {addr}; Missing mandatory values.')
