@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 var { imgDiff } = require("img-diff-js");
 const fs = require('fs');
-const domains = require('./src/config.json')['website']
+const domainsrc = require('./src/config.json')
 var review = {
 	"no_ss": {},
 	"no_base": [],
@@ -95,6 +95,14 @@ async function newBrowser(array) {
 
 (async () => {
 	console.log('[INFO][screenshotCompare.js] Taking screenshots...')
+	var domains = [];
+	for (const [role, config] of Object.entries(domainsrc)) {
+		if (config.screenshot) {
+			config.domains.forEach(domain => {
+				domains.push(domain)
+			});
+		}
+	}
 
 	let thirdLength = domains.length / 3
 	let first = domains.slice(0, thirdLength)
