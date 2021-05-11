@@ -34,22 +34,21 @@ def init():
         roleFrag = BeautifulSoup(ps_api.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
             roleConfig = ps_api.pfrag2dict(ps_api.get_fragment(xref['docid'], 'config'))
-
             # load domains with this role
             domains = []
             revXrefs = BeautifulSoup(ps_api.get_xrefs(xref['docid']), features='xml')
             for revXref in revXrefs("reversexref"):
-                if revXref['type'] == 'dns':
+                if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'dns':
                     domains.append(revXref['urititle'])
             
             config[roleConfig['name']] = {
                 "template": roleConfig['template'],
                 "screenshot": strtobool(roleConfig['screenshot']),
-                "domains": []
+                "domains": domains
             }
 
         # load exclusions
-        exclusionSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', 'exclusions'), features='xml')
+        exclusionSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', 'exclude'), features='xml')
         for para in exclusionSoup("para"):
             config['exclusions'].append(para.string)
 
@@ -152,14 +151,15 @@ def apply_roles(dns_set):
     """
     config = utils.config
 
-    for domain in dns_set:
-        for role in config:
-            if domain in config[role]:
+    for role in config:
+        if role == 'exclusions':
+            for domain in config[role]:
+                try:
+                    del dns_set[domain]
+                except KeyError: pass
+        else:
+            for domain in config[role]['domains']:
                 dns_set[domain].role = role
-        
-    for domain in config['exclusions']:
-        if domain in dns_set:
-            del dns_set[domain]
 
 @utils.handle
 def nat(dns_set):
