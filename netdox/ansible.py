@@ -54,32 +54,27 @@ def icinga_set_host(address, location=None, icinga=None, template="generic-host"
     """
     Adds host to a specified Icinga if it does not already exist
     """
-    if not location and not icinga:
-        raise ValueError('[ERROR][ansible.py] Either location or icinga must be defined.')
-    elif location and not icinga:
-        for host in icinga_hosts:
-            if location == icinga_hosts[host]['location']:
-                icinga = host
-        if not icinga:
-            raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
-            
-    tags = ['set-host']
-    vars = {
-        "icinga": icinga,
-        "host": address,
-        "template": template
-        }
-    if display_name:
-        vars['display_name'] = display_name
+    icinga = icinga_setloc(location, icinga)
+    if icinga:
+        tags = ['set-host']
+        vars = {
+            "icinga": icinga,
+            "host": address,
+            "template": template
+            }
+        if display_name:
+            vars['display_name'] = display_name
+        else:
+            vars['display_name'] = address
+        
+        print(f'[INFO][ansible.py] Set {template} for {address} in {icinga}')
+        stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
+        if stderr:
+            raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
+        else:
+            return stdout
     else:
-        vars['display_name'] = address
-    
-    print(f'[INFO][ansible.py] Set {template} for {address} in {icinga}')
-    stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
-    if stderr:
-        raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
-    else:
-        return stdout
+        return None
 
 
 @utils.handle
@@ -87,44 +82,49 @@ def icinga_pause(address, location=None, icinga=None):
     """
     Pauses the monitoring of the host object with a given address
     """
-    if not location and not icinga:
-        raise ValueError('[ERROR][ansible.py] Either location or icinga must be defined.')
-    elif location and not icinga:
-        for host in icinga_hosts:
-            if location == icinga_hosts[host]['location']:
-                icinga = host
-        if not icinga:
-            raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
-            
-    tags = ['pause-host']
-    vars = {
-        "icinga": icinga,
-        "host": address
-        }
-    
-    return playbook('/etc/ansible/icinga.yml', tags, vars)
+    icinga = icinga_setloc(location, icinga)
+    if icinga:     
+        tags = ['pause-host']
+        vars = {
+            "icinga": icinga,
+            "host": address
+            }
+        
+        return playbook('/etc/ansible/icinga.yml', tags, vars)
+    else:
+        return None
 
 @utils.handle
 def icinga_unpause(address, location=None, icinga=None):
     """
     Unpauses the monitoring of the host object with a given address
     """
+    icinga = icinga_setloc(location, icinga)
+    if icinga:
+        tags = ['unpause-host']
+        vars = {
+            "icinga": icinga,
+            "host": address,
+            }
+
+        return playbook('/etc/ansible/icinga.yml', tags, vars)
+    else:
+        return None
+    
+def icinga_setloc(location, icinga):
     if not location and not icinga:
         raise ValueError('[ERROR][ansible.py] Either location or icinga must be defined.')
     elif location and not icinga:
         for host in icinga_hosts:
-            if location == icinga_hosts[host]['location']:
+            if location in icinga_hosts[host]['locations']:
                 icinga = host
         if not icinga:
-            raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
-            
-    tags = ['unpause-host']
-    vars = {
-        "icinga": icinga,
-        "host": address,
-        }
-    
-    return playbook('/etc/ansible/icinga.yml', tags, vars)
+            if location not in utils._location_map:
+                raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
+            else:
+                print(f'[WARNING][ansible.py] No Icinga defined for location {location}')
+                return None
+    return icinga
 
 
 def copy(host, path):
