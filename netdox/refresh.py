@@ -206,6 +206,45 @@ def aws_ec2(dns_set):
                         dns.link(instance['InstanceId'], 'ec2')
 
 @utils.handle
+def locations(dns_set):
+    for domain in dns_set:
+        dns = dns_set[domain]
+
+        if not dns.location:
+            dns.location = utils.locate(dns.ips)
+
+        if not dns.location:
+            for alias in dns.cnames:
+                try:
+                    if dns_set[alias].location:
+                        dns.location = dns_set[alias].location
+                except KeyError:
+                    pass
+
+        if not dns.location:
+            with open('src/apps.json') as stream:
+                apps = json.load(stream)
+                appips = []
+                for appname in dns.apps:
+                    for context in apps:
+                        if appname in context:
+                            app = context[appname]
+                            for podname, pod in app['pods'].items():
+                                appips.append(pod['hostip'])
+            dns.location = utils.locate(appips)
+
+        if not dns.location:
+            vmips = []
+            for vmid in dns.vms:
+                vm = asyncio.run(xo_api.authenticate(xo_api.fetchObj)(vmid))
+                if 'mainIpAddress' in vm and iptools.valid_ip(vm['mainIpAddress']):
+                    vmips.append(vm['mainIpAddress'])
+            dns.location = utils.locate(vmips)
+        
+        if not dns.location:
+            print(f'[WARNING][refresh.py] Domain {domain} has no location data and therefore may not be monitored.')
+
+@utils.handle
 def icinga_services(dns_set, depth=0):
     if depth <= 1:
         icinga_inf.objectsByDomain()
@@ -344,6 +383,7 @@ def main():
     nat(forward)
     xo_vms(forward)
     aws_ec2(forward)
+    locations(forward)
     icinga_services(forward)
     license_keys(forward)
     license_orgs(forward)
