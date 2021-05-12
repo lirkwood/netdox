@@ -25,6 +25,7 @@
     },
     "kubernetes": {
         "<cluster-name>": {
+            "locations": [],
             "server": "",
             "token": ""
         }
