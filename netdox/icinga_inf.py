@@ -110,7 +110,7 @@ def dnsLookup(dns: utils.dns):
 def lookupManual(dns: utils.dns):
     global manual
     manual_monitor = False
-    for selector in [dns.name] + list(dns.ips) + list(dns.cnames):
+    for selector in [dns.name] + list(dns.ips):
         for icinga_host in manual:
             # if has a manually created monitor, just load info
             if selector in manual[icinga_host]:
