@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+function refresh {
+    _refresh 2>&1 | tee "/var/log/refresh-$(date +%F-T%T).log"
+}
+
+function _refresh {
+    for dir in /opt/app/out/*; do
+        rm -rf ${dir}/*
+    done
+
+    echo '[INFO][netdox] Refreshing DNS...'
+
+    if python3 refresh.py
+        then
+            echo '[INFO][netdox] Python exited successfully. Beginning PageSeeder upload...'
+            cd /opt/app/out
+            zip -r -q netdox-src.zip *
+            cd /opt/app
+            if ant -lib /opt/ant/lib
+                then
+                    echo '[INFO][netdox] Upload successful.'
+                else
+                    echo '[ERROR][netdox] Upload exited with non-zero status. Storing psml for debugging...'
+                    cp /opt/app/out/netdox-src.zip /etc/ext/psml.zip
+            fi
+        else
+            echo '[ERROR][netdox] Python exited with non-zero status. Cancelling upload...'
+    fi
+
+    cp /opt/app/src/dns.json /etc/ext/dns.json
+}
+
+function serve {
+    echo -e '[INFO][netdox] Starting gunicorn server on 8080\n'
+    gunicorn --reload -b '0.0.0.0:8080' serve:app
+}
+
+function init {
+    echo '[INFO][netdox] Pod started. Running init script...'
+
+    chmod 777 /opt/app/*
+
+    mkdir /opt/app/src/records
+    for file in /etc/nfs/*.bin; do
+        ./crypto.sh decrypt '/etc/nfs/vector.txt' "$file" "/opt/app/src/records/$(basename ${file%.bin}).json" &> /dev/null
+    done
+
+    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/authentication.bin" "/opt/app/src/authentication.json"
+    cp /etc/ext/dns.json /opt/app/src/dns.json &> /dev/null
+
+    if python3 init.py
+        then
+            echo '[INFO][netdox] Python initialisation successful.'
+            serve & refresh
+        else
+            echo '[ERROR][netdox] Python initialisation unsuccessful. Terminating...'
+            exit 1
+    fi
+
+    crontab <<< '0 8 * * * netdox refresh'
+}
+
+
+methods=("refresh" "serve" "init")
+for arg in "$@"; do
+    if [[ ${methods[@]} =~ $arg ]]
+        then
+            $arg
+    fi
+done
