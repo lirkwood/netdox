@@ -129,7 +129,6 @@ async def fetchObjects(dns):
     hostVMs = {}
     for vmId in vms:
         vm = vms[vmId]
-        vm['name_label'] = re.sub(r'[/\\]','', vm['name_label'])
         
         if vm['$container'] not in hostVMs:
             hostVMs[vm['$container']] = []
@@ -140,7 +139,7 @@ async def fetchObjects(dns):
             pass
 
         vm['domains'] = []
-        if 'mainIpAddress' in vm:
+        if 'mainIpAddress' in vm and iptools.valid_ip(vm['mainIpAddress']):
             for domain in dns:
                 if vm['mainIpAddress'] in dns[domain].ips:
                     vm['domains'].append(domain)
