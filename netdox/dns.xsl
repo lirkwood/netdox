@@ -140,7 +140,7 @@
                     </properties-fragment>
 
                     <properties-fragment id="icinga">
-                    <xsl:for-each select="xpf:map[@key = 'icinga']/xpf:map">
+                    <xsl:for-each select="xpf:map[@key = 'icinga']/xpf:array">
                         <property name="icinga" title="Icinga Hostname" datatype="xref">
                             <xref frag="default" docid="{translate(@key,'.','_')}" />
                         </property>
