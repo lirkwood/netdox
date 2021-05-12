@@ -38,6 +38,9 @@ ENV AWS_CONFIG_FILE=/opt/app/src/awsconfig
 # set tz
 ENV TZ="Australia/Sydney"
 
+# set flask app
+ENV FLASK_APP=/opt/app/serve.py
+
 # make dir for man page to stop jre postinstall script failing
 RUN mkdir -p /usr/share/man/man1
 RUN apt-get update &&  apt-get install -y --no-install-recommends curl unzip openjdk-11-jre-headless
@@ -52,13 +55,13 @@ WORKDIR /opt/ant/lib
 # download pageseeder jar files
 RUN curl http://download.pageseeder.com/pub/win/5.9811/pageseeder-publish-api-5.9811.jar \
 -o /opt/ant/lib/pageseeder-publish-api-5.9811.jar && \
-curl -L http://dl.bintray.com/pageseeder/maven/org/pageseeder/pso-psml/0.6.9/pso-psml-0.6.9.jar \
--o /opt/ant/lib/pso-psml-0.6.9.jar && \
-curl -L http://dl.bintray.com/pageseeder/maven/org/pageseeder/xmlwriter/pso-xmlwriter/1.0.2/pso-xmlwriter-1.0.2.jar \
--o /opt/ant/lib/pso-xmlwriter-1.0.2.jar && \
-curl -L https://bintray.com/bintray/jcenter/download_file?file_path=org%2Fslf4j%2Fslf4j-api%2F1.7.12%2Fslf4j-api-1.7.12.jar \
--o /opt/ant/lib/slf4j-api-1.7.12.jar && \
-curl -L https://bintray.com/bintray/jcenter/download_file?file_path=org%2Fslf4j%2Fslf4j-simple%2F1.7.12%2Fslf4j-simple-1.7.12.jar \
+curl -L https://maven-central.storage.googleapis.com/maven2/org/pageseeder/pso-psml/0.6.24/pso-psml-0.6.24.jar \
+-o /opt/ant/lib/pso-psml-0.6.24.jar && \
+curl -L https://maven-central.storage.googleapis.com/maven2/org/pageseeder/xmlwriter/pso-xmlwriter/1.0.4/pso-xmlwriter-1.0.4.jar \
+-o /opt/ant/lib/pso-xmlwriter-1.0.4.jar && \
+curl -L https://maven-central.storage.googleapis.com/maven2/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar \
+-o /opt/ant/lib/slf4j-api-1.7.5.jar && \
+curl -L https://maven-central.storage.googleapis.com/maven2/org/slf4j/slf4j-simple/1.7.12/slf4j-simple-1.7.12.jar \
 -o /opt/ant/lib/slf4j-simple-1.7.12.jar
 
 WORKDIR /usr/local/bin
@@ -104,7 +107,5 @@ RUN rm -rf /var/lib/apt/lists/* && \
 #copy main files and node deps
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
-
-ENV FLASK_APP=/opt/app/serve.py
 
 CMD [ "/bin/bash", "init.sh" ]
