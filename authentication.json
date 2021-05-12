@@ -17,8 +17,11 @@
         "group": ""
     },
     "icinga": {
-        "username": "",
-        "password": ""
+        "cluster": {
+            "locations": [],
+            "username": "",
+            "password": ""
+        }
     },
     "kubernetes": {
         "<cluster-name>": {
@@ -38,5 +41,8 @@
         "region": "",
         "aws_access_key_id": "",
         "aws_secret_access_key": ""
+    },
+    "ansible": {
+        "host": ""
     }
 }
