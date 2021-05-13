@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document type="dns_role" level="portable">
+    <documentinfo>
+        <uri docid="_nd_role_storage" title="DNS Role: storage">
+            <displaytitle>DNS Role: storage</displaytitle>
+        </uri>
+    </documentinfo>
+    <metadata>
+        <properties>
+            <property name="template_version" title="Template version" value="1.0"/>
+        </properties>
+    </metadata>
+    <section id="title">
+        <fragment id="1">
+            <heading level="1">DNS Role: storage</heading>
+        </fragment>
+    </section>
+    <section id="body">
+        <properties-fragment id="config">
+            <property name="name" title="Name" value="storage"/>
+            <property name="desc" title="Description" value="A host which serves as a storage server or a similar size-sensitive role. These domains have disk space monitors on them."/>
+            <property name="template" title="Default Icinga Template" value="generic-storage"/>
+            <property name="screenshot" title="Screenshot" value="no"/>
+        </properties-fragment>
+    </section>
+</document>

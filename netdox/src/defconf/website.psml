@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document type="dns_role" level="portable">
+    <documentinfo>
+        <uri docid="_nd_role_website" title="DNS Role: website">
+            <displaytitle>DNS Role: website</displaytitle>
+        </uri>
+    </documentinfo>
+    <metadata>
+        <properties>
+            <property name="template_version" title="Template version" value="1.0"/>
+        </properties>
+    </metadata>
+    <section id="title">
+        <fragment id="1">
+            <heading level="1">DNS Role: website</heading>
+        </fragment>
+    </section>
+    <section id="body">
+        <properties-fragment id="config">
+            <property name="name" title="Name" value="website"/>
+            <property name="desc" title="Description" value="A domain which is expected to be serving a webpage of some description on HTTP(S). These domains are screenshotted and have HTTP(S) monitors on them."/>
+            <property name="template" title="Default Icinga Template" value="generic-website"/>
+            <property name="screenshot" title="Screenshot" value="yes"/>
+        </properties-fragment>
+    </section>
+</document>

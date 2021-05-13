@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document type="dns_role" level="portable">
+    <documentinfo>
+        <uri docid="_nd_role_pageseeder" title="DNS Role: pageseeder">
+            <displaytitle>DNS Role: pageseeder</displaytitle>
+        </uri>
+    </documentinfo>
+    <metadata>
+        <properties>
+            <property name="template_version" title="Template version" value="1.0"/>
+        </properties>
+    </metadata>
+    <section id="title">
+        <fragment id="1">
+            <heading level="1">DNS Role: pageseeder</heading>
+        </fragment>
+    </section>
+    <section id="body">
+        <properties-fragment id="config">
+            <property name="name" title="Name" value="pageseeder"/>
+            <property name="desc" title="Description" value="A host serving a PageSeeder instance. These hosts are similar to websites but have an additional MySQL monitor."/>
+            <property name="template" title="Default Icinga Template" value="generic-pageeeder"/>
+            <property name="screenshot" title="Screenshot" value="yes"/>
+        </properties-fragment>
+    </section>
+</document>
