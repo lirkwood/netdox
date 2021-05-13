@@ -28,7 +28,7 @@ def init():
             os.mkdir(path)
             
     for path in ('DNS', 'IPs', 'k8s', 'xo', 'aws', 'screenshots', 'screenshot_history', 'review', 'config'):
-        if not os.path.exists(path):
+        if not os.path.exists('out/'+path):
             os.mkdir('out/'+path)
     
     # generate xslt json import files
