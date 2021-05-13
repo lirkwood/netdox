@@ -133,16 +133,17 @@ async def fetchObjects(dns):
         if vm['$container'] not in hostVMs:
             hostVMs[vm['$container']] = []
         hostVMs[vm['$container']].append(vm['uuid'])
-        try:
-            vm['subnet'] = iptools.sort(vm['mainIpAddress'])
-        except Exception:
-            pass
 
         vm['domains'] = []
-        if 'mainIpAddress' in vm and iptools.valid_ip(vm['mainIpAddress']):
-            for domain in dns:
-                if vm['mainIpAddress'] in dns[domain].ips:
-                    vm['domains'].append(domain)
+        if 'mainIpAddress' in vm:
+            if iptools.valid_ip(vm['mainIpAddress']):
+                vm['subnet'] = iptools.sort(vm['mainIpAddress'])
+                for domain in dns:
+                    if vm['mainIpAddress'] in dns[domain].ips:
+                        vm['domains'].append(domain)
+            else:
+                print(f'[WARNING][xo_api.py] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
+                del vm['mainIpAddress']
         else:
             if vm['power_state'] == 'Running':
                 print(f'[WARNING][xo_api.py] VM {vm["name_label"]} has no IP address')
