@@ -226,9 +226,9 @@ def locations(dns_set):
                 apps = json.load(stream)
                 appips = []
                 for appname in dns.apps:
-                    for context in apps:
-                        if appname in context:
-                            app = context[appname]
+                    for context in apps.keys():
+                        if appname in apps[context]:
+                            app = apps[context][appname]
                             for podname, pod in app['pods'].items():
                                 appips.append(pod['hostip'])
             dns.location = utils.locate(appips)
