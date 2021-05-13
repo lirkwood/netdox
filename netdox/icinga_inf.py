@@ -47,29 +47,28 @@ def objectsByDomain():
         for host in hosts['results']:
             name = host['name']
             addr = host['attrs']['address']
-            # if generated load template name
+            
             if host['attrs']['groups'] == ['generated']:
-                if addr not in generated[icinga]:
-                    generated[icinga][addr] = {"templates": host['attrs']['templates'], "services": [host['attrs']['check_command']]}
-                    if name in hostServices:
-                        generated[icinga][addr]['services'] += hostServices[name]
-                    # remove top template; should be specific to host
-                    if generated[icinga][addr]['templates'][0] == name:
-                        del generated[icinga][addr]['templates'][0]
-                    else:
-                        # remove this
-                        print(f'[WARNING][icinga_inf.py] Unexpected behaviour: Top level template has name {generated[icinga][addr][0]} for host {name}')
-                else:
-                    print(f'[WARNING][icinga_inf.py] Duplicate monitor for {name} in {icinga}')
-            # if manually specified load services
+                group = generated
             else:
-                if addr not in manual[icinga]:
-                    manual[icinga][addr] = {}
-                if name in hostServices:
-                    manual[icinga][addr][name] = hostServices[name]
-                else:
-                    manual[icinga][addr][name] = []
+                group = manual
 
+            if addr not in group[icinga]:
+                group[icinga][addr] = {
+                    "templates": host['attrs']['templates'],
+                    "services": [host['attrs']['check_command']],
+                    "display": name
+                }
+                if name in hostServices:
+                    group[icinga][addr]['services'] += hostServices[name]
+                # remove top template; should be specific to host
+                if group[icinga][addr]['templates'][0] == name:
+                    del group[icinga][addr]['templates'][0]
+                else:
+                    # remove this
+                    print(f'[WARNING][icinga_inf.py] Unexpected behaviour: Top level template has name {group[icinga][addr][0]} for host {name}')
+            else:
+                print(f'[WARNING][icinga_inf.py] Duplicate monitor for {name} in {icinga}')
     return manual, generated
 
 
@@ -90,20 +89,21 @@ def dnsLookup(dns: utils.dns):
                 # if template already valid, load service info
                 if validateTemplate(dns, icinga_host):
                     if dns.icinga:
-                        print(f'[WARNING][refresh.py] {dns.name} has duplicate monitors')
-                    dns.icinga = generated[icinga_host][dns.name]['services']
+                        print(f'[WARNING][refresh.py] {dns.name} has duplicate generated monitors')
+                    dns.icinga = generated[icinga_host][dns.name]
                 else:
                     return False
 
     # if has no monitor, assign one
     if not dns.icinga and dns.location:
-        if dns.role and dns.role != 'unmonitored':
-            ansible.icinga_set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
-        elif not dns.role:
-            ansible.icinga_set_host(dns.name, dns.location)
-        else:
-            return True
-        return False
+        if dns.location == 'Pyrmont':
+            if dns.role and dns.role != 'unmonitored':
+                ansible.icinga_set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
+            elif not dns.role:
+                ansible.icinga_set_host(dns.name, dns.location)
+            else:
+                return True
+            return False
 
     return True
 
