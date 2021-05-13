@@ -53,16 +53,11 @@
                         <property name="name"       title="Name"        value="{$name}" />
                         <property name="root"       title="Root Domain"        value="{xpf:string[@key = 'root']}" />
                         <property name="source"     title="DNS Source"      value="{xpf:string[@key = 'source']}" />
-                        <xsl:choose>
-                            <xsl:when test="xpf:string[@key = 'role']">
                         <property name="role"       title="DNS Role"    datatype="xref">
+                        <xsl:if test="xpf:string[@key = 'role']">
                             <xref frag="default" docid="_nd_role_{xpf:string[@key = 'role']}" />
+                        </xsl:if>
                         </property>
-                            </xsl:when>
-                            <xsl:otherwise>
-                        <property name="role"       title="DNS Role"    value="—" />
-                            </xsl:otherwise>
-                        </xsl:choose>
                         <xsl:choose>
                             <xsl:when test="xpf:string[@key = 'license']">
                         <property name="license"     title="PageSeeder License"      datatype="xref" >
@@ -140,16 +135,11 @@
                     </properties-fragment>
 
                     <properties-fragment id="icinga">
-                    <xsl:for-each select="xpf:map[@key = 'icinga']/xpf:array">
-                        <property name="icinga" title="Icinga Hostname" datatype="xref">
-                            <xref frag="default" docid="{translate(@key,'.','_')}" />
-                        </property>
-                        <xsl:for-each select="xpf:array">
-                        <property name="host" title="Host Display Name" value="{@key}" />
-                            <xsl:for-each select="xpf:string">
+                    <xsl:for-each select="xpf:map[@key = 'icinga']/xpf:map">
+                        <property name="host" title="Host Display Name" value="{xpf:string[@key = 'display']}" />
+                            <xsl:for-each select="xpf:array[@key = 'services']/xpf:string">
                         <property name="service" title="Service Display Name" value="{substring-after(., '!')}" />
                             </xsl:for-each>
-                        </xsl:for-each>
                     </xsl:for-each>
                     </properties-fragment>
 
