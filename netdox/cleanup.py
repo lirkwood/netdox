@@ -73,31 +73,44 @@ def placeholders():
                 shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpgName}')
 
 
+stale_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
+
 @utils.handle
 def sentenceStale():
     """
     Adds 30-day timer to files present on pageseeder but not locally
     """
     today = datetime.now().date()
+    group_path = f"/ps/{utils.auth['pageseeder']['group'].replace('-','/')}"
     stale = {}
     # for every folder in context on pageseeder
     for folder in ps_api.urimap:
         folder_uri = ps_api.urimap[folder]
-        remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={'type': 'document'}), features='xml')
-        if os.path.exists(f'out/{folder}'):
-            # alnum filenames for every file in local version of folder that is a file (not dir)
-            local = [alnum(file) for file in os.listdir(f'out/{folder}') if os.path.isfile(os.path.join(f'out/{folder}', file))]
+        # get all files descended from folder
+        remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={
+            'type': 'document',
+            'relationship': 'descendants'
+        }), features='xml')
+
+        # if folder exists in upload
+        if os.path.exists(f'out/{folder}') and folder not in ('config', 'review', 'screenshot_history'):
+            # get all files in given folder in upload
+            local = utils.fileFetchRecursive(f'out/{folder}')
 
             for file in remote("uri"):
-                filename = file["decodedpath"].split('/')[-1]
+                filename = file["decodedpath"].split(f"{group_path}/website/{folder}/")[-1]
                 uri = file["id"]
+                if file.labels: labels = file.labels.string
+                
+                marked_stale = re.search(stale_pattern, labels)
+                if marked_stale:
+                    expiry = date.fromisoformat(marked_stale['date'])
+                else:
+                    expiry = None
+                
                 if filename not in local:
-                    if file.labels:
-                        labels = file.labels.string
-
-                    marked_stale = re.search(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})', labels)
+                    print(f'[DEBUG][cleanup.py] File {filename} does not exist in local upload context.')
                     if marked_stale:
-                        expiry = date.fromisoformat(marked_stale['date'])
                         if expiry <= today:
                             ps_api.archive(uri)
                         else:
@@ -110,9 +123,17 @@ def sentenceStale():
                         plus_thirty = today + timedelta(days = 30)
                         labels += f'expires-{plus_thirty}'
                         ps_api.patch_uri(uri, {'labels':labels})
+                        print(f'[DEBUG][cleanup.py] File {folder}/{filename} is stale and has been sentenced.')
                         stale[uri] = str(plus_thirty)
+                # if marked stale but exists locally
+                else:
+                    if marked_stale:
+                        labels = re.sub(stale_pattern, '') # remove expiry label
+                        labels = re.sub(r',,',',') # remove double commas
+                        labels = re.sub(r',$','') # remove trailing commas
+                        labels = re.sub(r'^,','') # remove leading commas
+                        ps_api.patch_uri(uri, {'labels':labels})
     return stale
-
             
 
 # best guess at the transformation PageSeeder applies
