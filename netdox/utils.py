@@ -1,4 +1,5 @@
-from typing import Iterable
+from typing import Iterable, Union
+from os import scandir, DirEntry
 import iptools, json, re
 from traceback import format_exc
 from datetime import datetime
@@ -54,7 +55,7 @@ try:
     with open('src/locations.json', 'r') as stream:
         _location_map = json.load(stream)
 except Exception as e:
-    print('[WARNING][utils.py] Unable to find or parse locations.json')
+    print('[WARNING][utils] Unable to find or parse locations.json')
     _location_map = {}
 
 location_map = {}
@@ -62,7 +63,12 @@ for location in _location_map:
     for subnet in _location_map[location]:
         location_map[subnet] = location
 
-def locate(ip_set):
+def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
+    """
+    Returns a location for an ip or set of ips, None on fatal.
+    Location data is specified in src/locations.json.
+    Most specific match is used.
+    """
     if isinstance(ip_set, iptools.ipv4):
         if ip_set.valid:
             ip_set = [ip_set.ipv4]
@@ -118,7 +124,7 @@ class dns:
     Class representing some DNS record
     """
 
-    def __init__(self, name, root=None, source=None, constructor=None):
+    def __init__(self, name: str, root: str=None, source: str=None, constructor: dict=None):
         if constructor:
             for k, v in constructor.items():
                 setattr(self, k, v)
@@ -148,7 +154,7 @@ class dns:
             raise ValueError('Must provide a valid name for dns record (some FQDN) or a valid constructor dict.')
 
     # switch to case match on 2021-04-10
-    def link(self, string, type):
+    def link(self, string: str, type: str):
         """
         Adds a link to the given object.
         """
@@ -217,7 +223,7 @@ class ptr:
     unused: bool
     nat: str
 
-    def __init__(self, ip, root=None, source=None, unused=False):
+    def __init__(self, ip: str, root: str=None, source: str=None, unused: bool=False):
         if iptools.valid_ip(ip):
             self.ipv4 = ip
             self.name = ip
@@ -238,7 +244,7 @@ class ptr:
 
 
 @handle
-def loadDNS(file):
+def loadDNS(file: Union[str, DirEntry]):
     d = {}
     with open(file, 'r') as stream:
         jsondata = json.load(stream)
@@ -247,7 +253,7 @@ def loadDNS(file):
     return d
 
 
-def merge_sets(dns1,dns2):
+def merge_sets(dns1: dns, dns2: dns) -> dns:
     """
     Simple merge of any sets of found in two dns objects
     """
@@ -284,3 +290,20 @@ def loadConfig():
             config = json.load(stream)
     except FileNotFoundError:
         config = {'exclusions': []}
+
+def fileFetchRecursive(dir: Union[str, DirEntry]) -> list:
+    """
+    Returns a list of paths of all files descended from some directory.
+    """
+    if isinstance(dir, DirEntry):
+        dir = dir.path
+    elif not isinstance(dir, str):
+        raise ValueError(f'Directory must be one of: str, os.DirEntry; Not {type(dir)}')
+    
+    fileset = []
+    for file in scandir(dir):
+        if file.is_dir():
+            fileset += fileFetchRecursive(file)
+        elif file.is_file():
+            fileset.append(file.path)
+    return fileset
