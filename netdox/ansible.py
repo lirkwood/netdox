@@ -90,7 +90,11 @@ def icinga_pause(address, location=None, icinga=None):
             "host": address
             }
         
-        return playbook('/etc/ansible/icinga.yml', tags, vars)
+        stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
+        if stderr:
+            raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
+        else:
+            return stdout
     else:
         return None
 
@@ -107,7 +111,11 @@ def icinga_unpause(address, location=None, icinga=None):
             "host": address,
             }
 
-        return playbook('/etc/ansible/icinga.yml', tags, vars)
+        stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
+        if stderr:
+            raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
+        else:
+            return stdout
     else:
         return None
     
