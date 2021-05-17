@@ -1,6 +1,6 @@
 import ps_api, ad_api, cf_domains, k8s_domains, dnsme_api   # dns query scripts
 import k8s_inf, xo_api, nat_inf, icinga_inf, license_inf   # other info
-import cleanup, iptools, utils   # utility scripts
+import ansible, cleanup, iptools, utils   # utility scripts
 
 import subprocess, asyncio, shutil, boto3, json, os
 from distutils.util import strtobool
@@ -51,6 +51,18 @@ def init():
         exclusionSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', 'exclude'), features='xml')
         for para in exclusionSoup("para"):
             config['exclusions'].append(para.string)
+
+        # load batch defined roles
+        try:
+            with open('src/roles.json', 'r') as stream:
+                roles = json.load(stream)
+        except FileNotFoundError:
+            pass
+        else:
+            for role in roles:
+                if role in config:
+                    print(f'[INFO][refresh.py] Loaded additional data for role {role} from roles.json')
+                    config[role]['domains'] += roles[role]
 
         with open('src/config.json', 'w') as stream:
             stream.write(json.dumps(config, indent=2))
@@ -139,27 +151,48 @@ def aws_inf():
     instances = client.describe_instances()
     write_dns(instances, 'aws')
 
-
-###########################
-# Non-essential functions #
-###########################
-
-@utils.handle
+@utils.critical
 def apply_roles(dns_set):
     """
     Applies custom roles defined in _nd_config
     """
     config = utils.config
 
+    for domain in config['exclusions']:
+        try:
+            del dns_set[domain]
+        except KeyError: pass
+    
+    unassigned = dns_set
     for role in config:
-        if role == 'exclusions':
-            for domain in config[role]:
-                try:
-                    del dns_set[domain]
-                except KeyError: pass
-        else:
+        if role != 'exclusions':
             for domain in config[role]['domains']:
-                dns_set[domain].role = role
+                try:
+                    dns_set[domain].role = role
+                except KeyError:
+                    for icinga in icinga_inf.icinga_hosts:
+                        try:
+                            ansible.icinga_pause(domain, icinga=icinga)
+                        except RuntimeError:
+                            pass
+                        else:
+                            print(f'[INFO][refresh.py] Removed monitor from {domain} as it does not exist in the DNS.')
+                else:
+                    try:
+                        del unassigned[domain]
+                    except KeyError:
+                        print('[DEBUG][refresh.py] Unexpected behaviour: unassigned is missing domain in dns_set')
+    
+    for domain in unassigned:
+        try:
+            dns_set[domain].role == 'default'
+        except KeyError:
+            print('[DEBUG][refresh.py] Unexpected behaviour: dns_set is missing domain in unassigned')
+
+
+###########################
+# Non-essential functions #
+###########################
 
 @utils.handle
 def nat(dns_set):
