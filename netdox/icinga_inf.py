@@ -99,8 +99,6 @@ def dnsLookup(dns: utils.dns):
         if dns.location == 'Pyrmont':
             if dns.role and dns.role != 'unmonitored':
                 ansible.icinga_set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
-            elif not dns.role:
-                ansible.icinga_set_host(dns.name, dns.location)
             else:
                 return True
             return False
@@ -130,7 +128,7 @@ def validateTemplate(dns: utils.dns, icinga_host: str):
     template_name = generated[icinga_host][dns.name]['templates'][0]
 
     if dns.role:
-        if dns.role != 'unmonitored' and dns.role not in template_name:
+        if dns.role != 'unmonitored' and utils.config[dns.role]['template'] != template_name:
             print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
             ansible.icinga_set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
 
@@ -140,11 +138,6 @@ def validateTemplate(dns: utils.dns, icinga_host: str):
         
         else:
             return True
-
-    elif not dns.role and template_name != 'generic-host':
-        print(f'[WARNING][refresh.py] {dns.name} has no role but is using Icinga template {template_name}. Replacing...')
-        ansible.icinga_set_host(dns.name, icinga=icinga_host)
-
     else:
         return True
     return False
