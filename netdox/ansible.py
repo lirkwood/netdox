@@ -44,12 +44,15 @@ def playbook(path, tags=[], vars={}):
         tagstring += tag
     if tagstring: tagstring += '"'
 
-    return exec(f'ansible-playbook {path} {tagstring} {varstring}')
+    stdout, stderr = exec(f'ansible-playbook {path} {tagstring} {varstring}')
+    if stderr:
+        raise RuntimeError(f'[ERROR][ansible.py] Running playbook {path} with {tagstring} {varstring} raised:\n{stderr}')
+    else:
+        return stdout
 
 
 ## Functions for specific plays
 
-@utils.handle
 def icinga_set_host(address, location=None, icinga=None, template="generic-host", display_name=None):
     """
     Adds host to a specified Icinga if it does not already exist
@@ -68,16 +71,13 @@ def icinga_set_host(address, location=None, icinga=None, template="generic-host"
             vars['display_name'] = address
         
         print(f'[INFO][ansible.py] Set {template} for {address} in {icinga}')
-        stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
-        if stderr:
-            raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
-        else:
-            return stdout
+        stdout = playbook('/etc/ansible/icinga.yml', tags, vars)
+        if 'failed=0' not in stdout:
+            raise RuntimeError(f'[ERROR][ansible.py] One or more tasks failed during set-host with template {template} for address {address} on {icinga}. Printout:\n{stdout}')
     else:
         return None
 
 
-@utils.handle
 def icinga_pause(address, location=None, icinga=None):
     """
     Pauses the monitoring of the host object with a given address
@@ -90,15 +90,14 @@ def icinga_pause(address, location=None, icinga=None):
             "host": address
             }
         
-        stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
-        if stderr:
-            raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
+        stdout = playbook('/etc/ansible/icinga.yml', tags, vars)
+        if 'failed=0' not in stdout:
+            raise RuntimeError(f'[ERROR][ansible.py] One or more tasks failed during pause-host for address {address} on {icinga}. Printout:\n{stdout}')
         else:
             return stdout
     else:
         return None
 
-@utils.handle
 def icinga_unpause(address, location=None, icinga=None):
     """
     Unpauses the monitoring of the host object with a given address
@@ -111,9 +110,9 @@ def icinga_unpause(address, location=None, icinga=None):
             "host": address,
             }
 
-        stdout, stderr = playbook('/etc/ansible/icinga.yml', tags, vars)
-        if stderr:
-            raise RuntimeError(f'[ERROR][ansible.py] Running icinga playbook with tags {str(tags)} and vars {str(vars)} threw:\n{stderr}')
+        stdout = playbook('/etc/ansible/icinga.yml', tags, vars)
+        if 'failed=0' not in stdout:
+            raise RuntimeError(f'[ERROR][ansible.py] One or more tasks failed during unpause-host for address {address} on {icinga}. Printout:\n{stdout}')
         else:
             return stdout
     else:
