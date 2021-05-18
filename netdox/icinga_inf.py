@@ -96,16 +96,21 @@ def dnsLookup(dns: utils.dns):
 
     # if has no monitor, assign one
     if not dns.icinga and dns.location:
-        if dns.location == 'Pyrmont':
-            if dns.role and dns.role != 'unmonitored':
+        if dns.role != 'unmonitored':
+            try:
                 ansible.icinga_set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
-            else:
-                return True
-            return False
+            except KeyError:
+                print(f'[DEBUG][refresh.py] {dns.name} has role {dns.role}')
+        else:
+            return True
+        return False
 
     return True
 
-def lookupManual(dns: utils.dns):
+def lookupManual(dns: utils.dns) -> bool:
+    """
+    Returns bool based on if there is a manually specified monitor on a given DNS name
+    """
     global manual
     manual_monitor = False
     for selector in [dns.name] + list(dns.ips):
