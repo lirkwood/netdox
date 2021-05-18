@@ -28,7 +28,7 @@ function _refresh {
             echo '[ERROR][netdox] Python exited with non-zero status. Cancelling upload...'
     fi
 
-    cp /opt/app/src/dns.json /etc/ext/dns.json
+    cp /opt/app/src/dns.json /etc/ext/cfg/dns.json
 }
 
 function serve {
@@ -38,16 +38,24 @@ function serve {
 
 function init {
     echo '[INFO][netdox] Pod started. Running init script...'
-
+    
+    # make all scripts executable
     chmod 777 /opt/app/*
-
+    
+    # decrypt authentication details
+    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/cfg/authentication.bin" "/opt/app/src/authentication.json"
+    
+    # copy any unecrypted cfg files
+    for file in /etc/ext/cfg/*.json; do
+        cp $file /opt/app/src/$(basename $file) &> /dev/null
+    done
+    
+    # make dir for activedirectory files
     mkdir /opt/app/src/records
+    # decrypt activedirectory files
     for file in /etc/nfs/*.bin; do
         ./crypto.sh decrypt '/etc/nfs/vector.txt' "$file" "/opt/app/src/records/$(basename ${file%.bin}).json" &> /dev/null
     done
-
-    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/authentication.bin" "/opt/app/src/authentication.json"
-    cp /etc/ext/dns.json /opt/app/src/dns.json &> /dev/null
 
     if python3 init.py
         then
