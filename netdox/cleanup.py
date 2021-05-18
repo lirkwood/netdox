@@ -84,54 +84,54 @@ def sentenceStale():
     group_path = f"/ps/{utils.auth['pageseeder']['group'].replace('-','/')}"
     stale = {}
     # for every folder in context on pageseeder
-    for folder in ps_api.urimap:
-        folder_uri = ps_api.urimap[folder]
+    for folder, folder_uri in ps_api.urimap.items():
         # get all files descended from folder
-        remote = BeautifulSoup(ps_api.get_uris(folder_uri, params={
+        remote = json.loads(ps_api.get_uris(folder_uri, params={
             'type': 'document',
             'relationship': 'descendants'
-        }), features='xml')
+        }))
 
         # if folder exists in upload
         if os.path.exists(f'out/{folder}') and folder not in ('config', 'review', 'screenshot_history'):
             # get all files in given folder in upload
             local = utils.fileFetchRecursive(f'out/{folder}')
+            print(json.dumps(local, indent=2))
 
-            for file in remote("uri"):
-                filename = file["decodedpath"].split(f"{group_path}/website/{folder}/")[-1]
+            for file in remote["uris"]:
+                commonpath = file["decodedpath"].split(f"{group_path}/website/")[-1]
                 uri = file["id"]
-                if file.labels: labels = file.labels.string
-                
-                marked_stale = re.search(stale_pattern, labels)
+                if 'labels' in  file: 
+                    labels = ','.join(file['labels'])
+                    marked_stale = re.search(stale_pattern, labels)
+                else:
+                    labels = ''
+                    marked_stale = False
+
                 if marked_stale:
                     expiry = date.fromisoformat(marked_stale['date'])
                 else:
                     expiry = None
                 
-                if filename not in local:
-                    print(f'[DEBUG][cleanup.py] File {filename} does not exist in local upload context.')
+                if f'out/{commonpath}' not in local:
                     if marked_stale:
                         if expiry <= today:
                             ps_api.archive(uri)
                         else:
                             stale[uri] = marked_stale['date']
                     else:
-                        if labels:
-                            labels += ','
-                        else:
-                            labels = ''
                         plus_thirty = today + timedelta(days = 30)
+                        if labels: labels += ','
                         labels += f'expires-{plus_thirty}'
                         ps_api.patch_uri(uri, {'labels':labels})
-                        print(f'[DEBUG][cleanup.py] File {folder}/{filename} is stale and has been sentenced.')
+                        print(f'[INFO][cleanup.py] File {commonpath} is stale and has been sentenced.')
                         stale[uri] = str(plus_thirty)
                 # if marked stale but exists locally
                 else:
                     if marked_stale:
-                        labels = re.sub(stale_pattern, '') # remove expiry label
-                        labels = re.sub(r',,',',') # remove double commas
-                        labels = re.sub(r',$','') # remove trailing commas
-                        labels = re.sub(r'^,','') # remove leading commas
+                        labels = re.sub(stale_pattern, '', labels) # remove expiry label
+                        labels = re.sub(r',,',',', labels) # remove double commas
+                        labels = re.sub(r',$','', labels) # remove trailing commas
+                        labels = re.sub(r'^,','', labels) # remove leading commas
                         ps_api.patch_uri(uri, {'labels':labels})
     return stale
             
