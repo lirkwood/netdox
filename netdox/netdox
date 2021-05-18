@@ -28,7 +28,7 @@ function _refresh {
             echo '[ERROR][netdox] Python exited with non-zero status. Cancelling upload...'
     fi
 
-    cp /opt/app/src/dns.json /etc/ext/cfg/dns.json
+    cp /opt/app/src/dns.json /etc/ext/cfg/dns.json &> /dev/null
 }
 
 function serve {
@@ -60,7 +60,7 @@ function init {
     if python3 init.py
         then
             echo '[INFO][netdox] Python initialisation successful.'
-            serve & refresh
+            refresh & serve
         else
             echo '[ERROR][netdox] Python initialisation unsuccessful. Terminating...'
             exit 1
