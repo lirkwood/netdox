@@ -283,8 +283,7 @@ def icinga_services(dns_set, depth=0):
     if depth <= 1:
         icinga_inf.objectsByDomain()
         tmp = {}
-        for domain in dns_set:
-            dns = dns_set[domain]
+        for domain, dns in dns_set.items():
             # search icinga for objects with address == domain (or any ip for that domain)
             if not icinga_inf.dnsLookup(dns):
                 tmp[domain] = dns
@@ -311,8 +310,7 @@ def license_orgs(dns_set):
     """
     Integrates organisations into a dns set inferred from associated license
     """
-    for domain in dns_set:
-        dns = dns_set[domain]
+    for domain, dns in dns_set.items():
         if 'license' in dns.__dict__:
             org_id = license_inf.org(dns.license)
             if org_id:
@@ -351,8 +349,9 @@ async def template_map():
     snapshots = await xo_api.fetchType('VM-snapshot')
 
     for vm in vms:
-        name = vms[vm]['name_label']
-        vmSource['vms'][name] = vm
+        if vms[vm]['power_state'] == 'Running':
+            name = vms[vm]['name_label']
+            vmSource['vms'][name] = vm
 
     for snapshot in snapshots:
         name = snapshots[snapshot]['name_label']
