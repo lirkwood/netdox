@@ -175,13 +175,7 @@ def apply_roles(dns_set):
                         print(f'[WARNING][refresh.py] {domain} is present multiple times in config')
                 # if has a document (loaded role from ps) then remove monitor if exist
                 except KeyError:
-                    for icinga in icinga_inf.icinga_hosts:
-                        try:
-                            ansible.icinga_pause(domain, icinga=icinga)
-                        except RuntimeError:
-                            pass
-                        else:
-                            print(f'[INFO][refresh.py] Removed monitor from {domain} as it does not exist in the DNS.')
+                    pass
     
     for domain in unassigned:
         try:
@@ -291,6 +285,17 @@ def icinga_services(dns_set, depth=0):
         if tmp: icinga_services(tmp, depth+1)
     else:
         print(f'[WARNING][refresh.py] Abandoning domains without proper monitor: {dns_set.keys()}')
+
+@utils.handle
+def icinga_stale(dns_set):
+    """
+    Removes any generated monitors for domains no longer in the DNS
+    """
+    for icinga, addr_set in icinga_inf.generated.items():
+        for addr in addr_set:
+            if addr not in dns_set:
+                print(f'[INFO][refresh.py] Stale monitor for domain {addr}. Removing...')
+                ansible.icinga_pause(addr, icinga=icinga)
 
 @utils.handle
 def license_keys(dns_set):
@@ -418,6 +423,7 @@ def main():
     aws_ec2(forward)
     locations(forward)
     icinga_services(forward)
+    icinga_stale(forward)
     license_keys(forward)
     license_orgs(forward)
     labels(forward)
