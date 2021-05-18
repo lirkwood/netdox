@@ -83,13 +83,13 @@ def dnsLookup(dns: utils.dns):
     for icinga_host in generated:
         if dns.name in generated[icinga_host]:
             if manual_monitor:
-                print(f'[WARNING][refresh.py] {dns.name} has manual and generated monitor object. Removing generated object...')
+                print(f'[WARNING][icinga_inf.py] {dns.name} has manual and generated monitor object. Removing generated object...')
                 ansible.icinga_pause(dns.name, icinga = icinga_host)
             else:
                 # if template already valid, load service info
                 if validateTemplate(dns, icinga_host):
                     if dns.icinga:
-                        print(f'[WARNING][refresh.py] {dns.name} has duplicate generated monitors')
+                        print(f'[WARNING][icinga_inf.py] {dns.name} has duplicate generated monitors')
                     dns.icinga = generated[icinga_host][dns.name]
                 else:
                     return False
@@ -97,10 +97,7 @@ def dnsLookup(dns: utils.dns):
     # if has no monitor, assign one
     if not dns.icinga and dns.location:
         if dns.role != 'unmonitored':
-            try:
-                ansible.icinga_set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
-            except KeyError:
-                print(f'[DEBUG][refresh.py] {dns.name} has role {dns.role}')
+            ansible.icinga_set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
         else:
             return True
         return False
@@ -119,7 +116,7 @@ def lookupManual(dns: utils.dns) -> bool:
             if selector in manual[icinga_host]:
                 manual_monitor = True
                 if dns.icinga:
-                    print(f'[WARNING][refresh.py] {dns.name} has duplicate manual monitors in {icinga_host}')
+                    print(f'[WARNING][icinga_inf.py] {dns.name} has duplicate manual monitors in {icinga_host}')
                 dns.icinga = manual[icinga_host][selector]
 
     return manual_monitor
@@ -134,11 +131,9 @@ def validateTemplate(dns: utils.dns, icinga_host: str):
 
     if dns.role:
         if dns.role != 'unmonitored' and utils.config[dns.role]['template'] != template_name:
-            print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but is using Icinga template {template_name}. Replacing...')
             ansible.icinga_set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
 
         elif dns.role == 'unmonitored':
-            print(f'[WARNING][refresh.py] {dns.name} has role {dns.role} but has a generated monitor object. Removing...')
             ansible.icinga_pause(dns.name, icinga = icinga_host)
         
         else:
