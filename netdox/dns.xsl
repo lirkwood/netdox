@@ -99,7 +99,7 @@
                             <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="."/></xref>
                         </property>
                     </xsl:for-each>
-                    <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
+                    <xsl:for-each select="xpf:array[@key = 'cnames']/xpf:string">
                         <xsl:choose>
                             <xsl:when test="not(string-length(.) > 75)">
                         <property name="cname" title="CNAME" datatype="xref">
