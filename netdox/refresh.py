@@ -163,12 +163,17 @@ def apply_roles(dns_set):
             del dns_set[domain]
         except KeyError: pass
     
-    unassigned = dns_set
-    for role in config:
+    unassigned = list(dns_set.keys())
+    for role in config.keys():
         if role != 'exclusions':
             for domain in config[role]['domains']:
                 try:
                     dns_set[domain].role = role
+                    try:
+                        unassigned.remove(domain)
+                    except ValueError:
+                        print(f'[WARNING][refresh.py] {domain} is present multiple times in config')
+                # if has a document (loaded role from ps) then remove monitor if exist
                 except KeyError:
                     for icinga in icinga_inf.icinga_hosts:
                         try:
@@ -177,15 +182,11 @@ def apply_roles(dns_set):
                             pass
                         else:
                             print(f'[INFO][refresh.py] Removed monitor from {domain} as it does not exist in the DNS.')
-                else:
-                    try:
-                        del unassigned[domain]
-                    except KeyError:
-                        print('[DEBUG][refresh.py] Unexpected behaviour: unassigned is missing domain in dns_set')
     
     for domain in unassigned:
         try:
-            dns_set[domain].role == 'default'
+            dns_set[domain].role = 'default'
+            config['default']['domains'].append(domain)
         except KeyError:
             print('[DEBUG][refresh.py] Unexpected behaviour: dns_set is missing domain in unassigned')
 
