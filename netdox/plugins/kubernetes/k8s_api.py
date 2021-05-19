@@ -4,7 +4,7 @@ import json, utils
 
 ## Load config and init client for given context
 def initContext(context: str=None):
-    config.load_kube_config('src/kubeconfig', context=context)
+    config.load_kube_config('plugins/kubernetes/src/kubeconfig', context=context)
     global apiClient
     apiClient = client.ApiClient()
 
@@ -145,10 +145,10 @@ def main():
                     domainPods[domain] = set()
                 domainPods[domain].add(appName)
 
-    with open('src/apps.json', 'w') as stream:
+    with open('plugins/kubernetes/src/apps.json', 'w') as stream:
         stream.write(json.dumps(allApps, indent=2, cls=utils.JSONEncoder))
     workers = {}
-    with open('src/workers.json', 'w') as stream:
+    with open('plugins/kubernetes/src/workers.json', 'w') as stream:
         stream.write(json.dumps(workers, indent=2, cls=utils.JSONEncoder))
     utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/apps.xml')
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/workers.xml')
