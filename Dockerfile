@@ -89,6 +89,7 @@ RUN pip install gunicorn
 RUN pip install paramiko
 RUN pip install websockets
 RUN pip install boto3
+RUN pip install kubernetes
 
 WORKDIR /opt/app
 
