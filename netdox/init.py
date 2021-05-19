@@ -12,12 +12,8 @@ def init():
     """
     Initialises container and makes it usable for serve and refresh
     """
-    k8sauth = utils.auth['kubernetes']
     psauth = utils.auth['pageseeder']
     awsauth = utils.auth['aws']
-
-    # generate kubeconfig file
-    kubeconfig(k8sauth)
 
     # generate map of all dns zones
     fetchZones()
@@ -27,12 +23,12 @@ def init():
         if not os.path.exists(path):
             os.mkdir(path)
             
-    for path in ('DNS', 'IPs', 'k8s', 'xo', 'aws', 'screenshots', 'screenshot_history', 'review', 'config'):
+    for path in ('DNS', 'IPs', 'xo', 'aws', 'screenshots', 'screenshot_history', 'review', 'config'):
         if not os.path.exists('out/'+path):
             os.mkdir('out/'+path)
     
     # generate xslt json import files
-    for type in ('ips', 'dns', 'apps', 'workers', 'vms', 'hosts', 'pools', 'aws', 'review', 'templates'):
+    for type in ('ips', 'dns', 'vms', 'hosts', 'pools', 'aws', 'review', 'templates'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(dedent(f"""
             <?xml version="1.0" encoding="UTF-8"?>
@@ -72,45 +68,6 @@ def init():
         aws_secret_access_key = {awsauth['aws_secret_access_key']}
         """).strip())
 
-
-def kubeconfig(auth):
-    """
-    Generate kubeconfig file
-    """
-    with open('src/kubeconfig', 'w') as stream:
-        clusters = ''
-        users = ''
-        contexts = ''
-        for cluster in auth:
-            clusters += f"""
-            - cluster:
-                server: {auth[cluster]['server']}
-              name: {cluster}"""
-
-            users += f"""
-            - name: {cluster}
-              user:
-                token: {auth[cluster]['token']}
-            """
-
-            contexts += f"""
-            - context:
-                cluster: {cluster}
-                user: {cluster}
-              name: {cluster}
-            """
-
-            current = cluster
-
-        stream.write(dedent(f"""
-        apiVersion: v1
-        Kind: Config
-        current-context: {current}
-        preferences: {{}}
-        clusters: {clusters}
-        users: {users}
-        contexts: {contexts}
-        """))
 
 def fetchZones():
     zones = {
