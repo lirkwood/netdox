@@ -143,13 +143,13 @@ def ips(forward, reverse):
             if ip not in reverse:
                 reverse[ip] = utils.ptr(ip, source='Generated', unused=True)
 
-    write_dns(reverse, 'ips')
+    utils.write_dns(reverse, 'ips')
 
 @utils.critical
 def aws_inf():
     client = boto3.client('ec2')
     instances = client.describe_instances()
-    write_dns(instances, 'aws')
+    utils.write_dns(instances, 'aws')
 
 @utils.critical
 def apply_roles(dns_set):
@@ -368,31 +368,7 @@ async def template_map():
 
     with open('src/templates.json', 'w', encoding='utf-8') as stream:
         stream.write(json.dumps(vmSource, indent=2, ensure_ascii=False))
-    xslt('templates.xsl', 'src/templates.xml', 'out/config/templates.psml')
-    
-
-#############################
-# Writing data to json/psml #
-#############################
-
-@utils.critical
-def write_dns(dns_set, name='dns'):
-    """
-    Writes dns set to json file
-    """
-    with open(f'src/{name}.json', 'w') as dns:
-        dns.write(json.dumps(dns_set, cls=utils.JSONEncoder, indent=2))
-
-
-def xslt(xsl, src, out=None):
-    """
-    Runs some xslt using Saxon
-    """
-    xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
-    if out:
-        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src} -o:{out}', shell=True)
-    else:
-        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
+    utils.xslt('templates.xsl', 'src/templates.xml', 'out/config/templates.psml')
 
 
 ##################
@@ -405,7 +381,7 @@ def screenshots():
     Runs screenshotCompare node.js script and writes output using xslt
     """
     subprocess.run('node screenshotCompare.js', check=True, shell=True)
-    xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
+    utils.xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
 
 
 #############
@@ -431,23 +407,23 @@ def main():
     # gather config data (XO templates etc.)
     asyncio.run(template_map())
 
-    write_dns(forward)
+    utils.write_dns(forward)
 
     # Write DNS documents
-    xslt('dns.xsl', 'src/dns.xml')
+    utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
     ips(forward, reverse)
-    xslt('ips.xsl', 'src/ips.xml')
+    utils.xslt('ips.xsl', 'src/ips.xml')
     # Write K8s documents
-    xslt('clusters.xsl', 'src/workers.xml')
-    xslt('workers.xsl', 'src/workers.xml')
-    xslt('apps.xsl', 'src/apps.xml')
+    utils.xslt('clusters.xsl', 'src/workers.xml')
+    utils.xslt('workers.xsl', 'src/workers.xml')
+    utils.xslt('apps.xsl', 'src/apps.xml')
     # Write XO documents
-    xslt('pools.xsl', 'src/pools.xml')
-    xslt('hosts.xsl', 'src/hosts.xml')
-    xslt('vms.xsl', 'src/vms.xml')
+    utils.xslt('pools.xsl', 'src/pools.xml')
+    utils.xslt('hosts.xsl', 'src/hosts.xml')
+    utils.xslt('vms.xsl', 'src/vms.xml')
     # Write AWS documents
-    xslt('aws.xsl', 'src/aws.xml')
+    utils.xslt('aws.xsl', 'src/aws.xml')
 
     screenshots()
     cleanup.clean()

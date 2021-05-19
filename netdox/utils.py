@@ -1,6 +1,7 @@
+import iptools, json, re
+import subprocess
 from typing import Iterable, Union
 from os import scandir, DirEntry
-import iptools, json, re
 from traceback import format_exc
 from datetime import datetime
 from sys import argv
@@ -281,6 +282,25 @@ class JSONEncoder(json.JSONEncoder):
             return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
 
+@critical
+def write_dns(dns_set, name='dns'):
+    """
+    Writes dns set to json file
+    """
+    with open(f'src/{name}.json', 'w') as dns:
+        dns.write(json.dumps(dns_set, cls=JSONEncoder, indent=2))
+
+
+def xslt(xsl, src, out=None):
+    """
+    Runs some xslt using Saxon
+    """
+    xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
+    if out:
+        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src} -o:{out}', shell=True)
+    else:
+        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
+
 
 @critical
 def loadConfig():
@@ -290,6 +310,7 @@ def loadConfig():
             config = json.load(stream)
     except FileNotFoundError:
         config = {'exclusions': []}
+
 
 def fileFetchRecursive(dir: Union[str, DirEntry]) -> list:
     """
