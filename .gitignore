@@ -9,7 +9,7 @@ netdox/out
 netdox/node_modules
 netdox/logs
 
-netdox/src/*
+**/src/*
 !netdox/src/defconf/
 !netdox/src/exclusions.txt
 !netdox/src/placeholder.jpg
