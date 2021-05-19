@@ -1,9 +1,12 @@
+**/__pycache__
+*.zip
+*log.txt
+
 .kube
 .dockerignore
 netdox-src
 netdox/out
 netdox/node_modules
-netdox/__pycache__
 netdox/logs
 
 netdox/src/*
@@ -13,6 +16,3 @@ netdox/src/*
 !netdox/src/pageseeder.properties
 !netdox/src/locations.json
 !netdox/src/nat.txt
-
-*.zip
-*log.txt
