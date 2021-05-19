@@ -1,3 +1,4 @@
+from collections import defaultdict
 import iptools, json, re
 import subprocess
 from typing import Iterable, Union
@@ -145,9 +146,7 @@ class dns:
             self.public_ips = set()
             self.private_ips = set()
             self.cnames = set()
-            self.vms = set()
-            self.apps = set()
-            self.ec2s = set()
+            self.resources = defaultdict(set)
 
             self.subnets = set()
 
@@ -176,17 +175,8 @@ class dns:
                 else:
                     raise ValueError(f'Domain {string} is not valid.')
             
-            elif type == 'vm':
-                self.vms.add(string)
-            
-            elif type == 'app':
-                self.apps.add(string)
-
-            elif type == 'ec2':
-                self.ec2s.add(string)
-
             else:
-                raise ValueError('Provide a valid destination type. One of: "ipv4", "domain", "vm", or "app".')
+                self.resources[type].add(string)
             
             self.update()
 
