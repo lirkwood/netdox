@@ -1,6 +1,7 @@
 from plugins.kubernetes.k8s_api import main as runner
 from textwrap import dedent
 import os, utils
+stage = 1
 
 # Create output dir
 if not os.path.exists('plugins/kubernetes/out'):

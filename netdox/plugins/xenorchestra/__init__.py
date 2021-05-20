@@ -1,5 +1,6 @@
 from plugins.xenorchestra.xo_api import runner
 from textwrap import dedent
+stage = 1
 
 for type in ('vms', 'hosts', 'pools'):
     with open(f'src/{type}.xml','w') as stream:
