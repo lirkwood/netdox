@@ -46,7 +46,6 @@ def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict
     else:
         print(f'[INFO][pluginmaster] Plugin {plugin.__name__} completed successfully')
 
-@utils.critical
 def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
     """
     Runs all initialised plugins in a given stage.
