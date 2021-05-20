@@ -126,7 +126,6 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
                         unassigned.remove(domain)
                     except ValueError:
                         print(f'[WARNING][refresh.py] {domain} is present multiple times in config')
-                # if has a document (loaded role from ps) then remove monitor if exist
                 except KeyError:
                     pass
     
@@ -242,9 +241,10 @@ def screenshots():
 #############
 
 def main():
-    # Run plugins
+    # Run DNS and ext resource plugins
     forward, reverse = {}, {}
-    pluginmaster.runPlugins(forward, reverse)
+    pluginmaster.runPlugins('dns', forward, reverse)
+    pluginmaster.runPlugins('resource', forward, reverse)
 
     # apply additional modifications/filters
     apply_roles(forward)
@@ -255,13 +255,16 @@ def main():
     license_orgs(forward)
     labels(forward)
 
+    # Run remaining plugins
+    pluginmaster.runPlugins('other', forward, reverse)
+
     utils.write_dns(forward)
+    utils.write_dns(reverse, 'reverse')
     # Write DNS documents
     utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
     ips(forward, reverse)
     utils.xslt('ips.xsl', 'src/ips.xml')
-
     # Write AWS documents
     utils.xslt('aws.xsl', 'src/aws.xml')
 
