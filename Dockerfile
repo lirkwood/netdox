@@ -7,16 +7,8 @@ RUN npm install img-diff-js@0.5.2
 RUN npm install puppeteer@5.5.0
 RUN npm install utf-8-validate@5.0.4
 
-# install kubectl
-RUN apt-get update && apt-get install -y apt-transport-https gnupg2 curl
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-RUN echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | tee -a /etc/apt/sources.list.d/kubernetes.list
-RUN apt-get update
-RUN apt-get install -y kubectl
-
 # Timezone info
 RUN apt-get install -y tzdata
-
 
 ###################################
 FROM python:3.9.1-slim-buster AS py
@@ -28,9 +20,6 @@ ENV PYTHONUNBUFFERED="true"
 # set env vars for ant
 ENV ANT_HOME=/opt/ant/apache-ant-1.10.9
 ENV PATH=${PATH}:/opt/app:${ANT_HOME}/bin
-
-# set kubeconfig path
-ENV KUBECONFIG=/opt/app/src/kubeconfig
 
 # set aws-cli config
 ENV AWS_CONFIG_FILE=/opt/app/src/awsconfig
@@ -109,4 +98,4 @@ RUN rm -rf /var/lib/apt/lists/* && \
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
 
-CMD [ "/bin/bash", "netdox", "init" ]
+CMD [ "/bin/bash", "netdox", "start" ]
