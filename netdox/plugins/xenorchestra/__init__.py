@@ -1,7 +1,7 @@
 from plugins.xenorchestra.xo_api import runner
 from textwrap import dedent
 import os
-stage = 1
+stage = 'resource'
 
 if not os.path.exists('plugins/xenorchestra/src'):
     os.mkdir('plugins/xenorchestra/src')

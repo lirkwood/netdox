@@ -1,10 +1,14 @@
+from typing import Tuple
 import requests, json
-import ansible, utils
+import utils
 
 icinga_hosts = utils.auth['icinga']
 
+####################################
+# Generic resource fetch functions #
+####################################
 
-def fetchType(type: str, icinga_host: str):
+def fetchType(type: str, icinga_host: str) -> dict:
     """
     Returns all instances of a given object type
     """
@@ -13,7 +17,7 @@ def fetchType(type: str, icinga_host: str):
     jsondata = json.loads(r.text)
     return jsondata
 
-def fetchTemplates(type: str, icinga_host: str):
+def fetchTemplates(type: str, icinga_host: str) -> dict:
     """
     Returns all templates for a given object type
     """ 
@@ -22,8 +26,11 @@ def fetchTemplates(type: str, icinga_host: str):
     jsondata = json.loads(r.text)
     return jsondata
 
+#########################
+# Main plugin functions #
+#########################
 
-def objectsByDomain():
+def objectsByDomain() -> Tuple[dict, dict]:
     """
     Returns a dictionary of all hosts and their services, where addr is the key
     """
@@ -72,7 +79,7 @@ def objectsByDomain():
     return manual, generated
 
 
-def dnsLookup(dns: utils.DNSRecord):
+def dnsLookup(dns: utils.DNSRecord) -> bool:
     """
     Add details of any Icinga objects monitoring the host a record resolves to (through name, IP, or CNAME).
     If the monitoring is managed by Netdox, validate current template against the record's role.
@@ -122,40 +129,24 @@ def lookupManual(dns: utils.DNSRecord) -> bool:
     return manual_monitor
 
 
-def validateTemplate(dns: utils.DNSRecord, icinga_host: str):
+def validateTemplate(dns: utils.DNSRecord, icinga_host: str) -> bool:
     """
     Validates the template of a dns record against its role, modifies if necessary. Returns True if already valid.
     """
     global generated
     template_name = generated[icinga_host][dns.name]['templates'][0]
 
-    if dns.role:
-        if dns.role != 'unmonitored' and utils.config[dns.role]['template'] != template_name:
-            ansible.icinga_set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
+    if dns.role != 'unmonitored' and utils.config[dns.role]['template'] != template_name:
+        ansible.icinga_set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
 
-        elif dns.role == 'unmonitored':
-            ansible.icinga_pause(dns.name, icinga = icinga_host)
-        
-        else:
-            return True
+    elif dns.role == 'unmonitored':
+        ansible.icinga_pause(dns.name, icinga = icinga_host)
+    
     else:
         return True
     return False
 
 
-## Plugin runner
-
-def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
-    # Removes any generated monitors for domains no longer in the DNS
-    for icinga, addr_set in generated.items():
-        for addr in addr_set:
-            if addr not in forward_dns:
-                print(f'[INFO][icinga] Stale monitor for domain {addr}. Removing...')
-                ansible.icinga_pause(addr, icinga=icinga)
-
-    setServices(forward_dns)
-
-    
 @utils.handle
 def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
     """
@@ -175,3 +166,20 @@ def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
         if tmp: setServices(tmp, depth+1)
     else:
         print(f'[WARNING][icinga] Abandoning domains without proper monitor: {dns_set.keys()}')
+
+
+## Plugin runner
+def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+    try:
+        import plugins.ansible.icinga as ansible
+    except Exception:
+        raise ImportError('[ERROR][icinga] Unable to import ansible.icinga plugin, which this plugin relies on.')
+        
+    setServices(forward_dns)
+
+    # Removes any generated monitors for domains no longer in the DNS
+    for icinga, addr_set in generated.items():
+        for addr in addr_set:
+            if addr not in forward_dns:
+                print(f'[INFO][icinga] Stale monitor for domain {addr}. Removing...')
+                ansible.icinga_pause(addr, icinga=icinga)
