@@ -66,9 +66,9 @@ def objectsByDomain():
                     del group[icinga][addr]['templates'][0]
                 else:
                     # remove this
-                    print(f'[WARNING][icinga_inf.py] Unexpected behaviour: Top level template has name {group[icinga][addr][0]} for host {name}')
+                    print(f'[WARNING][icinga] Unexpected behaviour: Top level template has name {group[icinga][addr][0]} for host {name}')
             else:
-                print(f'[WARNING][icinga_inf.py] Duplicate monitor for {name} in {icinga}')
+                print(f'[WARNING][icinga] Duplicate monitor for {name} in {icinga}')
     return manual, generated
 
 
@@ -83,13 +83,13 @@ def dnsLookup(dns: utils.DNSRecord):
     for icinga_host in generated:
         if dns.name in generated[icinga_host]:
             if manual_monitor:
-                print(f'[WARNING][icinga_inf.py] {dns.name} has manual and generated monitor object. Removing generated object...')
+                print(f'[WARNING][icinga] {dns.name} has manual and generated monitor object. Removing generated object...')
                 ansible.icinga_pause(dns.name, icinga = icinga_host)
             else:
                 # if template already valid, load service info
                 if validateTemplate(dns, icinga_host):
                     if dns.icinga:
-                        print(f'[WARNING][icinga_inf.py] {dns.name} has duplicate generated monitors')
+                        print(f'[WARNING][icinga] {dns.name} has duplicate generated monitors')
                     dns.icinga = generated[icinga_host][dns.name]
                 else:
                     return False
@@ -116,7 +116,7 @@ def lookupManual(dns: utils.DNSRecord) -> bool:
             if selector in manual[icinga_host]:
                 manual_monitor = True
                 if dns.icinga:
-                    print(f'[WARNING][icinga_inf.py] {dns.name} has duplicate manual monitors in {icinga_host}')
+                    print(f'[WARNING][icinga] {dns.name} has duplicate manual monitors in {icinga_host}')
                 dns.icinga = manual[icinga_host][selector]
 
     return manual_monitor
@@ -150,7 +150,7 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     for icinga, addr_set in generated.items():
         for addr in addr_set:
             if addr not in forward_dns:
-                print(f'[INFO][refresh.py] Stale monitor for domain {addr}. Removing...')
+                print(f'[INFO][icinga] Stale monitor for domain {addr}. Removing...')
                 ansible.icinga_pause(addr, icinga=icinga)
 
     setServices(forward_dns)
@@ -174,4 +174,4 @@ def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
         # if some objects had invalid monitors, refresh and retest.
         if tmp: setServices(tmp, depth+1)
     else:
-        print(f'[WARNING][refresh.py] Abandoning domains without proper monitor: {dns_set.keys()}')
+        print(f'[WARNING][icinga] Abandoning domains without proper monitor: {dns_set.keys()}')
