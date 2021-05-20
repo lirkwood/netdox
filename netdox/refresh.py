@@ -43,11 +43,14 @@ def init():
                 if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'dns':
                     domains.append(revXref['urititle'])
             
-            config[roleConfig['name']] = {
-                "template": roleConfig['template'],
-                "screenshot": strtobool(roleConfig['screenshot']),
+            roleName = roleConfig['name']
+            screenshot = strtobool(roleConfig['screenshot'])
+            del roleConfig['name'], roleConfig['screenshot']
+            
+            config[roleName] = (roleConfig | {
+                "screenshot": screenshot,
                 "domains": domains
-            }
+            })
 
         # load exclusions
         exclusionSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', 'exclude'), features='xml')
