@@ -1,7 +1,7 @@
 import utils
 import importlib, os
 from traceback import format_exc
-from typing import Any, Generator, Iterable, Tuple
+from typing import Any, Generator, Tuple
 
 def fetchRunners() -> Generator[Tuple[Any, os.DirEntry], Any, Any]:
     for plugindir in os.scandir('plugins'):
@@ -15,7 +15,7 @@ def fetchRunners() -> Generator[Tuple[Any, os.DirEntry], Any, Any]:
                 yield plugin.runner, plugindir
 
 @utils.critical
-def runPlugins(forward_dns: dict[str, utils.dns], reverse_dns: dict[str, utils.dns]):
+def runPlugins(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
     for runner, plugindir in fetchRunners():
         pluginName = plugindir.name
         print(f'[INFO][pluginmaster] Discovered plugin {pluginName}')

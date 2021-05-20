@@ -72,7 +72,7 @@ def objectsByDomain():
     return manual, generated
 
 
-def dnsLookup(dns: utils.dns):
+def dnsLookup(dns: utils.DNSRecord):
     """
     Add details of any Icinga objects monitoring the host a record resolves to (through name, IP, or CNAME).
     If the monitoring is managed by Netdox, validate current template against the record's role.
@@ -104,7 +104,7 @@ def dnsLookup(dns: utils.dns):
 
     return True
 
-def lookupManual(dns: utils.dns) -> bool:
+def lookupManual(dns: utils.DNSRecord) -> bool:
     """
     Returns bool based on if there is a manually specified monitor on a given DNS name
     """
@@ -122,7 +122,7 @@ def lookupManual(dns: utils.dns) -> bool:
     return manual_monitor
 
 
-def validateTemplate(dns: utils.dns, icinga_host: str):
+def validateTemplate(dns: utils.DNSRecord, icinga_host: str):
     """
     Validates the template of a dns record against its role, modifies if necessary. Returns True if already valid.
     """
