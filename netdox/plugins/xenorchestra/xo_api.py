@@ -112,6 +112,7 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
 
+    # Link domains to vms
     for domain in forward_dns:
         dns = forward_dns[domain]
         for uuid in vms:

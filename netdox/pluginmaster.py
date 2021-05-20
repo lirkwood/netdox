@@ -40,7 +40,6 @@ def runPlugins(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, u
     """
     Runs all plugins in order.
     """
-    initPlugins()
     global pluginmap
     for index, stage in pluginmap.items():
         for plugin, runner in stage.items():

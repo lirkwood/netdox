@@ -1,4 +1,4 @@
-import os, utils
+import os, utils, pluginmaster
 from textwrap import dedent
 from bs4 import BeautifulSoup
 
@@ -53,9 +53,6 @@ def init():
     with open('build.xml','w') as stream:
         soup.find('ps:upload')['group'] = psauth['group']
         stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
-
-    # Load plugins
-
 
     # set up aws iam profile
     with open('src/awsconfig', 'w') as stream:
