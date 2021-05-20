@@ -55,7 +55,7 @@ def add_A(dns_set, record):
 
     # Integrate
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.dns(fqdn, source='ActiveDirectory', root=root)
+        dns_set[fqdn] = utils.DNSRecord(fqdn, source='ActiveDirectory', root=root)
     dns_set[fqdn].link(dest, 'ipv4')
 
 
@@ -78,7 +78,7 @@ def add_CNAME(dns_set, record):
                 dest = dest.strip('.')
 
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.dns(fqdn, source='ActiveDirectory', root=root)
+        dns_set[fqdn] = utils.DNSRecord(fqdn, source='ActiveDirectory', root=root)
     dns_set[fqdn].link(dest, 'domain')
 
 
@@ -98,7 +98,7 @@ def add_PTR(dns_set, record):
 
     if ip.valid:
         if ip.ipv4 not in dns_set:
-            dns_set[ip.ipv4] = utils.ptr(ip.ipv4, source='ActiveDirectory', root=zone)
+            dns_set[ip.ipv4] = utils.PTRRecord(ip.ipv4, source='ActiveDirectory', root=zone)
         dns_set[ip.ipv4].link(dest)
 
 

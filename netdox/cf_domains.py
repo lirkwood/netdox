@@ -56,7 +56,7 @@ def add_A(dns_set, record):
     ip = record['content']
 
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.dns(fqdn, root, 'Cloudflare')
+        dns_set[fqdn] = utils.DNSRecord(fqdn, root, 'Cloudflare')
     dns_set[fqdn].link(ip, 'ipv4')
 
 @utils.handle
@@ -69,7 +69,7 @@ def add_CNAME(dns_set, record):
     dest = record['content']
 
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.dns(fqdn, root, 'Cloudflare')
+        dns_set[fqdn] = utils.DNSRecord(fqdn, root, 'Cloudflare')
     dns_set[fqdn].link(dest, 'domain')
 
 @utils.handle

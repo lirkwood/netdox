@@ -72,7 +72,7 @@ def add_A(dns_set, record, root):
 	fqdn = assemble_fqdn(subdomain, root)
 
 	if fqdn not in dns_set:
-		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
+		dns_set[fqdn] = utils.DNSRecord(fqdn, source='DNSMadeEasy', root=root)
 	dns_set[fqdn].link(ip, 'ipv4')
 
 @utils.handle
@@ -86,7 +86,7 @@ def add_CNAME(dns_set, record, root):
 	dest = assemble_fqdn(value, root)
 
 	if fqdn not in dns_set:
-		dns_set[fqdn] = utils.dns(fqdn, source='DNSMadeEasy', root=root)
+		dns_set[fqdn] = utils.DNSRecord(fqdn, source='DNSMadeEasy', root=root)
 	dns_set[fqdn].link(dest, 'domain')	
 
 @utils.handle
@@ -102,7 +102,7 @@ def add_PTR(dns_set, record, root):
 	
 	if iptools.valid_ip(ip):
 		if ip not in dns_set:
-			dns_set[ip] = utils.ptr(ip, source='DNSMadeEasy', root=root)
+			dns_set[ip] = utils.PTRRecord(ip, source='DNSMadeEasy', root=root)
 		dns_set[ip].link(fqdn)
 
 
