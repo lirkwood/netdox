@@ -32,13 +32,13 @@ def initPlugins():
         if stage not in pluginmap:
             pluginmap[stage] = {}
         pluginmap[stage][plugindir.name] = runner
-    pluginmap = sorted(pluginmap)
+    pluginmap = {k: pluginmap[k] for k in sorted(pluginmap)}
 
 
 @utils.critical
 def runPlugins(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
     """
-    Runs all plugins in order.
+    Runs all initialised plugins in order.
     """
     global pluginmap
     for index, stage in pluginmap.items():
@@ -52,4 +52,5 @@ def runPlugins(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, u
                 print(f'[INFO][pluginmaster] Plugin {plugin} completed successfully')
 
 if __name__ == '__main__':
-    runPlugins({})
+    initPlugins()
+    runPlugins({},{})
