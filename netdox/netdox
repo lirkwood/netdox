@@ -74,12 +74,12 @@ function init {
 methods=("init" "refresh" "serve")
 for arg in "$@"; do
     if [[ ${methods[@]} =~ $arg ]]
-        then case $arg in;
-            init)
-                init
+        then case $arg in
+            serve)
+                serve &
                 ;;
             *)
-                $arg &
+                $arg
                 ;;
         esac
     fi
