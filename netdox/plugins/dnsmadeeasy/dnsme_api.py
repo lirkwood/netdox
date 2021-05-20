@@ -8,7 +8,7 @@ def genheader() -> dict[str, str]:
 	"""
 	Generates authentication header for DNSME api
 	"""
-	creds = utils.auth['dnsmadeeasy']
+	creds = utils.auth['plugins']['dnsmadeeasy']
 	api = creds['api']
 	secret = creds['secret']
 

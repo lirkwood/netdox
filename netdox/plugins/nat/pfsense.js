@@ -1,6 +1,5 @@
-const fs = require('fs');
 const puppeteer = require('puppeteer');
-const auth = require('./src/authentication.json')['pfsense'];
+const auth = require('../../src/authentication.json')['plugins']['pfsense'];
 const nat = {};
 
 (async () => {

@@ -6,7 +6,7 @@ try:
 except Exception:
     raise ImportError('[ERROR][icinga] Unable to import ansible.icinga plugin, which this plugin relies on.')
 
-icinga_hosts = utils.auth['icinga']
+icinga_hosts = utils.auth['plugins']['icinga']
 
 ####################################
 # Generic resource fetch functions #

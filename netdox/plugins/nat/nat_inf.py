@@ -15,7 +15,7 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
                 natDict[dest.ipv4] = alias.ipv4
 
     # Gather pfSense NAT
-    pfsense = subprocess.check_output('node pfsense.js', shell=True)
+    pfsense = subprocess.check_output('node plugins/nat/pfsense.js', shell=True)
     natDict |= json.loads(pfsense)
 
     for domain in forward_dns:
