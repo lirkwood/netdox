@@ -12,7 +12,7 @@ def writeJson(data, name):
     """
     Writes some data to a json file and then deletes it from memory
     """
-    with open(f'src/{name}.json', 'w') as stream:
+    with open(f'plugins/xenorchestra/src/{name}.json', 'w') as stream:
         stream.write(json.dumps(data, indent=2))
     del data
 
@@ -100,6 +100,12 @@ async def fetchObj(uuid):
 ##################
 # User functions #
 ##################
+
+def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+    asyncio.run(fetchObjects(forward_dns))
+    utils.xslt('plugins/xenorchestra/vms.xsl', 'plugins/xenorchestra/src/vms.xml')
+    utils.xslt('plugins/xenorchestra/hosts.xsl', 'plugins/xenorchestra/src/hosts.xml')
+    utils.xslt('plugins/xenorchestra/pools.xsl', 'plugins/xenorchestra/src/pools.xml')
 
 @utils.critical
 @authenticate
