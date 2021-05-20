@@ -43,13 +43,13 @@ def runPlugins(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, u
     global pluginmap
     for index, stage in pluginmap.items():
         for plugin, runner in stage.items():
-            print(f'[INFO][pluginmaster] Running plugin {plugin} as part of stage {index}')
+            print(f'[INFO][pluginmaster][stage {index}] Running plugin {plugin}')
             try:
                 runner(forward_dns, reverse_dns)
             except Exception:
-                print(f'[ERROR][pluginmaster] Running {plugin} threw an exception: \n{format_exc()}')
+                print(f'[ERROR][pluginmaster][stage {index}] Running {plugin} threw an exception: \n{format_exc()}')
             else:
-                print(f'[INFO][pluginmaster] Plugin {plugin} completed successfully')
+                print(f'[INFO][pluginmaster][stage {index}] Plugin {plugin} completed successfully')
 
 if __name__ == '__main__':
     initPlugins()
