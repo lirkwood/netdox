@@ -1,11 +1,11 @@
 import utils
-import importlib, os
+import importlib, sys, os
 from traceback import format_exc
-from typing import Any, Callable, Generator, Tuple
+from typing import Any, Generator, Tuple
 
-def fetchPlugins() -> Generator[Tuple[Callable[[dict[str, utils.DNSRecord], dict[str, utils.DNSRecord]], None], os.DirEntry, int], Any, Any]:
+def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, int], Any, Any]:
     """
-    Generator which yields a 3-tuple of a plugins main function, the location of said plugin, and a integer value used to decide execution order.
+    Generator which yields a 3-tuple of a plugin, the location of said plugin, and an optional stage at which to run
     """
     for plugindir in os.scandir('plugins'):
         if plugindir.is_dir() and plugindir.name != '__pycache__':
@@ -34,6 +34,17 @@ def initPlugins():
         pluginmap[stage][plugindir.name] = plugin
     pluginmap = {k: pluginmap[k] for k in sorted(pluginmap)}
 
+def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+    """
+    Runs a single plugin via it's runner
+    """
+    print(f'[INFO][pluginmaster] Running plugin {plugin.__name__}')
+    try:
+        plugin.runner(forward_dns, reverse_dns)
+    except Exception:
+        print(f'[ERROR][pluginmaster] Running {plugin.__name__} threw an exception: \n{format_exc()}')
+    else:
+        print(f'[INFO][pluginmaster] Plugin {plugin.__name__} completed successfully')
 
 @utils.critical
 def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
@@ -41,15 +52,31 @@ def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: d
     Runs all initialised plugins in a given stage.
     """
     global pluginmap
-    for pluginName, plugin in pluginmap[stage].items():
-        print(f'[INFO][pluginmaster][{stage}] Running plugin {pluginName}')
-        try:
-            plugin.runner(forward_dns, reverse_dns)
-        except Exception:
-            print(f'[ERROR][pluginmaster][{stage}] Running {pluginName} threw an exception: \n{format_exc()}')
-        else:
-            print(f'[INFO][pluginmaster][{stage}] Plugin {pluginName} completed successfully')
+    print(f'[INFO][pluginmaster] Running all plugins in stage {stage}')
+    for _, plugin in pluginmap[stage].items():
+        runPlugin(plugin, forward_dns, reverse_dns)
 
 if __name__ == '__main__':
     initPlugins()
-    runPlugins({},{})
+    try:
+        forward_dns = utils.loadDNS('src/dns.json')
+        reverse_dns = utils.loadDNS('src/reverse.json')
+    except Exception:
+        raise FileNotFoundError('[ERROR][pluginmaster] Unable to load DNS')
+
+    if sys.argv[1] and sys.argv[1] in ('stage', 'plugin'):
+        if sys.argv[1] == 'stage':
+            stage = sys.argv[2]
+            if stage in pluginmap:
+                runStage(stage, forward_dns, reverse_dns)
+            else:
+                raise ValueError(f'[ERROR][pluginmaster] Uknown stage: {stage}')
+        elif sys.argv[1] == 'plugin':
+            plugin = sys.argv[2]
+            found = False
+            for stage, pluginset in pluginmap.items():
+                if plugin in pluginset:
+                    runPlugin(plugin, forward_dns, reverse_dns)
+                    found = True
+            if not found:
+                raise ImportError(f'[ERROR][pluginmaster] Plugin {plugin} not found')
