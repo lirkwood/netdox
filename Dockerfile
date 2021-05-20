@@ -62,8 +62,6 @@ RUN curl -L https://sourceforge.net/projects/saxon/files/Saxon-HE/10/Java/SaxonH
 # import node and global node modules
 COPY --from=node /usr/local/bin /usr/local/bin
 COPY --from=node /usr/local/lib /usr/local/lib
-# import kubectl
-COPY --from=node /usr/bin/kubectl /usr/bin
 # import tz
 COPY --from=node /usr/share/zoneinfo/${TZ} /etc/localtime
 RUN echo "$TZ" > /etc/timezone
