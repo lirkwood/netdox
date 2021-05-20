@@ -1,4 +1,3 @@
-from plugins.kubernetes import auth
 from kubernetes import client, config
 from textwrap import dedent
 import json, utils
@@ -136,6 +135,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     return apps
     
 def main(forward_dns, reverse_dns):
+    auth = utils.auth['plugins']['kubernetes']
     allApps = {}
     for context in auth:
         allApps[context] = getApps(context)
@@ -155,3 +155,4 @@ def main(forward_dns, reverse_dns):
         stream.write(json.dumps(workers, indent=2, cls=utils.JSONEncoder))
     utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/src/apps.xml')
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
+    utils.xslt('plugins/kubernetes/clusters.xsl', 'plugins/kubernetes/src/workers.xml')
