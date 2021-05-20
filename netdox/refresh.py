@@ -1,7 +1,5 @@
-import nat_inf, license_inf   # other info
-import pluginmaster, cleanup, iptools, ps_api, utils   # utility scripts
-
-import subprocess, shutil, boto3, json, os
+import pluginmaster, license_inf, cleanup, iptools, ps_api, utils   # utility scripts
+import subprocess, shutil, json, os
 from distutils.util import strtobool
 from bs4 import BeautifulSoup
 
@@ -142,22 +140,6 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
 ###########################
 
 @utils.handle
-def aws_ec2(dns_set: dict[str, utils.DNSRecord]):
-    """
-    Links domains to AWS EC2 instances with the same IP
-    """
-    client = boto3.client('ec2')
-    allEC2 = client.describe_instances()
-    for domain in dns_set:
-        dns = dns_set[domain]
-        for reservation in allEC2['Reservations']:
-            for instance in reservation['Instances']:
-                if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
-                    dns.link(instance['InstanceId'], 'ec2')
-
-    utils.write_dns(allEC2, 'aws')
-
-@utils.handle
 def locations(dns_set: dict[str, utils.DNSRecord]):
     for domain in dns_set:
         dns = dns_set[domain]
@@ -235,7 +217,6 @@ def main():
 
     # apply additional modifications/filters
     apply_roles(forward)
-    aws_ec2(forward)
     locations(forward)
     license_keys(forward)
     license_orgs(forward)
@@ -251,8 +232,6 @@ def main():
     # Write IP documents
     ips(forward, reverse)
     utils.xslt('ips.xsl', 'src/ips.xml')
-    # Write AWS documents
-    utils.xslt('aws.xsl', 'src/aws.xml')
 
     screenshots()
     cleanup.clean()

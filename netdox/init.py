@@ -12,7 +12,6 @@ def init():
     Initialises container and makes it usable for serve and refresh
     """
     psauth = utils.auth['pageseeder']
-    awsauth = utils.auth['aws']
 
     # setting up dirs
     for path in ('out', '/etc/ext/base'):
@@ -24,7 +23,7 @@ def init():
             os.mkdir('out/'+path)
     
     # generate xslt json import files
-    for type in ('ips', 'dns', 'aws', 'review', 'templates'):
+    for type in ('ips', 'dns', 'review', 'templates'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(dedent(f"""
             <?xml version="1.0" encoding="UTF-8"?>
@@ -53,16 +52,6 @@ def init():
     with open('build.xml','w') as stream:
         soup.find('ps:upload')['group'] = psauth['group']
         stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
-
-    # set up aws iam profile
-    with open('src/awsconfig', 'w') as stream:
-        stream.write(dedent(f"""
-        [default]
-        output = json
-        region = {awsauth['region']}
-        aws_access_key_id = {awsauth['aws_access_key_id']}
-        aws_secret_access_key = {awsauth['aws_secret_access_key']}
-        """).strip())
 
 
 ################### Find alternative to this
