@@ -1,7 +1,6 @@
 import os, re, json, subprocess
 import iptools, utils
 
-@utils.critical
 def fetchDNS(forward, reverse):
     """
 	Returns tuple containing forward and reverse DNS records from ActiveDirectory

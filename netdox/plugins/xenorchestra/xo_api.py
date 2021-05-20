@@ -123,7 +123,6 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
             except KeyError:
                 pass
 
-@utils.critical
 @authenticate
 async def fetchObjects(dns):
     """

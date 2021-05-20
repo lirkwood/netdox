@@ -1,7 +1,6 @@
 import json, requests
 import utils
 
-@utils.handle
 def main(forward, reverse):
     """
     Returns tuple containing forward and reverse DNS records from Cloudflare

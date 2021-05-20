@@ -37,7 +37,6 @@ def fetchDomains():
 			yield (record['id'], record['name'])
 
 
-@utils.critical
 def fetchDNS(forward, reverse):
 	"""
 	Returns tuple containing forward and reverse DNS records from DNSMadeEasy
