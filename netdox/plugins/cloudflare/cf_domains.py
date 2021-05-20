@@ -1,7 +1,7 @@
 import json, requests
 import utils
 
-def main(forward, reverse):
+def main(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]):
     """
     Returns tuple containing forward and reverse DNS records from Cloudflare
     """
@@ -42,11 +42,11 @@ def fetch_zones():
 
 
 @utils.handle
-def add_A(dns_set, record):
+def add_A(dns_set: dict[str, utils.DNSRecord], record: dict):
     """
     Integrates one A record into a dns set from json returned by Cloudflare api
     """
-    fqdn = record['name']
+    fqdn = record['name'].lower()
     root = record['zone_name']
     ip = record['content']
 
@@ -55,11 +55,11 @@ def add_A(dns_set, record):
     dns_set[fqdn].link(ip, 'ipv4')
 
 @utils.handle
-def add_CNAME(dns_set, record):
+def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict):
     """
     Integrates one CNAME record into a dns set from json returned by Cloudflare api
     """
-    fqdn = record['name']
+    fqdn = record['name'].lower()
     root = record['zone_name']
     dest = record['content']
 
@@ -68,7 +68,7 @@ def add_CNAME(dns_set, record):
     dns_set[fqdn].link(dest, 'domain')
 
 @utils.handle
-def add_PTR(dns_set, record):
+def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict):
     """
     Integrates one PTR record into a dns set from json returned by Cloudflare api
     """

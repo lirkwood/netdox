@@ -1,9 +1,10 @@
 from datetime import datetime
 import re, hmac, json, hashlib, requests
+from typing import Generator, Tuple
 import iptools, utils
 
 
-def genheader():
+def genheader() -> dict[str, str]:
 	"""
 	Generates authentication header for DNSME api
 	"""
@@ -24,7 +25,7 @@ def genheader():
 	return header
 
 
-def fetchDomains():
+def fetchDomains() -> Generator[Tuple[str, str]]:
 	"""
 	Generator which returns a tuple containing one managed domain's ID and name
 	"""
@@ -37,7 +38,7 @@ def fetchDomains():
 			yield (record['id'], record['name'])
 
 
-def fetchDNS(forward, reverse):
+def fetchDNS(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]):
 	"""
 	Returns tuple containing forward and reverse DNS records from DNSMadeEasy
 	"""
@@ -58,7 +59,7 @@ def fetchDNS(forward, reverse):
 
 
 @utils.handle
-def add_A(dns_set, record, root):
+def add_A(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	"""
 	Integrates one A record into a dns set from json returned by DNSME api
 	"""
@@ -71,7 +72,7 @@ def add_A(dns_set, record, root):
 	dns_set[fqdn].link(ip, 'ipv4')
 
 @utils.handle
-def add_CNAME(dns_set, record, root):
+def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	"""
 	Integrates one CNAME record into a dns set from json returned by DNSME api
 	"""
@@ -85,7 +86,7 @@ def add_CNAME(dns_set, record, root):
 	dns_set[fqdn].link(dest, 'domain')	
 
 @utils.handle
-def add_PTR(dns_set, record, root):
+def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	"""
 	Integrates one PTR record into a dns set from json returned by DNSME api
 	"""
@@ -101,7 +102,7 @@ def add_PTR(dns_set, record, root):
 		dns_set[ip].link(fqdn)
 
 
-def assemble_fqdn(subdomain, root):
+def assemble_fqdn(subdomain: str, root: str) -> str:
 	if not subdomain:
 		fqdn = root
 	elif root in subdomain:
@@ -112,7 +113,7 @@ def assemble_fqdn(subdomain, root):
 		fqdn = '_wildcard_.' + root
 	else:
 		fqdn = subdomain +'.'+ root
-	return fqdn.strip('.').strip()
+	return fqdn.strip('.').strip().lower()
 
 
 @utils.handle

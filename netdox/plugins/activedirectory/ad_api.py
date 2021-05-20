@@ -1,7 +1,7 @@
 import os, re, json, subprocess
 import iptools, utils
 
-def fetchDNS(forward, reverse):
+def fetchDNS(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]):
     """
 	Returns tuple containing forward and reverse DNS records from ActiveDirectory
     """
@@ -23,7 +23,7 @@ def fetchDNS(forward, reverse):
                         add_PTR(reverse, record)
 
 
-def fetchJson():
+def fetchJson() -> os.DirEntry:
     """
     Generator which yields a json file containing some DNS records
     """
@@ -33,7 +33,7 @@ def fetchJson():
 
 
 @utils.handle
-def add_A(dns_set, record):
+def add_A(dns_set: dict[str, utils.DNSRecord], record: dict):
     """
 	Integrates one A record into a dns set from json returned by AD api
     """
@@ -55,7 +55,7 @@ def add_A(dns_set, record):
 
 
 @utils.handle
-def add_CNAME(dns_set, record):
+def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict):
     """
 	Integrates one CNAME record into a dns set from json returned by AD api
     """
@@ -78,7 +78,7 @@ def add_CNAME(dns_set, record):
 
 
 @utils.handle
-def add_PTR(dns_set, record):
+def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict):
     """
 	Integrates one PTR record into a dns set from json returned by AD api
     """
@@ -97,7 +97,7 @@ def add_PTR(dns_set, record):
         dns_set[ip.ipv4].link(dest)
 
 
-def assemble_fqdn(subdomain, root):
+def assemble_fqdn(subdomain: str, root: str) -> str:
     if subdomain == '@':
         fqdn = root
     elif subdomain == '*':
@@ -106,7 +106,7 @@ def assemble_fqdn(subdomain, root):
         fqdn = subdomain
     else:
         fqdn = subdomain + '.' + root
-    return fqdn
+    return fqdn.lower()
 
 
 def create_forward(name, ip, zone, type):
