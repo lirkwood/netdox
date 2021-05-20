@@ -41,4 +41,4 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
 
     with open('plugins/aws/src/aws.json', 'w') as stream:
         stream.write(json.dumps(allEC2, indent=2, cls=utils.JSONEncoder))
-    utils.xslt('plugins/src/aws/aws.xsl', 'plugins/aws/src/aws.xml')
+    utils.xslt('plugins/aws/aws.xsl', 'plugins/aws/src/aws.xml')
