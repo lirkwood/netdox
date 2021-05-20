@@ -2,12 +2,10 @@ import os, re, json, subprocess
 import iptools, utils
 
 @utils.critical
-def fetchDNS():
+def fetchDNS(forward, reverse):
     """
 	Returns tuple containing forward and reverse DNS records from ActiveDirectory
     """
-    forward = {}
-    reverse = {}
     for file in fetchJson():
         with open(file, 'r') as stream:
             try:
@@ -24,8 +22,6 @@ def fetchDNS():
                     
                     elif record['RecordType'] == 'PTR':
                         add_PTR(reverse, record)
-    
-    return (forward, reverse)
 
 
 def fetchJson():
