@@ -1,7 +1,7 @@
 import nat_inf, license_inf   # other info
-import pluginmaster, ansible, cleanup, iptools, ps_api, utils   # utility scripts
+import pluginmaster, cleanup, iptools, ps_api, utils   # utility scripts
 
-import subprocess, asyncio, shutil, boto3, json, os
+import subprocess, shutil, boto3, json, os
 from distutils.util import strtobool
 from bs4 import BeautifulSoup
 
@@ -142,19 +142,6 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
 ###########################
 
 @utils.handle
-def nat(dns_set: dict[str, utils.DNSRecord]):
-    """
-    Integrates IPs from NAT into a dns set
-    """
-    nat_inf.pfsense()
-    for domain in dns_set:
-        dns = dns_set[domain]
-        for ip in dns.ips:
-            ip_alias = nat_inf.lookup(ip)
-            if ip_alias:
-                dns.link(ip_alias, 'ipv4')
-
-@utils.handle
 def aws_ec2(dns_set: dict[str, utils.DNSRecord]):
     """
     Links domains to AWS EC2 instances with the same IP
@@ -243,12 +230,11 @@ def screenshots():
 def main():
     # Run DNS and ext resource plugins
     forward, reverse = {}, {}
-    pluginmaster.runPlugins('dns', forward, reverse)
-    pluginmaster.runPlugins('resource', forward, reverse)
+    pluginmaster.runStage('dns', forward, reverse)
+    pluginmaster.runStage('resource', forward, reverse)
 
     # apply additional modifications/filters
     apply_roles(forward)
-    nat(forward)
     aws_ec2(forward)
     locations(forward)
     license_keys(forward)
@@ -256,7 +242,7 @@ def main():
     labels(forward)
 
     # Run remaining plugins
-    pluginmaster.runPlugins('other', forward, reverse)
+    pluginmaster.runStage('other', forward, reverse)
 
     utils.write_dns(forward)
     utils.write_dns(reverse, 'reverse')
