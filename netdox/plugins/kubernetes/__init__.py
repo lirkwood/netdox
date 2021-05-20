@@ -6,6 +6,7 @@ import os, utils
 if not os.path.exists('plugins/kubernetes/out'):
     os.mkdir('plugins/kubernetes/out')
 
+global auth
 auth = utils.auth['plugins']['kubernetes']
 with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
     clusters = ''

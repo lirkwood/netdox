@@ -1,3 +1,4 @@
+from plugins.kubernetes import auth
 from kubernetes import client, config
 from textwrap import dedent
 import json, utils
@@ -134,17 +135,19 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     
     return apps
     
-def main():
-    domainPods = {}
+def main(forward_dns, reverse_dns):
     allApps = {}
-    for context in utils.auth['plugins']['kubernetes']:
+    for context in auth:
         allApps[context] = getApps(context)
         for appName, app in allApps[context].items():
             for domain in app['domains']:
-                if domain not in domainPods:
-                    domainPods[domain] = set()
-                domainPods[domain].add(appName)
-
+                if domain not in forward_dns:
+                    forward_dns[domain] = utils.dns(domain, source='Kubernetes')
+                elif not forward_dns[domain].location:
+                    if 'location' in auth[context]:
+                        forward_dns[domain].location = auth[context]['location']
+                forward_dns[domain].link(appName, 'k8s_app')
+    
     with open('plugins/kubernetes/src/apps.json', 'w') as stream:
         stream.write(json.dumps(allApps, indent=2, cls=utils.JSONEncoder))
     workers = {}
@@ -152,5 +155,3 @@ def main():
         stream.write(json.dumps(workers, indent=2, cls=utils.JSONEncoder))
     utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/src/apps.xml')
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
-
-    return domainPods
