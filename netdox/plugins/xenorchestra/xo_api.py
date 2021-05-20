@@ -102,10 +102,25 @@ async def fetchObj(uuid):
 ##################
 
 def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
-    asyncio.run(fetchObjects(forward_dns))
+    # Generate XO Docs
+    vms, pools, hosts = asyncio.run(fetchObjects(forward_dns))
+    del pools, hosts
     utils.xslt('plugins/xenorchestra/vms.xsl', 'plugins/xenorchestra/src/vms.xml')
     utils.xslt('plugins/xenorchestra/hosts.xsl', 'plugins/xenorchestra/src/hosts.xml')
     utils.xslt('plugins/xenorchestra/pools.xsl', 'plugins/xenorchestra/src/pools.xml')
+
+    # Generate template map for webhooks
+    asyncio.run(template_map(vms))
+
+    for domain in forward_dns:
+        dns = forward_dns[domain]
+        for uuid in vms:
+            vm = vms[uuid]
+            try:
+                if vm['mainIpAddress'] in dns.ips:
+                    dns.link(uuid, 'vm')
+            except KeyError:
+                pass
 
 @utils.critical
 @authenticate
@@ -157,6 +172,8 @@ async def fetchObjects(dns):
     writeJson(poolHosts, 'devices')
     writeJson(hostVMs, 'residents')
 
+    return vms, hosts, pools
+
 
 @utils.handle
 @authenticate
@@ -189,3 +206,35 @@ async def createVM(uuid, name=None):
 
         else:
             raise ValueError(f'[ERROR][xo_api.py] Invalid template type {object["type"]}')
+
+
+@utils.handle
+@authenticate
+async def template_map(vms):
+    """
+    Generates json with all vms/snapshots/templates
+    """
+    vmSource = {
+        'vms': {},
+        'snapshots': {},
+        'templates': {}
+    }
+    templates = await fetchType('VM-template')
+    snapshots = await fetchType('VM-snapshot')
+
+    for vm in vms:
+        if vms[vm]['power_state'] == 'Running':
+            name = vms[vm]['name_label']
+            vmSource['vms'][name] = vm
+
+    for snapshot in snapshots:
+        name = snapshots[snapshot]['name_label']
+        vmSource['snapshots'][name] = snapshot
+        
+    for template in templates:
+        name = templates[template]['name_label']
+        vmSource['templates'][name] = template
+
+    with open('src/templates.json', 'w', encoding='utf-8') as stream:
+        stream.write(json.dumps(vmSource, indent=2, ensure_ascii=False))
+    utils.xslt('templates.xsl', 'src/templates.xml', 'out/config/templates.psml')
