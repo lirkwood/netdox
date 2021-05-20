@@ -1,7 +1,4 @@
 from paramiko import client, AutoAddPolicy
-import utils
-
-icinga_hosts = utils.auth['icinga']
 
 ## Main functions
 
