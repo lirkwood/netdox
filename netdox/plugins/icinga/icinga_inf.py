@@ -95,7 +95,7 @@ def dnsLookup(dns: utils.DNSRecord) -> bool:
         if dns.name in generated[icinga_host]:
             if manual_monitor:
                 print(f'[WARNING][icinga] {dns.name} has manual and generated monitor object. Removing generated object...')
-                ansible.icinga_pause(dns.name, icinga = icinga_host)
+                ansible.pause(dns.name, icinga = icinga_host)
             else:
                 # if template already valid, load service info
                 if validateTemplate(dns, icinga_host):
@@ -108,7 +108,7 @@ def dnsLookup(dns: utils.DNSRecord) -> bool:
     # if has no monitor, assign one
     if not dns.icinga and dns.location:
         if dns.role != 'unmonitored':
-            ansible.icinga_set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
+            ansible.set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
         else:
             return True
         return False
@@ -141,10 +141,10 @@ def validateTemplate(dns: utils.DNSRecord, icinga_host: str) -> bool:
     template_name = generated[icinga_host][dns.name]['templates'][0]
 
     if dns.role != 'unmonitored' and utils.config[dns.role]['template'] != template_name:
-        ansible.icinga_set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
+        ansible.set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
 
     elif dns.role == 'unmonitored':
-        ansible.icinga_pause(dns.name, icinga = icinga_host)
+        ansible.pause(dns.name, icinga = icinga_host)
     
     else:
         return True
@@ -181,4 +181,4 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
         for addr in addr_set:
             if addr not in forward_dns:
                 print(f'[INFO][icinga] Stale monitor for domain {addr}. Removing...')
-                ansible.icinga_pause(addr, icinga=icinga)
+                ansible.pause(addr, icinga=icinga)
