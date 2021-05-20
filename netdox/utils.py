@@ -209,7 +209,7 @@ class DNSRecord:
     def update(self):
         for ip in self.private_ips:
             self.subnets.add(iptools.sort(ip))
-        self.location = locate(self.private_ips)
+        self.location = locate(self.ips)
 
 
 class PTRRecord:
