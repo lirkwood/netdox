@@ -2,13 +2,11 @@ import json, requests
 import utils
 
 @utils.handle
-def main():
+def main(forward, reverse):
     """
     Returns tuple containing forward and reverse DNS records from Cloudflare
     """
     init()
-    forward = {}
-    reverse = {}
     for id in fetch_zones():
         service = f'zones/{id}/dns_records'
         response = requests.get(base+service, headers=header).text
@@ -20,8 +18,6 @@ def main():
                 add_CNAME(forward, record)
             elif record['type'] == 'PTR':
                 add_PTR(reverse, record)
-    
-    return (forward, reverse)
 
 
 def init():
