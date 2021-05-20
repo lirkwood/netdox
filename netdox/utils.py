@@ -7,12 +7,17 @@ from traceback import format_exc
 from datetime import datetime
 from sys import argv
 
-## Global
+## Global vars
 
 with open('src/authentication.json', 'r') as stream:
     global auth
     auth = json.load(stream)
 
+dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
+
+##############
+# Decorators #
+##############
 
 def critical(func):
     """
@@ -52,6 +57,9 @@ def handle(func):
             return returned
     return wrapper
 
+############################
+# Location helper function #
+############################
 
 try:
     with open('src/locations.json', 'r') as stream:
@@ -112,19 +120,19 @@ def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
     except IndexError:
         return None
 
+###########
+# Classes #
+###########
 
-
-dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
-
-class dns:
+class DNSRecord:
+    """
+    Forward DNS record
+    """
     name: str
     root: str
     source: str
     location: str
 
-    """
-    Class representing some DNS record
-    """
 
     def __init__(self, name: str, root: str=None, source: str=None, constructor: dict=None):
         if constructor:
@@ -204,7 +212,10 @@ class dns:
         self.location = locate(self.private_ips)
 
 
-class ptr:
+class PTRRecord:
+    """
+    Reverse DNS record
+    """
     ipv4: str
     name: str
     subnet: str
@@ -234,21 +245,28 @@ class ptr:
             self.ptrs.add(name)
 
 
-@handle
-def loadDNS(file: Union[str, DirEntry]):
-    d = {}
-    with open(file, 'r') as stream:
-        jsondata = json.load(stream)
-        for key, constructor in jsondata.items():
-            d[key] = dns(key, constructor=constructor)
-    return d
+class JSONEncoder(json.JSONEncoder):
+    """
+    JSON Encoder compatible with DNSRecord and PTRRecord, sets, and datetime objects
+    """
+    def default(self, obj):
+        if isinstance(obj, DNSRecord) or isinstance(obj, PTRRecord):
+            return obj.__dict__
+        elif isinstance(obj, set):
+            return sorted(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        return json.JSONEncoder.default(self, obj)
 
+###################################
+# DNSRecord convenience functions #
+###################################
 
-def merge_sets(dns1: dns, dns2: dns) -> dns:
+def merge_sets(dns1: DNSRecord, dns2: DNSRecord) -> DNSRecord:
     """
     Simple merge of any sets of found in two dns objects
     """
-    if isinstance(dns1, dns) and isinstance(dns2, dns):
+    if isinstance(dns1, DNSRecord) and isinstance(dns2, DNSRecord):
         dns1_inf = dns1.__dict__
         dns2_inf = dns2.__dict__
         for attr in dns2_inf:
@@ -258,19 +276,28 @@ def merge_sets(dns1: dns, dns2: dns) -> dns:
     else:
         raise TypeError(f'Arguments must be dns objects, not {type(dns1)}, {type(dns2)}')
 
+def integrate(superset: dict[str, DNSRecord], dns_set: dict[str, DNSRecord]) -> dict[str, DNSRecord]:
+    """
+    Integrates some set of dns records into a master set
+    """
+    for domain in dns_set:
+        dns = dns_set[domain]
+        if domain not in superset:
+            superset[dns.name] = dns
+        else:
+            superset[domain] = merge_sets(superset[domain], dns_set[domain])
 
-class JSONEncoder(json.JSONEncoder):
+@handle
+def loadDNS(file: Union[str, DirEntry]) -> dict[str, DNSRecord]:
     """
-    Default json encoder except set type is encoded as sorted list
+    Loads some json file as a set of DNSRecords
     """
-    def default(self, obj):
-        if isinstance(obj, dns) or isinstance(obj, ptr):
-            return obj.__dict__
-        elif isinstance(obj, set):
-            return sorted(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
+    d = {}
+    with open(file, 'r') as stream:
+        jsondata = json.load(stream)
+        for key, constructor in jsondata.items():
+            d[key] = DNSRecord(key, constructor=constructor)
+    return d
 
 @critical
 def write_dns(dns_set, name='dns'):
@@ -280,6 +307,9 @@ def write_dns(dns_set, name='dns'):
     with open(f'src/{name}.json', 'w') as dns:
         dns.write(json.dumps(dns_set, cls=JSONEncoder, indent=2))
 
+#######################################
+# Miscellaneous convenience functions #
+#######################################
 
 def xslt(xsl, src, out=None):
     """
@@ -294,6 +324,9 @@ def xslt(xsl, src, out=None):
 
 @critical
 def loadConfig():
+    """
+    Loads the DNS config as a global var if it exists
+    """
     global config
     try:
         with open('src/config.json', 'r') as stream:
@@ -302,7 +335,7 @@ def loadConfig():
         config = {'exclusions': []}
 
 
-def fileFetchRecursive(dir: Union[str, DirEntry]) -> list:
+def fileFetchRecursive(dir: Union[str, DirEntry]) -> list[str]:
     """
     Returns a list of paths of all files descended from some directory.
     """
