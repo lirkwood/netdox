@@ -21,9 +21,6 @@ ENV PYTHONUNBUFFERED="true"
 ENV ANT_HOME=/opt/ant/apache-ant-1.10.9
 ENV PATH=${PATH}:/opt/app:${ANT_HOME}/bin
 
-# set aws-cli config
-ENV AWS_CONFIG_FILE=/opt/app/src/awsconfig
-
 # set tz
 ENV TZ="Australia/Sydney"
 

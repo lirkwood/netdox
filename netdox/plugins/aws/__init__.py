@@ -4,6 +4,7 @@ stage = 'resource'
 
 if not os.path.exists('plugins/aws/src'):
     os.mkdir('plugins/aws/src')
+os.environ['AWS_CONFIG_FILE'] = '/opt/app/plugins/aws/src/awsconfig'
 
 auth = utils.auth['plugins']['aws']
 # set up aws iam profile
