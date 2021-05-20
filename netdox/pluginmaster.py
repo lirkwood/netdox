@@ -1,9 +1,9 @@
 import utils
 import importlib, os
 from traceback import format_exc
-from typing import Any, Generator, Tuple
+from typing import Any, Callable, Generator, Tuple
 
-def fetchRunners() -> Generator[Tuple[Any, os.DirEntry], Any, Any]:
+def fetchRunners() -> Generator[Tuple[Callable[[dict[str, utils.DNSRecord], dict[str, utils.DNSRecord]], None], os.DirEntry], Any, Any]:
     for plugindir in os.scandir('plugins'):
         if plugindir.is_dir() and plugindir.name != '__pycache__':
             pluginName = plugindir.name
