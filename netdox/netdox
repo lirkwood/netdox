@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
+## Serve webhook listener
+function serve {
+    echo -e '[INFO][netdox] Starting gunicorn server on 8080\n'
+    gunicorn --reload -b '0.0.0.0:8080' serve:app
+}
+
+## Refresh DNS data and upload to PageSeeder
 function refresh {
     _refresh 2>&1 | tee "/var/log/refresh-$(date +%F-T%T).log"
 }
-
 function _refresh {
     for dir in /opt/app/out/*; do
         rm -rf ${dir}/*
@@ -31,11 +37,7 @@ function _refresh {
     cp /opt/app/src/dns.json /etc/ext/cfg/dns.json &> /dev/null
 }
 
-function serve {
-    echo -e '[INFO][netdox] Starting gunicorn server on 8080\n'
-    gunicorn --reload -b '0.0.0.0:8080' serve:app
-}
-
+## Initialise container to allow other processes to run
 function init {
     echo '[INFO][netdox] Pod started. Running init script...'
     
@@ -60,7 +62,6 @@ function init {
     if python3 init.py
         then
             echo '[INFO][netdox] Python initialisation successful.'
-            refresh & serve
         else
             echo '[ERROR][netdox] Python initialisation unsuccessful. Terminating...'
             exit 1
@@ -70,10 +71,16 @@ function init {
 }
 
 
-methods=("refresh" "serve" "init")
+methods=("init" "refresh" "serve")
 for arg in "$@"; do
     if [[ ${methods[@]} =~ $arg ]]
-        then
-            $arg
+        then case $arg in;
+            init)
+                init
+                ;;
+            *)
+                $arg &
+                ;;
+        esac
     fi
 done
