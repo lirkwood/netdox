@@ -1,6 +1,6 @@
 from datetime import datetime
 import re, hmac, json, hashlib, requests
-from typing import Generator, Tuple
+from typing import Any, Generator, Tuple
 import iptools, utils
 
 
@@ -25,7 +25,7 @@ def genheader() -> dict[str, str]:
 	return header
 
 
-def fetchDomains() -> Generator[Tuple[str, str]]:
+def fetchDomains() -> Generator[Tuple[str, str], Any, Any]:
 	"""
 	Generator which returns a tuple containing one managed domain's ID and name
 	"""
