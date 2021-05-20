@@ -1,6 +1,10 @@
 from typing import Tuple
 import requests, json
 import utils
+try:
+    import plugins.ansible.icinga as ansible
+except Exception:
+    raise ImportError('[ERROR][icinga] Unable to import ansible.icinga plugin, which this plugin relies on.')
 
 icinga_hosts = utils.auth['icinga']
 
@@ -170,11 +174,6 @@ def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
 
 ## Plugin runner
 def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
-    try:
-        import plugins.ansible.icinga as ansible
-    except Exception:
-        raise ImportError('[ERROR][icinga] Unable to import ansible.icinga plugin, which this plugin relies on.')
-        
     setServices(forward_dns)
 
     # Removes any generated monitors for domains no longer in the DNS
