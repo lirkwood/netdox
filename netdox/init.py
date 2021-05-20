@@ -1,7 +1,6 @@
-import json, os
+import os, utils
 from textwrap import dedent
 from bs4 import BeautifulSoup
-import dnsme_api, utils
 
 ##################
 # Initialisation #
@@ -15,9 +14,6 @@ def init():
     psauth = utils.auth['pageseeder']
     awsauth = utils.auth['aws']
 
-    # generate map of all dns zones
-    fetchZones()
-
     # setting up dirs
     for path in ('out', '/etc/ext/base'):
         if not os.path.exists(path):
@@ -28,7 +24,7 @@ def init():
             os.mkdir('out/'+path)
     
     # generate xslt json import files
-    for type in ('ips', 'dns', 'vms', 'hosts', 'pools', 'aws', 'review', 'templates'):
+    for type in ('ips', 'dns', 'aws', 'review', 'templates'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(dedent(f"""
             <?xml version="1.0" encoding="UTF-8"?>
@@ -58,6 +54,9 @@ def init():
         soup.find('ps:upload')['group'] = psauth['group']
         stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
+    # Load plugins
+
+
     # set up aws iam profile
     with open('src/awsconfig', 'w') as stream:
         stream.write(dedent(f"""
@@ -69,19 +68,20 @@ def init():
         """).strip())
 
 
-def fetchZones():
-    zones = {
-        "dnsme": {},
-        "ad": {},
-        "k8s": {},
-        "cf": {}
-    }    
+################### Find alternative to this
+# def fetchZones():
+#     zones = {
+#         "dnsme": {},
+#         "ad": {},
+#         "k8s": {},
+#         "cf": {}
+#     }    
 
-    for id, domain in dnsme_api.fetchDomains():
-        zones['dnsme'][domain] = id
+#     for id, domain in dnsme_api.fetchDomains():
+#         zones['dnsme'][domain] = id
     
-    with open('src/zones.json', 'w') as stream:
-        stream.write(json.dumps(zones, indent=2))
+#     with open('src/zones.json', 'w') as stream:
+#         stream.write(json.dumps(zones, indent=2))
 
 
 if __name__ == '__main__':
