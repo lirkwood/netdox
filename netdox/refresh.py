@@ -1,6 +1,5 @@
-import ps_api, ad_api, cf_domains, k8s_domains, dnsme_api   # dns query scripts
-import k8s_inf, xo_api, nat_inf, icinga_inf, license_inf   # other info
-import ansible, cleanup, iptools, utils   # utility scripts
+import nat_inf, icinga_inf, license_inf   # other info
+import pluginmaster, ansible, cleanup, iptools, ps_api, utils   # utility scripts
 
 import subprocess, asyncio, shutil, boto3, json, os
 from distutils.util import strtobool
@@ -25,6 +24,9 @@ def init():
                     shutil.rmtree(file)
         else:
             os.remove(folder)
+
+    #Initialise plugins
+    pluginmaster.initPlugins()
 
     # load dns config from pageseeder
     config = {"exclusions": []}
@@ -78,54 +80,8 @@ def init():
 # Gathering DNS info #
 ######################
 
-@utils.handle
-def integrate(superset, dns_set):
-    """
-    Integrates some set of dns records into a master set
-    """
-    for domain in dns_set:
-        dns = dns_set[domain]
-        if domain not in superset:
-            superset[dns.name] = dns
-        else:
-            superset[domain] = utils.merge_sets(superset[domain], dns_set[domain])
-
-## All queries called from here
 @utils.critical
-def queries():
-    """
-    Makes all queries and returns complete dns set
-    """
-    # Main sets of DNS records, dns_obj.name: dns_obj
-    forward = {}
-    reverse = {}
-
-    # DNS queries
-    ad_f, ad_r = ad_api.fetchDNS()
-    dnsme_f, dnsme_r = dnsme_api.fetchDNS()
-    cf_f, cf_r = cf_domains.main()
-
-    for source in (ad_f, dnsme_f, cf_f):
-        integrate(forward, source)
-        del source
-    for source in (ad_r, dnsme_r, cf_r):
-        integrate(reverse, source)
-        del source
-
-    # VM/App/AWS queries
-    asyncio.run(xo_api.fetchObjects(forward))
-    k8s_inf.main()
-    aws_inf()
-
-    # More DNS (move this)
-    k8s = k8s_domains.main()
-    integrate(forward, k8s)
-
-    return (forward, reverse)
-
-
-@utils.critical
-def ips(forward, reverse):
+def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]):
     """
     Assembles unique set of all ips referenced in the dns and writes it
     """
@@ -134,25 +90,19 @@ def ips(forward, reverse):
         dns = forward[domain]
         for ip in dns.ips:
             if ip not in reverse:
-                reverse[ip] = utils.ptr(ip, source=dns.source)
+                reverse[ip] = utils.PTRRecord(ip, source=dns.source)
             if not iptools.public_ip(ip):
                 subnets.add(reverse[ip].subnet)
     
     for subnet in subnets:
         for ip in iptools.subn_iter(subnet):
             if ip not in reverse:
-                reverse[ip] = utils.ptr(ip, source='Generated', unused=True)
+                reverse[ip] = utils.PTRRecord(ip, source='Generated', unused=True)
 
     utils.write_dns(reverse, 'ips')
 
 @utils.critical
-def aws_inf():
-    client = boto3.client('ec2')
-    instances = client.describe_instances()
-    utils.write_dns(instances, 'aws')
-
-@utils.critical
-def apply_roles(dns_set):
+def apply_roles(dns_set: dict[str, utils.DNSRecord]):
     """
     Applies custom roles defined in _nd_config
     """
@@ -190,7 +140,7 @@ def apply_roles(dns_set):
 ###########################
 
 @utils.handle
-def nat(dns_set):
+def nat(dns_set: dict[str, utils.DNSRecord]):
     """
     Integrates IPs from NAT into a dns set
     """
@@ -203,43 +153,25 @@ def nat(dns_set):
                 dns.link(ip_alias, 'ipv4')
 
 @utils.handle
-def xo_vms(dns_set):
-    """
-    Links domains to Xen Orchestra VMs with the same IP
-    """
-    with open('src/vms.json', 'r') as stream:
-        vms = json.load(stream)
-        for domain in dns_set:
-            dns = dns_set[domain]
-            for uuid in vms:
-                vm = vms[uuid]
-                try:
-                    if vm['mainIpAddress'] in dns.ips:
-                        dns.link(uuid, 'vm')
-                except KeyError:
-                    pass
-
-@utils.handle
-def aws_ec2(dns_set):
+def aws_ec2(dns_set: dict[str, utils.DNSRecord]):
     """
     Links domains to AWS EC2 instances with the same IP
     """
-    with open('src/aws.json', 'r') as stream:
-        aws = json.load(stream)
-        for domain in dns_set:
-            dns = dns_set[domain]
-            for reservation in aws['Reservations']:
-                for instance in reservation['Instances']:
-                    if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
-                        dns.link(instance['InstanceId'], 'ec2')
-
-@utils.handle
-def locations(dns_set):
+    client = boto3.client('ec2')
+    allEC2 = client.describe_instances()
     for domain in dns_set:
         dns = dns_set[domain]
+        for reservation in allEC2['Reservations']:
+            for instance in reservation['Instances']:
+                if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
+                    dns.link(instance['InstanceId'], 'ec2')
 
-        if not dns.location:
-            dns.location = utils.locate(dns.ips)
+    utils.write_dns(allEC2, 'aws')
+
+@utils.handle
+def locations(dns_set: dict[str, utils.DNSRecord]):
+    for domain in dns_set:
+        dns = dns_set[domain]
 
         if not dns.location:
             for alias in dns.cnames:
@@ -248,32 +180,12 @@ def locations(dns_set):
                         dns.location = dns_set[alias].location
                 except KeyError:
                     pass
-
-        if not dns.location:
-            with open('src/apps.json') as stream:
-                apps = json.load(stream)
-                appips = []
-                for appname in dns.apps:
-                    for context in apps.keys():
-                        if appname in apps[context]:
-                            app = apps[context][appname]
-                            for podname, pod in app['pods'].items():
-                                appips.append(pod['hostip'])
-            dns.location = utils.locate(appips)
-
-        if not dns.location:
-            vmips = []
-            for vmid in dns.vms:
-                vm = asyncio.run(xo_api.authenticate(xo_api.fetchObj)(vmid))
-                if 'mainIpAddress' in vm and iptools.valid_ip(vm['mainIpAddress']):
-                    vmips.append(vm['mainIpAddress'])
-            dns.location = utils.locate(vmips)
         
         if not dns.location:
             print(f'[WARNING][refresh.py] Domain {domain} has no location data and therefore may not be monitored.')
 
 @utils.handle
-def icinga_services(dns_set, depth=0):
+def icinga_services(dns_set: dict[str, utils.DNSRecord], depth: int=0):
     if depth <= 1:
         icinga_inf.objectsByDomain()
         tmp = {}
@@ -287,7 +199,7 @@ def icinga_services(dns_set, depth=0):
         print(f'[WARNING][refresh.py] Abandoning domains without proper monitor: {dns_set.keys()}')
 
 @utils.handle
-def icinga_stale(dns_set):
+def icinga_stale(dns_set: dict[str, utils.DNSRecord]):
     """
     Removes any generated monitors for domains no longer in the DNS
     """
@@ -298,7 +210,7 @@ def icinga_stale(dns_set):
                 ansible.icinga_pause(addr, icinga=icinga)
 
 @utils.handle
-def license_keys(dns_set):
+def license_keys(dns_set: dict[str, utils.DNSRecord]):
     """
     Integrates license keys into a dns set
     """
@@ -311,7 +223,7 @@ def license_keys(dns_set):
                 print(f'[WARNING][refresh.py] {dns.name} has a PageSeeder license but is using role {dns.role}')
 
 @utils.handle
-def license_orgs(dns_set):
+def license_orgs(dns_set: dict[str, utils.DNSRecord]):
     """
     Integrates organisations into a dns set inferred from associated license
     """
@@ -322,7 +234,7 @@ def license_orgs(dns_set):
                 dns.org = org_id
 
 @utils.handle
-def labels(dns_set):
+def labels(dns_set: dict[str, utils.DNSRecord]):
     """
     Applies any relevant document labels
     """
@@ -332,43 +244,6 @@ def labels(dns_set):
     #     # Icinga
     #     if 'icinga' in dns.__dict__:
     #         dns.labels.append('icinga_not_monitored')
-
-
-#####################################
-# Generating config files for users #
-#####################################
-
-@utils.handle
-@xo_api.authenticate
-async def template_map():
-    """
-    Generates json with all vms/snapshots/templates
-    """
-    vmSource = {
-        'vms': {},
-        'snapshots': {},
-        'templates': {}
-    }
-    vms = await xo_api.fetchType('VM')
-    templates = await xo_api.fetchType('VM-template')
-    snapshots = await xo_api.fetchType('VM-snapshot')
-
-    for vm in vms:
-        if vms[vm]['power_state'] == 'Running':
-            name = vms[vm]['name_label']
-            vmSource['vms'][name] = vm
-
-    for snapshot in snapshots:
-        name = snapshots[snapshot]['name_label']
-        vmSource['snapshots'][name] = snapshot
-        
-    for template in templates:
-        name = templates[template]['name_label']
-        vmSource['templates'][name] = template
-
-    with open('src/templates.json', 'w', encoding='utf-8') as stream:
-        stream.write(json.dumps(vmSource, indent=2, ensure_ascii=False))
-    utils.xslt('templates.xsl', 'src/templates.xml', 'out/config/templates.psml')
 
 
 ##################
@@ -389,13 +264,13 @@ def screenshots():
 #############
 
 def main():
-    # get dns info
-    forward, reverse = queries()
+    # Run plugins
+    forward, reverse = {}, {}
+    pluginmaster.runPlugins(forward, reverse)
 
     # apply additional modifications/filters
     apply_roles(forward)
     nat(forward)
-    xo_vms(forward)
     aws_ec2(forward)
     locations(forward)
     icinga_services(forward)
@@ -404,24 +279,13 @@ def main():
     license_orgs(forward)
     labels(forward)
 
-    # gather config data (XO templates etc.)
-    asyncio.run(template_map())
-
     utils.write_dns(forward)
-
     # Write DNS documents
     utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
     ips(forward, reverse)
     utils.xslt('ips.xsl', 'src/ips.xml')
-    # Write K8s documents
-    utils.xslt('clusters.xsl', 'src/workers.xml')
-    utils.xslt('workers.xsl', 'src/workers.xml')
-    utils.xslt('apps.xsl', 'src/apps.xml')
-    # Write XO documents
-    utils.xslt('pools.xsl', 'src/pools.xml')
-    utils.xslt('hosts.xsl', 'src/hosts.xml')
-    utils.xslt('vms.xsl', 'src/vms.xml')
+
     # Write AWS documents
     utils.xslt('aws.xsl', 'src/aws.xml')
 
