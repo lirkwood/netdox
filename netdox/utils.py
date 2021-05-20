@@ -147,7 +147,6 @@ class DNSRecord:
             if root: self.root = root.lower()
             self.source = source
             self.location = None
-            self.icinga = {}
             self.role = None
 
             # destinations
@@ -193,14 +192,11 @@ class DNSRecord:
 
     @property
     def destinations(self):
-        return {
+        return (self.resources | {
             'public_ips': self.public_ips,
             'private_ips': self.private_ips,
             'cnames': self.cnames,
-            'vms': self.vms,
-            'apps': self.apps,
-            'ec2s': self.ec2s
-        }
+        })
 
     @property
     def ips(self):

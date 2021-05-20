@@ -141,3 +141,37 @@ def validateTemplate(dns: utils.DNSRecord, icinga_host: str):
     else:
         return True
     return False
+
+
+## Plugin runner
+
+def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+    # Removes any generated monitors for domains no longer in the DNS
+    for icinga, addr_set in generated.items():
+        for addr in addr_set:
+            if addr not in forward_dns:
+                print(f'[INFO][refresh.py] Stale monitor for domain {addr}. Removing...')
+                ansible.icinga_pause(addr, icinga=icinga)
+
+    setServices(forward_dns)
+
+    
+@utils.handle
+def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
+    """
+    Iterate over every record in the DNS and set the correct monitors for it, then import the monitoring information into the record.
+    """
+    if depth <= 1:
+        objectsByDomain()
+        tmp = {}
+        for domain, dns in dns_set.items():
+            # create class attr if not exist already
+            if not hasattr(dns, 'icinga'):
+                setattr(dns, 'icinga', {})
+            # search icinga for objects with address == domain (or any ip for that domain)
+            if not dnsLookup(dns):
+                tmp[domain] = dns
+        # if some objects had invalid monitors, refresh and retest.
+        if tmp: setServices(tmp, depth+1)
+    else:
+        print(f'[WARNING][refresh.py] Abandoning domains without proper monitor: {dns_set.keys()}')

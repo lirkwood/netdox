@@ -1,4 +1,4 @@
-import nat_inf, icinga_inf, license_inf   # other info
+import nat_inf, license_inf   # other info
 import pluginmaster, ansible, cleanup, iptools, ps_api, utils   # utility scripts
 
 import subprocess, asyncio, shutil, boto3, json, os
@@ -188,31 +188,6 @@ def locations(dns_set: dict[str, utils.DNSRecord]):
             print(f'[WARNING][refresh.py] Domain {domain} has no location data and therefore may not be monitored.')
 
 @utils.handle
-def icinga_services(dns_set: dict[str, utils.DNSRecord], depth: int=0):
-    if depth <= 1:
-        icinga_inf.objectsByDomain()
-        tmp = {}
-        for domain, dns in dns_set.items():
-            # search icinga for objects with address == domain (or any ip for that domain)
-            if not icinga_inf.dnsLookup(dns):
-                tmp[domain] = dns
-        # if some objects had invalid monitors, refresh and retest.
-        if tmp: icinga_services(tmp, depth+1)
-    else:
-        print(f'[WARNING][refresh.py] Abandoning domains without proper monitor: {dns_set.keys()}')
-
-@utils.handle
-def icinga_stale(dns_set: dict[str, utils.DNSRecord]):
-    """
-    Removes any generated monitors for domains no longer in the DNS
-    """
-    for icinga, addr_set in icinga_inf.generated.items():
-        for addr in addr_set:
-            if addr not in dns_set:
-                print(f'[INFO][refresh.py] Stale monitor for domain {addr}. Removing...')
-                ansible.icinga_pause(addr, icinga=icinga)
-
-@utils.handle
 def license_keys(dns_set: dict[str, utils.DNSRecord]):
     """
     Integrates license keys into a dns set
@@ -276,8 +251,6 @@ def main():
     nat(forward)
     aws_ec2(forward)
     locations(forward)
-    icinga_services(forward)
-    icinga_stale(forward)
     license_keys(forward)
     license_orgs(forward)
     labels(forward)
