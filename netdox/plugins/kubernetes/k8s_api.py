@@ -150,7 +150,7 @@ def main():
     workers = {}
     with open('plugins/kubernetes/src/workers.json', 'w') as stream:
         stream.write(json.dumps(workers, indent=2, cls=utils.JSONEncoder))
-    utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/apps.xml')
-    utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/workers.xml')
+    utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/src/apps.xml')
+    utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
 
     return domainPods
