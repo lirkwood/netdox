@@ -15,11 +15,14 @@ def fetchRunners() -> Generator[Tuple[Callable[[dict[str, utils.DNSRecord], dict
             except Exception:
                 raise ImportError(f'[ERROR][plugins] Failed to import plugin {pluginName}: \n{format_exc()}')
             else:
-                if hasattr(plugin, 'stage'):
-                    stage = plugin.stage
+                if hasattr(plugin, 'runner'):
+                    if hasattr(plugin, 'stage'):
+                        stage = plugin.stage
+                    else:
+                        stage = 99
+                    yield plugin.runner, plugindir, stage
                 else:
-                    stage = 99
-                yield plugin.runner, plugindir, stage
+                    print(f'[WARNING][pluginmaster] Unable to load plugin {pluginName}: No runner found.')
 
 @utils.critical
 def initPlugins():
