@@ -19,7 +19,6 @@
         <properties-fragment id="config">
             <property name="name" title="Name" value="storage"/>
             <property name="desc" title="Description" value="A host which serves as a storage server or a similar size-sensitive role. These domains have disk space monitors on them."/>
-            <property name="template" title="Default Icinga Template" value="generic-storage"/>
             <property name="screenshot" title="Screenshot" value="no"/>
         </properties-fragment>
     </section>

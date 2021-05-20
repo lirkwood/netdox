@@ -19,7 +19,6 @@
         <properties-fragment id="config">
             <property name="name" title="Name" value="pageseeder"/>
             <property name="desc" title="Description" value="A host serving a PageSeeder instance. These hosts are similar to websites but have an additional MySQL monitor."/>
-            <property name="template" title="Default Icinga Template" value="generic-pageeeder"/>
             <property name="screenshot" title="Screenshot" value="yes"/>
         </properties-fragment>
     </section>

@@ -19,7 +19,6 @@
         <properties-fragment id="config">
             <property name="name" title="Name" value="website"/>
             <property name="desc" title="Description" value="A domain which is expected to be serving a webpage of some description on HTTP(S). These domains are screenshotted and have HTTP(S) monitors on them."/>
-            <property name="template" title="Default Icinga Template" value="generic-website"/>
             <property name="screenshot" title="Screenshot" value="yes"/>
         </properties-fragment>
     </section>

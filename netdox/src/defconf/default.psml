@@ -19,7 +19,6 @@
         <properties-fragment id="config">
             <property name="name" title="Name" value="default"/>
             <property name="desc" title="Description" value="Default role. Has a &#39;hostalive&#39; monitor."/>
-            <property name="template" title="Default Icinga Template" value="generic-host"/>
             <property name="screenshot" title="Screenshot" value="no"/>
         </properties-fragment>
     </section>

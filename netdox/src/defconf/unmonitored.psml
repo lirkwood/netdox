@@ -19,7 +19,6 @@
         <properties-fragment id="config">
             <property name="name" title="Name" value="unmonitored"/>
             <property name="desc" title="Description" value="A host which does not require Icinga monitoring, but should still be included in the DNS."/>
-            <property name="template" title="Default Icinga Template" value="N/A"/>
             <property name="screenshot" title="Screenshot" value="no"/>
         </properties-fragment>
     </section>
