@@ -38,12 +38,10 @@ def fetchDomains():
 
 
 @utils.critical
-def fetchDNS():
+def fetchDNS(forward, reverse):
 	"""
 	Returns tuple containing forward and reverse DNS records from DNSMadeEasy
 	"""
-	forward = {}
-	reverse = {}
 
 	for id, domain in fetchDomains():
 		response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=genheader()).text
@@ -58,8 +56,6 @@ def fetchDNS():
 
 			elif record['type'] == 'PTR':
 				add_PTR(reverse, record, domain)
-
-	return (forward, reverse)
 
 
 @utils.handle
