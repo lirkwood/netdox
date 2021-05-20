@@ -20,19 +20,11 @@ def runPlugins(forward_dns: dict[str, utils.dns], reverse_dns: dict[str, utils.d
         pluginName = plugindir.name
         print(f'[INFO][pluginmaster] Discovered plugin {pluginName}')
         try:
-            dnslinks_f, dnslinks_r = runner(forward_dns, reverse_dns)
+            runner(forward_dns, reverse_dns)
         except Exception:
             print(f'[ERROR][pluginmaster] Running {pluginName} threw an exception: \n{format_exc()}')
         else:
-            for dns_set, linkset in [(forward_dns, dnslinks_f),(reverse_dns, dnslinks_r)]:
-                for name, locator in linkset.items():
-                    if name in dns_set:
-                        dns = dns_set[name]
-                        if isinstance(locator, str):
-                            dns.link(locator, pluginName)
-                        elif isinstance(locator, Iterable):
-                            for _locator in locator:
-                                dns.link(_locator, pluginName)
+            print(f'[INFO][pluginmaster] Plugin {pluginName} completed successfully')
 
 if __name__ == '__main__':
     runPlugins({})
