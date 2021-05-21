@@ -191,6 +191,11 @@ def labels(dns_set: dict[str, utils.DNSRecord]):
     #     if 'icinga' in dns.__dict__:
     #         dns.labels.append('icinga_not_monitored')
 
+@utils.handle
+def implied_ptrs(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.PTRRecord]):
+    for ip, ptr in reverse_dns.items():
+        ptr.discoverImpliedPTR(forward_dns)
+
 
 ##################
 # Imgdiff script #
