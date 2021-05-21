@@ -232,6 +232,7 @@ class PTRRecord:
             self.location = locate(self.ipv4)
 
             self.ptrs = set()
+            self.implied_ptr = set()
             self.nat = None
         else:
             raise ValueError('Must provide a valid name for ptr record (some IPv4)')
@@ -239,6 +240,11 @@ class PTRRecord:
     def link(self, name):
         if re.fullmatch(dns_name_pattern, name):
             self.ptrs.add(name)
+    
+    def discoverImpliedPTR(self, forward_dns: dict[str, DNSRecord]):
+        for domain, dns in forward_dns.items():
+            if self.name in dns.ips:
+                self.implied_ptr.add(domain)
 
 
 class JSONEncoder(json.JSONEncoder):

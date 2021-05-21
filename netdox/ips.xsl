@@ -28,7 +28,7 @@
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="2.0" />
+                <property name="template_version"     title="Template version"   value="2.1" />
             </properties>
         </metadata>
 
@@ -54,9 +54,14 @@
 
             <properties-fragment id="reversedns">
             <xsl:for-each select="xpf:array[@key = 'ptr']/xpf:string">
-                <property name="ptr" title="Reverse DNS Record" datatype="xref">
+                <property name="ptr" title="PTR Record" datatype="xref">
                     <xref frag="default" docid="_nd_{translate(.,'.','_')}"
                     reversetitle="Reverse DNS destination" />
+                </property>
+            </xsl:for-each>
+            <xsl:for-each select="xpf:array[@key = 'implied_ptr']">
+                <property name="impliedptr" title="Implied PTR Record" datatype="xref" >
+                    <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                 </property>
             </xsl:for-each>
             </properties-fragment>
