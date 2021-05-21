@@ -205,6 +205,16 @@ def get_xrefs(uri, params={}, group=defaultgroup):
 
 
 @utils.handle
+def get_xref_tree(uri, params={}, group=defaultgroup):
+    """
+    Gets the xref tree for some uri
+    """
+    service = f'/groups/{group}/uris/{uri}/xreftree'
+    r = requests.get(base+service, headers=header, params=params)
+    return r.text
+
+
+@utils.handle
 def getUrimap(dir_uri):
     """
     Maps the directories in a URI to their URIs
