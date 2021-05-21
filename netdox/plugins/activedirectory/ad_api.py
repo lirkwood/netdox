@@ -27,7 +27,7 @@ def fetchJson() -> os.DirEntry:
     """
     Generator which yields a json file containing some DNS records
     """
-    for file in os.scandir("plugins/activedirectory/src/records/"):
+    for file in os.scandir("plugins/activedirectory/records/"):
         if file.name.endswith('.json'):
             yield file
 
@@ -119,7 +119,7 @@ def create_forward(name: str, ip: str, zone: str, type: str):
             if ip in dns[name]['private_ips']:
                 return None
         try:
-            subprocess.check_call('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin plugins/activedirectory/src/scheduled.json', shell=True)
+            subprocess.check_call('./crypto.sh decrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/nfs/scheduled.bin plugins/activedirectory/src/scheduled.json', shell=True)
             with open('plugins/activedirectory/src/scheduled.json', 'r') as stream:
                 existing = json.load(stream)
         except subprocess.CalledProcessError:
@@ -134,4 +134,4 @@ def create_forward(name: str, ip: str, zone: str, type: str):
             existing.append(new)
             with open('plugins/activedirectory/src/scheduled.json', 'w') as stream:
                 stream.write(json.dumps(existing))
-            # subprocess.run('./crypto.sh encrypt /etc/nfs/vector.txt src/scheduled.json /etc/nfs/scheduled.bin', shell=True)
+            # subprocess.run('./crypto.sh encrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/src/scheduled.json plugins/activedirectory/nfs/scheduled.bin', shell=True)
