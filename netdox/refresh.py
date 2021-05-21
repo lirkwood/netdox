@@ -91,14 +91,14 @@ def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]
         dns = forward[domain]
         for ip in dns.ips:
             if ip not in reverse:
-                reverse[ip] = utils.PTRRecord(ip, source=dns.source)
+                reverse[ip] = utils.PTRRecord(ip)
             if not iptools.public_ip(ip):
                 subnets.add(reverse[ip].subnet)
     
     for subnet in subnets:
         for ip in iptools.subn_iter(subnet):
             if ip not in reverse:
-                reverse[ip] = utils.PTRRecord(ip, source='Generated', unused=True)
+                reverse[ip] = utils.PTRRecord(ip, unused=True)
 
     utils.write_dns(reverse, 'ips')
 

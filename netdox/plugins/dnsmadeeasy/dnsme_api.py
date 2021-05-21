@@ -99,7 +99,7 @@ def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	if iptools.valid_ip(ip):
 		if ip not in dns_set:
 			dns_set[ip] = utils.PTRRecord(ip, source='DNSMadeEasy', root=root)
-		dns_set[ip].link(fqdn)
+		dns_set[ip].link(fqdn, 'DNSMadeEasy')
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:

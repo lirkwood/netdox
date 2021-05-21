@@ -94,7 +94,7 @@ def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict):
     if ip.valid:
         if ip.ipv4 not in dns_set:
             dns_set[ip.ipv4] = utils.PTRRecord(ip.ipv4, root=zone)
-        dns_set[ip.ipv4].link(dest)
+        dns_set[ip.ipv4].link(dest, 'ActiveDirectory')
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:

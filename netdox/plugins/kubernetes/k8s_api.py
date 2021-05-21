@@ -141,7 +141,7 @@ def main(forward_dns, reverse_dns):
         for appName, app in allApps[context].items():
             for domain in app['domains']:
                 if domain not in forward_dns:
-                    forward_dns[domain] = utils.DNSRecord(domain, source='Kubernetes')
+                    forward_dns[domain] = utils.DNSRecord(domain)
                 elif not forward_dns[domain].location:
                     if 'location' in auth[context]:
                         forward_dns[domain].location = auth[context]['location']
