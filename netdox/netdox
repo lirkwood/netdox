@@ -53,6 +53,7 @@ function init {
     done
 
     for initscript in plugins/*/init.sh; do
+        chmod 777 $initscript
         $initscript
     done
 
