@@ -1,8 +1,9 @@
+from typing import Tuple
 from paramiko import client, AutoAddPolicy
 
 ## Main functions
 
-def exec(cmd):
+def exec(cmd: str) -> Tuple[str, str]:
     """
     Executes a command on the ansible machine
     """
@@ -15,19 +16,17 @@ def exec(cmd):
     stderr = str(stderr.read(), encoding='utf-8')
     return (stdout, stderr)
 
-def playbook(path, tags=[], vars={}):
+def playbook(path: str, tags: list[str]=[], vars: dict[str, str]={}) -> str:
     """
     Runs a playbook with optional tags and extra vars
     """
     # encode dict as extra vars
     varstring = ''
-    for key in vars:
+    for key, value in vars.items():
         if not varstring:
             varstring = '-e "'
         else:
             varstring += ' '
-
-        value=vars[key]
         varstring += f'{key}={value}'
     if varstring: varstring += '"'
 
