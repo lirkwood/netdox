@@ -1,5 +1,4 @@
 from kubernetes import client, config
-from textwrap import dedent
 import json, utils
 
 ## Load config and init client for given context
