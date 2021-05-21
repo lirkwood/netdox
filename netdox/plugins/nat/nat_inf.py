@@ -22,4 +22,4 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
         dns = forward_dns[domain]
         for ip in dns.ips:
             if ip in natDict:
-                dns.link(natDict[ip], 'ipv4')
+                dns.link(natDict[ip], 'ipv4', 'NAT')
