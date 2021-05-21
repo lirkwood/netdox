@@ -45,21 +45,26 @@
                 <property name="ipv4"               title="IP"          value="{@key}" /> 
                 <property name="subnet"               title="Subnet"          value="{xpf:string[@key = 'subnet']}" />
                 <property name="location"               title="Location"          value="{xpf:string[@key = 'location']}" />
+                <xsl:if test="xpf:string[@key = 'nat']">
                 <property name="nat" title="NAT Destination" datatype="xref">
-                    <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'nat'],'.','_')}"
-                    reversetitle="NAT alias" />
+                    <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'nat'],'.','_')}" reversetitle="NAT alias" />
                 </property>
-                <property name="source" title="DNS Source" value="{xpf:string[@key = 'source']}" />
+                </xsl:if>
             </properties-fragment>
 
-            <properties-fragment id="reversedns">
-            <xsl:for-each select="xpf:array[@key = 'ptr']/xpf:string">
+        </section>
+        <section id="reversedns" title="Reverse DNS Records">
+            <xsl:for-each select="xpf:array[@key = 'ptr']/xpf:array">
+            <properties-fragment id="ptr_{position()}">
                 <property name="ptr" title="PTR Record" datatype="xref">
-                    <xref frag="default" docid="_nd_{translate(.,'.','_')}"
-                    reversetitle="Reverse DNS destination" />
+                    <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="Reverse DNS destination" />
                 </property>
+                <property name="source" title="Source Plugin" value="{xpf:string[2]}"/>
+            </properties-fragment>
             </xsl:for-each>
-            <xsl:for-each select="xpf:array[@key = 'implied_ptr']">
+
+            <properties-fragment id="impliedptr">
+            <xsl:for-each select="xpf:array[@key = 'implied_ptr']/xpf:string">
                 <property name="impliedptr" title="Implied PTR Record" datatype="xref" >
                     <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
                 </property>

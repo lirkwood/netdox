@@ -130,11 +130,10 @@ class DNSRecord:
     """
     name: str
     root: str
-    source: str
     location: str
 
 
-    def __init__(self, name: str, root: str=None, source: str=None, constructor: dict=None):
+    def __init__(self, name: str, root: str=None, constructor: dict=None):
         if constructor:
             for k, v in constructor.items():
                 setattr(self, k, v)
@@ -145,14 +144,13 @@ class DNSRecord:
         elif re.fullmatch(dns_name_pattern, name):
             self.name = name.lower()
             if root: self.root = root.lower()
-            self.source = source
             self.location = None
             self.role = None
 
             # destinations
             self._public_ips = set()
             self._private_ips = set()
-            self.cnames = set()
+            self._cnames = set()
             self.resources = defaultdict(set)
 
             self.subnets = set()
@@ -180,7 +178,7 @@ class DNSRecord:
 
                     elif type in ('domain', 'cname'):
                         if re.fullmatch(dns_name_pattern, string):
-                            self.cnames.add((string, source))
+                            self._cnames.add((string, source))
                         else:
                             raise ValueError(f'Domain {string} is not valid.')
                 else:
@@ -214,6 +212,10 @@ class DNSRecord:
     def ips(self):
         return self.public_ips + self.private_ips
 
+    @property
+    def cnames(self):
+        return [cname for cname,_ in self._cnames]
+
     def update(self):
         for ip in self.private_ips:
             self.subnets.add(iptools.sort(ip))
@@ -228,7 +230,6 @@ class PTRRecord:
     name: str
     subnet: str
     root: str
-    source: str
     location: str
     unused: bool
     nat: str
@@ -243,15 +244,15 @@ class PTRRecord:
             self.unused = unused
             self.location = locate(self.ipv4)
 
-            self.ptrs = set()
+            self.ptr = set()
             self.implied_ptr = set()
             self.nat = None
         else:
             raise ValueError('Must provide a valid name for ptr record (some IPv4)')
 
-    def link(self, name):
+    def link(self, name, source):
         if re.fullmatch(dns_name_pattern, name):
-            self.ptrs.add(name)
+            self.ptr.add((name, source))
     
     def discoverImpliedPTR(self, forward_dns: dict[str, DNSRecord]):
         for domain, dns in forward_dns.items():
