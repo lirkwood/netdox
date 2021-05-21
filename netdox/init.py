@@ -53,22 +53,5 @@ def init():
         soup.find('ps:upload')['group'] = psauth['group']
         stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
 
-
-################### Find alternative to this
-# def fetchZones():
-#     zones = {
-#         "dnsme": {},
-#         "ad": {},
-#         "k8s": {},
-#         "cf": {}
-#     }    
-
-#     for id, domain in dnsme_api.fetchDomains():
-#         zones['dnsme'][domain] = id
-    
-#     with open('src/zones.json', 'w') as stream:
-#         stream.write(json.dumps(zones, indent=2))
-
-
 if __name__ == '__main__':
     init()
