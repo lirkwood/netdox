@@ -29,7 +29,7 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version"     title="Template version"   value="5.2" />
+                        <property name="template_version"     title="Template version"   value="5.3" />
                     </properties>
                 </metadata>
 
@@ -87,24 +87,34 @@
                             </xsl:otherwise>
                         </xsl:choose>
                     </properties-fragment>
+                </section>
+                <section id="dest" title="Destinations">
 
-                    <properties-fragment id="dest">
-                    <xsl:for-each select="xpf:array[@key = 'private_ips']/xpf:string">
+                    <xsl:for-each select="xpf:array[@key = 'private_ips']/xpf:array">
+                    <properties-fragment id="private_ip_{position()}">
                         <property name="ipv4" title="Private IP" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="."/></xref>
+                            <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="xpf:string[1]"/></xref>
                         </property>
-                    </xsl:for-each>
-                    <xsl:for-each select="xpf:array[@key = 'public_ips']/xpf:string">
-                        <property name="ipv4" title="Public IP" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="."/></xref>
-                        </property>
-                    </xsl:for-each>
-                    <xsl:for-each select="xpf:array[@key = 'cnames']/xpf:string">
-                        <property name="cname" title="CNAME" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this domain"><xsl:value-of select="."/></xref>
-                        </property>
-                    </xsl:for-each>
+                        <property name="source" title="Source Plugin" value="{xpf:string[2]}" />
                     </properties-fragment>
+                    </xsl:for-each>
+                    <xsl:for-each select="xpf:array[@key = 'public_ips']/xpf:array">
+                    <properties-fragment id="public_ip_{position()}">
+                        <property name="ipv4" title="Public IP" datatype="xref">
+                            <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="xpf:string[1]"/></xref>
+                        </property>
+                        <property name="source" title="Source Plugin" value="{xpf:string[2]}" />
+                    </properties-fragment>
+                    </xsl:for-each>
+                    <xsl:for-each select="xpf:array[@key = 'cnames']/xpf:array">
+                    <properties-fragment id="cname_{position()}">
+                        <property name="cname" title="CNAME" datatype="xref">
+                            <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this domain"><xsl:value-of select="xpf:string[1]"/></xref>
+                        </property>
+                        <property name="source" title="Source Plugin" value="{xpf:string[2]}" />
+                    </properties-fragment>
+                    </xsl:for-each>
+
                     <properties-fragment id="resources">
                     <xsl:for-each select="xpf:map[@key='resources']/xpf:array">
                         <xsl:variable name="resource" select="@key"/>

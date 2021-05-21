@@ -68,8 +68,8 @@ def add_A(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	fqdn = assemble_fqdn(subdomain, root)
 
 	if fqdn not in dns_set:
-		dns_set[fqdn] = utils.DNSRecord(fqdn, source='DNSMadeEasy', root=root)
-	dns_set[fqdn].link(ip, 'ipv4')
+		dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+	dns_set[fqdn].link(ip, 'ipv4', 'DNSMadeEasy')
 
 @utils.handle
 def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
@@ -82,8 +82,8 @@ def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	dest = assemble_fqdn(value, root)
 
 	if fqdn not in dns_set:
-		dns_set[fqdn] = utils.DNSRecord(fqdn, source='DNSMadeEasy', root=root)
-	dns_set[fqdn].link(dest, 'domain')	
+		dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+	dns_set[fqdn].link(dest, 'domain', 'DNSMadeEasy')	
 
 @utils.handle
 def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):

@@ -50,8 +50,8 @@ def add_A(dns_set: dict[str, utils.DNSRecord], record: dict):
 
     # Integrate
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.DNSRecord(fqdn, source='ActiveDirectory', root=root)
-    dns_set[fqdn].link(dest, 'ipv4')
+        dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+    dns_set[fqdn].link(dest, 'ipv4', 'ActiveDirectory')
 
 
 @utils.handle
@@ -73,8 +73,8 @@ def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict):
                 dest = dest.strip('.')
 
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.DNSRecord(fqdn, source='ActiveDirectory', root=root)
-    dns_set[fqdn].link(dest, 'domain')
+        dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+    dns_set[fqdn].link(dest, 'domain', 'ActiveDirectory')
 
 
 @utils.handle
@@ -93,7 +93,7 @@ def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict):
 
     if ip.valid:
         if ip.ipv4 not in dns_set:
-            dns_set[ip.ipv4] = utils.PTRRecord(ip.ipv4, source='ActiveDirectory', root=zone)
+            dns_set[ip.ipv4] = utils.PTRRecord(ip.ipv4, root=zone)
         dns_set[ip.ipv4].link(dest)
 
 

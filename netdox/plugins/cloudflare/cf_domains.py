@@ -51,8 +51,8 @@ def add_A(dns_set: dict[str, utils.DNSRecord], record: dict):
     ip = record['content']
 
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.DNSRecord(fqdn, root, 'Cloudflare')
-    dns_set[fqdn].link(ip, 'ipv4')
+        dns_set[fqdn] = utils.DNSRecord(fqdn, root)
+    dns_set[fqdn].link(ip, 'ipv4', 'Cloudflare')
 
 @utils.handle
 def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict):
@@ -64,8 +64,8 @@ def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict):
     dest = record['content']
 
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.DNSRecord(fqdn, root, 'Cloudflare')
-    dns_set[fqdn].link(dest, 'domain')
+        dns_set[fqdn] = utils.DNSRecord(fqdn, root)
+    dns_set[fqdn].link(dest, 'domain', 'Cloudflare')
 
 @utils.handle
 def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict):

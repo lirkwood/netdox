@@ -161,27 +161,31 @@ class DNSRecord:
             raise ValueError('Must provide a valid name for dns record (some FQDN) or a valid constructor dict.')
 
     # switch to case match on 2021-04-10
-    def link(self, string: str, type: str):
+    def link(self, string: str, type: str, source: str=None):
         """
-        Adds a link to the given object.
+        Adds a link to the given object. Source is required for ip/ipv4 and domain link types.
         """
         if isinstance(string, str):
             string = string.lower().strip()
-            if type == 'ipv4' or type == 'ip':
-                if iptools.valid_ip(string):
-                    if iptools.public_ip(string):
-                        self.public_ips.add(string)
-                    else:
-                        self.private_ips.add(string)
-                else:
-                    raise ValueError(f'"{string}" is not a valid ipv4 address.')
+            if type in ('ipv4', 'ip', 'domain', 'cname'):
+                if source:
+                    if type in ('ipv4', 'ip'):
+                        if iptools.valid_ip(string):
+                            if iptools.public_ip(string):
+                                self.public_ips.add((string, source))
+                            else:
+                                self.private_ips.add((string, source))
+                        else:
+                            raise ValueError(f'"{string}" is not a valid ipv4 address.')
 
-            elif type == 'domain':
-                if re.fullmatch(dns_name_pattern, string):
-                    self.cnames.add(string)
+                    elif type in ('domain', 'cname'):
+                        if re.fullmatch(dns_name_pattern, string):
+                            self.cnames.add((string, source))
+                        else:
+                            raise ValueError(f'Domain {string} is not valid.')
                 else:
-                    raise ValueError(f'Domain {string} is not valid.')
-            
+                    raise ValueError(f'Source is required for links of type {type}')
+                
             else:
                 self.resources[type].add(string)
             
