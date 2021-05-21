@@ -27,7 +27,7 @@ def fetchJson() -> os.DirEntry:
     """
     Generator which yields a json file containing some DNS records
     """
-    for file in os.scandir("src/records/"):
+    for file in os.scandir("plugins/activedirectory/src/records/"):
         if file.name.endswith('.json'):
             yield file
 
@@ -109,7 +109,7 @@ def assemble_fqdn(subdomain: str, root: str) -> str:
     return fqdn.lower()
 
 
-def create_forward(name, ip, zone, type):
+def create_forward(name: str, ip: str, zone: str, type: str):
     """
     Schedules a DNS record for creation in ActiveDirectory
     """
@@ -118,14 +118,12 @@ def create_forward(name, ip, zone, type):
             dns = json.load(dnsstream)
             if ip in dns[name]['private_ips']:
                 return None
-
-        existing = []
         try:
-            subprocess.check_call('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin src/scheduled.json', shell=True)
-            with open('src/scheduled.json', 'r') as stream:
+            subprocess.check_call('./crypto.sh decrypt /etc/nfs/vector.txt /etc/nfs/scheduled.bin plugins/activedirectory/src/scheduled.json', shell=True)
+            with open('plugins/activedirectory/src/scheduled.json', 'r') as stream:
                 existing = json.load(stream)
         except subprocess.CalledProcessError:
-            pass
+            existing = []
         finally:
             new = {
                 "name": name,
@@ -134,6 +132,6 @@ def create_forward(name, ip, zone, type):
                 "type": type
             }
             existing.append(new)
-            with open('src/scheduled.json', 'w') as stream:
+            with open('plugins/activedirectory/src/scheduled.json', 'w') as stream:
                 stream.write(json.dumps(existing))
             # subprocess.run('./crypto.sh encrypt /etc/nfs/vector.txt src/scheduled.json /etc/nfs/scheduled.bin', shell=True)
