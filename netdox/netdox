@@ -51,12 +51,9 @@ function init {
     for file in /etc/ext/cfg/*.json; do
         cp $file /opt/app/src/$(basename $file) &> /dev/null
     done
-    
-    # make dir for activedirectory files
-    mkdir /opt/app/src/records
-    # decrypt activedirectory files
-    for file in /etc/nfs/*.bin; do
-        ./crypto.sh decrypt '/etc/nfs/vector.txt' "$file" "/opt/app/src/records/$(basename ${file%.bin}).json" &> /dev/null
+
+    for initscript in plugins/*/init.sh; do
+        $initscript
     done
 
     if python3 init.py
