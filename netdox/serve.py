@@ -5,7 +5,7 @@ from traceback import format_exc
 from bs4 import BeautifulSoup
 import json, re
 
-import ps_api, utils, iptools
+import ps_api, utils, iptools, pluginmaster
 
 app = Flask(__name__)
 
@@ -67,37 +67,65 @@ def approved_dns(uri):
     Handles documents with 'dns' type and worflow 'Approved'.
     """
     info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
-    icinga = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'icinga'))
-    destinations = BeautifulSoup(ps_api.get_fragment(uri, 'dest'), features='xml')
+    links = BeautifulSoup(ps_api.get_xref_tree(uri), features='xml')
     dns = utils.loadDNS('src/dns.json')
         
     if info['name'] and info['root']:
-        ## Generic approved DNS actions
-        for destination in destinations("property"):
+        for link in links("xref"):
+            try:
+                # if link is not unresolved
+                if not (hasattr(link, 'unresolved') and link['unresolved'] == 'true'):
+                    if link['type'] in ('ipv4','cname'):
+                        name = info['name']
+                        value = link['urititle']
+                        zone = info['root']
 
-            if destination['name'] == 'ipv4':
-                ip = destination.xref.string
-                if ip not in dns[info['name']].ips:
-                    if iptools.public_ip(ip):
-                        ## Create public A record
-                        pass
-                    
-                    else:
-                        ## Create private A record
-                        pass
-
-            elif destination['name'] == 'cname':
-                value = destination.xref.string
-                if ip not in dns[info['name']].ips:
-                    if info['source'] == 'DNSMadeEasy':
-                        ## Create public CNAME
-                        pass
-                    
-                    elif info['source'] == 'ActiveDirectory':
-                        ## Create private CNAME
-                        pass
+                        dest = ps_api.pfrag2dict(ps_api.get_fragment(uri, link.parent['id']))
+                        sourcePlugin = dest['source'].lower()
+                        if sourcePlugin in pluginmaster.pluginmap['all']:
+                            plugin = pluginmaster.pluginmap['all'][sourcePlugin]
+                            if link['type'] == 'ipv4':
+                                if iptools.valid_ip(value) and value not in dns[name].ips:
+                                    try:
+                                        plugin.create_A(name, value, zone)
+                                    except AttributeError:
+                                        print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating an A record.')
+                            else:
+                                if re.fullmatch(utils.dns_name_pattern, value) and value not in dns[name].cnames:
+                                    try:
+                                        plugin.create_CNAME(name, value, zone)
+                                    except AttributeError:
+                                        print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating an CNAME record.')
+            except Exception:
+                print(f'[ERROR][webhooks] Failed to parse the following xref as a DNS link:\n{link.prettify()}')
 
     return Response(status=200)
+
+    
+        # ## Generic approved DNS actions
+        # for destination in destinations("property"):
+
+        #     if destination['name'] == 'ipv4':
+        #         ip = destination.xref.string
+        #         if ip not in dns[info['name']].ips:
+        #             if iptools.public_ip(ip):
+        #                 ## Create public A record
+        #                 pass
+                    
+        #             else:
+        #                 ## Create private A record
+        #                 pass
+
+        #     elif destination['name'] == 'cname':
+        #         value = destination.xref.string
+        #         if ip not in dns[info['name']].ips:
+        #             if info['source'] == 'DNSMadeEasy':
+        #                 ## Create public CNAME
+        #                 pass
+                    
+        #             elif info['source'] == 'ActiveDirectory':
+        #                 ## Create private CNAME
+        #                 pass
 
 # def approved_vm(uri):
 #     """
