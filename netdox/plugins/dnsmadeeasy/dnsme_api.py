@@ -117,7 +117,7 @@ def assemble_fqdn(subdomain: str, root: str) -> str:
 
 
 @utils.handle
-def create_A(name, zone, ip):
+def create_A(name, ip, zone):
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
 		with open('src/dns.json', 'r') as dnsstream:
 			dns = json.load(dnsstream)
@@ -145,7 +145,7 @@ def create_A(name, zone, ip):
 		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or IPv4 ({ip})')
 
 @utils.handle
-def create_CNAME(name, zone, value):
+def create_CNAME(name, value, zone):
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
 		with open('src/dns.json', 'r') as dnsstream:
 			dns = json.load(dnsstream)
@@ -174,7 +174,7 @@ def create_CNAME(name, zone, value):
 		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or ({value})')
 
 @utils.handle
-def create_PTR(addr, zone, value):
+def create_PTR(addr, value, zone):
 	if int(addr) and re.fullmatch(utils.dns_name_pattern, value):
 		zoneArr = zone.split('.')
 		ip = '.'.join(zoneArr[-3::-1] + [str(addr)])
