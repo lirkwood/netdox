@@ -1,5 +1,6 @@
 from typing import Tuple
 from paramiko import client, AutoAddPolicy
+import json, re
 
 ## Main functions
 
@@ -41,23 +42,19 @@ def playbook(path: str, tags: list[str]=[], vars: dict[str, str]={}) -> str:
     if tagstring: tagstring += '"'
 
     stdout, stderr = exec(f'ansible-playbook {path} {tagstring} {varstring}')
+    errors = validateStdout(stdout)
     if stderr:
-        raise RuntimeError(f'[ERROR][ansible.py] Running playbook {path} with {tagstring} {varstring} raised:\n{stderr}')
+        raise RuntimeError(f'[ERROR][ansible.py] Running playbook {path} with {tagstring} {varstring} failed:\n{stderr}')
+    elif errors:
+        raise RuntimeError(f'[ERROR][ansible.py] One or more tasks failed running playbook {path} with {tagstring} {varstring}:\n{json.dumps(errors, indent=1)}')
     else:
         return stdout
 
-
-## Functions for specific plays
-
-# def copy(host, path):
-#     tags = ['copy-file']
-
-#     pathArr = path.split('/')
-#     basepath = '/'.join(pathArr[:-1])
-#     filename = pathArr[-1]
-#     vars = {
-#         "dir": basepath,
-#         "filename": filename
-#     }
-
-#     return playbook('/etc/ansible/utils.yml', tags, vars)
+failed_task_pattern = re.compile(r'FAILED! => (?P<json>{.+?})\s*\n')
+def validateStdout(stdout: str) -> list[dict]:
+    stderrs = []
+    failed = re.finditer(failed_task_pattern, stdout)
+    for task in failed:
+        jsondata = json.loads(task['json'])
+        stderrs.append(jsondata['stderr'])
+    return stderrs
