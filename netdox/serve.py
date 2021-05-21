@@ -5,8 +5,7 @@ from traceback import format_exc
 from bs4 import BeautifulSoup
 import json, re
 
-import ansible, dnsme_api, ad_api, ps_api, xo_api
-import utils, iptools
+import ps_api, utils, iptools
 
 app = Flask(__name__)
 
@@ -28,33 +27,25 @@ def webhooks():
     Main route for PageSeeder webhooks. Sorts events and sends them to downstream functions
     """
     try:
-        if request.method == 'POST':
-            if request.content_length and request.content_length < 10**6 and request.is_json:
-                body = request.get_json()
-                for event in body['webevents']:
-                        
-                    if event['type'] == 'webhook.ping':
-                        return Response(status=200, headers=[('X-Ps-Secret', request.headers['X-PS-Secret'])])
-
-                    elif event['type'] == 'uri.modified':
-                        return ps_uri_modified(event)
-
-                    elif event['type'] == 'workflow.updated':
-                        return ps_workflow_updated(event)
+        if request.content_length and request.content_length < 10**6 and request.is_json:
+            body = request.get_json()
+            for event in body['webevents']:
                     
-                    else:
-                        print(json.dumps(body, indent=4))
+                if event['type'] == 'webhook.ping':
+                    return Response(status=200, headers=[('X-Ps-Secret', request.headers['X-PS-Secret'])])
+
+                elif event['type'] == 'workflow.updated':
+                    return ps_workflow_updated(event)
+                
                 else:
-                    return Response(status=400)
+                    print(json.dumps(body, indent=4))
+            else:
+                return Response(status=400)
         return Response(status=200)
     except Exception:
-        print(f'[WARNING][serve.py] Threw exception:\n {format_exc()}')
+        print(f'[WARNING][webhooks] Threw exception:\n {format_exc()}')
         return Response(status=500)
 
-
-def ps_uri_modified(event):
-    uri = event['uri']
-    return Response(status=200)
 
 def ps_workflow_updated(event):
     """
@@ -69,8 +60,6 @@ def ps_workflow_updated(event):
 
         if document_type == 'dns':
             return approved_dns(document_uri)
-        elif document_type == 'xo_vm':
-            return approved_vm(document_uri)
 
 
 def approved_dns(uri):
@@ -83,54 +72,53 @@ def approved_dns(uri):
     dns = utils.loadDNS('src/dns.json')
         
     if info['name'] and info['root']:
-        ansible.icinga_set_host(info['name'], info['location'])
-
+        ## Generic approved DNS actions
         for destination in destinations("property"):
 
             if destination['name'] == 'ipv4':
                 ip = destination.xref.string
                 if ip not in dns[info['name']].ips:
                     if iptools.public_ip(ip):
-                        dnsme_api.create_A(info['name'], info['root'], ip)
-                        print(f'[INFO][serve.py] Created A record in DNSMadeEasy with name {info["name"]} and value {ip}')
+                        ## Create public A record
+                        pass
                     
                     else:
-                        ad_api.create_forward(info['name'], ip, info['root'], 'A')
-                        print(f'[INFO][serve.py] Created A record in ActiveDirectory with name {info["name"]} and value {ip}')
+                        ## Create private A record
+                        pass
 
             elif destination['name'] == 'cname':
                 value = destination.xref.string
                 if ip not in dns[info['name']].ips:
                     if info['source'] == 'DNSMadeEasy':
-                        dnsme_api.create_CNAME(info['name'], info['root'], value)
-                        print(f'[INFO][serve.py] Created CNAME record in DNSMadeEasy with name {info["name"]} and value {value}')
+                        ## Create public CNAME
+                        pass
                     
                     elif info['source'] == 'ActiveDirectory':
-                        ad_api.create_forward(info['name'], value, info['root'], 'CNAME')
-                        print(f'[INFO][serve.py] Created CNAME record in ActiveDirectory with name {info["name"]} and value {value}')
+                        ## Create private CNAME
+                        pass
 
     return Response(status=200)
 
-def approved_vm(uri):
-    """
-    Handles documents with 'xo_vm' type and workflow 'Approved'.
-    """
-    core_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'core'))
-    os_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'os_version'))
-    addr_soup = BeautifulSoup(ps_api.get_fragment(uri, 'addresses'), features='xml')
+# def approved_vm(uri):
+#     """
+#     Handles documents with 'xo_vm' type and workflow 'Approved'.
+#     """
+#     core_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'core'))
+#     os_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'os_version'))
+#     addr_soup = BeautifulSoup(ps_api.get_fragment(uri, 'addresses'), features='xml')
 
-    addrs = set()
-    for property in addr_soup("property"):
-        if iptools.valid_ip(property.xref.string):
-            addrs.add(property.xref.string)
+#     addrs = set()
+#     for property in addr_soup("property"):
+#         if iptools.valid_ip(property.xref.string):
+#             addrs.add(property.xref.string)
 
-    location = utils.locate(addrs)
-    if location:
-        ansible.icinga_set_host(addrs[0], location)
+#     location = utils.locate(addrs)
+#     if location:
+#         ansible.icinga_set_host(addrs[0], location)
 
-    if os_inf['template']:
-        xo_api.createVM(os_inf['template'], core_inf['name'])
-    else:
-        raise ValueError('[ERROR][server.py] Must provide a valid template/VM/snapshot UUID.')
+#     if os_inf['template']:
+#         xo_api.createVM(os_inf['template'], core_inf['name'])
+#     else:
+#         raise ValueError('[ERROR][server.py] Must provide a valid template/VM/snapshot UUID.')
 
-    return Response(status=200)
+#     return Response(status=200)
