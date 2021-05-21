@@ -150,8 +150,8 @@ class DNSRecord:
             self.role = None
 
             # destinations
-            self.public_ips = set()
-            self.private_ips = set()
+            self._public_ips = set()
+            self._private_ips = set()
             self.cnames = set()
             self.resources = defaultdict(set)
 
@@ -172,9 +172,9 @@ class DNSRecord:
                     if type in ('ipv4', 'ip'):
                         if iptools.valid_ip(string):
                             if iptools.public_ip(string):
-                                self.public_ips.add((string, source))
+                                self._public_ips.add((string, source))
                             else:
-                                self.private_ips.add((string, source))
+                                self._private_ips.add((string, source))
                         else:
                             raise ValueError(f'"{string}" is not a valid ipv4 address.')
 
@@ -203,8 +203,16 @@ class DNSRecord:
         })
 
     @property
+    def public_ips(self):
+        return [ip for ip,_ in self._public_ips]
+
+    @property
+    def private_ips(self):
+        return [ip for ip,_ in self._private_ips]
+
+    @property
     def ips(self):
-        return self.public_ips.union(self.private_ips)
+        return self.public_ips + self.private_ips
 
     def update(self):
         for ip in self.private_ips:
