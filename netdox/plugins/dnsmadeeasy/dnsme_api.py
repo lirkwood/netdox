@@ -124,7 +124,7 @@ def create_A(name, zone, ip):
 			if ip in dns[name]['public_ips']:
 				return None
 
-		with open('src/zones.json', 'r') as zonestream:
+		with open('plugin/dnsmadeeasy/src/zones.json', 'r') as zonestream:
 			zones = json.load(zonestream)['dnsme']
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
