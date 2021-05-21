@@ -3,6 +3,8 @@ import importlib, sys, os
 from traceback import format_exc
 from typing import Any, Generator, Tuple
 
+## Initialisation
+
 def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, int], Any, Any]:
     """
     Generator which yields a 3-tuple of a plugin, the location of said plugin, and an optional stage at which to run
@@ -27,12 +29,16 @@ def initPlugins():
     Fetches all plugins and sorts them by stage
     """
     global pluginmap
-    pluginmap = {}
+    pluginmap = {'all':{}}
     for plugin, plugindir, stage in fetchPlugins():
         if stage not in pluginmap:
             pluginmap[stage] = {}
         pluginmap[stage][plugindir.name] = plugin
+        pluginmap['all'][plugindir.name] = plugin
     pluginmap = {k: pluginmap[k] for k in sorted(pluginmap)}
+
+
+## Runners
 
 def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
     """
@@ -54,6 +60,8 @@ def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: d
     print(f'[INFO][pluginmaster] Running all plugins in stage {stage}')
     for _, plugin in pluginmap[stage].items():
         runPlugin(plugin, forward_dns, reverse_dns)
+
+
 
 if __name__ == '__main__':
     initPlugins()
