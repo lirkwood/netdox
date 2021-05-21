@@ -133,11 +133,12 @@
                     </properties-fragment>
 
                     <properties-fragment id="icinga">
-                    <xsl:for-each select="xpf:map[@key = 'icinga']/xpf:map">
+                    <xsl:for-each select="xpf:map[@key = 'icinga']">
                         <property name="host" title="Host Display Name" value="{xpf:string[@key = 'display']}" />
-                            <xsl:for-each select="xpf:array[@key = 'services']/xpf:string">
+                        <property name="template" title="Monitor Template" value="{xpf:array[@key = 'templates']/xpf:string[1]}" />
+                        <xsl:for-each select="xpf:array[@key = 'services']/xpf:string">
                         <property name="service" title="Service Display Name" value="{substring-after(., '!')}" />
-                            </xsl:for-each>
+                        </xsl:for-each>
                     </xsl:for-each>
                     </properties-fragment>
 
