@@ -141,9 +141,8 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
 
 @utils.handle
 def locations(dns_set: dict[str, utils.DNSRecord]):
-    for domain in dns_set:
-        dns = dns_set[domain]
-
+    unlocated = []
+    for domain, dns in dns_set.items():
         if not dns.location:
             for alias in dns.cnames:
                 try:
@@ -153,7 +152,11 @@ def locations(dns_set: dict[str, utils.DNSRecord]):
                     pass
         
         if not dns.location:
-            print(f'[WARNING][refresh.py] Domain {domain} has no location data and therefore may not be monitored.')
+            unlocated.append(domain)
+    if unlocated:
+        print('[WARNING][refresh] Some records are missing location data. For a complete list see /var/log/unlocated.json')
+        with open('/var/log/unlocated.json', 'w') as stream:
+            stream.write(json.dumps(unlocated, indent=2))
 
 @utils.handle
 def license_keys(dns_set: dict[str, utils.DNSRecord]):
