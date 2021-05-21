@@ -29,7 +29,7 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version"     title="Template version"   value="5.1" />
+                        <property name="template_version"     title="Template version"   value="5.2" />
                     </properties>
                 </metadata>
 
@@ -100,31 +100,19 @@
                         </property>
                     </xsl:for-each>
                     <xsl:for-each select="xpf:array[@key = 'cnames']/xpf:string">
-                        <xsl:choose>
-                            <xsl:when test="not(string-length(.) > 75)">
                         <property name="cname" title="CNAME" datatype="xref">
                             <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this domain"><xsl:value-of select="."/></xref>
                         </property>
-                            </xsl:when>
-                            <xsl:otherwise>
-                        <property name="cname" title="CNAME" value="{.}" />
-                            </xsl:otherwise>
-                        </xsl:choose>
                     </xsl:for-each>
-                    <xsl:for-each select="xpf:array[@key = 'apps']/xpf:string">
-                        <property name="app" title="Application" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this app"><xsl:value-of select="."/></xref>
+                    </properties-fragment>
+                    <properties-fragment id="resources">
+                    <xsl:for-each select="xpf:map[@key='resources']/xpf:array">
+                        <xsl:variable name="resource" select="@key"/>
+                        <xsl:for-each select="xpf:string">
+                        <property name="{$resource}" title="Resource: {$resource}" datatype="xref">
+                            <xref frag="default" docid="{.}" />
                         </property>
-                    </xsl:for-each>
-                    <xsl:for-each select="xpf:array[@key = 'vms']/xpf:string">
-                        <property name="vm" title="VM" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this VM"><xsl:value-of select="."/></xref>
-                        </property>
-                    </xsl:for-each>
-                    <xsl:for-each select="xpf:array[@key = 'ec2s']/xpf:string">
-                        <property name="ec2" title="AWS EC2 Instance" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" reversetitle="DNS record resolving to this instance"><xsl:value-of select="."/></xref>
-                        </property>
+                        </xsl:for-each>
                     </xsl:for-each>
                     </properties-fragment>
                     
