@@ -79,6 +79,5 @@ def setloc(location, icinga):
             if location not in utils._location_map:
                 raise ValueError(f'[ERROR][ansible.py] Unrecognised location {location}')
             else:
-                print(f'[WARNING][ansible.py] No Icinga defined for location {location}')
                 return None
     return icinga
