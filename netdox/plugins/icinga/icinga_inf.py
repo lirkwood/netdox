@@ -53,7 +53,7 @@ def objectsByDomain() -> Tuple[dict, dict]:
             host = service['attrs']['host_name']
             if host not in hostServices:
                 hostServices[host] = []
-            hostServices[host].append(service['name'])
+            hostServices[host].append(service['name'].split('!')[-1])
 
         for host in hosts['results']:
             name = host['name']
