@@ -4,8 +4,9 @@ import os, utils
 stage = 'resource'
 
 # Create output dir
-if not os.path.exists('plugins/kubernetes/out'):
-    os.mkdir('plugins/kubernetes/out')
+for dir in ('out', 'src'):
+  if not os.path.exists(f'plugins/kubernetes/{dir}'):
+      os.mkdir(f'plugins/kubernetes/{dir}')
 
 auth = utils.auth['plugins']['kubernetes']
 with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
