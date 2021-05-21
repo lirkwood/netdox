@@ -18,7 +18,7 @@ def init():
         if not os.path.exists(path):
             os.mkdir(path)
             
-    for path in ('DNS', 'IPs', 'xo', 'aws', 'screenshots', 'screenshot_history', 'review', 'config'):
+    for path in ('DNS', 'IPs', 'screenshots', 'screenshot_history', 'review', 'config'):
         if not os.path.exists('out/'+path):
             os.mkdir('out/'+path)
     
