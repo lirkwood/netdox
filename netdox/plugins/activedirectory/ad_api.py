@@ -114,10 +114,10 @@ def create_forward(name: str, ip: str, zone: str, type: str):
     Schedules a DNS record for creation in ActiveDirectory
     """
     if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-        with open('src/dns.json', 'r') as dnsstream:
-            dns = json.load(dnsstream)
-            if ip in dns[name]['private_ips']:
-                return None
+        dns = utils.loadDNS('src/dns.json')
+        if (ip, 'ActiveDirectory') in dns[name]._ips:
+            return None
+
         try:
             subprocess.check_call('./crypto.sh decrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/nfs/scheduled.bin plugins/activedirectory/src/scheduled.json', shell=True)
             with open('plugins/activedirectory/src/scheduled.json', 'r') as stream:
@@ -130,6 +130,36 @@ def create_forward(name: str, ip: str, zone: str, type: str):
                 "value": ip,
                 "zone": zone,
                 "type": type
+            }
+            existing.append(new)
+            with open('plugins/activedirectory/src/scheduled.json', 'w') as stream:
+                stream.write(json.dumps(existing))
+            # subprocess.run('./crypto.sh encrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/src/scheduled.json plugins/activedirectory/nfs/scheduled.bin', shell=True)
+
+def create_reverse(ip: str, value: str):
+    """
+    Schedules a PTR record for creation in ActiveDirectory
+    """
+    if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
+        with open('src/ips.json', 'r') as dnsstream:
+            dns = json.load(dnsstream)
+            if value in dns[ip]['ptrs']:
+                return None
+    
+        addr = ip.split('.')[-1]
+        zone = f'{".".join(ip.split(".")[-2::-1])}.in-addr.arpa'
+        try:
+            subprocess.check_call('./crypto.sh decrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/nfs/scheduled.bin plugins/activedirectory/src/scheduled.json', shell=True)
+            with open('plugins/activedirectory/src/scheduled.json', 'r') as stream:
+                existing = json.load(stream)
+        except subprocess.CalledProcessError:
+            existing = []
+        finally:
+            new = {
+                "name": addr,
+                "value": value,
+                "zone": zone,
+                "type": "PTR"
             }
             existing.append(new)
             with open('plugins/activedirectory/src/scheduled.json', 'w') as stream:

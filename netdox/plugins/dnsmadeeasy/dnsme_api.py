@@ -117,12 +117,14 @@ def assemble_fqdn(subdomain: str, root: str) -> str:
 
 
 @utils.handle
-def create_A(name, ip, zone):
+def create_A(name: str, ip: str, zone: str):
+	"""
+	Creates an A record in DNSMadeEasy
+	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-		with open('src/dns.json', 'r') as dnsstream:
-			dns = json.load(dnsstream)
-			if ip in dns[name]['public_ips']:
-				return None
+		dns = utils.loadDNS('src/dns.json')
+		if (ip, 'DNSMadeEasy') in dns[name]._ips:
+			return None
 
 		with open('plugin/dnsmadeeasy/src/zones.json', 'r') as zonestream:
 			zones = json.load(zonestream)
@@ -145,12 +147,14 @@ def create_A(name, ip, zone):
 		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or IPv4 ({ip})')
 
 @utils.handle
-def create_CNAME(name, value, zone):
+def create_CNAME(name: str, value: str, zone: str):
+	"""
+	Creates a CNAME record in DNSMadeEasy
+	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
-		with open('src/dns.json', 'r') as dnsstream:
-			dns = json.load(dnsstream)
-			if value in dns[name]['cnames']:
-				return None
+		dns = utils.loadDNS('src/dns.json')
+		if (value, 'DNSMadeEasy') in dns[name]._cnames:
+			return None
 
 		with open('src/zones.json', 'r') as stream:
 			zones = json.load(stream)
@@ -174,22 +178,25 @@ def create_CNAME(name, value, zone):
 		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or ({value})')
 
 @utils.handle
-def create_PTR(addr, value, zone):
-	if int(addr) and re.fullmatch(utils.dns_name_pattern, value):
-		zoneArr = zone.split('.')
-		ip = '.'.join(zoneArr[-3::-1] + [str(addr)])
+def create_PTR(ip: str, value: str):
+	"""
+	Creates a PTR record in DNSMadeEasy
+	"""
+	if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
 		with open('src/ips.json', 'r') as dnsstream:
 			dns = json.load(dnsstream)
 			if value in dns[ip]['ptrs']:
 				return None
 
+		addr = ip.split('.')[-1]
+		zone = f'{".".join(ip.split(".")[-2::-1])}.in-addr.arpa'
 		with open('src/zones.json', 'r') as stream:
 			zones = json.load(stream)
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
 				data = {
 					"name": addr,
-					"type": "CNAME",
+					"type": "PTR",
 					"value": value,
 					"gtdLocation": "DEFAULT",
 					"ttl": 3600
@@ -202,4 +209,4 @@ def create_PTR(addr, value, zone):
 			else:
 				raise ValueError(f'[ERROR][dnsme_api.py] Unknown zone for DNSMadeEasy: {zone}')
 	else:
-		raise ValueError(f'[ERROR][dnsme_api.py] Invalid address ({addr}) or hostname ({value})')
+		raise ValueError(f'[ERROR][dnsme_api.py] Invalid IPv4 ({ip}) or hostname ({value})')
