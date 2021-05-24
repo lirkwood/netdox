@@ -1,7 +1,7 @@
 from collections import defaultdict
 import iptools, json, re
 import subprocess
-from typing import Iterable, Union
+from typing import Iterable, Tuple, Union
 from os import scandir, DirEntry
 from traceback import format_exc
 from datetime import datetime
@@ -200,7 +200,7 @@ class DNSRecord:
             raise TypeError('DNS destination must be provided as string')
 
     @property
-    def destinations(self):
+    def destinations(self) -> dict:
         return (self.resources | {
             'public_ips': self.public_ips,
             'private_ips': self.private_ips,
@@ -208,19 +208,23 @@ class DNSRecord:
         })
 
     @property
-    def public_ips(self):
+    def public_ips(self) -> list[str]:
         return [ip for ip,_ in self._public_ips]
 
     @property
-    def private_ips(self):
+    def private_ips(self) -> list[str]:
         return [ip for ip,_ in self._private_ips]
 
     @property
-    def ips(self):
+    def ips(self) -> list[str]:
         return self.public_ips + self.private_ips
 
     @property
-    def cnames(self):
+    def _ips(self) -> set[Tuple[str, str]]:
+        return self._public_ips.union(self._private_ips)
+
+    @property
+    def cnames(self) -> list[str]:
         return [cname for cname,_ in self._cnames]
 
     def update(self):
@@ -251,7 +255,7 @@ class PTRRecord:
             self.unused = unused
             self.location = locate(self.ipv4)
 
-            self.ptr = set()
+            self._ptr = set()
             self.implied_ptr = set()
             self.nat = None
         else:
@@ -259,7 +263,11 @@ class PTRRecord:
 
     def link(self, name, source):
         if re.fullmatch(dns_name_pattern, name):
-            self.ptr.add((name, source))
+            self._ptr.add((name, source))
+    
+    @property
+    def ptr(self):
+        return [ptr for ptr,_ in self._ptr]
     
     def discoverImpliedPTR(self, forward_dns: dict[str, DNSRecord]):
         for domain, dns in forward_dns.items():
