@@ -125,7 +125,7 @@ def create_A(name, ip, zone):
 				return None
 
 		with open('plugin/dnsmadeeasy/src/zones.json', 'r') as zonestream:
-			zones = json.load(zonestream)['dnsme']
+			zones = json.load(zonestream)
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
 				data = {
@@ -153,7 +153,7 @@ def create_CNAME(name, value, zone):
 				return None
 
 		with open('src/zones.json', 'r') as stream:
-			zones = json.load(stream)['dnsme']
+			zones = json.load(stream)
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
 				data = {
@@ -184,7 +184,7 @@ def create_PTR(addr, value, zone):
 				return None
 
 		with open('src/zones.json', 'r') as stream:
-			zones = json.load(stream)['dnsme']
+			zones = json.load(stream)
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
 				data = {
