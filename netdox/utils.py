@@ -132,13 +132,20 @@ class DNSRecord:
     root: str
     location: str
 
-
-    def __init__(self, name: str, root: str=None, constructor: dict=None):
+    def __init__(self, name: str=None, root: str=None, constructor: dict=None):
         if constructor:
             for k, v in constructor.items():
                 setattr(self, k, v)
-            for type, value in self.destinations.items():
-                setattr(self, type, set(value))
+            if not self.name:
+                raise ValueError('Must provide a name for a DNS record within constructor OR separately.')
+
+            for attr in ('_public_ips','_private_ips','_cnames'):
+                value = set()
+                for list in self.__dict__[attr]:
+                    value.add(tuple(list))
+                setattr(self, attr, value)
+            for _,list in self.resources.items():
+                list = set(list)
             self.subnets = set(self.subnets)
 
         elif re.fullmatch(dns_name_pattern, name):
@@ -315,11 +322,11 @@ def loadDNS(file: Union[str, DirEntry]) -> dict[str, DNSRecord]:
     return d
 
 @critical
-def write_dns(dns_set, name='dns'):
+def writeDNS(dns_set: dict[str, DNSRecord], file: str):
     """
     Writes dns set to json file
     """
-    with open(f'src/{name}.json', 'w') as dns:
+    with open(file, 'w') as dns:
         dns.write(json.dumps(dns_set, cls=JSONEncoder, indent=2))
 
 #######################################
