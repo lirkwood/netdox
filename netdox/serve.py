@@ -35,7 +35,7 @@ def webhooks():
                     return Response(status=200, headers=[('X-Ps-Secret', request.headers['X-PS-Secret'])])
 
                 elif event['type'] == 'workflow.updated':
-                    return ps_workflow_updated(event)
+                    return workflow_updated(event)
                 
                 else:
                     print(json.dumps(body, indent=4))
@@ -47,7 +47,7 @@ def webhooks():
         return Response(status=500)
 
 
-def ps_workflow_updated(event):
+def workflow_updated(event):
     """
     Main route. If workflow is 'Approved' netdox attempts to realise the links in the document.
     """
@@ -61,10 +61,13 @@ def ps_workflow_updated(event):
         if document_type == 'dns':
             return approved_dns(document_uri)
 
+        elif document_type == 'ip':
+            return approved_ip(document_uri)
+
 
 def approved_dns(uri):
     """
-    Handles documents with 'dns' type and worflow 'Approved'.
+    Handles ratifying changes specified in a DNS document.
     """
     info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
     links = BeautifulSoup(ps_api.get_xref_tree(uri), features='xml')
@@ -73,7 +76,6 @@ def approved_dns(uri):
     if info['name'] and info['root']:
         for link in links("xref"):
             try:
-                # if link is not unresolved
                 if not (hasattr(link, 'unresolved') and link['unresolved'] == 'true'):
                     if link['type'] in ('ipv4','cname'):
                         name = info['name']
@@ -85,47 +87,60 @@ def approved_dns(uri):
                         if sourcePlugin in pluginmaster.pluginmap['all']:
                             plugin = pluginmaster.pluginmap['all'][sourcePlugin]
                             if link['type'] == 'ipv4':
-                                if iptools.valid_ip(value) and value not in dns[name].ips:
+                                if iptools.valid_ip(value):
                                     try:
                                         plugin.create_A(name, value, zone)
                                     except AttributeError:
                                         print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating an A record.')
                             else:
-                                if re.fullmatch(utils.dns_name_pattern, value) and value not in dns[name].cnames:
+                                if re.fullmatch(utils.dns_name_pattern, value):
+                                    if not value.endswith('.'):
+                                        value += '.'
                                     try:
                                         plugin.create_CNAME(name, value, zone)
                                     except AttributeError:
-                                        print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating an CNAME record.')
+                                        print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating a CNAME record.')
+                        else:
+                            print(f'[WARNING][webhooks] Unrecognised plugin {sourcePlugin}')
             except Exception:
                 print(f'[ERROR][webhooks] Failed to parse the following xref as a DNS link:\n{link.prettify()}')
 
     return Response(status=200)
 
-    
-        # ## Generic approved DNS actions
-        # for destination in destinations("property"):
 
-        #     if destination['name'] == 'ipv4':
-        #         ip = destination.xref.string
-        #         if ip not in dns[info['name']].ips:
-        #             if iptools.public_ip(ip):
-        #                 ## Create public A record
-        #                 pass
-                    
-        #             else:
-        #                 ## Create private A record
-        #                 pass
+def approved_ip(uri):
+    """
+    Handles ratifying changes specified in an IP document.
+    """
+    info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
+    links = BeautifulSoup(ps_api.get_xref_tree(uri), features='xml')
+    if info['ipv4']:
+        for link in links("xref"):
+            try:
+                if not (hasattr(link, 'unresolved') and link['unresolved'] == 'true'):
+                    ip = info['ipv4'].split('.')[-1]
+                    value = link['urititle']
+                    if re.fullmatch(utils.dns_name_pattern, value):
+                        if not value.endswith('.'):
+                            value += '.'
+                        dest = ps_api.pfrag2dict(ps_api.get_fragment(uri, link.parent['id']))
+                        sourcePlugin = dest['source'].lower()
+                        if sourcePlugin in pluginmaster.pluginmap['all']:
+                            plugin = pluginmaster.pluginmap['all'][sourcePlugin]
+                            try:
+                                plugin.create_PTR(ip, value)
+                            except AttributeError:
+                                print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating a PTR record.')
+                        else:
+                            print(f'[WARNING][webhooks] Unrecognised plugin {sourcePlugin}')
+                    else:
+                        print(f'[ERROR][webhooks] Invalid PTR value: {value}. Must be a valid FQDN.')
 
-        #     elif destination['name'] == 'cname':
-        #         value = destination.xref.string
-        #         if ip not in dns[info['name']].ips:
-        #             if info['source'] == 'DNSMadeEasy':
-        #                 ## Create public CNAME
-        #                 pass
-                    
-        #             elif info['source'] == 'ActiveDirectory':
-        #                 ## Create private CNAME
-        #                 pass
+            except Exception:
+                print(f'[ERROR][webhooks] Failed to parse the following xref as a PTR link:\n{link.prettify()}')
+                
+    return Response(status=200)
+
 
 # def approved_vm(uri):
 #     """
