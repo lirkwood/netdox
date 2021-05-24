@@ -5,6 +5,7 @@
                 exclude-result-prefixes="#all">
 
 <xsl:output method="xml" indent="yes" />
+<xsl:variable name="config" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
 
 <xsl:template match="/">
     <xsl:variable name="dns" select="json-to-xml(dns)"/>
@@ -20,6 +21,7 @@
             <xsl:variable name="labels">
                 <xsl:for-each select="xpf:array[@key = 'labels']/xpf:string">,<xsl:value-of select="."/></xsl:for-each>
             </xsl:variable>
+            <xsl:variable name="role" select="xpf:string[@key = 'role']/text()"/>
 
                 <documentinfo>
                     <uri docid="_nd_{translate($name,'.','_')}" title="{$name}">
@@ -54,7 +56,7 @@
                         <property name="root"       title="Root Domain"        value="{xpf:string[@key = 'root']}" />
                         <property name="role"       title="DNS Role"    datatype="xref">
                         <xsl:if test="xpf:string[@key = 'role']">
-                            <xref frag="default" docid="_nd_role_{xpf:string[@key = 'role']}" />
+                            <xref frag="default" docid="_nd_role_{$role}" />
                         </xsl:if>
                         </property>
                         <xsl:choose>
@@ -141,11 +143,13 @@
                     </xsl:for-each>
                     </properties-fragment>
 
+                    <xsl:if test="$config/xpf:map[@key = $role]/*[@key = 'screenshot'] = '1'">
                     <fragment id="screenshot" labels="text-align-center">
                         <block label="border-2">
                             <image src="/ps/operations/network/website/screenshots/{translate($name,'.','_')}.jpg"/>
                         </block>
                     </fragment>
+                    </xsl:if>
                     
                     <properties-fragment id="url-key">
                         <property name="url-key" title="URL Key" value="" />
