@@ -141,9 +141,9 @@ def create_reverse(ip: str, value: str):
     Schedules a PTR record for creation in ActiveDirectory
     """
     if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
-        with open('src/ips.json', 'r') as dnsstream:
+        with open('src/reverse.json', 'r') as dnsstream:
             dns = json.load(dnsstream)
-            if value in dns[ip]['ptrs']:
+            if [value, 'ActiveDirectory'] in dns[ip]['_ptr']:
                 return None
     
         addr = ip.split('.')[-1]
