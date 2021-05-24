@@ -232,7 +232,7 @@ def main():
     pluginmaster.runStage('other', forward, reverse)
 
     utils.writeDNS(forward, 'src/dns.json')
-    utils.writeDNS(reverse, 'src/reverse.json')
+    utils.writeDNS(reverse, 'src/ips.json')
     # Write DNS documents
     utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents

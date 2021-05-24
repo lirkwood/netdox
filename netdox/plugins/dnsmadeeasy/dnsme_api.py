@@ -183,7 +183,7 @@ def create_PTR(ip: str, value: str):
 	Creates a PTR record in DNSMadeEasy
 	"""
 	if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
-		with open('src/reverse.json', 'r') as dnsstream:
+		with open('src/ips.json', 'r') as dnsstream:
 			dns = json.load(dnsstream)
 			if [value, 'DNSMadeEasy'] in dns[ip]['_ptr']:
 				return None
