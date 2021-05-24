@@ -82,7 +82,7 @@ def init():
 ######################
 
 @utils.critical
-def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]):
+def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
     """
     Assembles unique set of all ips referenced in the dns and writes it
     """
@@ -99,8 +99,6 @@ def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]
         for ip in iptools.subn_iter(subnet):
             if ip not in reverse:
                 reverse[ip] = utils.PTRRecord(ip, unused=True)
-
-    utils.write_dns(reverse, 'ips')
 
 @utils.critical
 def apply_roles(dns_set: dict[str, utils.DNSRecord]):
@@ -233,8 +231,8 @@ def main():
     # Run remaining plugins
     pluginmaster.runStage('other', forward, reverse)
 
-    utils.write_dns(forward)
-    utils.write_dns(reverse, 'reverse')
+    utils.writeDNS(forward, 'src/dns.json')
+    utils.writeDNS(reverse, 'src/reverse.json')
     # Write DNS documents
     utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
