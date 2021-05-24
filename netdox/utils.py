@@ -8,10 +8,14 @@ from datetime import datetime
 from sys import argv
 
 ## Global vars
-
-with open('src/authentication.json', 'r') as stream:
-    global auth
-    auth = json.load(stream)
+def auth():
+    global authdict
+    try:
+        return authdict
+    except NameError:
+        with open('src/authentication.json', 'r') as stream:
+            authdict = json.load(stream)
+        return authdict
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 

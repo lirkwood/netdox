@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 # Setting global vars
 
-credentials = utils.auth['pageseeder']
+credentials = utils.auth()['pageseeder']
 
 defaultgroup = credentials['group']
 base = f'https://{credentials["host"]}/ps/service'

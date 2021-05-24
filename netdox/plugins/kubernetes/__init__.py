@@ -8,7 +8,7 @@ for dir in ('out', 'src'):
   if not os.path.exists(f'plugins/kubernetes/{dir}'):
       os.mkdir(f'plugins/kubernetes/{dir}')
 
-auth = utils.auth['plugins']['kubernetes']
+auth = utils.auth()['plugins']['kubernetes']
 with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
     clusters = ''
     users = ''

@@ -81,7 +81,7 @@ def sentenceStale():
     Adds 30-day timer to files present on pageseeder but not locally
     """
     today = datetime.now().date()
-    group_path = f"/ps/{utils.auth['pageseeder']['group'].replace('-','/')}"
+    group_path = f"/ps/{utils.auth()['pageseeder']['group'].replace('-','/')}"
     stale = {}
     # for every folder in context on pageseeder
     for folder, folder_uri in ps_api.urimap.items():

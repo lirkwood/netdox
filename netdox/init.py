@@ -11,7 +11,7 @@ def init():
     """
     Initialises container and makes it usable for serve and refresh
     """
-    psauth = utils.auth['pageseeder']
+    psauth = utils.auth()['pageseeder']
 
     # setting up dirs
     for path in ('out', '/etc/ext/base'):

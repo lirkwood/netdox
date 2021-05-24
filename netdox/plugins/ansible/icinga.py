@@ -1,7 +1,7 @@
 from plugins.ansible.utils import *
 import utils
 
-icinga_hosts = utils.auth['plugins']['icinga']
+icinga_hosts = utils.auth()['plugins']['icinga']
 
 def set_host(address, location=None, icinga=None, template="generic-host", display_name=None):
     """

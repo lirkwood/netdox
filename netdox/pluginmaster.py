@@ -18,7 +18,7 @@ def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, int], Any, Any]:
                 raise ImportError(f'[ERROR][plugins] Failed to import plugin {pluginName}: \n{format_exc()}')
             else:
                 if hasattr(plugin, 'stage'):
-                    stage = plugin.stage
+                    stage = plugin.stage.lower()
                 else:
                     stage = 'none'
                 yield plugin, plugindir, stage

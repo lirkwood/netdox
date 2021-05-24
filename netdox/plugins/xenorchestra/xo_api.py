@@ -4,7 +4,7 @@ import iptools, utils
 
 ## Some initialisation
 
-creds = utils.auth['plugins']['xenorchestra']
+creds = utils.auth()['plugins']['xenorchestra']
 global url
 url = f"wss://{creds['host']}/api/"
 

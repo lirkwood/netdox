@@ -134,7 +134,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     return apps
     
 def main(forward_dns, reverse_dns):
-    auth = utils.auth['plugins']['kubernetes']
+    auth = utils.auth()['plugins']['kubernetes']
     allApps = {}
     for context in auth:
         allApps[context] = getApps(context)
