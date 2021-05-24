@@ -1,4 +1,4 @@
-import os, utils, pluginmaster
+import os, utils
 from textwrap import dedent
 from bs4 import BeautifulSoup
 
