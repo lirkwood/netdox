@@ -71,9 +71,8 @@ def approved_dns(uri):
     """
     info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
     links = BeautifulSoup(ps_api.get_xref_tree(uri), features='xml')
-    dns = utils.loadDNS('src/dns.json')
         
-    if info['name'] and info['root']:
+    if 'name' in info and 'root' in info and info['name'] and info['root']:
         for link in links("xref"):
             try:
                 if not (hasattr(link, 'unresolved') and link['unresolved'] == 'true'):
@@ -104,6 +103,8 @@ def approved_dns(uri):
                             print(f'[WARNING][webhooks] Unrecognised plugin {sourcePlugin}')
             except Exception:
                 print(f'[ERROR][webhooks] Failed to parse the following xref as a DNS link:\n{link.prettify()}')
+    else:
+        print('[ERROR][webhooks] Missing mandatory fields: name or root')
 
     return Response(status=200)
 
@@ -114,7 +115,7 @@ def approved_ip(uri):
     """
     info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
     links = BeautifulSoup(ps_api.get_xref_tree(uri), features='xml')
-    if info['ipv4']:
+    if 'ipv4' in info and info['ipv4']:
         for link in links("xref"):
             try:
                 if not (hasattr(link, 'unresolved') and link['unresolved'] == 'true'):
@@ -138,6 +139,8 @@ def approved_ip(uri):
 
             except Exception:
                 print(f'[ERROR][webhooks] Failed to parse the following xref as a PTR link:\n{link.prettify()}')
+    else:
+        print('[ERROR][webhooks] Missing mandatory fields: ipv4')
                 
     return Response(status=200)
 
