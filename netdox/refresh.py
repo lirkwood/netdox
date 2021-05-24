@@ -78,27 +78,8 @@ def init():
 
 
 ######################
-# Gathering DNS info #
+# Critical functions #
 ######################
-
-@utils.critical
-def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
-    """
-    Assembles unique set of all ips referenced in the dns and writes it
-    """
-    subnets = set()
-    for domain in forward:
-        dns = forward[domain]
-        for ip in dns.ips:
-            if ip not in reverse:
-                reverse[ip] = utils.PTRRecord(ip)
-            if not iptools.public_ip(ip):
-                subnets.add(reverse[ip].subnet)
-    
-    for subnet in subnets:
-        for ip in iptools.subn_iter(subnet):
-            if ip not in reverse:
-                reverse[ip] = utils.PTRRecord(ip, unused=True)
 
 @utils.critical
 def apply_roles(dns_set: dict[str, utils.DNSRecord]):
@@ -131,6 +112,33 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
             config['default']['domains'].append(domain)
         except KeyError:
             print('[DEBUG][refresh.py] Unexpected behaviour: dns_set is missing domain in unassigned')
+
+@utils.critical
+def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
+    """
+    Populates a reverse dns set with any missing IPs from a forward dns set
+    """
+    subnets = set()
+    for domain in forward:
+        dns = forward[domain]
+        for ip in dns.ips:
+            if ip not in reverse:
+                reverse[ip] = utils.PTRRecord(ip)
+            if not iptools.public_ip(ip):
+                subnets.add(reverse[ip].subnet)
+    
+    for subnet in subnets:
+        for ip in iptools.subn_iter(subnet):
+            if ip not in reverse:
+                reverse[ip] = utils.PTRRecord(ip, unused=True)
+
+@utils.critical
+def screenshots():
+    """
+    Runs screenshotCompare node.js script and writes output using xslt
+    """
+    subprocess.run('node screenshotCompare.js', check=True, shell=True)
+    utils.xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
 
 
 ###########################
@@ -198,19 +206,6 @@ def implied_ptrs(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str,
         ptr.discoverImpliedPTR(forward_dns)
 
 
-##################
-# Imgdiff script #
-##################
-
-@utils.critical
-def screenshots():
-    """
-    Runs screenshotCompare node.js script and writes output using xslt
-    """
-    subprocess.run('node screenshotCompare.js', check=True, shell=True)
-    utils.xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
-
-
 #############
 # Main flow #
 #############
@@ -222,6 +217,7 @@ def main():
     pluginmaster.runStage('resource', forward, reverse)
 
     # apply additional modifications/filters
+    ips(forward, reverse)
     apply_roles(forward)
     locations(forward)
     license_keys(forward)
@@ -236,7 +232,6 @@ def main():
     # Write DNS documents
     utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
-    ips(forward, reverse)
     utils.xslt('ips.xsl', 'src/ips.xml')
 
     screenshots()
