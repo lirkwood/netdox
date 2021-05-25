@@ -2,6 +2,8 @@
 
 About plugins
 ==============
+Plugins provide instance-specific functionality to Netdox in order to support any network/environment.
+Each plugin must be an importable Python module placed in a directory within the netdox/plugins folder, where the name of the directory is taken as the plugin name.
 
 
 Plugin stages
@@ -29,6 +31,8 @@ Plugins have no mandatory attributes, but in order for Netdox to auto-run your p
 ``dict[str, utils.DNSRecord]`` *and* ``dict[str, utils.PTRRecord]``
 
 where the dictionary keys are the DNS record names (either domain or IPv4 address).
+
+Any configuration values needed for your plugins to run should be placed in authentication.json (for more info see ref:`config`).
 
 
 pluginmaster
