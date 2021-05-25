@@ -6,7 +6,9 @@
                folder="website"
                overwriteproperties="true"
                overwrite="true"
-               unzip="true">
+               unzip="true"
+               resolve="false"
+               validate="false">
       <fileset dir="out">
         <include name="netdox-src.zip"/>
       </fileset>
