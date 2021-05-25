@@ -11,16 +11,17 @@ In other words, any records in that document that do not already exist will be c
 Netdox achieves this by reading the *source* property of each destination fragment. 
 This value must match the name of a plugin (case insensitive) with a valid function or the record will not be created. Expected function names are ``create_A``, ``create_CNAME``, and ``create_PTR``. 
 These functions must be exposed at the top level of the plugin module in order for Netdox to recognise them, and must take the following arguments:
-    create_A / create_CNAME:
-        name: A string containing the name to be used for the DNS record.
 
-        value: A string containing the value of the record (an IP address or FQDN, depending on the record type)
+create_A / create_CNAME:
+    :name: A string containing the name to be used for the DNS record.
 
-        zone: A string containing the DNS zone the record should be created in.
+    :value: A string containing the value of the record (an IP address or FQDN, depending on the record type)
 
-    create_PTR:
-        ip: A string containing the full IP address to use as the name of the PTR record.
-        
-        value: A string containing the FQDN the PTR record should resolve to.
+    :zone: A string containing the DNS zone the record should be created in.
+
+create_PTR:
+    :ip: A string containing the full IP address to use as the name of the PTR record.
+    
+    :value: A string containing the FQDN the PTR record should resolve to.
 
 Modifying resources other than DNS has not yet been implemented.

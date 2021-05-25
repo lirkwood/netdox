@@ -22,6 +22,8 @@ The configuration is done through the ``locations.json`` file (stored in persist
 Each location should be defined by an array of IPv4 subnets using the *CIDR* notation (e.g. ``192.168.0.0/16``). 
 The smallest subnet an IP is part of will be used to define that IP's location, so that you don't have to define a location for every possible subnet in your network.
 
+A conveniece function exists for this so that you can use location data in plugins, see :ref:`utils`.
+
 
 .. _roles:
 
