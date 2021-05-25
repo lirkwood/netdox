@@ -18,7 +18,7 @@
     <section id="body">
         <properties-fragment id="config">
             <property name="name" title="Name" value="default"/>
-            <property name="desc" title="Description" value="Default role. Has a &#39;hostalive&#39; monitor."/>
+            <property name="desc" title="Description" value="Default role."/>
             <property name="screenshot" title="Screenshot" value="no"/>
         </properties-fragment>
     </section>

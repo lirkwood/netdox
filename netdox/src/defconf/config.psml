@@ -20,9 +20,7 @@ Here you may define additional DNS roles. Simply create a valid role document an
             </preformat>
             <para><xref frag="default" docid="_nd_role_default">DNS Role: default</xref></para>
             <para><xref frag="default" docid="_nd_role_website">DNS Role: website</xref></para>
-            <para><xref frag="default" docid="_nd_role_storage">DNS Role: storage</xref></para>
             <para><xref frag="default" docid="_nd_role_pageseeder">DNS Role: pageseeder</xref></para>
-            <para><xref frag="default" docid="_nd_role_unmonitored">DNS Role: unmonitored</xref></para>
         </fragment>
         <fragment id="exclude">
             <heading level="2">Exclusions</heading>
