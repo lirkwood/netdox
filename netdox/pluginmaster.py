@@ -1,3 +1,10 @@
+"""
+This module initialises and exposes plugins as imported modules for use by Netdox and other plugins.
+
+Initially the default plugins were baked in features, but it became obvious that in order for Netdox to be useful anywhere outside of an internal context, it needed completely modular inputs at least. This was quickly expanded to allow custom code to be executed at multiple points of interest, which became the plugin stages.
+This script may also be used to manually run a plugin or plugin stage. Usage is as follows: ``python3 pluginmaster.py <stage|plugin> <name>``
+"""
+
 import utils
 import importlib, sys, os
 from traceback import format_exc
@@ -5,9 +12,14 @@ from typing import Any, Generator, Tuple
 
 ## Initialisation
 
-def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, int], Any, Any]:
+def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, str], Any, Any]:
     """
-    Generator which yields a 3-tuple of a plugin, the location of said plugin, and an optional stage at which to run
+    This function scans the plugins directory for valid modules and imports if possible. It also loads the plugins stage if present.
+
+    Yields:
+        A 3-tuple containing the module object of a plugin, an *os.DirEntry* object corresponding to the directory the plugin was found in, and the plugin stage as a string.
+    
+    :meta public:
     """
     for plugindir in os.scandir('plugins'):
         if plugindir.is_dir() and plugindir.name != '__pycache__':
@@ -26,7 +38,9 @@ def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, int], Any, Any]:
 @utils.critical
 def initPlugins():
     """
-    Fetches all plugins and sorts them by stage
+    Loads any valid plugins into a global dict named *pluginmap*, in which keys are any used plugin stages, aswell as an *all* stage which contains all initialised plugins.
+    
+    :meta public:
     """
     global pluginmap
     pluginmap = {'all':{}}
@@ -40,9 +54,19 @@ def initPlugins():
 
 ## Runners
 
-def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.PTRRecord]):
     """
-    Runs a single plugin via it's runner
+    Calls the top-level *runner* function of the provided plugin module object. Arguments passed to *runner* are the two dns sets (one forward and one reverse) passed to this function, which can be used for reading or writing.
+
+    Args:
+        plugin:
+            A module object returned by ``importlib.import_module``
+        forward_dns:
+            A dictionary where keys are unique DNS names and values are a ``utils.DNSRecord`` class describing all forward DNS records with that name.
+        reverse_dns:
+            A dictionary where keys are unique DNS names and values are a ``utils.PTRRecord`` class describing all reverse DNS records with that name.
+    
+    :meta public:
     """
     print(f'[INFO][pluginmaster] Running plugin {plugin.__name__}')
     try:
@@ -52,9 +76,11 @@ def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict
     else:
         print(f'[INFO][pluginmaster] Plugin {plugin.__name__} completed successfully')
 
-def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.PTRRecord]):
     """
-    Runs all initialised plugins in a given stage.
+    Calls *runPlugin* on all plugins in a specified stage.
+    
+    :meta public:
     """
     global pluginmap
     print(f'[INFO][pluginmaster] Running all plugins in stage {stage}')
@@ -83,7 +109,7 @@ if __name__ == '__main__':
             found = False
             for stage, pluginset in pluginmap.items():
                 if plugin in pluginset:
-                    runPlugin(plugin, forward_dns, reverse_dns)
+                    runPlugin(pluginset[plugin], forward_dns, reverse_dns)
                     found = True
             if not found:
                 raise ImportError(f'[ERROR][pluginmaster] Plugin {plugin} not found')
