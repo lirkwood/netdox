@@ -7,45 +7,5 @@
         "host": "",
         "group": ""
     },
-    "plugins": {
-        "dnsmadeeasy": {
-            "api": "",
-            "secret": ""
-        },
-        "xenorchestra": {
-            "username": "",
-            "password": "",
-            "host": ""
-        },
-        "icinga": {
-            "cluster": {
-                "locations": [],
-                "username": "",
-                "password": ""
-            }
-        },
-        "kubernetes": {
-            "<cluster-name>": {
-                "locations": [],
-                "server": "",
-                "token": ""
-            }
-        },
-        "pfsense": {
-            "username": "",
-            "password": "",
-            "host": ""
-        },
-        "cloudflare": {
-            "token": ""
-        },
-        "aws": {
-            "region": "",
-            "aws_access_key_id": "",
-            "aws_secret_access_key": ""
-        },
-        "ansible": {
-            "host": ""
-        }
-    }
+    "plugins": {}
 }
