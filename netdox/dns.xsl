@@ -60,26 +60,6 @@
                         </xsl:if>
                         </property>
                         <xsl:choose>
-                            <xsl:when test="xpf:string[@key = 'license']">
-                        <property name="license"     title="PageSeeder License"      datatype="xref" >
-                            <xref frag="default" uriid="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
-                        </property>
-                            </xsl:when>
-                            <xsl:otherwise>
-                        <property name="license" title="PageSeeder License" value="—" />
-                            </xsl:otherwise>
-                        </xsl:choose>
-                        <xsl:choose>
-                            <xsl:when test="xpf:string[@key = 'org']">
-                        <property name="organization"     title="Licensed Organization"      datatype="xref" >
-                            <xref frag="default" uriid="{xpf:string[@key = 'org']}" reversetitle="Domain using license issued to this organization."/>
-                        </property>
-                            </xsl:when>
-                            <xsl:otherwise>
-                        <property name="organization" title="Licensed Organization" value="—" />
-                            </xsl:otherwise>
-                        </xsl:choose>
-                        <xsl:choose>
                             <xsl:when test="not(xpf:string[@key='location']/text() = null)">
                         <property name="location" title="Location" value="{xpf:string[@key = 'location']}" />
                             </xsl:when>
@@ -87,6 +67,14 @@
                         <property name="location" title="Location" value="—" />
                             </xsl:otherwise>
                         </xsl:choose>
+                        <xsl:if test="$role = 'pageseeder'">
+                        <property name="license"     title="PageSeeder License"      datatype="xref" >
+                            <xref frag="default" uriid="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
+                        </property>
+                        <property name="organization"     title="Licensed Organization"      datatype="xref" >
+                            <xref frag="default" uriid="{xpf:string[@key = 'org']}" reversetitle="Domain using license issued to this organization."/>
+                        </property>
+                        </xsl:if>
                     </properties-fragment>
                 </section>
                 <section id="dest" title="Destinations">
