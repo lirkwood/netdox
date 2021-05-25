@@ -1,3 +1,11 @@
+"""
+This module contains any multi-purpose or generic code for use by both internal processes and plugins.
+
+This script is mostly to improve the development process and encourage code reuse. 
+It contains the two main classes used within Netdox, *DNSRecord* and *PTRRecord*, which represent all the DNS records which share a name.
+It also defines two decorators which are used throughout Netdox, and some other functions which became useful across multiple scripts.
+"""
+
 from collections import defaultdict
 import iptools, json, re
 import subprocess
@@ -11,6 +19,13 @@ from sys import argv
 ## Global vars
 global authdict
 def auth():
+    """
+    Returns the contents of the main configuration file, ``authentication.json``.
+    If the file has not yet been opened in this instance, it is opened and read first.
+
+    Returns:
+        A dictionary containing the authentication/configuration details for PageSeeder and any plugins which use it.
+    """
     try:
         return authdict
     except NameError:
@@ -26,7 +41,10 @@ dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
 def critical(func):
     """
-    For functions which are absolutely necessary. On fatal, entire app stops.
+    Prints timestamped debug messages before and after running the passed function.
+    Also prints an additional message for clarity if the function raises an exception.
+
+    :noindex:
     """
     funcname = func.__name__
     funcmodule = func.__module__
@@ -48,7 +66,10 @@ def critical(func):
 
 def handle(func):
     """
-    For functions that are not necessary. On fatal, return None and continue.
+    Catches any exceptions raised by the passed function, prints the traceback, and returns *None*.
+    Useful for functions which perform non-essential operations.
+
+    :noindex:
     """
     funcname = func.__name__
     funcmodule = func.__module__
@@ -84,9 +105,11 @@ for location in _location_map:
 
 def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
     """
-    Returns a location for an ip or set of ips, None on fatal.
-    Location data is specified in src/locations.json.
-    Most specific match is used.
+    Returns a location for an ip or set of ips, or None if there is no determinable location.
+    Locations are decided based on the content of the ``locations.json`` config file (for more see :ref:`config`)
+
+    :Returns:
+        String|None; A string containing the location as it appears in ``locations.json``, or None if no valid location could be decided on.
     """
     if isinstance(ip_set, iptools.ipv4):
         if ip_set.valid:
@@ -289,6 +312,9 @@ class JSONEncoder(json.JSONEncoder):
     JSON Encoder compatible with DNSRecord and PTRRecord, sets, and datetime objects
     """
     def default(self, obj):
+        """
+        :meta private:
+        """
         if isinstance(obj, DNSRecord) or isinstance(obj, PTRRecord):
             return obj.__dict__
         elif isinstance(obj, set):
