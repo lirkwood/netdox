@@ -5,11 +5,12 @@ from typing import Iterable, Tuple, Union
 from os import scandir, DirEntry
 from traceback import format_exc
 from datetime import datetime
+from functools import wraps
 from sys import argv
 
 ## Global vars
+global authdict
 def auth():
-    global authdict
     try:
         return authdict
     except NameError:
@@ -31,6 +32,8 @@ def critical(func):
     funcmodule = func.__module__
     if funcmodule == '__main__':
         funcmodule = argv[0].replace('.py','')
+
+    @wraps(func)
     def wrapper(*args, **kwargs):
         print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
         try:
@@ -51,6 +54,8 @@ def handle(func):
     funcmodule = func.__module__
     if funcmodule == '__main__':
         funcmodule = argv[0].replace('.py','')
+        
+    @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             returned = func(*args, **kwargs)
