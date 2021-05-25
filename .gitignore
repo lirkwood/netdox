@@ -16,3 +16,5 @@ netdox/logs
 !netdox/src/pageseeder.properties
 !netdox/src/locations.json
 !netdox/src/nat.txt
+
+docs/_build/
