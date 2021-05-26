@@ -36,7 +36,7 @@ def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
                 'name': pod.metadata.name,
                 'containers': containers,
                 'nodeName': pod.spec.node_name,
-                'namespace': namespace
+                'namespace': namespace,
             }
             del pod.metadata.labels['pod-template-hash']
             labelHash = hash(json.dumps(pod.metadata.labels, sort_keys=True))
@@ -100,6 +100,8 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServiceDomains(namespace)
     workerAddrs = getWorkerAddresses()
+    contextDetails = utils.auth()["plugins"]["kubernetes"][context]
+    podLinkBase = f'{contextDetails["server"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
     # map domains to their destination pods
     podDomains = {}
@@ -123,6 +125,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
         if labelHash in podsByLabel:
             for pod in podsByLabel[labelHash]:
                 podName = pod['name']
+                pod['rancher'] = podLinkBase + podName
                 app['pods'][podName] = pod
                 try:
                     app['pods'][podName]['hostip'] = workerAddrs[pod['nodeName']]['InternalIP']
