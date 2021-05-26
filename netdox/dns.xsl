@@ -60,7 +60,7 @@
                         </xsl:if>
                         </property>
                         <xsl:choose>
-                            <xsl:when test="not(xpf:string[@key='location']/text() = null)">
+                            <xsl:when test="string-length(xpf:string[@key = 'location']) != 0">
                         <property name="location" title="Location" value="{xpf:string[@key = 'location']}" />
                             </xsl:when>
                             <xsl:otherwise>
@@ -68,12 +68,12 @@
                             </xsl:otherwise>
                         </xsl:choose>
                         <xsl:if test="$role = 'pageseeder'">
-                            <xsl:if test="not(xpf:string[@key='license']/text() = null)">
+                            <xsl:if test="string-length(xpf:string[@key = 'license']) != 0">
                         <property name="license"     title="PageSeeder License"      datatype="xref" >
                             <xref frag="default" uriid="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
                         </property>
                         <property name="organization"     title="Licensed Organization"      datatype="xref" >
-                            <xsl:if test="not(xpf:string[@key='org']/text() = null)">
+                            <xsl:if test="string-length(xpf:string[@key='org']) != 0">
                             <xref frag="default" uriid="{xpf:string[@key = 'org']}" reversetitle="Domain using license issued to this organization."/>
                             </xsl:if>
                         </property>
