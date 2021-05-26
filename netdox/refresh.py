@@ -82,6 +82,14 @@ def init():
 ######################
 
 @utils.critical
+def flatten(dns_set: dict[str, utils.DNSRecord]):
+    for domain in dns_set:
+        if (domain.lower() in dns_set) and (dns_set[domain.lower()] is not dns_set[domain]):
+            union = utils.merge_sets(dns_set[domain.lower()], dns_set[domain])
+            del dns_set[domain]
+            dns_set[domain.lower()] = union
+
+@utils.critical
 def apply_roles(dns_set: dict[str, utils.DNSRecord]):
     """
     Applies custom roles defined in _nd_config
@@ -218,6 +226,7 @@ def main():
 
     # apply additional modifications/filters
     ips(forward, reverse)
+    flatten(forward)
     apply_roles(forward)
     locations(forward)
     license_keys(forward)
