@@ -65,7 +65,7 @@ function init {
             exit 1
     fi
 
-    crontab <<< '0 8 * * * netdox refresh'
+    crontab <<< '15 6 * * * netdox refresh'
 }
 
 
@@ -82,7 +82,7 @@ for arg in "$@"; do
         esac
     elif [[ $arg == 'start' ]]
         then if init
-            then serve & refresh
+            then serve & refresh &
         fi
     fi
 done
