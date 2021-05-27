@@ -26,13 +26,15 @@ Any plugins with no defined stage or a stage not mentioned above are not run aut
 
 Running plugins
 ---------------
-Plugins have no mandatory attributes, but in order for Netdox to auto-run your plugin it must expose a function named 'runner' at the top level of the module. This function will be called with two arguments, a forward and reverse DNS set. These 'DNS sets' are typed like: 
+Plugins have no mandatory attributes, but in order for Netdox to auto-run your plugin it must expose a function named 'runner' at the top level of the module.
+This function will be called with two arguments, a forward and reverse DNS set.
+These 'DNS sets' are typed like: 
 
 ``dict[str, utils.DNSRecord]`` *and* ``dict[str, utils.PTRRecord]``
 
 where the dictionary keys are the DNS record names (either domain or IPv4 address).
 
-Any configuration values needed for your plugins to run should be placed in authentication.json (for more info see ref:`config`).
+Any configuration values needed for your plugins to run should be placed in authentication.json (for more info see :ref:`config`).
 
 
 pluginmaster

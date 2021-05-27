@@ -1,8 +1,3 @@
-.. Netdox documentation master file, created by
-   sphinx-quickstart on Mon May 24 17:19:19 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Documentation for the Netdox project
 ====================================
 
