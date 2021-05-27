@@ -13,26 +13,26 @@ with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
     clusters = ''
     users = ''
     contexts = ''
-    for cluster in auth:
+    for context in auth:
         clusters += f"""
         - cluster:
-            server: {auth[cluster]['server']}
-          name: {cluster}"""
+            server: {auth[context]['server']}/k8s/clusters/{auth[context]['clusterId']}
+          name: {context}"""
 
         users += f"""
-        - name: {cluster}
+        - name: {context}
           user:
-            token: {auth[cluster]['token']}
+            token: {auth[context]['token']}
         """
 
         contexts += f"""
         - context:
-            cluster: {cluster}
-            user: {cluster}
-          name: {cluster}
+            cluster: {context}
+            user: {context}
+          name: {context}
         """
 
-        current = cluster
+        current = context
 
         stream.write(dedent(f"""
         apiVersion: v1
