@@ -11,13 +11,13 @@ Plugin stages
 Plugins may perform multiple different tasks, from gathering DNS data to setting monitors for any domains which satisfy certain requirements. Because of this, some plugins may need to be run in a specific order, or provided with certain information by other plugins. In order to allow plugin writers to specify when to run their module, the concept of stages was introduced.
 Currently Netdox attempts to run any plugins in stages 'dns', 'resource', and 'other', in that order.
 
-**dns**
+:dns:
     Plugins in the *dns* stage are intended to run first, and their main purpose is to retrieve DNS records from any provider or other source, and add them to the master set.
 
-**resource**
+:resource:
     Plugins in the *resource* stage are run directly after the DNS stage, and are intended to retrieve information about any external resource that you wish to include in your network documentation. Two good examples are the default plugins 'kubernetes' and 'xenorchestra', which also generate their own psml.
 
-**other**
+:other:
     These plugins are run last, after some additional processing has been done on the data e.g. application of DNS roles (for more see :ref:`roles`)
 
 In order to set the stage for a plugin simply expose a string named 'stage' with the value of the desired stage at the top level of the module.

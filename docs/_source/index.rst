@@ -1,3 +1,5 @@
+.. _index:
+
 Documentation for the Netdox project
 ====================================
 
