@@ -118,20 +118,22 @@ class PSMLTranslator(SphinxTranslator):
     def visit_reference(self, node: nodes.Node) -> None:
         if node['internal']:
             if 'refuri' in node:
+                xref_display = 'document'
                 if '#' in node['refuri']:
                     document, refid = node['refuri'].split('#')
                 else:
                     document, refid = node['refuri'], 'default'
-                docid = document.split('.')[0]
-                if self.xref_type in ("embed", "transclude"):
-                    self.body += f'<blockxref frag="{refid}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
-                else:
-                    self.body += f'<xref frag="{refid}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
-                # removes file extension and capitalises
-                self.body += '.'.join(document.split('.')[:-1]).capitalize()
-                raise nodes.SkipChildren
+            elif 'refid' in node:
+                xref_display = 'document+fragment'
+                document, refid = self.docname, node['refid']
             else:
-                raise nodes.SkipDeparture
+                raise nodes.SkipNode
+
+            docid = document.split('.')[0]
+            if self.xref_type in ("embed", "transclude"):
+                self.body += f'<blockxref frag="{refid}" display="{xref_display}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
+            else:
+                self.body += f'<xref frag="{refid}" display="{xref_display}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
     
     def depart_reference(self, node: nodes.Node = None) -> None:
         if self.xref_type in ("embed", "transclude"):
