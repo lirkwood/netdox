@@ -48,12 +48,8 @@ class PSMLTranslator(SphinxTranslator):
 
     # Default behaviour
     def unknown_visit(self, node: nodes.Node) -> None:
-        # self.body += f'<untranslated:{node.__class__.__name__}>'
-        pass
-
-    def unknown_departure(self, node: nodes.Node) -> None:
-        # self.body += f'</untranslated:{node.__class__.__name__}>'
-        pass
+        print(node.__dict__)
+        raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
 
     ## Structural elements ##
 
@@ -78,6 +74,10 @@ class PSMLTranslator(SphinxTranslator):
     
     def depart_section(self, node: nodes.Node = None) -> None:
         self.heading_level -= 1
+
+    # Field List
+    def visit_field_list(self, node: nodes.Node) -> None:
+        raise nodes.SkipDeparture
 
     # Field
     def visit_field(self, node: nodes.Node = None) -> None:
@@ -246,6 +246,10 @@ class PSMLTranslator(SphinxTranslator):
     def visit_definition_list(self, node: nodes.Node = None) -> None:
         raise nodes.SkipDeparture
 
+    # Definition list item
+    def visit_definition_list_item(self, node: nodes.Node) -> None:
+        raise nodes.SkipDeparture
+
     # Term to be defined
     def visit_term(self, node: nodes.Node = None) -> None:
         pass
@@ -299,6 +303,18 @@ class PSMLTranslator(SphinxTranslator):
     def depart_desc(self, node: nodes.Node) -> None:
         self.depart_paragraph(node)
 
+    # Function name
+    def visit_desc_name(self, node: nodes.Node) -> None:
+        raise nodes.SkipDeparture
+
+    # Function name decoration
+    def visit_desc_addname(self, node: nodes.Node) -> None:
+        raise nodes.SkipDeparture
+    
+    # Function annotation
+    def visit_desc_annotation(self, node: nodes.Node) -> None:
+        raise nodes.SkipDeparture
+
     # Signature container
     def visit_desc_signature(self, node: nodes.Node) -> None:
         self.visit_literal(node)
@@ -332,6 +348,12 @@ class PSMLTranslator(SphinxTranslator):
 
     def depart_desc_content(self, node: nodes.Node = None) -> None:
         self.indent -= 1
+
+    ## Other ##
+
+    # Index
+    def visit_index(self, node: nodes.Node) -> None:
+        raise nodes.SkipDeparture
     
 
 
