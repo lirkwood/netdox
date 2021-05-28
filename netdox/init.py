@@ -9,7 +9,10 @@ from bs4 import BeautifulSoup
 @utils.critical
 def init():
     """
-    Initialises container and makes it usable for serve and refresh
+    Initialises container and makes it usable for serve and refresh.
+
+    Copies any values configured in ``authentication.json`` into ``pageseeder.properties`` and ``build.xml``,
+    creates some folders, and generates JSON import documents for core XSLT operations.
     """
     psauth = utils.auth()['pageseeder']
 
