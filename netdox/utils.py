@@ -23,7 +23,7 @@ def auth():
     Returns the contents of the main configuration file, ``authentication.json``.
     If the file has not yet been opened in this instance, it is opened and read first.
 
-    Returns:
+    :Returns:
         A dictionary containing the authentication/configuration details for PageSeeder and any plugins which use it.
     """
     try:
@@ -43,8 +43,6 @@ def critical(func):
     """
     Prints timestamped debug messages before and after running the passed function.
     Also prints an additional message for clarity if the function raises an exception.
-
-    :noindex:
     """
     funcname = func.__name__
     funcmodule = func.__module__
@@ -68,8 +66,6 @@ def handle(func):
     """
     Catches any exceptions raised by the passed function, prints the traceback, and returns *None*.
     Useful for functions which perform non-essential operations.
-
-    :noindex:
     """
     funcname = func.__name__
     funcmodule = func.__module__
