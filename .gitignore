@@ -1,9 +1,12 @@
 **/__pycache__
-*.zip
-*log.txt
+**/*.zip
+**/*log.txt
 
-.kube
+
+.vscode
 .dockerignore
+*.code-workspace
+netdox-backend*.yml
 netdox-src
 netdox/out
 netdox/node_modules
