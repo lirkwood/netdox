@@ -6,7 +6,7 @@ stage = 'resource'
 if not os.path.exists('plugins/xenorchestra/src'):
     os.mkdir('plugins/xenorchestra/src')
 
-for type in ('vms', 'hosts', 'pools'):
+for type in ('vms', 'hosts', 'pools', 'templates'):
     with open(f'plugins/xenorchestra/src/{type}.xml','w') as stream:
         stream.write(dedent(f"""
         <?xml version="1.0" encoding="UTF-8"?>

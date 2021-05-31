@@ -239,6 +239,6 @@ async def template_map(vms):
         name = templates[template]['name_label']
         vmSource['templates'][name] = template
 
-    with open('src/templates.json', 'w', encoding='utf-8') as stream:
+    with open('plugins/xenorchestra/src/templates.json', 'w', encoding='utf-8') as stream:
         stream.write(json.dumps(vmSource, indent=2, ensure_ascii=False))
-    utils.xslt('templates.xsl', 'src/templates.xml', 'out/config/templates.psml')
+    utils.xslt('plugins/xenorchestra/templates.xsl', 'plugins/xenorchestra/src/templates.xml', 'out/config/templates.psml')

@@ -26,7 +26,7 @@ def init():
             os.mkdir('out/'+path)
     
     # generate xslt json import files
-    for type in ('ips', 'dns', 'review', 'templates'):
+    for type in ('ips', 'dns', 'review'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(dedent(f"""
             <?xml version="1.0" encoding="UTF-8"?>
