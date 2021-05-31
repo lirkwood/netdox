@@ -96,9 +96,7 @@ async def getWorkerVMs(workerAddrs: dict):
     for uuid, vm in VMs.items():
         if '0/ipv4/0' in vm['addresses']:
             ip = vm['addresses']['0/ipv4/0']
-            if ip not in vmsByIP:
-                vmsByIP[ip] = []
-            vmsByIP[ip].append(uuid)
+            vmsByIP[ip] = uuid
 
     workerVMs = {}
     for worker, addrTypes in workerAddrs.items():
@@ -159,7 +157,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     
     return apps
     
-    
+
 def main(forward_dns,_):
     auth = utils.auth()['plugins']['kubernetes']
     allApps = {}
