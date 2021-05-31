@@ -1,5 +1,5 @@
 from kubernetes import client, config
-import json, utils
+import json, utils, pluginmaster
 
 ## Load config and init client for given context
 def initContext(context: str=None):
@@ -89,6 +89,24 @@ def getWorkerAddresses():
 
     return workers
 
+async def getWorkerVMs(workerAddrs: dict):
+    from plugins.xenorchestra import xo_api
+    VMs = await xo_api.authenticate(xo_api.fetchType)('VM')
+    vmsByIP = {}
+    for uuid, vm in VMs.items():
+        if '0/ipv4/0' in vm['addresses']:
+            ip = vm['addresses']['0/ipv4/0']
+            if ip not in vmsByIP:
+                vmsByIP[ip] = []
+            vmsByIP[ip].append(uuid)
+
+    workerVMs = {}
+    for worker, addrTypes in workerAddrs.items():
+        if 'InternalIP' in addrTypes:
+            addr = addrTypes['InternalIP']
+            workerVMs[worker] = vmsByIP[addr]
+    return workerVMs
+
 
 def getApps(context: str, namespace: str='default') -> dict[str]:
     """
@@ -100,6 +118,9 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServiceDomains(namespace)
     workerAddrs = getWorkerAddresses()
+    if 'xenorchestra' in pluginmaster.pluginmap['all']:
+        from asyncio import run
+        workerVMs = run(getWorkerVMs(workerAddrs))
     contextDetails = utils.auth()["plugins"]["kubernetes"][context]
     podLinkBase = f'{contextDetails["server"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
@@ -126,6 +147,8 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
             for pod in podsByLabel[labelHash]:
                 podName = pod['name']
                 pod['rancher'] = podLinkBase + podName
+                if pod['nodeName'] in workerVMs:
+                    pod['vm'] = workerVMs[pod['nodeName']]
                 app['pods'][podName] = pod
                 try:
                     app['pods'][podName]['hostip'] = workerAddrs[pod['nodeName']]['InternalIP']
@@ -135,6 +158,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
                     app['domains'] |= podDomains[podName]
     
     return apps
+    
     
 def main(forward_dns,_):
     auth = utils.auth()['plugins']['kubernetes']
