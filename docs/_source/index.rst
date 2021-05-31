@@ -1,19 +1,46 @@
 .. _index:
 
-Documentation for the Netdox project
-====================================
+Dev
+===
 
-Netdox is a network documentation generator designed for use with PageSeeder.
-It runs as a containerised application using mostly Python and XSLT but also some Node.js.
-The main goal of Netdox is to make network administration less confusing and more efficient. 
-By leveraging a plugin system, Netdox is able to integrate not only with whatever DNS provider you happen to use, but also with other frameworks which manage things such as VMs or Kubelets that are useful to document in the context of your network. 
-Netdox then generates PSML documents and uploads them (along with any plugin-generated psml) to a configured PageSeeder server.
+Netdox Overview
+---------------
+The following pages are for developers that need to maintain or extend Netdox, a collection of code that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
 
+Netdox is a containerised application built with Python, XSLT and some Node.js.
+The objective of Netdox is to improve the productivity of network administrators by consolidating information from a range of systems.
+This reduces the need to move between many different systems.
+It also uses any available information to connect data from one system to another.
+This reduces the need for administrators to be familiar with every system on the network, and the documentation is updated and pruned daily to keep data current and accurate.
+
+Plugins used in the Allette instance of Netdox interface with the following services:
+
+- ActiveDirectory
+- DNSMadeEasy
+- CloudFlare
+- Xen Orchestra
+- Kubernetes
+- AWS EC2
+- Icinga
+- Ansible
+- FortiGate
+- pfSense
+
+Architecture
+------------
+Netdox is, at it's simplest, a DNS record aggregator.
+All other functionality simply extends Netdox's ability to define network nodes by the DNS records that reference them.
+A core concept that Netdox leverages to deduce the topology of a network is that IP addresses are both immutable and permanent.
+More IP addresses cannot be created in an existing address space, and a single IP address always represents a single node on the network.
+This provides Netdox with an anchor that can be used to identify a node's position and role in the network's ecosystem.
+
+As IP addresses are deployed, released and redeployed, all changes are captured in PageSeeder through the document history.
+This can help to identify the cause of a problem, or even resolve one before it arises.
+Furthermore, this tracking of IP address usage means it is trivial to capture the next unused address for use within other automated services.
 
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    config.rst
    utils.rst

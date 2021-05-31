@@ -33,6 +33,7 @@ release = '1.0'
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.linkcode",
     "psmlwriter"
 ]
 
@@ -62,3 +63,14 @@ html_static_path = ['../_static']
 
 autodoc_member_order = 'bysource'
 add_module_names = False
+viewcode_enable_epub = True
+
+# -- Linkcode configuration --------------------------------------------------
+
+def linkcode_resolve(domain, info):
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+    base = 'gitlab.allette.com.au/allette/devops/network-documentation/-/tree/master/netdox'
+    return f'https://{base}/{info["module"]}.py'

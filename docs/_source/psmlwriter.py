@@ -21,13 +21,20 @@ def setup(app: Sphinx):
 
 class PSMLTranslator(SphinxTranslator):
     body: str = ''
+    toc: str = ''
     indent: int = 0
     heading_level: int = 0
     frag_count: int = 0
-    textelems: list[str] = ['paragraph', 'title', 'item']
-    xref_type = "none"
-    docname = ''
-    title = ''
+    textelems: list[str] = ['paragraph', 'title', 'list_item']
+    fragments: list[str] = ["fragment", "xref-fragment", "properties-fragment"]
+    xref_type: str = "none"
+    docname: str = ''
+    title: str = ''
+
+    def in_tag(self, tag: str):
+        if len(re.findall(rf'<{tag}.*?>', self.body)) > len(re.findall(rf'</{tag}>', self.body)):
+            return True
+        return False
 
     @property
     def in_textelem(self):
@@ -39,7 +46,45 @@ class PSMLTranslator(SphinxTranslator):
     def depart_textelem(self):
         for elem in self.textelems:
             if getattr(self, f'in_{elem}'):
-                getattr(self, f'depart_{elem}')(self)
+                getattr(self, f'depart_{elem}')()
+
+
+    @property
+    def in_frag(self):
+        for frag in self.fragments:
+            if getattr(self, f'in_{frag.replace("-","_")}'):
+                return True
+        return False
+
+    @property
+    def in_fragment(self):
+        frags = re.split(r'<fragment id=".+?">', self.body)
+        if len(frags) > 1:
+            if '</fragment>' not in frags[-1]:
+                return True
+        return False
+
+    @property
+    def in_xref_fragment(self):
+        frags = re.split(r'<xref-fragment id=".+?">', self.body)
+        if len(frags) > 1:
+            if '</xref-fragment>' not in frags[-1]:
+                return True
+        return False
+
+    @property
+    def in_properties_fragment(self):
+        frags = re.split(r'<properties-fragment id=".+?">', self.body)
+        if len(frags) > 1:
+            if '</properties-fragment>' not in frags[-1]:
+                return True
+        return False
+
+    def depart_frag(self):
+        for type in self.fragments:
+            if getattr(self, f'in_{type.replace("-","_")}'):
+                self.body += f'</{type}>'
+                break
 
     
     ############################
@@ -48,25 +93,37 @@ class PSMLTranslator(SphinxTranslator):
 
     # Default behaviour
     def unknown_visit(self, node: nodes.Node) -> None:
-        print(node.__dict__)
-        raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
+        # raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
+        self.body += f'<untranslated:{node.__class__.__name__}>'
+    
+    def unknown_departure(self, node: nodes.Node) -> None:
+        self.body += f'</untranslated:{node.__class__.__name__}>'
 
     ## Structural elements ##
 
     # Document
     def visit_document(self, node: nodes.Node):
-        self.body += '<document level="portable">'
-
         self.docname = os.path.basename(node['source'])
-        self.body += f'<documentinfo><uri docid="_sphinx_{project}_{self.docname.split(".")[0]}" title="#_title_#" />'
-        # make index a publication root
         if self.docname == 'index.rst':
-            self.body += f'<publication id="_sphinx_{project}_root" type="default"/>'
+            root = True
+        else:
+            root = False
+
+        self.body += f'<document level="portable" type="{"references" if root else "default"}">'
+        self.body += f'<documentinfo><uri docid="_sphinx_{project}_{self.docname.split(".")[0]}" title="#_title_#"/>'
+
+        if root: self.body += f'<publication id="_sphinx_{project}_root"/>'
 
         self.body += '</documentinfo><section id="body">'
 
     def depart_document(self, node: nodes.Node = None):
-        self.body += '</fragment></section></document>'
+        if self.in_frag:
+            self.depart_frag()
+        if self.toc:
+            if len(re.findall(r'<section id=".+?">', self.body)) > len(re.findall(r'</section>', self.body)):
+                self.body += '</section>'
+            self.body += self.toc
+        self.body += '</section></document>'
 
     # Section
     def visit_section(self, node: nodes.Node = None) -> None:
@@ -108,10 +165,9 @@ class PSMLTranslator(SphinxTranslator):
 
     # Fragment/Xref target
     def visit_target(self, node: nodes.Node) -> None:
-        if self.frag_count:
-            self.body += '</fragment>'
+        if self.in_frag:
+            self.depart_frag()
         self.body += f'<fragment id="{node["refid"]}">'
-        self.frag_count += 1
         raise nodes.SkipDeparture
 
     # Xref
@@ -134,6 +190,9 @@ class PSMLTranslator(SphinxTranslator):
                 self.body += f'<blockxref frag="{refid}" display="{xref_display}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
             else:
                 self.body += f'<xref frag="{refid}" display="{xref_display}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
+        else:
+            self.body += f'<link href="{node["refuri"]}">   [source]</link>'
+            raise nodes.SkipNode
     
     def depart_reference(self, node: nodes.Node = None) -> None:
         if self.xref_type in ("embed", "transclude"):
@@ -145,6 +204,8 @@ class PSMLTranslator(SphinxTranslator):
 
     # Paragraph
     def visit_paragraph(self, node: nodes.Node = None) -> None:
+        if not self.in_frag:
+            self.body += f'<fragment id="{self.frag_count}">'
         if not self.in_textelem:
             if self.indent:
                 self.body += f'<para indent="{self.indent}">'
@@ -157,15 +218,12 @@ class PSMLTranslator(SphinxTranslator):
 
     @property
     def in_paragraph(self):
-        paras = re.split(r'<para( indent="\d+")?>', self.body)
-        if len(paras) > 1:
-            if '</para>' not in paras[-1]:
-                return True
-        return False
+        return self.in_tag('para')
     
     # Title
     def visit_title(self, node: nodes.Node) -> None:
-        self.depart_paragraph(node)
+        if self.in_textelem:
+            self.depart_textelem()
         if not self.title:
             self.title = node.astext()
             self.body = re.sub(r'#_title_#', self.title, self.body)
@@ -199,21 +257,38 @@ class PSMLTranslator(SphinxTranslator):
     # ToC
     def visit_compound(self, node: nodes.Node) -> None:
         self.xref_type = "embed"
+        if self.in_frag:
+            self.depart_frag()
+        # swap body for toc so any edits go to toc
+        self.store = str(self.body)
+        self.body = str(self.toc)
+        self.body += f'<toc/><section id="toc"><fragment id="toc">'
     
     def depart_compound(self, node: nodes.Node) -> None:
+        self.toc += self.body
+        self.toc += f'</fragment>'
         self.xref_type = "none"
+        self.body = str(self.store)
+        del self.store
+
+    @property
+    def in_toc(self):
+        return self.body.startswith('<toc/>')
 
     # Bullet list
     def visit_bullet_list(self, node: nodes.Node) -> None:
-        if self.in_item:
+        if self.in_bullet_list:
             raise nodes.SkipNode
         elif self.in_textelem:
             self.depart_textelem()
         self.body += '<list>'
     
     def depart_bullet_list(self, node: nodes.Node = None) -> None:
-        # if not self.in_textelem:
         self.body += '</list>'
+
+    @property
+    def in_bullet_list(self):
+        return self.in_tag('list')
 
     # Generic list item
     def visit_list_item(self, node: nodes.Node = None) -> None:
@@ -223,13 +298,8 @@ class PSMLTranslator(SphinxTranslator):
         self.body += '</item>'
 
     @property
-    def in_item(self):
-        items = re.split(r'<item>', self.body)
-        if len(items) > 1:
-            if '</item>' in items:
-                return False
-            else:
-                return True
+    def in_list_item(self):
+        return self.in_tag('item')
 
     # Definition list
     def visit_definition_list(self, node: nodes.Node = None) -> None:
@@ -365,10 +435,7 @@ class PSMLBuilder(Builder):
 
     def prepare_writing(self, _) -> None:
         self.docwriter = PSMLWriter(self)
-        self.outdir = os.path.join(self.app.outdir, 'psml')
-        if os.path.exists(self.outdir):
-            rmtree(self.outdir)
-        os.mkdir(self.outdir)
+        self.outdir = self.app.outdir
 
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
         dest = StringOutput(encoding='utf-8')
