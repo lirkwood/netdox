@@ -25,11 +25,15 @@ class PSMLTranslator(SphinxTranslator):
     indent: int = 0
     heading_level: int = 0
     frag_count: int = 0
-    textelems: list[str] = ['paragraph', 'title', 'list_item']
+    textelems: list[str] = ['para', 'heading', 'item']
     fragments: list[str] = ["fragment", "xref-fragment", "properties-fragment"]
     xref_type: str = "none"
     docname: str = ''
     title: str = ''
+
+    ##################################
+    # Functions for finding position #
+    ##################################
 
     def in_tag(self, tag: str):
         if len(re.findall(rf'<{tag}.*?>', self.body)) > len(re.findall(rf'</{tag}>', self.body)):
@@ -39,52 +43,26 @@ class PSMLTranslator(SphinxTranslator):
     @property
     def in_textelem(self):
         for elem in self.textelems:
-            if getattr(self, f'in_{elem}'):
+            if self.in_tag(elem):
                 return True
         return False
 
     def depart_textelem(self):
         for elem in self.textelems:
-            if getattr(self, f'in_{elem}'):
-                getattr(self, f'depart_{elem}')()
-
+            if self.in_tag(elem):
+                self.body += f'</{elem}>'
 
     @property
     def in_frag(self):
-        for frag in self.fragments:
-            if getattr(self, f'in_{frag.replace("-","_")}'):
-                return True
-        return False
-
-    @property
-    def in_fragment(self):
-        frags = re.split(r'<fragment id=".+?">', self.body)
-        if len(frags) > 1:
-            if '</fragment>' not in frags[-1]:
-                return True
-        return False
-
-    @property
-    def in_xref_fragment(self):
-        frags = re.split(r'<xref-fragment id=".+?">', self.body)
-        if len(frags) > 1:
-            if '</xref-fragment>' not in frags[-1]:
-                return True
-        return False
-
-    @property
-    def in_properties_fragment(self):
-        frags = re.split(r'<properties-fragment id=".+?">', self.body)
-        if len(frags) > 1:
-            if '</properties-fragment>' not in frags[-1]:
+        for elem in self.fragments:
+            if self.in_tag(elem):
                 return True
         return False
 
     def depart_frag(self):
-        for type in self.fragments:
-            if getattr(self, f'in_{type.replace("-","_")}'):
-                self.body += f'</{type}>'
-                break
+        for elem in self.fragments:
+            if self.in_tag(elem):
+                self.body += f'</{elem}>'
 
     
     ############################
@@ -93,11 +71,8 @@ class PSMLTranslator(SphinxTranslator):
 
     # Default behaviour
     def unknown_visit(self, node: nodes.Node) -> None:
-        # raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
-        self.body += f'<untranslated:{node.__class__.__name__}>'
-    
-    def unknown_departure(self, node: nodes.Node) -> None:
-        self.body += f'</untranslated:{node.__class__.__name__}>'
+        raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
+        # self.body += f'<untranslated:{node.__class__.__name__}>'
 
     ## Structural elements ##
 
@@ -358,6 +333,7 @@ class PSMLTranslator(SphinxTranslator):
     # Function description container
     def visit_desc(self, node: nodes.Node) -> None:
         self.visit_paragraph(node)
+        self.body += '<br/>'
     
     def depart_desc(self, node: nodes.Node) -> None:
         self.depart_paragraph(node)
