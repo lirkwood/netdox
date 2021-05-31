@@ -45,16 +45,12 @@
                         <xsl:for-each select="xpf:map[@key = 'containers']/xpf:string">
                             <property name="container" title="Container" value="{@key}" />
                             <property name="image" title="Image ID" value="{.}"/>
-                            <xsl:if test="contains(.,'registry-gitlab.allette.com.au')">
+                            <xsl:if test="contains(.,'registry-gitlab.')">
                             <property name="gitlab" title="Image on GitLab" datatype="link">
                                 <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="@key"/> on GitLab.</link>
                             </property>
                             </xsl:if>
                         </xsl:for-each>
-                        <property name="worker_vm" title="Worker VM" datatype="xref" >
-                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
-                            reversetitle="App running on this VM"/>
-                        </property>
                         <property name="ipv4"  title="Worker IP"  datatype="xref" >
                             <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
                                 reversetitle="App running on this IP" />
@@ -62,6 +58,12 @@
                         <property name="rancher" title="Pod on Rancher" datatype="link">
                             <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/> on rancher.</link>
                         </property>
+                        <xsl:if test="xpf:string[@key = 'vm']">
+                        <property name="worker_vm" title="Worker VM" datatype="xref" >
+                            <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
+                            reversetitle="App running on this VM"/>
+                        </property>
+                        </xsl:if>
                     </properties-fragment>
                     </xsl:for-each>
                     
