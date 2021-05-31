@@ -91,7 +91,6 @@ try:
     with open('src/locations.json', 'r') as stream:
         _location_map = json.load(stream)
 except Exception as e:
-    print('[WARNING][utils] Unable to find or parse locations.json')
     _location_map = {}
 
 location_map = {}
