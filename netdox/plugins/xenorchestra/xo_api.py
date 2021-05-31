@@ -77,7 +77,7 @@ async def reciever(id):
 # Convenience functions #
 #########################
 
-async def fetchType(type):
+async def fetchType(type: str):
     """
     Fetches all objects of a given type
     """
@@ -87,7 +87,7 @@ async def fetchType(type):
     }}))['result']
     
     
-async def fetchObj(uuid):
+async def fetchObj(uuid: str):
     """
     Fetches an object by UUID
     """
@@ -96,6 +96,10 @@ async def fetchObj(uuid):
         'uuid': uuid
     }}))['result']
 
+
+async def fetchObjByFields(fieldmap: dict[str, str]):
+    return (await call('xo.getAllObjects', {
+    'filter': fieldmap}))['result']
 
 ##################
 # User functions #
