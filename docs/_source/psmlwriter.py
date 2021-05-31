@@ -187,19 +187,6 @@ class PSMLTranslator(SphinxTranslator):
     def visit_Text(self, node: nodes.Node) -> None:
         if self.in_textelem:
             self.body += escape(node.astext())
-            # content = escape(node.astext())
-            # if '\n' in content:
-            #     for line in content.splitlines():
-            #         self.body += (self.indent + line + '\n')
-            # else:
-            #     if self.in_inline:
-            #         self.body += content
-            #     elif self.leaving_inline:
-            #         self.body += content
-            #         self.leaving_inline = False
-            #     else:
-            #         # skip adding indent if text elem within other text elem
-            #         self.body += (self.indent + content)
         else:
             self.visit_paragraph(node)
             self.visit_Text(node)
