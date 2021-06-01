@@ -72,7 +72,6 @@ class PSMLTranslator(SphinxTranslator):
     # Default behaviour
     def unknown_visit(self, node: nodes.Node) -> None:
         raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
-        # self.body += f'<untranslated:{node.__class__.__name__}>'
 
     ## Structural elements ##
 
@@ -140,14 +139,21 @@ class PSMLTranslator(SphinxTranslator):
 
     # Fragment/Xref target
     def visit_target(self, node: nodes.Node) -> None:
+        if 'refid' in node:
+            id = node["refid"]
+        elif 'ismod' in node and node['ismod']:
+            id = node["ids"][0].split('-')[-1]
+        else:
+            raise nodes.SkipNode
+
         if self.in_frag:
             self.depart_frag()
-        self.body += f'<fragment id="{node["refid"]}">'
+        self.body += f'<fragment id="{id}">'
         raise nodes.SkipDeparture
 
     # Xref
     def visit_reference(self, node: nodes.Node) -> None:
-        if node['internal']:
+        if 'internal' in node and node['internal']:
             if 'refuri' in node:
                 xref_display = 'document'
                 if '#' in node['refuri']:
@@ -166,7 +172,11 @@ class PSMLTranslator(SphinxTranslator):
             else:
                 self.body += f'<xref frag="{refid}" display="{xref_display}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
         else:
-            self.body += f'<link href="{node["refuri"]}">   [source]</link>'
+            if 'name' in node:
+                text = node['name']
+            else:
+                text = ' [source]'
+            self.body += f'<link href="{node["refuri"]}">{text}</link>'
             raise nodes.SkipNode
     
     def depart_reference(self, node: nodes.Node = None) -> None:
