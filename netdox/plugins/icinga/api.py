@@ -1,8 +1,9 @@
-from plugins.icinga import icinga_hosts
 from plugins.icinga.ssh import set_host, rm_host
 from typing import Tuple
 import requests, json
 import utils
+
+icinga_hosts = utils.auth()['plugins']['icinga']
 
 ####################################
 # Generic resource fetch functions #

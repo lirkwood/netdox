@@ -1,8 +1,10 @@
-from plugins.icinga import icinga_hosts
 from paramiko import client, AutoAddPolicy
 from textwrap import dedent
 from functools import wraps
 from typing import Tuple
+import utils
+
+icinga_hosts = utils.auth()['plugins']['icinga']
 
 ###################################
 # Abstract Functions / Decorators #
