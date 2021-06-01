@@ -9,6 +9,7 @@ import requests, utils, json
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from functools import wraps
+from inspect import signature
 
 
 #####################
@@ -59,11 +60,6 @@ def auth(func):
     """
     
     credentials = utils.auth()['pageseeder']
-    defaults = {
-        'group': credentials['group'],
-        'host': f'https://{credentials["host"]}/ps/service',
-        'member': credentials['username']
-    }
     try:
         with open('src/pstoken.json', 'r') as stream:
             details = json.load(stream)
@@ -75,17 +71,23 @@ def auth(func):
     except FileNotFoundError:
         token = refreshToken(credentials)
     
-    @wraps
-    def wrapper(*args, **kwargs):
-        if 'header' in kwargs:
-            kwargs['header'] = {
+    defaults = {
+        'host': f'https://{credentials["host"]}/ps/service',
+        'member': credentials['username'],
+        'group': credentials['group'],
+        'header': {
                 'authorization': f'Bearer {token}',
                 'Accept': 'application/json'
             }
-        for key, val in defaults.items():
-            if not kwargs[key]:
-                kwargs[key] = val
+    }
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        for kw in signature(func).parameters:
+            if kw not in kwargs and kw in defaults:
+                kwargs[kw] = defaults[kw]
         return utils.handle(func)(*args, **kwargs)
+
     return wrapper
 
 # global urimap
@@ -143,7 +145,7 @@ def get_files(uri, params={}, group=''):
     files = []
     if 'type' not in params:
         params['type'] = 'document'
-    soup = BeautifulSoup(get_uris(uri, params, group), features='xml')
+    soup = BeautifulSoup(get_uris(uri, params, group=group), features='xml')
     for uri in soup.find_all('uri'):
         files.append(uri['path'].split('/')[-1])
     
