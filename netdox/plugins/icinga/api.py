@@ -1,12 +1,8 @@
+from plugins.icinga import icinga_hosts
+from plugins.icinga.ssh import set_host, rm_host
 from typing import Tuple
 import requests, json
 import utils
-try:
-    import plugins.ansible.icinga as ansible
-except Exception:
-    raise ImportError('[ERROR][icinga] Unable to import ansible.icinga plugin, which this plugin relies on.')
-
-icinga_hosts = utils.auth()['plugins']['icinga']
 
 ####################################
 # Generic resource fetch functions #
@@ -95,7 +91,7 @@ def dnsLookup(dns: utils.DNSRecord) -> bool:
         if dns.name in generated[icinga_host]:
             if manual_monitor:
                 print(f'[WARNING][icinga] {dns.name} has manual and generated monitor object. Removing generated object...')
-                ansible.pause(dns.name, icinga = icinga_host)
+                rm_host(dns.name, icinga = icinga_host)
             else:
                 # if template already valid, load service info
                 if validateTemplate(dns, icinga_host):
@@ -108,7 +104,7 @@ def dnsLookup(dns: utils.DNSRecord) -> bool:
     # if has no monitor, assign one
     if not dns.icinga and dns.location:
         if dns.role != 'unmonitored':
-            ansible.set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
+            set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
         else:
             return True
         return False
@@ -141,10 +137,10 @@ def validateTemplate(dns: utils.DNSRecord, icinga_host: str) -> bool:
     template_name = generated[icinga_host][dns.name]['templates'][0]
 
     if dns.role != 'unmonitored' and utils.config[dns.role]['template'] != template_name:
-        ansible.set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
+        set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
 
     elif dns.role == 'unmonitored':
-        ansible.pause(dns.name, icinga = icinga_host)
+        rm_host(dns.name, icinga = icinga_host)
     
     else:
         return True
@@ -181,4 +177,4 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
         for addr in addr_set:
             if addr not in forward_dns:
                 print(f'[INFO][icinga] Stale monitor for domain {addr}. Removing...')
-                ansible.pause(addr, icinga=icinga)
+                rm_host(addr, icinga=icinga)

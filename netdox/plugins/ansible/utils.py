@@ -10,7 +10,7 @@ def exec(cmd: str) -> Tuple[str, str]:
     """
     sshclient = client.SSHClient()
     sshclient.set_missing_host_key_policy(AutoAddPolicy())
-    sshclient.connect('ansiblesy4.allette.com.au', username='root', key_filename='plugins/ansible/src/ssh/ssh-privatekey')
+    sshclient.connect('ansiblesy4.allette.com.au', username='root', key_filename='src/ssh/ssh-ed25519')
     stdin, stdout, stderr = sshclient.exec_command(cmd)
     stdin.close()
     stdout = str(stdout.read(), encoding='utf-8')
