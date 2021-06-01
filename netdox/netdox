@@ -82,7 +82,7 @@ for arg in "$@"; do
         esac
     elif [[ $arg == 'start' ]]
         then if init
-            then serve & refresh &
+            then refresh & serve
         fi
     fi
 done
