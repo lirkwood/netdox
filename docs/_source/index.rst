@@ -48,3 +48,4 @@ Furthermore, this tracking of IP address usage means it is trivial to capture th
    refresh.rst
    webhooks.rst
    security.rst
+   files.rst
