@@ -62,15 +62,27 @@ html_static_path = ['../_static']
 # -- Autodoc configuration ---------------------------------------------------
 
 autodoc_member_order = 'bysource'
+autodoc_mock_imports = ['ps_api']
 add_module_names = False
-viewcode_enable_epub = True
 
 # -- Linkcode configuration --------------------------------------------------
 
+from re import search
 def linkcode_resolve(domain, info):
     if domain != 'py':
         return None
     if not info['module']:
         return None
+
+    with open(f'../netdox/{info["module"]}.py', 'r', encoding='utf-8') as stream:
+        lines = stream.readlines()
+        functionLine = None
+        for lineNum in range(len(lines)):
+            if search(rf'(def|class) {info["fullname"]}', lines[lineNum]):
+                functionLine = lineNum + 1
+
     base = 'gitlab.allette.com.au/allette/devops/network-documentation/-/tree/master/netdox'
-    return f'https://{base}/{info["module"]}.py'
+    if functionLine:
+        return f'https://{base}/{info["module"]}.py#L{functionLine}'
+    else:
+        return f'https://{base}/{info["module"]}.py'
