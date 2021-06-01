@@ -1,36 +1,30 @@
+"""
+Used to interface with the PageSeeder REST API for numerous operations throughout Netdox's lifecycle.
+
+Provides many various convenience functions for PageSeeder API actions, returning JSON where possible.
+The decorator ``@auth`` injects default values and authentication details to the most of the functions in this script.
+"""
+
 import requests, utils, json
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-
-# Setting global vars
-
-credentials = utils.auth()['pageseeder']
-
-defaultgroup = credentials['group']
-base = f'https://{credentials["host"]}/ps/service'
-member = credentials['username']
+from functools import wraps
 
 
-# Useful services
+#####################
+# Utility functions #
+#####################
 
-def auth():
+def refreshToken(credentials: dict) -> str:
     """
-    Returns authentication token for PageSeeder API
+    Requests a new PageSeeder API authentication token and saves it to disk.
+
+    :Args:
+        A dictionary containing some authentication/configuration details. Found in ``authentication.json``.
+
+    :Returns:
+        A string containing a valid PageSeeder API token.
     """
-    try:
-        with open('src/pstoken.json', 'r') as stream:
-            details = json.load(stream)
-            token = details['token']
-            issued = details['issued']
-
-            if datetime.fromisoformat(issued) > (datetime.now() - timedelta(hours=1)):
-                return token
-            else:
-                return refreshToken()
-    except FileNotFoundError:
-        return refreshToken()
-
-def refreshToken():
     with open('src/pstoken.json', 'w') as stream:
         print('[INFO][ps_api.py] Requesting new access token...')
 
@@ -51,9 +45,71 @@ def refreshToken():
 
     return token
 
+def auth(func):
+    """
+    Authenticates a PageSeeder API request function.
 
-@utils.handle
-def get_uri(locator, params={}, forurl=False, group=defaultgroup):
+    Reads existing PageSeeder authentication token, refreshes it if expired,
+    and replaces the passed function's kwarg *header* with its own value.
+    Also passes some other global kwargs (e.g. group) if not otherwise specified.
+    Also applies the ``@utils.handle`` functionality (see :ref:`utils`).
+    
+    :Args:
+        Some function to be authenticated which makes a PageSeeder REST API request and takes the kwarg *header*.
+    """
+    
+    credentials = utils.auth()['pageseeder']
+    defaults = {
+        'group': credentials['group'],
+        'host': f'https://{credentials["host"]}/ps/service',
+        'member': credentials['username']
+    }
+    try:
+        with open('src/pstoken.json', 'r') as stream:
+            details = json.load(stream)
+            token = details['token']
+            issued = details['issued']
+
+            if datetime.fromisoformat(issued) <= (datetime.now() - timedelta(hours=1)):
+                token = refreshToken(credentials)
+    except FileNotFoundError:
+        token = refreshToken(credentials)
+    
+    @wraps
+    def wrapper(*args, **kwargs):
+        if 'header' in kwargs:
+            kwargs['header'] = {
+                'authorization': f'Bearer {token}',
+                'Accept': 'application/json'
+            }
+        for key, val in defaults.items():
+            if not kwargs[key]:
+                kwargs[key] = val
+        return utils.handle(func)(*args, **kwargs)
+    return wrapper
+
+# global urimap
+global _urimap
+def urimap():
+    """
+    Returns value of default urimap if it has already been fetched. If not, it is fetched and returned.
+
+    :Returns:
+        Same as ``getUrimap()``
+    """
+    try:
+        return _urimap
+    except NameError:
+        _urimap = getUrimap('375156')
+        return _urimap
+
+
+##########################
+# PageSeeder API Actions #
+##########################
+
+@auth
+def get_uri(locator, params={}, forurl=False, host='', group='', header={}):
     """
     Returns some info on a uri
     """
@@ -63,11 +119,11 @@ def get_uri(locator, params={}, forurl=False, group=defaultgroup):
     else:
         service = f'/groups/~{group}/uris/{locator}'
 
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
-@utils.handle
-def get_uris(uri, params={}, group=defaultgroup):
+@auth
+def get_uris(uri, params={}, host='', group='', header={}):
     """
     Returns all uris with some relationship to a given uri
     """
@@ -75,12 +131,12 @@ def get_uris(uri, params={}, group=defaultgroup):
         params['pagesize'] = 9999
 
     service = f'/groups/~{group}/uris/{uri}/uris'
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
-def get_files(uri, params={}, group=defaultgroup):
+@auth
+def get_files(uri, params={}, group=''):
     """
     Returns a list of filenames with some relationship (default = child) for a given URI
     """
@@ -93,48 +149,48 @@ def get_files(uri, params={}, group=defaultgroup):
     
     return files
 
-@utils.handle
-def get_fragment(uri, fragment_id, params={}, group=defaultgroup):
+@auth
+def get_fragment(uri, fragment_id, params={}, host='', group='', member='', header={}):
     """
     Returns content of a fragment in some given uri
     """
     service = f'/members/~{member}/groups/~{group}/uris/{uri}/fragments/{fragment_id}'
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
-def export(uri, params={}):
+@auth
+def export(uri, params={}, host='', member='', header={}):
     """
     Begins export process for some URI and returns relevant thread ID
     """
     service = f'/members/~{member}/uris/{uri}/export'
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
-def get_thread(id):
+@auth
+def get_thread(id, host='', header={}):
     """
     Returns information about some PageSeeder process thread
     """
     service = f'/threads/{id}/progress'
-    r = requests.get(base+service, headers=header)
+    r = requests.get(host+service, headers=header)
     return r.text
 
 
-@utils.handle
-def archive(uri, params={}, group=defaultgroup):
+@auth
+def archive(uri, params={}, host='', group='', member='', header={}):
     """
     Begins archive process for some URI
     """
     service = f'/members/~{member}/groups/~{group}/uris/{uri}/archive'
-    r = requests.post(base+service, headers=header, params=params)
+    r = requests.post(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
-def version(uri, params={}, group=defaultgroup):
+@auth
+def version(uri, params={}, host='', group='', member='', header={}):
     """
     Adds a version to some URI. Default name is current date/time
     """
@@ -142,79 +198,79 @@ def version(uri, params={}, group=defaultgroup):
         params['name'] = datetime.now().replace(microsecond=0)
         
     service = f'/members/~{member}/groups/~{group}/uris/{uri}/versions'
-    r = requests.post(base+service, headers=header, params=params)   # version all docs that are not archived => current
+    r = requests.post(host+service, headers=header, params=params)   # version all docs that are not archived => current
     return r.text
 
 
-@utils.handle
-def get_versions(uri, group=defaultgroup):
+@auth
+def get_versions(uri, host='', group='', header={}):
     """
     Lists the versions 
     """
     service = f'/groups/{group}/uris/{uri}/versions'
-    r = requests.get(base+service, headers=header)
+    r = requests.get(host+service, headers=header)
     return r.text
 
 
-@utils.handle
-def patch_uri(uri, params={}, group=defaultgroup):
+@auth
+def patch_uri(uri, params={}, host='', group='', member='', header={}):
     """
     Sets the specified properties of a URI
     """
     service = f'/members/{member}/groups/{group}/uris/{uri}'
-    r = requests.patch(base+service, headers=header, params=params)
+    r = requests.patch(host+service, headers=header, params=params)
     return r.text
 
-@utils.handle
-def get_groupfolder(id, params={}, group=defaultgroup):
+@auth
+def get_groupfolder(id, params={}, host='', group='', member='', header={}):
     """
     Gets some groupfolder
     """
     service = f'/members/{member}/groups/{group}/groupfolders/{id}'
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
-@utils.handle
-def get_groupfolders(params={}, group=defaultgroup):
+@auth
+def get_groupfolders(params={}, host='', group='', member='', header={}):
     """
     Gets the groupfolders for some group
     """
     service = f'/members/{member}/groups/{group}/groupfolders'
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
-def get_comment(commentid, params={}):
+@auth
+def get_comment(commentid, params={}, host='', member='', header={}):
     """
     Gets some comment
     """
-    service = f'/members/{credentials["username"]}/comments/{commentid}'
-    r = requests.get(base+service, headers=header, params=params)
+    service = f'/members/{member}/comments/{commentid}'
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
-def get_xrefs(uri, params={}, group=defaultgroup):
+@auth
+def get_xrefs(uri, params={}, host='', group='', header={}):
     """
     Gets the xrefs of some uri
     """
     service = f'/groups/{group}/uris/{uri}/xrefs'
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
-def get_xref_tree(uri, params={}, group=defaultgroup):
+@auth
+def get_xref_tree(uri, params={}, host='', group='', header={}):
     """
     Gets the xref tree for some uri
     """
     service = f'/groups/{group}/uris/{uri}/xreftree'
-    r = requests.get(base+service, headers=header, params=params)
+    r = requests.get(host+service, headers=header, params=params)
     return r.text
 
 
-@utils.handle
+@auth
 def getUrimap(dir_uri):
     """
     Maps the directories in a URI to their URIs
@@ -240,15 +296,3 @@ def pfrag2dict(fragment):
             d[property['name']] = property['value']
     
     return d
-
-# some global vars
-
-header = {
-    'authorization': f'Bearer {auth()}',
-    'Accept': 'application/json'
-}
-
-urimap = getUrimap('375156')
-
-if __name__ == '__main__':
-    print(auth())
