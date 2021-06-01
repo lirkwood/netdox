@@ -1,3 +1,11 @@
+"""
+The main script in Netdox. Manages almost every step of the refresh process from data gathering to writing PSML.
+
+This script is used to provide a central flow for the data refresh.
+It runs some initialisation first, then calls the *dns* plugins, the *resource* plugins, does some additional processing,
+then calls the final plugin stage and writes PSML. The upload is managed by the caller executable Netdox (see :ref:`file_netdox`)
+"""
+
 import pluginmaster, license_inf, cleanup, iptools, ps_api, utils   # utility scripts
 import subprocess, shutil, json, os
 from distutils.util import strtobool
@@ -10,7 +18,10 @@ from bs4 import BeautifulSoup
 @utils.critical
 def init():
     """
-    Some init commands to run every time the DNS data is refreshed
+    Some initialisation to run every time the data is refreshed.
+
+    Removes any leftover output files, initialises all plugins, and loads the dns roles and other config from PageSeeder.
+    If this config is not present or Netdox is unable to find or parse it, a default set of config files is copied to the upload context.
     """
     # remove old output files
     for folder in os.scandir('out'):
@@ -83,6 +94,14 @@ def init():
 
 @utils.critical
 def flatten(dns_set: dict[str, utils.DNSRecord]):
+    """
+    Takes a set of DNS records and resolves any conflicts caused by capitalisation.
+
+    Modifies the given DNS set in place by combining any DNS records with names that are the same except for captalisation.
+
+    :Args:
+        A dictionary of DNS records (see :ref:`utils`)
+    """
     for domain in dns_set:
         if (domain.lower() in dns_set) and (dns_set[domain.lower()] is not dns_set[domain]):
             union = utils.merge_sets(dns_set[domain.lower()], dns_set[domain])
@@ -92,7 +111,10 @@ def flatten(dns_set: dict[str, utils.DNSRecord]):
 @utils.critical
 def apply_roles(dns_set: dict[str, utils.DNSRecord]):
     """
-    Applies custom roles defined in _nd_config
+    Applies custom roles defined in the PageSeeder config.
+
+    Deletes any DNS records with names specified in the main config file, and sets the *role* attribute on all other records.
+    If a record's name does not appear in the config, it is assigned the *default* role.
     """
     config = utils.config
 
@@ -124,7 +146,9 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
 @utils.critical
 def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
     """
-    Populates a reverse dns set with any missing IPs from a forward dns set
+    Populates a reverse dns set with any missing IPs from a forward dns set.
+
+    Iterates over every unique and private subnet and generates empty PTR records for any unused IPv4 addresses.
     """
     subnets = set()
     for domain in forward:
@@ -143,7 +167,7 @@ def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]
 @utils.critical
 def screenshots():
     """
-    Runs screenshotCompare node.js script and writes output using xslt
+    Runs screenshotCompare (see :ref:`file_screenshot`) and writes output using xslt.
     """
     subprocess.run('node screenshotCompare.js', check=True, shell=True)
     utils.xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
@@ -155,6 +179,11 @@ def screenshots():
 
 @utils.handle
 def locations(dns_set: dict[str, utils.DNSRecord]):
+    """
+    Attempts to extract location data from CNAME records for those DNS records that have none.
+
+    Iterates over the cnames of a record. If any of them have location data, inject into the initial record.
+    """
     unlocated = []
     for domain, dns in dns_set.items():
         if not dns.location:
@@ -175,7 +204,9 @@ def locations(dns_set: dict[str, utils.DNSRecord]):
 @utils.handle
 def license_keys(dns_set: dict[str, utils.DNSRecord]):
     """
-    Integrates license keys into a dns set
+    Sets the *license* attribute for any domains with a PageSeeder license.
+
+    Uses the functionality found in :ref:`file_licenses` to add license data to records.
     """
     licenses = license_inf.fetch()
     for domain in licenses:
@@ -188,7 +219,9 @@ def license_keys(dns_set: dict[str, utils.DNSRecord]):
 @utils.handle
 def license_orgs(dns_set: dict[str, utils.DNSRecord]):
     """
-    Integrates organisations into a dns set inferred from associated license
+    Sets the *org* attribute using the associated PageSeeder license.
+
+    Uses the functionality found in :ref:`file_licenses` to add organisation data to records.
     """
     for domain, dns in dns_set.items():
         if 'license' in dns.__dict__:
@@ -200,6 +233,8 @@ def license_orgs(dns_set: dict[str, utils.DNSRecord]):
 def labels(dns_set: dict[str, utils.DNSRecord]):
     """
     Applies any relevant document labels
+
+    :meta private:
     """
     # for domain in dns_set:
     #     dns = dns_set[domain]
@@ -210,7 +245,12 @@ def labels(dns_set: dict[str, utils.DNSRecord]):
 
 @utils.handle
 def implied_ptrs(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.PTRRecord]):
-    for ip, ptr in reverse_dns.items():
+    """
+    Calls the ``discoverImpliedPTR`` class method on all PTR records in a reverse dns set.
+
+    For more see :ref:`utils`.
+    """
+    for _, ptr in reverse_dns.items():
         ptr.discoverImpliedPTR(forward_dns)
 
 
@@ -219,6 +259,11 @@ def implied_ptrs(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str,
 #############
 
 def main():
+    """
+    The main flow of the refresh process.
+
+    Calls most other functions in this script in the required order.
+    """
     # Run DNS and ext resource plugins
     forward, reverse = {}, {}
     pluginmaster.runStage('dns', forward, reverse)

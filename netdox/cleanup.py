@@ -1,13 +1,24 @@
+"""
+This script is used for preparing outgoing data for the PageSeeder upload.
+
+One of its primary uses is parsing the output of :ref:`file_screenshot`.
+This involves converting all the screenshots from PNG files to JPGs,
+saving screenshots which are to be overwritten in the *screenshot_history* folder,
+and generating placeholder images for websites which Netdox failed to screenshot.
+"""
+
 from datetime import timedelta, datetime, date
 from PIL import Image, UnidentifiedImageError
-from bs4 import BeautifulSoup
 import re, os, json, shutil
 import ps_api, utils
 
 
 def parseReview():
     """
-    Perform various actions based on a domains value in review.json
+    Parses the ``review.json`` file returned by ``screenshotCompare.js``.
+
+    Every screenshot which will be overwritten by the PNG to JPG conversion is saved in the ``screenshot_history`` directory under a dated folder.
+    This function also deletes any 'diff overlay' images that have <10% different pixels, as specified in ``review.json``.
     """
     global today
     if not os.path.exists(f'out/screenshot_history/{today}'):
@@ -37,7 +48,10 @@ def parseReview():
 # converts every file in a dir from png to 1024x576 jpg
 def png2jpg(path):
     """
-    Converts png images in some dir to fixed size jpgs
+    Converts all PNG images in a directory to 1024x576 JPGs.
+
+    :Args:
+        A string path to a directory containing some image files.. 
     """
     try:
         for file in os.scandir(path):
@@ -57,11 +71,14 @@ def png2jpg(path):
 @utils.handle
 def placeholders():
     """
-    Generates placeholder images for domains with no screenshot locally or on PageSeeder
+    Generates placeholder images for domains with no screenshot locally or on PageSeeder.
+
+    For any website which Netdox was unable to screenshot, this function checks the set of screenshots on PageSeeder.
+    If an image of that website already exists (be it placeholder or screenshot), no placeholder will be generated.
     """
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
     try:
-        pageseeder_screens = ps_api.get_files(ps_api.urimap['screenshots'])  # get list of screenshots on pageseeder
+        pageseeder_screens = ps_api.get_files(ps_api.urimap()['screenshots'])  # get list of screenshots on pageseeder
     except KeyError:
         pageseeder_screens = []
 
@@ -78,7 +95,12 @@ stale_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
 @utils.handle
 def sentenceStale():
     """
-    Adds 30-day timer to files present on pageseeder but not locally
+    The purpose of this function is to mark documents which are present on PageSeeder but not in the local upload context as *stale* (out of date/nonexistent).
+    Any documents which exist exclusively on PageSeeder have a document label applied matching a string like ``expires-on-<date + 30 days>``.
+    Should a document exist that was sentenced to expire today or in the past, Netdox will archive it.
+
+    :Returns:
+        A dictionary of any URIs that were newly marked as stale, and the date they expire on.
     """
     today = datetime.now().date()
     group_path = f"/ps/{utils.auth()['pageseeder']['group'].replace('-','/')}"
@@ -137,12 +159,22 @@ def sentenceStale():
 
 # best guess at the transformation PageSeeder applies
 def alnum(string):
+    """
+    Performs the same character substitutions PageSeeder applies to filenames.
+    """
     string = re.sub(r'[/\\?%*:|<>^]', '_', string)
     return re.sub(r'[^\x00-\x7F]', '_', string)
 
 
 @utils.critical
 def clean():
+    """
+    The main cleanup flow. Calls most other functions in this script in the required order.
+
+    Runs ``png2jpg`` on the *screenshots*, *review*, and *screenshot_history* directories.
+    Also attempts to archive the *review* directory on PageSeeder from the last refresh, if it exists.
+    Finally, adds the *stale* domains to ``review.json`` in order for them to be shown in the status update (see :ref:`file_status`).
+    """
     global today
     today = str(datetime.now().date())
 
@@ -178,6 +210,3 @@ def clean():
         with open('src/review.json', 'w') as stream:
             review['stale'] = stale
             stream.write(json.dumps(review, indent=2))
-    
-    # for folder in ps_api.urimap:
-    #     ps_api.version(ps_api.urimap[folder])

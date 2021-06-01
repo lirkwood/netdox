@@ -1,4 +1,10 @@
-import re, math
+"""
+Module of useful classes and functions for manipulating IPv4 addresses and subnets.
+
+Not a part of Netdox.
+"""
+
+import re
 from types import prepare_class
 from typing import Union
 

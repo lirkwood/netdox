@@ -9,14 +9,6 @@ import ps_api, utils, iptools, pluginmaster
 
 app = Flask(__name__)
 
-psproperties = {}
-with open('src/pageseeder.properties', 'r') as stream:
-    for line in stream.read().splitlines():
-        property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
-        if property:
-            psproperties[property['key']] = property['value']
-
-
 @app.route('/')
 def root():
     return Response(status=200)
@@ -168,3 +160,11 @@ def approved_ip(uri):
 #         raise ValueError('[ERROR][server.py] Must provide a valid template/VM/snapshot UUID.')
 
 #     return Response(status=200)
+
+if __name__ == '__main__':    
+    psproperties = {}
+    with open('src/pageseeder.properties', 'r') as stream:
+        for line in stream.read().splitlines():
+            property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
+            if property:
+                psproperties[property['key']] = property['value']

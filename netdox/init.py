@@ -1,3 +1,7 @@
+"""
+This script is used to initialise the container for the rest of Netdox.
+"""
+
 import os, utils
 from textwrap import dedent
 from bs4 import BeautifulSoup
@@ -9,10 +13,8 @@ from bs4 import BeautifulSoup
 @utils.critical
 def init():
     """
-    Initialises container and makes it usable for serve and refresh.
-
     Copies any values configured in ``authentication.json`` into ``pageseeder.properties`` and ``build.xml``,
-    creates some folders, and generates JSON import documents for core XSLT operations.
+    creates output directories, and generates some XML to import JSON for core XSLT operations.
     """
     psauth = utils.auth()['pageseeder']
 
