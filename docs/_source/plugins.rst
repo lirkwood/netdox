@@ -30,9 +30,9 @@ Plugins have no mandatory attributes, but in order for Netdox to auto-run your p
 This function will be called with two arguments, a forward and reverse DNS set.
 These 'DNS sets' are typed like: 
 
-``dict[str, utils.DNSRecord]`` *and* ``dict[str, utils.PTRRecord]``
+``dict[str, utils.DNSRecord]`` and ``dict[str, utils.PTRRecord]``
 
-where the dictionary keys are the DNS record names (either domain or IPv4 address).
+where the dictionary keys are the record names (either domain or IPv4 address).
 
 Any configuration values needed for your plugins to run should be placed in authentication.json (for more info see :ref:`config`).
 
