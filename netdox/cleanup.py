@@ -28,7 +28,7 @@ def parseReview():
         # check if any domains occur in multiple categories
         all_domains = list(review['no_ss'].keys()) + review['no_base'] + review['imgdiff'] + review['nodiff']
         if len(all_domains) > len(list(dict.fromkeys(all_domains))):
-            print('[WARNING][cleanup.py] Duplication detected in review.json')
+            print('[WARNING][cleanup] Duplication detected in review.json')
         # save base images that will be overwritten
         for domain in (review['imgdiff'] + list(review['no_ss'].keys())):
             try:
@@ -63,9 +63,9 @@ def png2jpg(path):
                 img_small.save(path +'/'+ outfile)
 
             except UnidentifiedImageError:
-                print(f'[WARNING][cleanup.py] Cannot open {file.name} as image file.')
+                print(f'[WARNING][cleanup] Cannot open {file.name} as image file.')
     except FileNotFoundError:
-        print(f'[WARNING][cleanup.py] Path {path} does not exist.')
+        print(f'[WARNING][cleanup] Path {path} does not exist.')
 
 
 @utils.handle
@@ -144,7 +144,7 @@ def sentenceStale():
                         if labels: labels += ','
                         labels += f'expires-{plus_thirty}'
                         ps_api.patch_uri(uri, {'labels':labels})
-                        print(f'[INFO][cleanup.py] File {commonpath} is stale and has been sentenced.')
+                        print(f'[INFO][cleanup] File {commonpath} is stale and has been sentenced.')
                         stale[uri] = str(plus_thirty)
                 # if marked stale but exists locally
                 else:

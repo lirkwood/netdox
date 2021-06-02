@@ -27,7 +27,7 @@ def refreshToken(credentials: dict) -> str:
         A string containing a valid PageSeeder API token.
     """
     with open('src/pstoken.json', 'w') as stream:
-        print('[INFO][ps_api.py] Requesting new access token...')
+        print('[INFO][pageseeder] Requesting new access token...')
 
         url = f'https://{credentials["host"]}/ps/oauth/token'
         refresh_header = {

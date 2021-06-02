@@ -147,7 +147,7 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
             dns_set[domain].role = 'default'
             config['default']['domains'].append(domain)
         except KeyError:
-            print('[DEBUG][refresh.py] Unexpected behaviour: dns_set is missing domain in unassigned')
+            print('[DEBUG][refresh] Unexpected behaviour: dns_set is missing domain in unassigned')
 
 @utils.critical
 def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
