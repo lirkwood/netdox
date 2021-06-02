@@ -106,7 +106,7 @@ def sentenceStale():
     group_path = f"/ps/{utils.auth()['pageseeder']['group'].replace('-','/')}"
     stale = {}
     # for every folder in context on pageseeder
-    for folder, folder_uri in ps_api.urimap.items():
+    for folder, folder_uri in ps_api.urimap().items():
         # get all files descended from folder
         remote = json.loads(ps_api.get_uris(folder_uri, params={
             'type': 'document',
@@ -199,7 +199,7 @@ def clean():
 
     # archive last review if exist
     try:
-        ps_api.archive(ps_api.urimap['review'])
+        ps_api.archive(ps_api.urimap()['review'])
     except KeyError:
         pass
 
