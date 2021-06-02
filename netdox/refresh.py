@@ -279,7 +279,8 @@ def main():
     ips(forward, reverse)
     flatten(forward)
     apply_roles(forward)
-    locations(forward)
+    if utils.location_map:
+        locations(forward)
     license_keys(forward)
     license_orgs(forward)
     labels(forward)
