@@ -34,13 +34,15 @@ def setloc(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         args = list(args)
+        host: str = ''
+        
         if 'icinga' in kwargs:
-            pass
+            host = kwargs['icinga']
 
         elif 'location' in kwargs:
             for icinga, conf in icinga_hosts.items():
                 if kwargs['location'] in conf['locations']:
-                    kwargs['icinga'] = icinga
+                    host = icinga
                 del kwargs['location']
 
         elif len(args) > 1:
