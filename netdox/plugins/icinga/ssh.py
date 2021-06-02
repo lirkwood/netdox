@@ -33,9 +33,8 @@ def setloc(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        args = list(args)
         host: str = ''
-        
+
         if 'icinga' in kwargs:
             host = kwargs['icinga']
 
@@ -46,18 +45,10 @@ def setloc(func):
                 del kwargs['location']
 
         elif len(args) > 1:
-            tmp = []
-            for arg in args[1:3]:
-                if arg in icinga_hosts:
-                    host = arg
-                    tmp.append(arg)
-                else:
-                    for icinga, conf in icinga_hosts.items():
-                        if arg in conf['locations']:
-                            host = icinga
-                            tmp.append(arg)
-            for arg in tmp:
-                args.remove(arg)
+            if args[1] in icinga_hosts:
+                host = args[1]
+                # for error message
+                kwargs['icinga'] = args[1]
 
         if not host:
             if 'location' in kwargs:
@@ -65,7 +56,7 @@ def setloc(func):
             elif 'icinga' in kwargs:
                 raise ValueError(f'Unrecognised Icinga {kwargs["icinga"]}')
             else:
-                raise ValueError(f'Missing kwargs; Must provide one of icinga, location.')
+                raise ValueError(f'Missing args/kwargs; Must provide one of icinga, location.')
         else:
             kwargs['icinga'] = host
             return func(*args, **kwargs)
@@ -92,6 +83,7 @@ def set_host(address: str, icinga: str = '', location: str = '', template: str =
     }}' > /etc/icinga2/conf.d/hosts/generated/{address.replace('.','_')}.conf && icinga2 daemon -C && systemctl reload icinga2
     """)
 
+    print(f'[INFO][icinga] Setting template for {address} to {template}')
     return exec(cmd, host=icinga)
 
 @setloc
@@ -101,4 +93,5 @@ def rm_host(address: str, icinga: str = '', location: str = '') -> str:
     """
     cmd = f'rm -f /etc/icinga2/conf.d/hosts/generated/{address.replace(".","_")}.conf'
 
+    print(f'[INFO][icinga] Removing monitor on {address}')
     return exec(cmd, host=icinga)
