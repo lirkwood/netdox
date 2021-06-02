@@ -27,7 +27,7 @@ def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, str], Any, Any]:
             try:
                 plugin = importlib.import_module(f'plugins.{pluginName}')
             except Exception:
-                raise ImportError(f'[ERROR][plugins] Failed to import plugin {pluginName}: \n{format_exc()}')
+                raise ImportError(f'[ERROR][plugins] Failed to import {pluginName}: \n{format_exc()}')
             else:
                 if hasattr(plugin, 'stage'):
                     stage = plugin.stage.lower()
@@ -64,13 +64,13 @@ def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict
         reverse_dns:
             A dictionary where keys are unique DNS names and values are a ``utils.PTRRecord`` class describing all reverse DNS records with that name.
     """
-    print(f'[INFO][pluginmaster] Running plugin {plugin.__name__}')
+    print(f'[INFO][pluginmaster] Running {plugin.__name__}')
     try:
         plugin.runner(forward_dns, reverse_dns)
     except Exception:
-        print(f'[ERROR][pluginmaster] Running {plugin.__name__} threw an exception: \n{format_exc()}')
+        print(f'[ERROR][pluginmaster] {plugin.__name__} threw an exception: \n{format_exc()}')
     else:
-        print(f'[INFO][pluginmaster] Plugin {plugin.__name__} completed successfully')
+        print(f'[INFO][pluginmaster] {plugin.__name__} completed successfully')
 
 def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.PTRRecord]):
     """
