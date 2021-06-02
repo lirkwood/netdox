@@ -105,7 +105,10 @@ def dnsLookup(dns: utils.DNSRecord) -> bool:
     # if has no monitor, assign one
     if not dns.icinga and dns.location:
         if dns.role != 'unmonitored':
-            set_host(dns.name, dns.location, template = utils.config[dns.role]['template'])
+            try:
+                set_host(dns.name, location = dns.location, template = utils.config[dns.role]['template'])
+            except ValueError:
+                pass
         else:
             return True
         return False
