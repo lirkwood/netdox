@@ -60,7 +60,7 @@ def setloc(func):
             elif 'icinga' in kwargs:
                 raise ValueError(f'Unrecognised Icinga {kwargs["icinga"]}')
             else:
-                raise ValueError(f'Missing args/kwargs; Must provide one of icinga, location.')
+                raise ValueError(f'Invalid args / missing kwargs; Must provide a valid value for one of: icinga, location.')
         else:
             kwargs['icinga'] = host
             return func(*args, **kwargs)
@@ -71,7 +71,6 @@ def setloc(func):
 # Command Builders #
 ####################
 
-@utils.handle
 @setloc
 def set_host(address: str, icinga: str = '', location: str = '', template: str = 'generic-host', display_name: str = '') -> str:
     """
@@ -91,7 +90,6 @@ def set_host(address: str, icinga: str = '', location: str = '', template: str =
     print(f'[INFO][icinga] Setting template for {address} to {template}')
     return exec(cmd, host=icinga)
 
-@utils.handle
 @setloc
 def rm_host(address: str, icinga: str = '', location: str = '') -> str:
     """
