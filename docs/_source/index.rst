@@ -9,9 +9,8 @@ The following pages are for developers that need to maintain or extend Netdox, a
 
 Netdox is a containerised application built with Python, XSLT and some Node.js.
 The objective of Netdox is to improve the productivity of network administrators by consolidating information from a range of systems.
-This reduces the need to move between many different systems.
-It also uses any available information to connect data from one system to another.
-This reduces the need for administrators to be familiar with every system on the network, and the documentation is updated and pruned daily to keep data current and accurate.
+This reduces the need for administrators to move between many different interfaces, and minimises the familiarity required with each service.
+The documentation is updated and pruned daily to keep data current and accurate, and can be refreshed at any time.
 
 Plugins used in the Allette instance of Netdox interface with the following services:
 
