@@ -37,28 +37,30 @@ def init():
     #Initialise plugins
     pluginmaster.initPlugins()
 
-    # load dns config from pageseeder
+
     config = {"exclusions": []}
+    roles = {}
+    # load dns config from pageseeder
     psConfigInf = json.loads(ps_api.get_uri('_nd_config'))
     if psConfigInf['title'] == 'DNS Config':
-        # load roles
+        # load a role
         roleFrag = BeautifulSoup(ps_api.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
             roleConfig = ps_api.pfrag2dict(ps_api.get_fragment(xref['docid'], 'config'))
-            # load domains with this role
-            domains = []
+            roleName = roleConfig['name']
+
+            # set role for configured domains
             revXrefs = BeautifulSoup(ps_api.get_xrefs(xref['docid']), features='xml')
             for revXref in revXrefs("reversexref"):
                 if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'dns':
-                    domains.append(revXref['urititle'])
+                    roles[revXref['urititle']] = roleName
             
-            roleName = roleConfig['name']
             screenshot = strtobool(roleConfig['screenshot'])
             del roleConfig['name'], roleConfig['screenshot']
             
             config[roleName] = (roleConfig | {
                 "screenshot": screenshot,
-                "domains": domains
+                "domains": []
             })
 
         # load exclusions
@@ -67,16 +69,23 @@ def init():
             config['exclusions'].append(para.string)
 
         # load batch defined roles
+        tmp = {}
         try:
             with open('src/roles.json', 'r') as stream:
-                roles = json.load(stream)
+                batchroles = json.load(stream)
         except FileNotFoundError:
-            pass
-        else:
-            for role in roles:
-                if role in config:
-                    print(f'[INFO][refresh.py] Loaded additional data for role {role} from roles.json')
-                    config[role]['domains'] += roles[role]
+            batchroles = {}
+
+        for role, domainset in batchroles.items():
+            for domain in domainset:
+                tmp[domain] = role
+        batchroles = tmp
+        # overwrite roles with batchroles where necessary
+        roles |= batchroles
+
+        for domain, role in roles.items():
+            if role in config:
+                config[role]['domains'].append(domain)
 
         with open('src/config.json', 'w') as stream:
             stream.write(json.dumps(config, indent=2))
@@ -129,10 +138,7 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
             for domain in config[role]['domains']:
                 try:
                     dns_set[domain].role = role
-                    try:
-                        unassigned.remove(domain)
-                    except ValueError:
-                        print(f'[WARNING][refresh.py] {domain} is present multiple times in config')
+                    unassigned.remove(domain)
                 except KeyError:
                     pass
     
