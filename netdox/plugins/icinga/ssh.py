@@ -42,13 +42,17 @@ def setloc(func):
             for icinga, conf in icinga_hosts.items():
                 if kwargs['location'] in conf['locations']:
                     host = icinga
-                del kwargs['location']
 
         elif len(args) > 1:
             if args[1] in icinga_hosts:
                 host = args[1]
                 # for error message
                 kwargs['icinga'] = args[1]
+            else:
+                for icinga, conf in icinga_hosts.items():
+                    if args[1] in conf['locations']:
+                        host = args[1]
+                        kwargs['location'] = args[1]
 
         if not host:
             if 'location' in kwargs:
@@ -67,6 +71,7 @@ def setloc(func):
 # Command Builders #
 ####################
 
+@utils.handle
 @setloc
 def set_host(address: str, icinga: str = '', location: str = '', template: str = 'generic-host', display_name: str = '') -> str:
     """
@@ -86,6 +91,7 @@ def set_host(address: str, icinga: str = '', location: str = '', template: str =
     print(f'[INFO][icinga] Setting template for {address} to {template}')
     return exec(cmd, host=icinga)
 
+@utils.handle
 @setloc
 def rm_host(address: str, icinga: str = '', location: str = '') -> str:
     """
