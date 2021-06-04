@@ -39,7 +39,7 @@ function _refresh {
 
 ## Initialise container to allow other processes to run
 function init {
-    echo '[INFO][netdox] Pod started. Running init script...'
+    echo "[INFO][netdox] Initalising container as: $(id)"
     
     # make all scripts executable
     chmod 777 /opt/app/*
