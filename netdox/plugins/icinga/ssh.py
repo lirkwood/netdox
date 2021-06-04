@@ -99,3 +99,13 @@ def rm_host(address: str, icinga: str = '', location: str = '') -> str:
 
     print(f'[INFO][icinga] Removing monitor on {address}')
     return exec(cmd, host=icinga)
+
+@setloc
+def reload(icinga: str = '', location: str = '') -> str:
+    """
+    Validates config files and reloads the Icinga2 systemd service.
+    """
+    cmd = f'icinga2 daemon -C && systemctl reload icinga2'
+
+    print(f'[INFO][icinga] Reloading Icinga2 service on {icinga}')
+    return exec(cmd, host=icinga)

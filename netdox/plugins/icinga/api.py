@@ -1,4 +1,4 @@
-from plugins.icinga.ssh import set_host, rm_host
+from plugins.icinga.ssh import set_host, rm_host, reload
 from typing import Tuple
 import requests, json
 import utils
@@ -166,7 +166,12 @@ def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
             # search icinga for objects with address == domain (or any ip for that domain)
             if not dnsLookup(dns):
                 tmp[domain] = dns
-        # if some objects had invalid monitors, refresh and retest.
+
+        # reload icinga services to update information coming from api
+        for icinga in icinga_hosts:
+            reload(icinga)
+
+        # if some objects had invalid monitors, retest using new data.
         if tmp: setServices(tmp, depth+1)
     else:
         print(f'[WARNING][icinga] Abandoning domains without proper monitor: {dns_set.keys()}')
@@ -180,5 +185,5 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     for icinga, addr_set in generated.items():
         for addr in addr_set:
             if addr not in forward_dns:
-                print(f'[INFO][icinga] Stale monitor for domain {addr}. Removing...')
+                print(f'[WARNING][icinga] Stale monitor detected on {addr}')
                 rm_host(addr, icinga=icinga)
