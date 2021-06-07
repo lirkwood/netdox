@@ -43,24 +43,13 @@ def setloc(func):
                 if kwargs['location'] in conf['locations']:
                     host = icinga
 
-        elif len(args) > 1:
-            if args[1] in icinga_hosts:
-                host = args[1]
-                # for error message
-                kwargs['icinga'] = args[1]
-            else:
-                for icinga, conf in icinga_hosts.items():
-                    if args[1] in conf['locations']:
-                        host = args[1]
-                        kwargs['location'] = args[1]
-
         if not host:
             if 'location' in kwargs:
                 raise ValueError(f'Unrecognised location {kwargs["location"]}')
             elif 'icinga' in kwargs:
                 raise ValueError(f'Unrecognised Icinga {kwargs["icinga"]}')
             else:
-                raise ValueError(f'Invalid args / missing kwargs; Must provide a valid value for one of: icinga, location.')
+                raise ValueError(f'Missing kwargs; Must provide a valid value for one of: icinga, location.')
         else:
             kwargs['icinga'] = host
             return func(*args, **kwargs)

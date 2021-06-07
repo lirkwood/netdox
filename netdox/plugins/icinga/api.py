@@ -151,7 +151,6 @@ def validateTemplate(dns: utils.DNSRecord, icinga_host: str) -> bool:
     return False
 
 
-@utils.handle
 def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
     """
     Iterate over every record in the DNS and set the correct monitors for it, then import the monitoring information into the record.
@@ -169,7 +168,7 @@ def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
 
         # reload icinga services to update information coming from api
         for icinga in icinga_hosts:
-            reload(icinga)
+            reload(icinga=icinga)
 
         # if some objects had invalid monitors, retest using new data.
         if tmp: setServices(tmp, depth+1)
