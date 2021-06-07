@@ -58,31 +58,33 @@ def auth(func):
     :Args:
         Some function to be authenticated which makes a PageSeeder REST API request and takes the kwarg *header*.
     """
-    
-    credentials = utils.auth()['pageseeder']
-    try:
-        with open('src/pstoken.json', 'r') as stream:
-            details = json.load(stream)
-            token = details['token']
-            issued = details['issued']
-
-            if datetime.fromisoformat(issued) <= (datetime.now() - timedelta(hours=1)):
-                token = refreshToken(credentials)
-    except FileNotFoundError:
-        token = refreshToken(credentials)
-    
-    defaults = {
-        'host': f'https://{credentials["host"]}/ps/service',
-        'member': credentials['username'],
-        'group': credentials['group'],
-        'header': {
-                'authorization': f'Bearer {token}',
-                'Accept': 'application/json'
-            }
-    }
-
     @wraps(func)
     def wrapper(*args, **kwargs):
+
+        credentials = utils.auth()['pageseeder']
+        try:
+            with open('src/pstoken.json', 'r') as stream:
+                details = json.load(stream)
+                token = details['token']
+                issued = details['issued']
+
+                if datetime.fromisoformat(issued) <= (datetime.now() - timedelta(hours=1)):
+                    token = refreshToken(credentials)
+        except FileNotFoundError:
+            token = refreshToken(credentials)
+        except json.JSONDecodeError:
+            token = refreshToken(credentials)
+        
+        defaults = {
+            'host': f'https://{credentials["host"]}/ps/service',
+            'member': credentials['username'],
+            'group': credentials['group'],
+            'header': {
+                    'authorization': f'Bearer {token}',
+                    'Accept': 'application/json'
+                }
+        }
+
         for kw in signature(func).parameters:
             if kw not in kwargs and kw in defaults:
                 kwargs[kw] = defaults[kw]
