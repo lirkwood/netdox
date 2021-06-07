@@ -159,23 +159,8 @@ class DNSRecord:
     root: str
     location: str
 
-    def __init__(self, name: str=None, root: str=None, constructor: dict=None):
-        if constructor:
-            for k, v in constructor.items():
-                setattr(self, k, v)
-            if not self.name:
-                raise ValueError('Must provide a name for a DNS record within constructor OR separately.')
-
-            for attr in ('_public_ips','_private_ips','_cnames'):
-                value = set()
-                for list in self.__dict__[attr]:
-                    value.add(tuple(list))
-                setattr(self, attr, value)
-            for _,list in self.resources.items():
-                list = set(list)
-            self.subnets = set(self.subnets)
-
-        elif re.fullmatch(dns_name_pattern, name):
+    def __init__(self, name: str=None, root: str=None):
+        if re.fullmatch(dns_name_pattern, name):
             self.name = name.lower()
             if root: self.root = root.lower()
             self.location = None
@@ -190,9 +175,31 @@ class DNSRecord:
             self.subnets = set()
 
         else:
-            raise ValueError('Must provide a valid name for dns record (some FQDN) or a valid constructor dict.')
+            raise ValueError('Must provide a valid name for dns record (some FQDN)')
 
-    # switch to case match on 2021-04-10
+    @classmethod
+    def from_json(cls, object: dict):
+        """
+        Instantiates a DNSRecord from JSON.
+        """
+        record = cls(object['name'])
+        del object['name']
+        for k, v in object.items():
+            setattr(record, k, v)
+
+        for attr in ('_public_ips','_private_ips','_cnames'):
+            value = set()
+            for list in record.__dict__[attr]:
+                value.add(tuple(list))
+            setattr(record, attr, value)
+
+        for _,list in record.resources.items():
+            list = set(list)
+
+        record.subnets = set(record.subnets)
+        
+        return record
+
     def link(self, string: str, type: str, source: str=None):
         """
         Adds a link to the given object. Source is required for ip/ipv4 and domain link types.
@@ -355,8 +362,8 @@ def loadDNS(file: Union[str, DirEntry]) -> dict[str, DNSRecord]:
     d = {}
     with open(file, 'r') as stream:
         jsondata = json.load(stream)
-        for key, constructor in jsondata.items():
-            d[key] = DNSRecord(key, constructor=constructor)
+        for name, constructor in jsondata.items():
+            d[name] = DNSRecord.from_json(constructor)
     return d
 
 @critical
