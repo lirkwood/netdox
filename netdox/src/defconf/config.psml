@@ -9,7 +9,7 @@
     <section id="title">
         <fragment id="1">
             <heading level="1">DNS Config</heading>
-            <para>In this document you may define custom roles for unique FQDN's in the DNS using inline labels. Recognised roles are limited to those listed. The format of the document is purely for readability, inline labels are the only thing Netdox recognises.</para>
+            <para>In this document you may configure the DNS roles that Netdox recognises.</para>
         </fragment>
     </section>
     <section id="config">
