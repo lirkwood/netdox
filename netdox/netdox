@@ -25,8 +25,9 @@ function _refresh {
             cd /opt/app
             if ant -lib /opt/ant/lib
                 then
-                    echo '[INFO][netdox] Upload successful.'
+                    echo '[INFO][netdox] Upload successful. Running post-upload cleanup...'
                     python3 cleanup.py
+                    echo '[INFO][netdox] Refresh complete.'
                 else
                     echo '[ERROR][netdox] Upload exited with non-zero status. Storing psml for debugging...'
                     cp /opt/app/out/netdox-src.zip /etc/ext/psml.zip
