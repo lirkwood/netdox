@@ -73,7 +73,7 @@ def set_host(address: str, icinga: str = '', location: str = '', template: str =
         import "{template}"
         address = "{address}"
         vars.group = "generated"
-    }}' > /etc/icinga2/conf.d/hosts/generated/{address.replace('.','_')}.conf && icinga2 daemon -C && systemctl reload icinga2
+    }}' > /etc/icinga2/conf.d/hosts/generated/{address.replace('.','_')}.conf
     """)
 
     print(f'[INFO][icinga] Setting template for {address} to {template}')

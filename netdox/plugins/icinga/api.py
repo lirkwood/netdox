@@ -182,7 +182,12 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
 
     # Removes any generated monitors for domains no longer in the DNS
     for icinga, addr_set in generated.items():
+        stale = []
         for addr in addr_set:
             if addr not in forward_dns:
-                print(f'[WARNING][icinga] Stale monitor detected on {addr}')
+                stale.append(addr)
+        if stale:
+            print(f'[INFO] Found stale monitors: {", ".join(stale)}')
+            for addr in stale:
                 rm_host(addr, icinga=icinga)
+            reload(icinga=icinga)
