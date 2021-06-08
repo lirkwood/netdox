@@ -32,7 +32,7 @@ def refreshToken(credentials: dict) -> str:
         url = f'https://{credentials["host"]}/ps/oauth/token'
         refresh_header = {
             'grant_type': 'client_credentials',
-            'client_id': credentials['id'],
+            'client_id': credentials['id'].lower(),
             'client_secret': credentials['secret']
         }
 
@@ -104,8 +104,17 @@ def urimap():
     try:
         return _urimap
     except NameError:
-        _urimap = getUrimap('375156')
-        return _urimap
+        group = utils.auth()["pageseeder"]["group"]
+        websiteDirCheck = json.loads(search({
+            'filters': f'pstype:folder,psfilename:website,psfolder:/ps/{group.replace("-","/")}'
+        }))
+        if websiteDirCheck['results']['result']:
+            for field in websiteDirCheck['results']['result'][0]['fields']:
+                if field['name'] == 'psid':
+                    _urimap = get_urimap(field['value'])
+                    return _urimap
+        else:
+            raise RuntimeError(f'[ERROR][pageseeder] Directory \'website\' not present at root of group {group}.')
 
 
 ##########################
@@ -275,7 +284,7 @@ def get_xref_tree(uri, params={}, host='', group='', header={}):
 
 
 @auth
-def getUrimap(dir_uri):
+def get_urimap(dir_uri):
     """
     Maps the directories in a URI to their URIs
     """
@@ -284,6 +293,13 @@ def getUrimap(dir_uri):
     for uri in uris['uris']:
         urimap[uri['displaytitle']] = uri['id']
     return urimap
+
+
+@auth
+def search(params={}, host='', group='', header={}):
+    service = f'/groups/{group}/search'
+    r = requests.get(host+service, headers=header, params=params)
+    return r.text
 
 
 def pfrag2dict(fragment):
