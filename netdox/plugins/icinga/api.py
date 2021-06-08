@@ -103,7 +103,7 @@ def dnsLookup(dns: utils.DNSRecord) -> bool:
                     return False
 
     # if has no monitor, assign one
-    if not dns.icinga and dns.location:
+    if not dns.icinga and dns.location and 'template' in utils.config[dns.role]:
         if dns.role != 'unmonitored':
             try:
                 set_host(dns.name, location = dns.location, template = utils.config[dns.role]['template'])
@@ -138,9 +138,13 @@ def validateTemplate(dns: utils.DNSRecord, icinga_host: str) -> bool:
     Validates the template of a dns record against its role, modifies if necessary. Returns True if already valid.
     """
     global generated
-    template_name = generated[icinga_host][dns.name]['templates'][0]
+    current = generated[icinga_host][dns.name]['templates'][0]
+    try:
+        desired = utils.config[dns.role]['template']
+    except KeyError:
+        return True
 
-    if dns.role != 'unmonitored' and utils.config[dns.role]['template'] != template_name:
+    if dns.role != 'unmonitored' and desired != current:
         set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
 
     elif dns.role == 'unmonitored':
