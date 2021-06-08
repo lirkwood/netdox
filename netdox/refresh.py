@@ -74,7 +74,7 @@ def init():
             if file.name != 'config.psml':
                 with open(file, 'r') as stream:
                     soup = BeautifulSoup(stream.read(), features='xml')
-                    roleConfig = soup.find(id="config")
+                    roleConfig = ps_api.pfrag2dict(soup.find(id="config")) | {'domains':[]}
                     config[roleConfig['name']] = roleConfig
 
             shutil.copyfile(file.path, f'out/config/{file.name}')
@@ -301,7 +301,7 @@ def main():
     utils.xslt('ips.xsl', 'src/ips.xml')
 
     screenshots()
-    cleanup.clean()
+    cleanup.pre_upload()
 
 
 if __name__ == '__main__':
