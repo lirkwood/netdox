@@ -302,6 +302,13 @@ def search(params={}, host='', group='', header={}):
     return r.text
 
 
+@auth
+def resolve_group_refs(params={}, host='', group='', member='', header={}):
+    service = f'/members/{member}/groups/{group}/resolverefs'
+    r = requests.post(host+service, headers=header, params=params)
+    return r.text
+
+
 def pfrag2dict(fragment):
     if isinstance(fragment, str):
         fragment = BeautifulSoup(fragment, features='xml')
