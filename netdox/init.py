@@ -5,6 +5,7 @@ This script is used to initialise the container for the rest of Netdox.
 import os, utils
 from textwrap import dedent
 from bs4 import BeautifulSoup
+from ps_api import urimap
 
 ##################
 # Initialisation #
@@ -17,6 +18,9 @@ def init():
     creates output directories, and generates some XML to import JSON for core XSLT operations.
     """
     psauth = utils.auth()['pageseeder']
+
+    # check that urimap can be generated
+    urimap()
 
     # setting up dirs
     for path in ('out', '/etc/ext/base'):
