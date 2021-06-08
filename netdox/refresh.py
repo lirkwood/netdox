@@ -69,6 +69,7 @@ def init():
             config['exclusions'].append(para.string)
 
     else:
+        print('[WARNING][refresh] No DNS config found on PageSeeder')
         # load default config and copy to upload context
         for file in os.scandir('src/defconf'):
             if file.name != 'config.psml':
