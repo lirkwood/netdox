@@ -167,9 +167,9 @@ def alnum(string):
 
 
 @utils.critical
-def clean():
+def pre_upload():
     """
-    The main cleanup flow. Calls most other functions in this script in the required order.
+    The main pre-upload cleanup flow, used to prepare for upload and detect old files on PageSeeder.
 
     Runs ``png2jpg`` on the *screenshots*, *review*, and *screenshot_history* directories.
     Also attempts to archive the *review* directory on PageSeeder from the last refresh, if it exists.
@@ -210,3 +210,15 @@ def clean():
         with open('src/review.json', 'w') as stream:
             review['stale'] = stale
             stream.write(json.dumps(review, indent=2))
+
+
+def post_upload():
+    """
+    Main post-upload cleanup flow, currently just starts a resolve xrefs process for upload group.
+    """
+    ps_api.resolve_group_refs()
+
+
+
+if __name__ == '__main__':
+    post_upload()
