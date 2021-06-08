@@ -69,9 +69,16 @@ def init():
             config['exclusions'].append(para.string)
 
     else:
-        # make defaultconfig
+        # load default config and copy to upload context
         for file in os.scandir('src/defconf'):
-            shutil.copyfile(file, f'out/config/{file}')
+            if file.name != 'config.psml':
+                with open(file, 'r') as stream:
+                    soup = BeautifulSoup(stream.read(), features='xml')
+                    roleConfig = soup.find(id="config")
+                    config[roleConfig['name']] = roleConfig
+
+            shutil.copyfile(file.path, f'out/config/{file.name}')
+
 
     # load batch defined roles
     tmp = {}
@@ -144,11 +151,8 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
                     pass
     
     for domain in unassigned:
-        try:
-            dns_set[domain].role = 'default'
-            config['default']['domains'].append(domain)
-        except KeyError:
-            print('[DEBUG][refresh] Unexpected behaviour: dns_set is missing domain in unassigned')
+        dns_set[domain].role = 'default'
+        config['default']['domains'].append(domain)
 
 @utils.critical
 def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
