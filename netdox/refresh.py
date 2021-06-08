@@ -42,7 +42,7 @@ def init():
     roles = {}
     # load dns config from pageseeder
     psConfigInf = json.loads(ps_api.get_uri('_nd_config'))
-    if psConfigInf['title'] == 'DNS Config':
+    if 'title' in psConfigInf and psConfigInf['title'] == 'DNS Config':
         # load a role
         roleFrag = BeautifulSoup(ps_api.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
@@ -68,31 +68,32 @@ def init():
         for para in exclusionSoup("para"):
             config['exclusions'].append(para.string)
 
-        # load batch defined roles
-        tmp = {}
-        try:
-            with open('src/roles.json', 'r') as stream:
-                batchroles = json.load(stream)
-        except FileNotFoundError:
-            batchroles = {}
-
-        for role, domainset in batchroles.items():
-            for domain in domainset:
-                tmp[domain] = role
-        batchroles = tmp
-        # overwrite roles with batchroles where necessary
-        roles |= batchroles
-
-        for domain, role in roles.items():
-            if role in config:
-                config[role]['domains'].append(domain)
-
-        with open('src/config.json', 'w') as stream:
-            stream.write(json.dumps(config, indent=2))
     else:
         # make defaultconfig
         for file in os.scandir('src/defconf'):
             shutil.copyfile(file, f'out/config/{file}')
+
+    # load batch defined roles
+    tmp = {}
+    try:
+        with open('src/roles.json', 'r') as stream:
+            batchroles = json.load(stream)
+    except FileNotFoundError:
+        batchroles = {}
+
+    for role, domainset in batchroles.items():
+        for domain in domainset:
+            tmp[domain] = role
+    batchroles = tmp
+    # overwrite roles with batchroles where necessary
+    roles |= batchroles
+
+    for domain, role in roles.items():
+        if role in config:
+            config[role]['domains'].append(domain)
+
+    with open('src/config.json', 'w') as stream:
+        stream.write(json.dumps(config, indent=2))
     
     utils.loadConfig()
 
