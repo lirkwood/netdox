@@ -312,8 +312,11 @@ def resolve_group_refs(params={}, host='', group='', member='', header={}):
 def pfrag2dict(fragment):
     if isinstance(fragment, str):
         fragment = BeautifulSoup(fragment, features='xml')
-    elif not isinstance(fragment, BeautifulSoup):
-        raise TypeError(f'[ERROR][ps_api.py] Fragment but be one of: str, BeautifulSoup. Not {type(fragment)}')
+    else:
+        try:
+            fragment = BeautifulSoup(str(fragment), features='xml')
+        except Exception:
+            raise TypeError(f'[ERROR][pageseeder] Fragment must be valid PSML')
     
     d = {}
     for property in fragment("property"):
