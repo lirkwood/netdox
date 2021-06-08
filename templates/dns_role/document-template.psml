@@ -1,0 +1,24 @@
+<document type="dns_role" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+  <metadata>
+      <properties>
+          <property name="template_version"     title="Template version"   value="1.0" />
+      </properties>
+  </metadata>
+  
+  <section id="title">
+    <fragment id="1">
+      <heading level="1">DNS Role: &lt;role&gt;</heading>
+    </fragment>
+  </section>
+
+  <section id="body">
+    <properties-fragment id="config">
+      <property name="name" title="Name" value="" />
+      <property name="desc" title="Description" value="" />
+      <property name="template" title="Default Icinga Template" value="" />
+      <property name="screenshot" title="Screenshot" value="yes|no" />
+    </properties-fragment>
+  </section>
+</document>
+

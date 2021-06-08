@@ -1,0 +1,36 @@
+<document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+  <metadata>
+    <properties>
+      <property name="template_version"     title="Template version"   value="2.2" />
+    </properties>
+  </metadata>
+
+  <section id="title">
+    <fragment id="title">
+      <heading level="2">IP Address</heading>
+      <heading level="1"></heading>
+    </fragment>
+  </section>
+
+  <section id="details" title="details">
+  
+    <properties-fragment id="info">
+      <property name="ipv4"               title="IP"          value="" /> 
+      <property name="subnet"               title="subnet"          value="" />
+      <property name="location"               title="Location"          value="" /> 
+      <property name="nat" title="NAT Destination" datatype="xref"/>
+    </properties-fragment>
+
+    <properties-fragment id="reversedns">
+      <property name="ptr" title="PTR Record" datatype="xref"/>
+      <property name="source" title="Source Plugin" value=""/>
+    </properties-fragment>
+    
+    <properties-fragment id="for-search" labels="s-hide-content">
+      <property name="octets" title="Octets for search" value=""/>
+    </properties-fragment>
+    
+  </section> 
+
+</document>

@@ -1,0 +1,68 @@
+<document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+    <metadata>
+        <properties>
+            <property name="template_version"     title="Template version"   value="5.3" />
+        </properties>
+    </metadata>
+
+    <section id="title">
+      <fragment xmlns:t="http://pageseeder.com/psml/template" id="title">
+        <heading level="2">DNS Record</heading>
+         <heading level="1"/>
+      </fragment>
+   </section>
+  
+   <section id="details" title="Details">
+      <properties-fragment id="info" xmlns:t="http://pageseeder.com/psml/template">
+         <property name="name" title="Name" value=""/>
+         <property name="root" title="Root Domain" value=""/>
+         <property name="source" title="DNS Source" value=""/>
+         <property name="role"   title="DNS Role"    datatype="xref">
+           <xref frag="default" docid="_nd_role_default" />
+        </property>
+         <property name="license" title="PageSeeder License" value="—"/>
+         <property name="organization" title="Licensed Organization" value="—"/>
+      </properties-fragment>
+   </section>
+  
+   <section id="dest" title="Destinations">
+      <properties-fragment id="private_ip_0">
+         <property name="ipv4" title="Private IP" datatype="xref"/>
+         <property name="source" title="Source Plugin" value=""/>
+     </properties-fragment>
+      <properties-fragment id="public_ip_0">
+         <property name="ipv4" title="Public IP" datatype="xref"/>
+         <property name="source" title="Source Plugin" value=""/>
+     </properties-fragment>
+      <properties-fragment id="cname_0">
+         <property name="cname" title="CNAME" datatype="xref"/>
+         <property name="source" title="Source Plugin" value=""/>
+     </properties-fragment>
+     
+     <properties-fragment id="resources">
+       <property name="k8s_app" title="Resource: k8s_app" datatype="xref" />
+       <property name="xo_vm" title="Resource: xo_vm" datatype="xref" />
+       <property name="aws_ec2" title="Resource: aws_ec2" datatype="xref" />
+     </properties-fragment>
+     
+      <properties-fragment id="subnets" xmlns:t="http://pageseeder.com/psml/template">
+         <property name="subnet" title="Subnet" value=""/>
+      </properties-fragment>
+     
+     <properties-fragment id="icinga" />
+     
+      <fragment id="screenshot" labels="text-align-center" xmlns:t="http://pageseeder.com/psml/template">
+         <block label="border-2"/>
+      </fragment>
+     
+      <properties-fragment id="url-key">
+       <property name="url-key" title="URL Key" value="" />
+     </properties-fragment>
+     
+      <properties-fragment id="for-search" labels="s-hide-content" xmlns:t="http://pageseeder.com/psml/template">
+         <property name="octets" title="Octets for search" value=""/>
+      </properties-fragment>
+     
+   </section>
+</document>
