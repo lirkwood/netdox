@@ -6,6 +6,7 @@
 
 <xsl:output method="xml" indent="yes" />
 <xsl:variable name="config" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
+<xsl:variable name="auth" select="json-to-xml(unparsed-text('src/authentication.json'))/xpf:map"/>
 
 <xsl:template match="/">
     <xsl:variable name="dns" select="json-to-xml(dns)"/>
@@ -138,7 +139,7 @@
                     <xsl:if test="$config/xpf:map[@key = $role]/*[@key = 'screenshot'] = '1'">
                     <fragment id="screenshot" labels="text-align-center">
                         <block label="border-2">
-                            <image src="/ps/operations/network/website/screenshots/{translate($name,'.','_')}.jpg"/>
+                            <image src="/ps/{translate($auth/xpf:map[@key='pageseeder']/xpf:string[@key='group'],'-','/')}/website/screenshots/{translate($name,'.','_')}.jpg"/>
                         </block>
                     </fragment>
                     </xsl:if>
