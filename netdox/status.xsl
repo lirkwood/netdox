@@ -7,6 +7,7 @@
 <xsl:output method="xml" indent="yes" />
 
 <xsl:template match="/">
+    <xsl:variable name="auth" select="json-to-xml(unparsed-text('src/authentication.json'))/xpf:map"/>
     <xsl:variable name="review" select="json-to-xml(review)"/>
     <xsl:variable name="date" select="format-date(current-date(), '[Y0001]-[M01]-[D01]')"/>
     <xsl:variable name="dateTime" select="format-dateTime(adjust-dateTime-to-timezone(current-dateTime(), xs:dayTimeDuration('PT10H')), '[Y0001]-[M01]-[D01] at [H01]:[m01] [z]')"/>
@@ -38,19 +39,19 @@
         <fragment id="imgdiff_{position()}_img_col1" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Expected screenshot</para>
-                <image src="/ps/operations/network/website/screenshot_history/{$date}/{translate(., '.', '_')}.jpg"/>
+                <image src="/ps/{translate($auth/xpf:map[@key='pageseeder']/xpf:string[@key='group'],'-','/')}/website/screenshot_history/{$date}/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_col2" labels="text-align-center,col-1-of-2">
             <block label="border-2">
                 <para>Actual screenshot</para>
-                <image src="/ps/operations/network/website/screenshots/{translate(., '.', '_')}.jpg"/>
+                <image src="/ps/{translate($auth/xpf:map[@key='pageseeder']/xpf:string[@key='group'],'-','/')}/website/screenshots/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
         <fragment id="imgdiff_{position()}_img_diff" labels="text-align-center">
             <block label="border-2">
                 <para>Expected screenshot with diff overlay</para>
-                <image src="/ps/operations/network/website/review/{translate(., '.', '_')}.jpg"/>
+                <image src="/ps/{translate($auth/xpf:map[@key='pageseeder']/xpf:string[@key='group'],'-','/')}/website/review/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
@@ -80,7 +81,7 @@
         </properties-fragment>
         <fragment id="no_base_{position()}_img" labels="text-align-center">
             <block label="border-2">
-                <image src="/ps/operations/network/website/screenshots/{translate(., '.', '_')}.jpg"/>
+                <image src="/ps/{translate($auth/xpf:map[@key='pageseeder']/xpf:string[@key='group'],'-','/')}/website/screenshots/{translate(., '.', '_')}.jpg"/>
             </block>
         </fragment>
     </xsl:for-each>
