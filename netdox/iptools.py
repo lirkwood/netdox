@@ -55,10 +55,7 @@ class subnet:
             for octet in range(4):
                 self.octets[octet] = int(self.octets[octet])
         else:
-            self.subnet = None
-            self._mask = None
-            self.min_addr = None
-            self.octets = []
+            raise ValueError(f'Invalid subnet: {raw}')
     
     # returns value of subnet mask (int)
     @property
@@ -68,15 +65,12 @@ class subnet:
     # sets new value for subnet mask and reinitialises class instance (accepts int or str, with or without leading '/')
     @mask.setter
     def mask(self, new_mask):
-        if self.valid:
-            str_new_mask = str(new_mask)
-            if re.match(r'/*[0-9]{1,2}', str_new_mask):
-                self._mask = int(str_new_mask.strip('/'))
-                self.__init__(self.min_addr +'/'+ str(self._mask))
-            else:
-                print('[ERROR][iptools.py] Invalid subnet mask provided. Must be in between 0 and 31 inclusive.')
+        str_new_mask = str(new_mask)
+        if re.match(r'/*[0-9]{1,2}', str_new_mask):
+            self._mask = int(str_new_mask.strip('/'))
+            self.__init__(self.min_addr +'/'+ str(self._mask))
         else:
-            print('[ERROR][iptools.py] Cannot set new subnet mask for invalid subnet.')
+            raise ValueError('Invalid subnet mask provided. Must be in between 0 and 31 inclusive.')
 
 
     def equiv(self, mask):
@@ -132,7 +126,7 @@ def subn_floor(subn):
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: str, subnet; Not "{type(subn)}"')
 
     if re.fullmatch(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])', subn):
         mask = int(subn.split('/')[-1])
@@ -142,13 +136,12 @@ def subn_floor(subn):
             octets[octet] = int(octets[octet])
 
         split_octet = mask // 8
-        bin_octet = bin(octets[split_octet])[2:].zfill(8)
         bit_mask = mask % 8
 
-        new_octet = ''
+        new_octet = 0
         for bit in range(bit_mask):
-            new_octet += bin_octet[bit]
-        octets[split_octet] = int(new_octet.ljust(8,'0'), 2)
+            new_octet += 2**(8 - bit)
+        octets[split_octet] = new_octet
 
         str_octets = []
         for octet in range(4):
@@ -160,8 +153,7 @@ def subn_floor(subn):
         return min_addr
 
     else:
-        print('[ERROR][iptools.py] Please provide a valid address (0.0.0.0 -> 255.255.255.255) and subnet mask (address/0 -> address/31)')
-        return None
+        raise ValueError('Please provide a valid address (0.0.0.0 -> 255.255.255.255) and subnet mask (address/0 -> address/31)')
 
 # Returns dict with lowest (key=lower) and highest (key=upper) ip addresses in subnet (32-bit wide binary strs)
 def subn_bounds(subn, binary=False):
@@ -170,36 +162,34 @@ def subn_bounds(subn, binary=False):
     elif not isinstance(subn, str):
         raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
 
-    bounds = {}
-    lower = cidr2binary(subn_floor(subn))
-    bounds['lower'] = lower
+    lower = cidr2int(subn_floor(subn))
+    bounds = {'lower': lower}
 
     mask = int(subn.split('/')[-1])
 
-    upper = str(lower)
-    upper = upper[:mask]
-    for i in range(32 - mask):
-        upper += '1'    #set all bits out of mask range
+    upper = lower
+    for bit in range(32 - mask):
+        upper += 2**bit    #set all bits out of mask range
     bounds['upper'] = upper
 
     if not binary:
         for bound in bounds:
-            bounds[bound] = binary2cidr(bounds[bound])
+            bounds[bound] = int2cidr(bounds[bound])
 
     return bounds
-# returns list obj containing some subnets with a given mask (CIDR ipv4 format). The union of these is equivalent to
-# the namespace of the original subnet
+# returns list obj containing some subnets with a given mask (CIDR ipv4 format).
+# The union of these has an equivalent namespace to the original subnet.
 def subn_equiv(subn, new_mask):
     if isinstance(subn, subnet):
         if subn.valid:
             old_mask = subn.mask
         else:
-            raise ValueError('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
+            raise ValueError('Cannot find equivalent subnets to invalid subnet.')
     elif isinstance(subn, str):
         if valid_subnet(subn):
             old_mask = int(subn.split('/')[-1])
         else:
-            raise ValueError('[ERROR][iptools.py] Cannot find equivalent subnets to invalid subnet.')
+            raise ValueError('Cannot find equivalent subnets to invalid subnet.')
     else:
         raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
 
@@ -212,7 +202,7 @@ def subn_equiv(subn, new_mask):
         int_min_addr = int(bin_min_addr, 2)
 
         for i in range(2**(new_mask - old_mask)):
-            min_addr = binary2cidr(int2binary(int_min_addr))
+            min_addr = int2cidr(int_min_addr)
             new_subnet = min_addr +'/'+ str(new_mask)
             subnets.append(new_subnet)
 
@@ -229,7 +219,7 @@ def subn_contains(subn: Union[str, subnet], object: Union[str, ipv4, subnet], ve
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'[ERROR][iptools.py] Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
 
     # Validate input object
     if isinstance(object, ipv4):
@@ -244,26 +234,26 @@ def subn_contains(subn: Union[str, subnet], object: Union[str, ipv4, subnet], ve
             bounds = subn_bounds(object)
             return (subn_contains(subn, bounds['upper']) & subn_contains(subn, bounds['lower']))
         else:
-            raise ValueError(f'[ERROR][iptools.py] Object to be tested must be a valid ipv4 or subnet.')
+            raise ValueError(f'Object to be tested must be a valid ipv4 or subnet.')
     else:
-        raise TypeError(f'[ERROR][iptools.py] IP object must be one of: "str", "ipv4"; Not "{type(object)}"')
+        raise TypeError(f'IP object must be one of: "str", "ipv4"; Not "{type(object)}"')
 
     bin_ip = int(cidr2binary(ip), base=2)
     bounds = subn_bounds(subn, binary=True)
-    if bin_ip >= int(bounds['lower'],2) and bin_ip <= int(bounds['upper'],2):
+    if bin_ip >= int(bounds['lower']) and bin_ip <= int(bounds['upper']):
         if verbose:
-            print(f'[INFO][iptools.py] IP Address {ip} is within subnet {subn}.')
+            print(f'[INFO][iptools] IP Address {ip} is within subnet {subn}.')
         return True
     else:
         if verbose:
-            print(f'[INFO][iptools.py] IP Address {ip} is outside subnet {subn}.')
+            print(f'[INFO][iptools] IP Address {ip} is outside subnet {subn}.')
         return False
     
 def subn_iter(subn):
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'[ERROR][iptools.py] Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
         
     bounds = subn_bounds(subn, binary=True)
     upper = int(bounds['upper'], 2)
@@ -312,7 +302,7 @@ def search_string(string, object, delimiter=None):
         validate = valid_subnet
         pattern = regex_subnet
     else:
-        raise TypeError(f'[ERROR][iptools.py] Search object must be one of: ipv4, subnet; Not "{type(object)}".')
+        raise TypeError(f'Search object must be one of: ipv4, subnet; Not "{type(object)}".')
 
     outlist = []
     for line in string.split(delimiter):
@@ -332,13 +322,12 @@ def sort(ip, mask=24):
     if isinstance(ip, ipv4):
         ip = ip.ipv4
     elif not isinstance(ip, str):
-        raise TypeError('[ERROR][iptools.py] IPv4 object must be one of: ipv4, str ')
+        raise TypeError('IPv4 object must be one of: ipv4, str ')
 
     if isinstance(mask, int):
         mask = str(mask)
     elif not isinstance(mask, str):
-        raise TypeError('[ERROR][iptools.py] Subnet mask must be one of: int, str ')
+        raise TypeError('Subnet mask must be one of: int, str ')
 
     subn = ip +'/'+ str(mask)
     return f'{subn_floor(subn)}/{str(mask)}'
-
