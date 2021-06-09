@@ -112,6 +112,7 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     utils.xslt('plugins/xenorchestra/vms.xsl', 'plugins/xenorchestra/src/vms.xml')
     utils.xslt('plugins/xenorchestra/hosts.xsl', 'plugins/xenorchestra/src/hosts.xml')
     utils.xslt('plugins/xenorchestra/pools.xsl', 'plugins/xenorchestra/src/pools.xml')
+    utils.xslt('plugins/xenorchestra/pub.xsl', 'plugins/xenorchestra/src/pools.xml', 'out/xenorchestra_pub.psml')
 
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
