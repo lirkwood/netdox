@@ -137,9 +137,8 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
     config = utils.config
 
     for domain in config['exclusions']:
-        try:
+        if domain in dns_set:
             del dns_set[domain]
-        except KeyError: pass
     
     unassigned = list(dns_set.keys())
     for role in config.keys():
