@@ -143,15 +143,11 @@
                         </block>
                     </fragment>
                     </xsl:if>
-                    
-                    <properties-fragment id="url-key">
-                        <property name="url-key" title="URL Key" value="" />
-                    </properties-fragment>
     
                     <properties-fragment id="for-search" labels="s-hide-content">
                         <xsl:variable name="octets">
-                            <xsl:for-each select="xpf:array[matches(@key, '.*_ips$')]/xpf:string">
-                                <xsl:value-of select="concat(tokenize(.,'\.')[3], ', ', concat(tokenize(.,'\.')[3],'.',tokenize(.,'\.')[4]), ', ')"/>
+                            <xsl:for-each select="xpf:array[matches(@key, '.*_ips$')]/xpf:array">
+                                <xsl:value-of select="concat(tokenize(xpf:string[1],'\.')[3], ', ', concat(tokenize(xpf:string[1],'\.')[3],'.',tokenize(xpf:string[1],'\.')[4]), ', ')"/>
                             </xsl:for-each>
                         </xsl:variable>
                         <property name="octets" title="Octets for search" value="{substring($octets,1,string-length($octets)-2)}"/>

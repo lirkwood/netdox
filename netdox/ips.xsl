@@ -72,7 +72,10 @@
             </properties-fragment>
 
             <properties-fragment id="for-search" labels="s-hide-content">
-                <property name="octets" title="Octets for search" value="{xpf:string[@key = 'for-search']}"/>
+                <xsl:variable name="octets">
+                    <xsl:value-of select="concat(tokenize(@key,'\.')[3], ', ', concat(tokenize(@key,'\.')[3],'.',tokenize(@key,'\.')[4]), ', ')"/>
+                </xsl:variable>
+                <property name="octets" title="Octets for search" value="{substring($octets,1,string-length($octets)-2)}"/>
             </properties-fragment>
             
         </section> 
