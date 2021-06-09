@@ -161,8 +161,10 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
 def main(forward_dns,_):
     auth = utils.auth()['plugins']['kubernetes']
     allApps = {}
+    workers = {}
     for context in auth:
         allApps[context] = getApps(context)
+        workers[context] = {}
         for appName, app in allApps[context].items():
             for domain in app['domains']:
                 if domain not in forward_dns:
@@ -171,12 +173,19 @@ def main(forward_dns,_):
                     if 'location' in auth[context]:
                         forward_dns[domain].location = auth[context]['location']
                 forward_dns[domain].link(appName, 'k8s_app')
+                
+            c_workers = workers[context]
+            for _, pod in app['pods'].items():
+                if pod['nodeName'] not in c_workers:
+                    c_workers[pod['nodeName']] = {'vm':pod['vm'],'apps':[]}
+            c_workers[pod['nodeName']]['apps'].append(appName)
     
     with open('plugins/kubernetes/src/apps.json', 'w') as stream:
         stream.write(json.dumps(allApps, indent=2, cls=utils.JSONEncoder))
-    workers = {}
     with open('plugins/kubernetes/src/workers.json', 'w') as stream:
         stream.write(json.dumps(workers, indent=2, cls=utils.JSONEncoder))
+        
     utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/src/apps.xml')
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
     utils.xslt('plugins/kubernetes/clusters.xsl', 'plugins/kubernetes/src/workers.xml')
+    utils.xslt('plugins/kubernetes/pub.xsl', 'plugins/kubernetes/src/apps.xml', 'out/kubernetes_pub.psml')
