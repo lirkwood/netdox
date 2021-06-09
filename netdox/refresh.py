@@ -34,8 +34,11 @@ def init():
         else:
             os.remove(folder)
 
-    #Initialise plugins
+    # Initialise plugins
     pluginmaster.initPlugins()
+
+    # Load user-defined locations
+    utils.loadLocations()
 
 
     config = {"exclusions": []}

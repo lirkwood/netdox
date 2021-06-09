@@ -87,16 +87,19 @@ def handle(func):
 # Location helper function #
 ############################
 
-try:
-    with open('src/locations.json', 'r') as stream:
-        _location_map = json.load(stream)
-except Exception as e:
-    _location_map = {}
+def loadLocations():
+    global location_map
+    global location_pivot
+    try:
+        with open('src/locations.json', 'r') as stream:
+            location_map = json.load(stream)
+    except Exception:
+        location_map = {}
 
-location_map = {}
-for location in _location_map:
-    for subnet in _location_map[location]:
-        location_map[subnet] = location
+    location_pivot = {}
+    for location in location_map:
+        for subnet in location_map[location]:
+            location_pivot[subnet] = location
 
 def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
     """
@@ -124,12 +127,12 @@ def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
     # sort every declared subnet that matches one of ips by mask size
     matches = {}
     for subnet in ip_set:
-        for match in location_map:
+        for match in location_pivot:
             if iptools.subn_contains(match, subnet):
                 mask = int(match.split('/')[-1])
                 if mask not in matches:
                     matches[mask] = []
-                matches[mask].append(location_map[match])
+                matches[mask].append(location_pivot[match])
 
     matches = dict(sorted(matches.items(), reverse=True))
 
