@@ -7,7 +7,7 @@
                overwriteproperties="true"
                overwrite="true"
                unzip="true"
-               resolve="false"
+               resolve="true"
                validate="false">
       <fileset dir="out">
         <include name="netdox-src.zip"/>
