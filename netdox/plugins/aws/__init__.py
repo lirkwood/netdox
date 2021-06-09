@@ -32,12 +32,15 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     """
     client = boto3.client('ec2')
     allEC2 = client.describe_instances()
-    for domain in forward_dns:
-        dns = forward_dns[domain]
-        for reservation in allEC2['Reservations']:
-            for instance in reservation['Instances']:
+    for reservation in allEC2['Reservations']:
+        for instance in reservation['Instances']:
+            for _, dns in forward_dns.items():
                 if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
                     dns.link(instance['InstanceId'], 'ec2')
+            
+            for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
+                if ip not in reverse_dns:
+                    reverse_dns[ip] = utils.PTRRecord(ip, source='AWS')
 
     with open('plugins/aws/src/aws.json', 'w') as stream:
         stream.write(json.dumps(allEC2, indent=2, cls=utils.JSONEncoder))
