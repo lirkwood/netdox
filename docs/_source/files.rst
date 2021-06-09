@@ -101,6 +101,9 @@ PageSeeder API
 
 .. automodule:: pageseeder
     :members:
+    :exclude-members: auth
+
+    .. autodecorator:: pageseeder.auth
 
 
 .. _file_refresh:
