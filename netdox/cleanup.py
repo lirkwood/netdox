@@ -10,7 +10,7 @@ and generating placeholder images for websites which Netdox failed to screenshot
 from datetime import timedelta, datetime, date
 from PIL import Image, UnidentifiedImageError
 import re, os, json, shutil
-import ps_api, utils
+import pageseeder, utils
 
 
 def parseReview():
@@ -78,7 +78,7 @@ def placeholders():
     """
     # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
     try:
-        pageseeder_screens = ps_api.get_files(ps_api.urimap()['screenshots'])  # get list of screenshots on pageseeder
+        pageseeder_screens = pageseeder.get_files(pageseeder.urimap()['screenshots'])  # get list of screenshots on pageseeder
     except KeyError:
         pageseeder_screens = []
 
@@ -106,9 +106,9 @@ def sentenceStale():
     group_path = f"/ps/{utils.auth()['pageseeder']['group'].replace('-','/')}"
     stale = {}
     # for every folder in context on pageseeder
-    for folder, folder_uri in ps_api.urimap().items():
+    for folder, folder_uri in pageseeder.urimap().items():
         # get all files descended from folder
-        remote = json.loads(ps_api.get_uris(folder_uri, params={
+        remote = json.loads(pageseeder.get_uris(folder_uri, params={
             'type': 'document',
             'relationship': 'descendants'
         }))
@@ -136,14 +136,14 @@ def sentenceStale():
                 if f'out/{commonpath}' not in local:
                     if marked_stale:
                         if expiry <= today:
-                            ps_api.archive(uri)
+                            pageseeder.archive(uri)
                         else:
                             stale[uri] = marked_stale['date']
                     else:
                         plus_thirty = today + timedelta(days = 30)
                         if labels: labels += ','
                         labels += f'expires-{plus_thirty}'
-                        ps_api.patch_uri(uri, {'labels':labels})
+                        pageseeder.patch_uri(uri, {'labels':labels})
                         print(f'[INFO][cleanup] File {commonpath} is stale and has been sentenced.')
                         stale[uri] = str(plus_thirty)
                 # if marked stale but exists locally
@@ -153,7 +153,7 @@ def sentenceStale():
                         labels = re.sub(r',,',',', labels) # remove double commas
                         labels = re.sub(r',$','', labels) # remove trailing commas
                         labels = re.sub(r'^,','', labels) # remove leading commas
-                        ps_api.patch_uri(uri, {'labels':labels})
+                        pageseeder.patch_uri(uri, {'labels':labels})
     return stale
             
 
@@ -199,7 +199,7 @@ def pre_upload():
 
     # archive last review if exist
     try:
-        ps_api.archive(ps_api.urimap()['review'])
+        pageseeder.archive(pageseeder.urimap()['review'])
     except KeyError:
         pass
 
@@ -216,7 +216,7 @@ def post_upload():
     """
     Main post-upload cleanup flow, currently just starts a resolve xrefs process for upload group.
     """
-    ps_api.resolve_group_refs()
+    pageseeder.resolve_group_refs()
 
 
 

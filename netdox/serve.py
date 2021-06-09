@@ -5,7 +5,7 @@ from traceback import format_exc
 from bs4 import BeautifulSoup
 import json, re
 
-import ps_api, utils, iptools, pluginmaster
+import pageseeder, utils, iptools, pluginmaster
 
 app = Flask(__name__)
 
@@ -46,7 +46,7 @@ def workflow_updated(event):
     status = event['workflow']['status']
     if status == 'Approved':
         comment = event['workflow']['comments'][0]
-        comment_details = json.loads(ps_api.get_comment(comment['id']))
+        comment_details = json.loads(pageseeder.get_comment(comment['id']))
         document_uri = comment_details['context']['uri']['id']
         document_type = comment_details['context']['uri']['documenttype']
 
@@ -61,8 +61,8 @@ def approved_dns(uri):
     """
     Handles ratifying changes specified in a DNS document.
     """
-    info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
-    links = BeautifulSoup(ps_api.get_xref_tree(uri), features='xml')
+    info = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'info'))
+    links = BeautifulSoup(pageseeder.get_xref_tree(uri), features='xml')
         
     if 'name' in info and 'root' in info and info['name'] and info['root']:
         for link in links("xref"):
@@ -73,7 +73,7 @@ def approved_dns(uri):
                         value = link['urititle']
                         zone = info['root']
 
-                        dest = ps_api.pfrag2dict(ps_api.get_fragment(uri, link.parent['id']))
+                        dest = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
                         sourcePlugin = dest['source'].lower()
                         if sourcePlugin in pluginmaster.pluginmap['all']:
                             plugin = pluginmaster.pluginmap['all'][sourcePlugin]
@@ -105,8 +105,8 @@ def approved_ip(uri):
     """
     Handles ratifying changes specified in an IP document.
     """
-    info = ps_api.pfrag2dict(ps_api.get_fragment(uri, 'info'))
-    links = BeautifulSoup(ps_api.get_xref_tree(uri), features='xml')
+    info = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'info'))
+    links = BeautifulSoup(pageseeder.get_xref_tree(uri), features='xml')
     if 'ipv4' in info and info['ipv4']:
         for link in links("xref"):
             try:
@@ -116,7 +116,7 @@ def approved_ip(uri):
                     if re.fullmatch(utils.dns_name_pattern, value):
                         if not value.endswith('.'):
                             value += '.'
-                        dest = ps_api.pfrag2dict(ps_api.get_fragment(uri, link.parent['id']))
+                        dest = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
                         sourcePlugin = dest['source'].lower()
                         if sourcePlugin in pluginmaster.pluginmap['all']:
                             plugin = pluginmaster.pluginmap['all'][sourcePlugin]
@@ -141,9 +141,9 @@ def approved_ip(uri):
 #     """
 #     Handles documents with 'xo_vm' type and workflow 'Approved'.
 #     """
-#     core_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'core'))
-#     os_inf = ps_api.psfrag2dict(ps_api.get_fragment(uri, 'os_version'))
-#     addr_soup = BeautifulSoup(ps_api.get_fragment(uri, 'addresses'), features='xml')
+#     core_inf = pageseeder.psfrag2dict(pageseeder.get_fragment(uri, 'core'))
+#     os_inf = pageseeder.psfrag2dict(pageseeder.get_fragment(uri, 'os_version'))
+#     addr_soup = BeautifulSoup(pageseeder.get_fragment(uri, 'addresses'), features='xml')
 
 #     addrs = set()
 #     for property in addr_soup("property"):

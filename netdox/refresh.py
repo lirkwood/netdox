@@ -6,7 +6,7 @@ It runs some initialisation first, then calls the *dns* plugins, the *resource* 
 then calls the final plugin stage and writes PSML. The upload is managed by the caller executable Netdox (see :ref:`file_netdox`)
 """
 
-import pluginmaster, license_inf, cleanup, iptools, ps_api, utils   # utility scripts
+import pluginmaster, license_inf, cleanup, iptools, pageseeder, utils   # utility scripts
 import subprocess, shutil, json, os
 from distutils.util import strtobool
 from bs4 import BeautifulSoup
@@ -41,16 +41,16 @@ def init():
     config = {"exclusions": []}
     roles = {}
     # load dns config from pageseeder
-    psConfigInf = json.loads(ps_api.get_uri('_nd_config'))
+    psConfigInf = json.loads(pageseeder.get_uri('_nd_config'))
     if 'title' in psConfigInf and psConfigInf['title'] == 'DNS Config':
         # load a role
-        roleFrag = BeautifulSoup(ps_api.get_fragment('_nd_config', 'roles'), features='xml')
+        roleFrag = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
-            roleConfig = ps_api.pfrag2dict(ps_api.get_fragment(xref['docid'], 'config'))
+            roleConfig = pageseeder.pfrag2dict(pageseeder.get_fragment(xref['docid'], 'config'))
             roleName = roleConfig['name']
 
             # set role for configured domains
-            revXrefs = BeautifulSoup(ps_api.get_xrefs(xref['docid']), features='xml')
+            revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['docid']), features='xml')
             for revXref in revXrefs("reversexref"):
                 if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'dns':
                     roles[revXref['urititle']] = roleName
@@ -64,7 +64,7 @@ def init():
             })
 
         # load exclusions
-        exclusionSoup = BeautifulSoup(ps_api.get_fragment('_nd_config', 'exclude'), features='xml')
+        exclusionSoup = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'exclude'), features='xml')
         for para in exclusionSoup("para"):
             config['exclusions'].append(para.string)
 
@@ -75,7 +75,7 @@ def init():
             if file.name != 'config.psml':
                 with open(file, 'r') as stream:
                     soup = BeautifulSoup(stream.read(), features='xml')
-                    roleConfig = ps_api.pfrag2dict(soup.find(id="config")) | {'domains':[]}
+                    roleConfig = pageseeder.pfrag2dict(soup.find(id="config")) | {'domains':[]}
                     config[roleConfig['name']] = roleConfig
 
             shutil.copyfile(file.path, f'out/config/{file.name}')

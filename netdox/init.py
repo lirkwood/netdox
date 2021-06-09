@@ -5,7 +5,7 @@ This script is used to initialise the container for the rest of Netdox.
 import os, utils
 from textwrap import dedent
 from bs4 import BeautifulSoup
-from ps_api import urimap
+from pageseeder import urimap
 
 ##################
 # Initialisation #

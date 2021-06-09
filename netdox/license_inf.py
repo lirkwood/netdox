@@ -3,7 +3,7 @@ Used to read existing PageSeeder licenses through a shared group and link those 
 """
 
 from bs4 import BeautifulSoup
-import ps_api, re
+import pageseeder, re
 
 
 license_pattern = re.compile(r'(REPLACED )?(?P<domain>[\w.-]+)\s+-\s+')
@@ -17,7 +17,7 @@ def fetch() -> dict[str, str]:
     """
     license_dict = {}
     # 187062 is the uri of the license folder in operations-license shared to operations-network
-    license_xml = BeautifulSoup(ps_api.get_uris('187062'), 'lxml')
+    license_xml = BeautifulSoup(pageseeder.get_uris('187062'), 'lxml')
     for uri in license_xml("uri"):
         id = uri['id']
 
@@ -39,7 +39,7 @@ def org(license_id: str) -> str:
     :Returns:
         URI of the organisation document in the PageSeeder license group.
     """
-    license_psml = BeautifulSoup(ps_api.get_fragment(license_id, '2'), 'lxml')
+    license_psml = BeautifulSoup(pageseeder.get_fragment(license_id, '2'), 'lxml')
     org_id = license_psml.find(title='Organization').xref["uriid"]
     return org_id
     

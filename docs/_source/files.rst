@@ -97,9 +97,9 @@ Pluginmaster
 
 PageSeeder API
 --------------
-`ps_api.py <https://gitlab.allette.com.au/allette/devops/network-documentation/-/tree/master/netdox/ps_api.py>`_
+`pageseeder.py <https://gitlab.allette.com.au/allette/devops/network-documentation/-/tree/master/netdox/pageseeder.py>`_
 
-.. automodule:: ps_api
+.. automodule:: pageseeder
     :members:
 
 
