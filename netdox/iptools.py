@@ -1,12 +1,9 @@
 """
 Module of useful classes and functions for manipulating IPv4 addresses and subnets.
-
-Not a part of Netdox.
 """
 
 import re
-from types import prepare_class
-from typing import Union
+from typing import Any, Generator, Union
 
 ###############
 # Class: ipv4 #
@@ -18,15 +15,12 @@ class ipv4:
         self.valid = valid_ip(self.raw)
         if self.valid:
             self.ipv4 = self.raw
-            self.binary = cidr2binary(self.ipv4)
+            self.int = cidr2int(self.ipv4)
             self.subnet = sort(self.ipv4)
             self.public = public_ip(self.ipv4)
             self.octets = self._octets()
         else:
-            self.ipv4 = None
-            self.binary = None
-            self.subnet = None
-            self.octets = None
+            raise ValueError('Cannot instantiate an ipv4 using an invalid address')
 
     def in_subnet(self, subnet, verbose=False):
         return subn_contains(subnet, self.ipv4, verbose)  
@@ -85,14 +79,16 @@ class subnet:
 
 ## Useful regex patterns
 
-regex_ip = re.compile(r'([0-9]{1,3}\.){3}[0-9]{1,3}')
-regex_subnet = re.compile(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])')
+regex_ip = re.compile(r'((1?[0-9]{0,2}|2[0-4][0-9]|25[0-5])\.){3}(1?[0-9]{0,2}|2[0-4][0-9]|25[0-5])')
+regex_subnet = re.compile(r'((1?[0-9]{0,2}|2[0-4][0-9]|25[0-5])\.){3}(1?[0-9]{0,2}|2[0-4][0-9]|25[0-5])/([0-2]?[0-9]|3[0-1])')
 
 
 ## Validation
 
-# returns boolean if given str is valid within CIDR ipv4 format
-def valid_ip(string):
+def valid_ip(string: str) -> bool:
+    """
+    Tests if a string is valid as a CIDR IPv4 address
+    """
     if re.fullmatch(regex_ip, string):
         for octet in string.split('.'):
             if int(octet) >= 0 and int(octet) <= 255:
@@ -103,13 +99,19 @@ def valid_ip(string):
     else:
         return False
     
-def valid_subnet(string):
+def valid_subnet(string: str) -> bool:
+    """
+    Tests if a string is valid as a CIDR IPv4 subnet
+    """
     if re.fullmatch(regex_subnet, string):
         return True
     else:
         return False
 
-def public_ip(string):
+def public_ip(string: str) -> bool:
+    """
+    Tests if an IP address is part of the public or private namespace
+    """
     if subn_contains('192.168.0.0/16', string):
         return False
     elif subn_contains('10.0.0.0/8', string):
@@ -119,48 +121,52 @@ def public_ip(string):
     else:
         return True
 
+
 ## Subnet functions
 
-# returns lowest ip address in subnet (CIDR ipv4)
-def subn_floor(subn):
+def subn_floor(subn: Union[str, subnet]) -> str:
+    """
+    Returns the lowest IP address in a subnet
+    """
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'Subnet object must be one of: str, subnet; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: str, subnet; Not {type(subn)}')
+    elif not valid_subnet(subn):
+        raise ValueError(f'Invalid subnet {subn}')
 
-    if re.fullmatch(r'([0-9]{1,3}\.){3}[0-9]{1,3}/([0-2]?[0-9]|3[0-1])', subn):
-        mask = int(subn.split('/')[-1])
-        addr = subn.split('/')[0]
-        octets = addr.split('.')
-        for octet in range(4):
-            octets[octet] = int(octets[octet])
+    mask = int(subn.split('/')[-1])
+    addr = subn.split('/')[0]
+    octets = addr.split('.')
+    for octet in range(4):
+        octets[octet] = int(octets[octet])
 
-        split_octet = mask // 8
-        bit_mask = mask % 8
-
-        new_octet = 0
-        for bit in range(bit_mask):
-            new_octet += 2**(8 - bit)
-        octets[split_octet] = new_octet
-
-        str_octets = []
-        for octet in range(4):
-            if octet > split_octet:
-                octets[octet] = 0
-            str_octets.append(str(octets[octet]))
-                
-        min_addr = '.'.join(str_octets)
-        return min_addr
-
+    split_octet = mask // 8
+    
+    octet_mask = mask % 8
+    if octet_mask:
+        octets[split_octet] >>= 8 - octet_mask
+        octets[split_octet] <<= 8 - octet_mask  # discard all bits after mask
     else:
-        raise ValueError('Please provide a valid address (0.0.0.0 -> 255.255.255.255) and subnet mask (address/0 -> address/31)')
+        octets[split_octet] = 0
 
-# Returns dict with lowest (key=lower) and highest (key=upper) ip addresses in subnet (32-bit wide binary strs)
-def subn_bounds(subn, binary=False):
+    str_octets = []
+    for octet in range(4):
+        if octet > split_octet:
+            octets[octet] = 0
+        str_octets.append(str(octets[octet]))
+            
+    min_addr = '.'.join(str_octets)
+    return min_addr
+
+def subn_bounds(subn: Union[str, subnet], binary: bool = False) -> dict[str, int]:
+    """
+    Returns a dictionary of the bounds of a subnet, as integers
+    """
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: str, subnet; Not {type(subn)}')
 
     lower = cidr2int(subn_floor(subn))
     bounds = {'lower': lower}
@@ -177,31 +183,26 @@ def subn_bounds(subn, binary=False):
             bounds[bound] = int2cidr(bounds[bound])
 
     return bounds
-# returns list obj containing some subnets with a given mask (CIDR ipv4 format).
-# The union of these has an equivalent namespace to the original subnet.
-def subn_equiv(subn, new_mask):
+    
+def subn_equiv(subn: Union[str, subnet], new_mask: int) -> list[str]:
+    """
+    Converts a subnet to new subnet(s) with the given mask.
+    """
     if isinstance(subn, subnet):
-        if subn.valid:
-            old_mask = subn.mask
-        else:
-            raise ValueError('Cannot find equivalent subnets to invalid subnet.')
+        old_mask = subn.mask
     elif isinstance(subn, str):
         if valid_subnet(subn):
             old_mask = int(subn.split('/')[-1])
         else:
             raise ValueError('Cannot find equivalent subnets to invalid subnet.')
     else:
-        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: str, subnet; Not {type(subn)}')
 
-    if isinstance(new_mask, str):
-        new_mask = int(new_mask.strip('/'))
     subnets = []
-    bin_min_addr = cidr2binary(subn_floor(subn))
+    int_min_addr = cidr2int(subn_floor(subn))
 
     if new_mask > old_mask:
-        int_min_addr = int(bin_min_addr, 2)
-
-        for i in range(2**(new_mask - old_mask)):
+        for _ in range(2**(new_mask - old_mask)):
             min_addr = int2cidr(int_min_addr)
             new_subnet = min_addr +'/'+ str(new_mask)
             subnets.append(new_subnet)
@@ -213,13 +214,14 @@ def subn_equiv(subn, new_mask):
 
     return subnets
 
-# returns boolean if ip (CIDR ipv4) is in given subnet
-def subn_contains(subn: Union[str, subnet], object: Union[str, ipv4, subnet], verbose=False):
-    # Validate subnet
+def subn_contains(subn: Union[str, subnet], object: Union[str, ipv4, subnet], verbose: bool = False) -> bool:
+    """
+    Tests if a subnet contains an IP or subnet
+    """
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: str, subnet; Not {type(subn)}')
 
     # Validate input object
     if isinstance(object, ipv4):
@@ -236,9 +238,9 @@ def subn_contains(subn: Union[str, subnet], object: Union[str, ipv4, subnet], ve
         else:
             raise ValueError(f'Object to be tested must be a valid ipv4 or subnet.')
     else:
-        raise TypeError(f'IP object must be one of: "str", "ipv4"; Not "{type(object)}"')
+        raise TypeError(f'IP object must be one of: str, ipv4; Not {type(object)}')
 
-    bin_ip = int(cidr2binary(ip), base=2)
+    bin_ip = cidr2int(ip)
     bounds = subn_bounds(subn, binary=True)
     if bin_ip >= int(bounds['lower']) and bin_ip <= int(bounds['upper']):
         if verbose:
@@ -249,52 +251,48 @@ def subn_contains(subn: Union[str, subnet], object: Union[str, ipv4, subnet], ve
             print(f'[INFO][iptools] IP Address {ip} is outside subnet {subn}.')
         return False
     
-def subn_iter(subn):
+def subn_iter(subn: Union[str, subnet]) -> Generator[str, Any, Any]:
+    """
+    Returns a generator which yields each IP address in a subnet, lowest first
+    """
     if isinstance(subn, subnet):
         subn = subn.subnet
     elif not isinstance(subn, str):
-        raise TypeError(f'Subnet object must be one of: "str", "subnet"; Not "{type(subn)}"')
+        raise TypeError(f'Subnet object must be one of: str, subnet; Not {type(subn)}')
         
     bounds = subn_bounds(subn, binary=True)
-    upper = int(bounds['upper'], 2)
-    lower = int(bounds['lower'], 2)
-    for ip in range((upper - lower)+ 1):    #+1 to include upper bound as bounds are inclusive
-        yield int2cidr(ip+lower)
+    for ip in range((bounds['upper'] - bounds['lower'])+ 1):    #+1 to include upper bound as bounds are inclusive
+        yield int2cidr(ip+bounds['lower'])
+
 
 ## Conversion functions
 
-# converts ipv4 in CIDR format to 32 bit wide binary str
-def cidr2binary(ipv4):
-    bin_ip = ''
-    for octet in ipv4.split('.'):
-        bin_ip += bin(int(octet))[2:].zfill(8) 
-    #strip 0b prefix and pad to size with 0s
-    return bin_ip
+def cidr2int(ipv4: str) -> int:
+    """
+    Converts an IPv4 address given in CIDR from to an integer
+    """
+    octets = ipv4.split('.')
+    int_ip = 0
+    for octet in range(4):
+        int_ip += int(octets[octet]) << (8 * (3 - octet))
+    return int_ip
 
-# converts 32-bit unsigned binary str from given ipv4 using CIDR notation
-def binary2cidr(bin_ip):
-    cache = ''
-    octets = []
-    for index in range(32):
-        cache += bin_ip[index]
-        if (index+1) %8 == 0:
-            octets.append(str(int(cache,2)))
-            cache = ''
-    return '.'.join(octets)
+def int2cidr(ipv4: int) -> str:
+    """
+    Converts an IPv4 address to a string in CIDR form
+    """
+    bin_str = bin(ipv4)[2:].zfill(32)
+    str_octets = [str(int(bin_str[octet:octet+8], base = 2)) for octet in range(0,32,8)]
+    return '.'.join(str_octets)
 
-# converts integer to binary string (default width 32 bits)
-def int2binary(integer, width=32):
-    return bin(integer).replace('0b','').zfill(width)
-
-def int2cidr(integer):
-    return binary2cidr(int2binary(integer))
-
-def cidr2int(ipv4):
-    return int(cidr2binary(ipv4), 2)
 
 ## Other
 
-def search_string(string, object, delimiter=None):
+def search_string(string: str, object: str = 'ipv4', delimiter: str = None) -> list[str]:
+    """
+    Searches a string for all instances of an object: either an IPv4 address (ipv4) or an IPv4 subnet (ipv4_subnet).
+    Searches in chunks delimited by the provided value (default = newline).
+    """
     if object == 'ipv4':
         validate = valid_ip
         pattern = regex_ip
@@ -302,7 +300,7 @@ def search_string(string, object, delimiter=None):
         validate = valid_subnet
         pattern = regex_subnet
     else:
-        raise TypeError(f'Search object must be one of: ipv4, subnet; Not "{type(object)}".')
+        raise TypeError(f'Search object must be one of: ipv4, ipv4_subnet; Not {object}')
 
     outlist = []
     for line in string.split(delimiter):
@@ -318,16 +316,19 @@ def search_string(string, object, delimiter=None):
     return outlist
 
 
-def sort(ip, mask=24):
+def sort(ip: Union[str, ipv4], mask: int = 24) -> str:
+    """
+    Returns the subnet with a given mask an IPv4 address is in
+    """
     if isinstance(ip, ipv4):
         ip = ip.ipv4
     elif not isinstance(ip, str):
-        raise TypeError('IPv4 object must be one of: ipv4, str ')
+        raise TypeError(f'IPv4 object must be one of: ipv4, str; Not {type(ip)}')
 
     if isinstance(mask, int):
         mask = str(mask)
     elif not isinstance(mask, str):
-        raise TypeError('Subnet mask must be one of: int, str ')
+        raise TypeError(f'Subnet mask must be one of: int, str; Not {type(mask)}')
 
     subn = ip +'/'+ str(mask)
     return f'{subn_floor(subn)}/{str(mask)}'
