@@ -37,26 +37,39 @@
                     </fragment>
                 </section>
                 
-                <section id="details" title="Details">
+                <section id="template" title="Pod Template">
+
+                <xsl:for-each select="xpf:map[@key = 'template']/xpf:map">
+                    <properties-fragment id="container_{position()}">
+                        <property name="container" title="Container Name" value="{@key}" />
+                        <property name="image" title="Image ID" value="{xpf:string[@key = 'image']}" />
+                        <xsl:for-each select="xpf:map[@key = 'volumes']/xpf:map">
+                            <property name="pvc" title="Persistent Volume Claim" value="{@key}" />
+                            <property name="mount_path" title="Path in Container" value="{xpf:string[@key = 'mount_path']}" />
+                            <property name="sub_path" title="Path in PVC" value="{xpf:string[@key = 'sub_path']}" />
+                        </xsl:for-each>
+                    </properties-fragment>
+                </xsl:for-each>
+
+                <properties-fragment id="domains">
+                    <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
+                        <property name="domain" title="Domain" datatype="xref">
+                            <xref frag="default" docid="_nd_{translate(.,'.','_')}" 
+                            reversetitle="App served on this domain" />
+                        </property>
+                    </xsl:for-each>
+                </properties-fragment>
+
+                </section>
+
+                <section id="pods" title="Running Pods">
 
                     <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
-                    <properties-fragment id="podinf_{position()}">
+                    <properties-fragment id="pod_{position()}">
                         <property name="pod"  title="Pod"  value="{@key}" />
-                        <xsl:for-each select="xpf:map[@key = 'containers']/xpf:string">
-                            <property name="container" title="Container" value="{@key}" />
-                            <property name="image" title="Image ID" value="{.}"/>
-                            <xsl:if test="contains(.,'registry-gitlab.')">
-                            <property name="gitlab" title="Image on GitLab" datatype="link">
-                                <link href="https://{substring-before(substring-after(.,'registry-'),':')}"><xsl:value-of select="@key"/> on GitLab.</link>
-                            </property>
-                            </xsl:if>
-                        </xsl:for-each>
                         <property name="ipv4"  title="Worker IP"  datatype="xref" >
                             <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
                                 reversetitle="App running on this IP" />
-                        </property>
-                        <property name="rancher" title="Pod on Rancher" datatype="link">
-                            <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/> on rancher.</link>
                         </property>
                         <xsl:if test="xpf:string[@key = 'vm']">
                         <property name="worker_vm" title="Worker VM" datatype="xref" >
@@ -64,17 +77,11 @@
                             reversetitle="App running on this VM"/>
                         </property>
                         </xsl:if>
+                        <property name="rancher" title="Pod on Rancher" datatype="link">
+                            <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/> on rancher.</link>
+                        </property>
                     </properties-fragment>
                     </xsl:for-each>
-                    
-                    <properties-fragment id="domains">
-                        <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
-                            <property name="domain" title="Domain" datatype="xref">
-                                <xref frag="default" docid="_nd_{translate(.,'.','_')}" 
-                                reversetitle="App served on this domain" />
-                            </property>
-                        </xsl:for-each>
-                    </properties-fragment>
                 
                 </section>
             </document>

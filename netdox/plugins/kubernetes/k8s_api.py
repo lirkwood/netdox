@@ -1,5 +1,7 @@
+from typing import Union
 from kubernetes import client, config
-import json, utils, pluginmaster
+import re, yaml, json, utils, pageseeder, pluginmaster
+from bs4 import BeautifulSoup
 
 ## Load config and init client for given context
 def initContext(context: str=None):
@@ -8,35 +10,56 @@ def initContext(context: str=None):
     apiClient = client.ApiClient()
 
 
-def getDeploymentMatchLabels(namespace: str='default') -> dict[str, dict[str, str]]:
+def getDeploymentDetails(namespace: str='default') -> dict[str, dict[str, str]]:
     """
-    Maps a service in a given namespace to its match labels
+    Maps deployments in a given namespace to their labels and pod template
     """
-    depMatchLabels = {}
+    depDetails = {}
     api = client.AppsV1Api(apiClient)
     allDeps = api.list_namespaced_deployment(namespace)
     for deployment in allDeps.items:
-        depMatchLabels[deployment.metadata.name] = deployment.spec.selector.match_labels
+        if deployment.spec.template.spec.volumes:
+            pvcs = {volume.name: volume.persistent_volume_claim.claim_name for volume in deployment.spec.template.spec.volumes
+                    if volume.persistent_volume_claim is not None}
+        else:
+            pvcs = {}
 
-    return depMatchLabels
+        containers = {}
+        for container in deployment.spec.template.spec.containers:
+            volumes = {}
+            if container.volume_mounts:
+                for volume in container.volume_mounts:
+                    if volume.name in pvcs:
+                        volumes[pvcs[volume.name]] = {
+                            'sub_path': volume.sub_path,
+                            'mount_path': volume.mount_path
+                        }
+
+            containers[container.name] = {
+                'image': container.image,
+                'volumes': volumes
+            }
+
+        depDetails[deployment.metadata.name] = {
+            'labels': deployment.spec.selector.match_labels,
+            'template': containers
+        }
+
+    return depDetails
+
 
 def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
     """
-    Maps the digest of a pod's labels to some information about it
+    Maps the digest of a pod's labels to the name of the pod and its host node
     """
     podsByLabel = {}
     api = client.CoreV1Api(apiClient)
     allPods = api.list_namespaced_pod(namespace)
     for pod in allPods.items:
         if 'pod-template-hash' in pod.metadata.labels:
-            containers = {}
-            for container in pod.spec.containers:
-                containers[container.name] = container.image
             podinfo = {
                 'name': pod.metadata.name,
-                'containers': containers,
                 'nodeName': pod.spec.node_name,
-                'namespace': namespace,
             }
             del pod.metadata.labels['pod-template-hash']
             labelHash = hash(json.dumps(pod.metadata.labels, sort_keys=True))
@@ -74,7 +97,7 @@ def getServiceDomains(namespace: str='default') -> dict[str, set]:
 
     return serviceDomains
 
-def getWorkerAddresses():
+def getWorkerAddresses() -> dict[str, dict[str, str]]:
     """
     Maps workers to a specified address type
     """
@@ -119,6 +142,9 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     if 'xenorchestra' in pluginmaster.pluginmap['all']:
         from asyncio import run
         workerVMs = run(getWorkerVMs(workerAddrs))
+    else:
+        workerVMs = {}
+
     contextDetails = utils.auth()["plugins"]["kubernetes"][context]
     podLinkBase = f'{contextDetails["server"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
@@ -135,9 +161,16 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
                 podDomains[podName] |= domains
     
     # construct app by mapping deployment to pods
-    deploymentMatchLabels = getDeploymentMatchLabels(namespace)
-    for deployment, labels in deploymentMatchLabels.items():
-        apps[deployment] = {'pods':{},'domains':set()}
+    deploymentDetails = getDeploymentDetails(namespace)
+    for deployment, details in deploymentDetails.items():
+        labels = details['labels']
+        apps[deployment] = {
+            'pods':{},
+            'domains':set(),
+            'cluster':context,
+            'labels': labels,
+            'template': details['template']
+        }
         app = apps[deployment]
 
         labelHash = hash(json.dumps(labels, sort_keys=True))
@@ -158,7 +191,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     return apps
     
 
-def main(forward_dns,_):
+def runner(forward_dns,_):
     auth = utils.auth()['plugins']['kubernetes']
     allApps = {}
     workers = {}
@@ -189,3 +222,105 @@ def main(forward_dns,_):
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
     utils.xslt('plugins/kubernetes/clusters.xsl', 'plugins/kubernetes/src/workers.xml')
     utils.xslt('plugins/kubernetes/pub.xsl', 'plugins/kubernetes/src/apps.xml', 'out/kubernetes_pub.psml')
+
+
+# 2do: add replicas spec
+def create_app(uri: Union[str, int]):
+    name = BeautifulSoup(pageseeder.get_fragment(uri, 'title'), features='xml').find('heading').string
+
+    ## Container info
+    containers = []
+    lastContainer = False
+    container = None
+    volume = None
+    while not lastContainer:
+        containerPSML = BeautifulSoup(pageseeder.get_fragment(uri, f'container_{len(containers) + 1}'), features='xml')
+        if containerPSML.find('properties-fragment'):
+            for property in containerPSML('property'):
+                if property['name'] == 'container':
+                    containers.append({
+                        'name': property['value'],
+                        'volumes': {}
+                    })
+                    container = containers[-1]
+                
+                elif property['name'] == 'image':
+                    container['imageLink'] = property['value']
+                    imageInf = re.search(r'registry-gitlab.allette.com.au/([a-zA-Z0-9-]+/)*(?P<project>[a-zA-Z0-9-]+):(?P<tag>.*)$',
+                                        container['imageLink'])
+                    container['project'] = imageInf['project']
+                    container['imageTag'] = imageInf['tag']
+
+                elif property['name'] == 'pvc':
+                    container['volumes'][property['value']] = {}
+                    volume = container['volumes'][list(container['volumes'])[-1]]
+
+                elif property['name'] == 'mount_path':
+                    volume['mount_path'] = property['value']
+                elif property['name'] == 'sub_path':
+                    volume['sub_path'] = property['value']
+        else:
+            lastContainer = True
+
+    ## Find cluster
+    toc = BeautifulSoup(pageseeder.get_toc(uri, {'publicationid':'_nd_k8s_pub'}), features='xml')
+    for parent in toc.find(content='true').parents:
+        if 'level' in parent.attrs and parent['level'] == '1':
+            cluster = parent.find('document-ref')['title']
+    try:
+        cluster
+    except UnboundLocalError:
+        raise RuntimeError('Failed to infer cluster from ToC; Check that the approved document is in the correct publication.')
+
+    ## Find any domains for ingress
+    domainFrag = BeautifulSoup(pageseeder.get_fragment(uri, 'domains'), features='xml')
+    domains = []
+    for property in domainFrag('property'):
+        domains.append(property.xref.string)
+
+
+    if len(containers) != 1:
+        if len(containers) > 1:
+            raise NotImplementedError('Creating deployments with multiple containers has not been implemented yet.')
+        else:
+            raise ValueError('At least one container spec is required')
+    else:
+        container = containers[0]
+        if container['project'] == 'psberlioz-simple':
+            create_simple(name, container, domains, cluster)
+
+
+##########################
+# App specific functions #
+##########################
+
+def create_simple(name: str, container: dict, domains: list, cluster: str):
+    initContext(cluster)
+
+    volume = list(container['volumes'])[0]
+    templateVals = {
+        'depname': name,
+        'domain': domains[0],
+        'containername': container['name'],
+        'image': container['imageLink'],
+        'pvc': volume,
+        'sub_path': container['volumes'][volume]['sub_path'],
+        'mount_path': container['volumes'][volume]['mount_path']
+    } 
+
+    with open(f'plugins/kubernetes/src/templates/simple.yml', 'r') as stream:
+        templateRaw = stream.read()
+
+    for key, val in templateVals.items():
+        templateRaw = re.sub(rf'<{key}>', val, templateRaw)
+    
+    deployment, service, ingress = [yaml.safe_load(template) for template in re.split(r'\n\s*---\s*\n', templateRaw)]
+
+    api = client.AppsV1Api(apiClient)
+    api.create_namespaced_deployment(body = deployment, namespace = 'default')
+
+    api = client.CoreV1Api(apiClient)
+    api.create_namespaced_service(body = service, namespace = 'default')
+
+    api = client.ExtensionsV1beta1Api(apiClient)
+    api.create_namespaced_ingress(body = ingress, namespace = 'default')

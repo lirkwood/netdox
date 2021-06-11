@@ -1,4 +1,5 @@
-from plugins.kubernetes.k8s_api import main as runner
+from plugins.kubernetes.k8s_api import runner as runner
+from plugins.kubernetes.k8s_api import create_app as k8s_app
 from textwrap import dedent
 import os, utils
 stage = 'resource'
