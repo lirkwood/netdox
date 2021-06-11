@@ -186,7 +186,6 @@ class DNSRecord:
         Instantiates a DNSRecord from JSON.
         """
         record = cls(object['name'])
-        del object['name']
         for k, v in object.items():
             setattr(record, k, v)
 
@@ -196,10 +195,11 @@ class DNSRecord:
                 value.add(tuple(list))
             setattr(record, attr, value)
 
-        for _,list in record.resources.items():
-            list = set(list)
+        for type, list in record.resources.items():
+            record.resources[type] = set(list)
 
         record.subnets = set(record.subnets)
+        record.update()
         
         return record
 
@@ -245,24 +245,24 @@ class DNSRecord:
         })
 
     @property
-    def public_ips(self) -> list[str]:
-        return [ip for ip,_ in self._public_ips]
-
-    @property
-    def private_ips(self) -> list[str]:
-        return [ip for ip,_ in self._private_ips]
-
-    @property
-    def ips(self) -> list[str]:
-        return self.public_ips + self.private_ips
-
-    @property
     def _ips(self) -> set[Tuple[str, str]]:
         return self._public_ips.union(self._private_ips)
 
     @property
+    def public_ips(self) -> list[str]:
+        return list(set([ip for ip,_ in self._public_ips]))
+
+    @property
+    def private_ips(self) -> list[str]:
+        return list(set([ip for ip,_ in self._private_ips]))
+
+    @property
+    def ips(self) -> list[str]:
+        return list(set(self.public_ips + self.private_ips))
+
+    @property
     def cnames(self) -> list[str]:
-        return [cname for cname,_ in self._cnames]
+        return list(set([cname for cname,_ in self._cnames]))
 
     def update(self):
         for ip in self.private_ips:
@@ -342,20 +342,10 @@ def merge_sets(dns1: DNSRecord, dns2: DNSRecord) -> DNSRecord:
         for attr in dns2_inf:
             if isinstance(dns2_inf[attr], set):
                 dns1_inf[attr] = dns1_inf[attr].union(dns2_inf[attr])
+        dns1.update()
         return dns1
     else:
         raise TypeError(f'Arguments must be dns objects, not {type(dns1)}, {type(dns2)}')
-
-def integrate(superset: dict[str, DNSRecord], dns_set: dict[str, DNSRecord]) -> dict[str, DNSRecord]:
-    """
-    Integrates some set of dns records into a master set
-    """
-    for domain in dns_set:
-        dns = dns_set[domain]
-        if domain not in superset:
-            superset[dns.name] = dns
-        else:
-            superset[domain] = merge_sets(superset[domain], dns_set[domain])
 
 @handle
 def loadDNS(file: Union[str, DirEntry]) -> dict[str, DNSRecord]:
