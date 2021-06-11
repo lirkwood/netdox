@@ -56,6 +56,14 @@ def workflow_updated(event):
         elif document_type == 'ip':
             return approved_ip(document_uri)
 
+        else:
+            if document_type in doctypeMap:
+                plugin = pluginmaster.pluginmap['all'][doctypeMap[document_type]]
+                try:
+                    getattr(plugin, document_type)()
+                except Exception:
+                    print(f'[ERROR][webhooks] Failed to run function {document_type} from {plugin.__name__}')
+
 
 def approved_dns(uri):
     """
@@ -161,10 +169,15 @@ def approved_ip(uri):
 
 #     return Response(status=200)
 
-if __name__ == '__main__':    
-    psproperties = {}
+doctypeMap = {} 
+psproperties = {}
+if __name__ == '__main__': 
+    pluginmaster.initPlugins()  
     with open('src/pageseeder.properties', 'r') as stream:
         for line in stream.read().splitlines():
             property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
             if property:
                 psproperties[property['key']] = property['value']
+
+    with open('src/webhooks.json', 'r') as stream:
+        doctypeMap = json.load(stream)
