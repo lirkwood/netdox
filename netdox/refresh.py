@@ -123,11 +123,11 @@ def flatten(dns_set: dict[str, utils.DNSRecord]):
     :Args:
         A dictionary of DNS records (see :ref:`utils`)
     """
-    for domain in dns_set:
-        if (domain.lower() in dns_set) and (dns_set[domain.lower()] is not dns_set[domain]):
-            union = utils.merge_sets(dns_set[domain.lower()], dns_set[domain])
+    domains = list(dns_set.keys())
+    for domain in domains:
+        if domain.lower() in dns_set and domain.lower() != domain:
+            dns_set[domain.lower()] = utils.merge_sets(dns_set[domain.lower()], dns_set[domain])
             del dns_set[domain]
-            dns_set[domain.lower()] = union
 
 @utils.critical
 def apply_roles(dns_set: dict[str, utils.DNSRecord]):
