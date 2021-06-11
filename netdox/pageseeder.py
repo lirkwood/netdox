@@ -284,6 +284,17 @@ def get_xref_tree(uri, params={}, host='', group='', header={}):
 
 
 @auth
+def get_toc(uri, params={}, host='', group='', member='', header={}):
+    """
+    Output the partial TOC for a publication including a content document and its ancestors.
+    If URI is not in a publication, output the TOC for the URI only with no publications.
+    """
+    service = f'/members/{member}/groups/{group}/uris/{uri}/toc'
+    r = requests.get(host+service, params=params, headers=header)
+    return r.text
+
+
+@auth
 def get_urimap(dir_uri):
     """
     Maps the directories in a URI to their URIs
@@ -320,9 +331,17 @@ def pfrag2dict(fragment):
     
     d = {}
     for property in fragment("property"):
-        if property.xref:
-            d[property['name']] = property.xref.string
-        else:
+        if 'value' in property.attrs:
             d[property['name']] = property['value']
+        elif 'datatype' in property.attrs:
+            if property['datatype'] == 'xref':
+                d[property['name']] = property.xref.string
+            elif property['datatype'] == 'link':
+                d[property['name']] = property.link['href']
+            else:
+                raise NotImplementedError('[ERROR][pageseeder] Unimplemented property type')
     
-    return d
+    if d:
+        return d
+    else:
+        raise RuntimeError('No properties found to add to dictionary')
