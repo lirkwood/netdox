@@ -1,0 +1,53 @@
+<document type="xo_host" level="portable">
+
+    <metadata>
+      <properties>
+        <property name="template-version"     title="Template version"   value="2.0" />
+      </properties>
+    </metadata>
+
+    <section id="title">
+      <fragment id="title">
+        <heading level="1"/>
+      </fragment>
+    </section>
+
+    <section id="details">
+
+      <properties-fragment id="core">
+        <property name="name-label"         title="Label"          value="" />
+        <property name="name-description"   title="Description"              value="" />
+        <property name="uuid"               title="UUID"                     value="" />
+      </properties-fragment>
+
+      <properties-fragment id="addresses">
+        <property name="host"          title="Host name"                value="" />
+        <property name="ipv4"       title="Internal IP"             datatype="xref" />
+        <property name="subnet" title="Subnet" value="" />
+      </properties-fragment>
+
+      <properties-fragment id="cpus">
+        <property name="host-cpu-count"          title="CPU count"      value="" />
+        <property name="host-cpu-socket-count"   title="CPU sockets"    value="" />
+        <property name="host-cpu-vendor"         title="CPU vendor"     value="" />
+        <property name="host-cpu-speed"          title="CPU speed"      value="" />
+        <property name="host-cpu-modelname"      title="CPU model"      value="" />
+      </properties-fragment>
+
+      <properties-fragment id="location">
+        <property name="pool"            title="Pool"           datatype="xref"/>
+      </properties-fragment>
+
+      <properties-fragment id="status">
+        <property name="power-state"        title="Power state"    value=""/>
+      </properties-fragment>
+
+    </section>
+
+    <section id="vms" title="VMs">
+
+      <xref-fragment id="xrefs"/>
+      
+    </section>
+
+  </document>

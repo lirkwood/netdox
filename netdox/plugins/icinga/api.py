@@ -1,5 +1,5 @@
 from plugins.icinga.ssh import set_host, rm_host, reload
-from os import rename, mkdir
+from os import rename, mkdir, scandir
 from shutil import rmtree
 from typing import Tuple
 import requests, json
@@ -183,7 +183,7 @@ def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
 
 
 ## Plugin runner
-def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+def runner(forward_dns: dict[str, utils.DNSRecord], _):
     setServices(forward_dns)
 
     # Removes any generated monitors for domains no longer in the DNS
@@ -203,3 +203,7 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     utils.xslt('plugins/icinga/services.xsl', 'out/DNS', 'out/tmp')
     rmtree('out/DNS')
     rename('out/tmp', 'out/DNS')
+
+    for file in scandir('out/DNS'):
+        if file.name.endswith('.xml'):
+            rename(file.path, file.path.replace('.xml',''))

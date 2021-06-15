@@ -1,0 +1,19 @@
+<document type="k8s_cluster" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+    <metadata>
+        <properties>
+            <property name="template_version" title="Template version" value="1.0" />
+        </properties>
+    </metadata>
+
+    <section id="title">
+        <fragment id="1">
+        <heading level="1"/>
+        </fragment>
+    </section>
+
+    <section id="nodes">
+        <xref-fragment id="workers"/>
+    </section>
+
+</document>
