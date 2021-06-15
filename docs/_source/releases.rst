@@ -3,7 +3,7 @@
 Releases
 ========
 
-1.1
+v1.1
 ---
 
 - Added PageSeeder document templates to the root of the project for default document types and those introduced by stock plugins.
@@ -19,7 +19,7 @@ Releases
 - Added creating Berlioz Simple Sites from webhooks to the ``kubernetes`` plugin.
 
 
-1.0
+v1.0
 ---
 
 Initial stable release of Netdox
