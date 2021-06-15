@@ -21,8 +21,7 @@
          <property name="role"   title="DNS Role"    datatype="xref">
            <xref frag="default" docid="_nd_role_default" />
         </property>
-         <property name="license" title="PageSeeder License" value="—"/>
-         <property name="organization" title="Licensed Organization" value="—"/>
+        <property name="location" title="Location" value="" />
       </properties-fragment>
    </section>
   
@@ -50,15 +49,9 @@
          <property name="subnet" title="Subnet" value=""/>
       </properties-fragment>
      
-     <properties-fragment id="icinga" />
-     
       <fragment id="screenshot" labels="text-align-center" xmlns:t="http://pageseeder.com/psml/template">
          <block label="border-2"/>
       </fragment>
-     
-      <properties-fragment id="url-key">
-       <property name="url-key" title="URL Key" value="" />
-     </properties-fragment>
      
       <properties-fragment id="for-search" labels="s-hide-content" xmlns:t="http://pageseeder.com/psml/template">
          <property name="octets" title="Octets for search" value=""/>
