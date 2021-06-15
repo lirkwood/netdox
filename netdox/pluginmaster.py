@@ -41,7 +41,13 @@ def initPlugins():
     Loads any valid plugins into a global dict named *pluginmap*, in which keys are any used plugin stages, aswell as an *all* stage which contains all initialised plugins.
     """
     global pluginmap
-    pluginmap = {'all':{}}
+    pluginmap = {
+        'all':{},
+        'dns': {},
+        'resources': {},
+        'pre-write': {},
+        'post-write': {}
+    }
     for plugin, plugindir, stage in fetchPlugins():
         if stage not in pluginmap:
             pluginmap[stage] = {}

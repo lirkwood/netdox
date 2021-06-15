@@ -293,8 +293,7 @@ def main():
     license_orgs(forward)
     labels(forward)
 
-    # Run remaining plugins
-    pluginmaster.runStage('other', forward, reverse)
+    pluginmaster.runStage('pre-write', forward, reverse)
 
     utils.writeDNS(forward, 'src/dns.json')
     utils.writeDNS(reverse, 'src/ips.json')
@@ -302,6 +301,8 @@ def main():
     utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents
     utils.xslt('ips.xsl', 'src/ips.xml')
+
+    pluginmaster.runStage('post-write', forward, reverse)
 
     screenshots()
     cleanup.pre_upload()
