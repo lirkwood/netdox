@@ -19,7 +19,6 @@ def webhooks():
     Main route for PageSeeder webhooks. Sorts events and sends them to downstream functions
     """
     try:
-        print(request.get_data())
         if request.content_length and request.content_length < 10**6 and request.is_json:
             body = request.get_json()
             for event in body['webevents']:

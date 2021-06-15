@@ -15,7 +15,6 @@ from bs4 import BeautifulSoup
 # Initialisation #
 ##################
 
-@utils.critical
 def init():
     """
     Some initialisation to run every time the data is refreshed.
@@ -113,7 +112,6 @@ def init():
 # Critical functions #
 ######################
 
-@utils.critical
 def flatten(dns_set: dict[str, utils.DNSRecord]):
     """
     Takes a set of DNS records and resolves any conflicts caused by capitalisation.
@@ -129,7 +127,6 @@ def flatten(dns_set: dict[str, utils.DNSRecord]):
             dns_set[domain.lower()] = utils.merge_sets(dns_set[domain.lower()], dns_set[domain])
             del dns_set[domain]
 
-@utils.critical
 def apply_roles(dns_set: dict[str, utils.DNSRecord]):
     """
     Applies custom roles defined in the PageSeeder config.
@@ -157,7 +154,6 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
         dns_set[domain].role = 'default'
         config['default']['domains'].append(domain)
 
-@utils.critical
 def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
     """
     Populates a reverse dns set with any missing IPs from a forward dns set.
@@ -178,7 +174,6 @@ def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]
             if ip not in reverse:
                 reverse[ip] = utils.PTRRecord(ip, unused=True)
 
-@utils.critical
 def screenshots():
     """
     Runs screenshotCompare (see :ref:`file_screenshot`) and writes output using xslt.

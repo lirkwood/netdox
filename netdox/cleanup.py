@@ -166,7 +166,6 @@ def alnum(string):
     return re.sub(r'[^\x00-\x7F]', '_', string)
 
 
-@utils.critical
 def pre_upload():
     """
     The main pre-upload cleanup flow, used to prepare for upload and detect old files on PageSeeder.

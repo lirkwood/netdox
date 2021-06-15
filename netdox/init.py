@@ -11,7 +11,6 @@ from pageseeder import urimap
 # Initialisation #
 ##################
 
-@utils.critical
 def init():
     """
     Copies any values configured in ``authentication.json`` into ``pageseeder.properties`` and ``build.xml``,

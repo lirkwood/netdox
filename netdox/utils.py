@@ -359,7 +359,6 @@ def loadDNS(file: Union[str, DirEntry]) -> dict[str, DNSRecord]:
             d[name] = DNSRecord.from_json(constructor)
     return d
 
-@critical
 def writeDNS(dns_set: dict[str, DNSRecord], file: str):
     """
     Writes dns set to json file
@@ -382,7 +381,6 @@ def xslt(xsl, src, out=None):
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
 
 
-@critical
 def loadConfig():
     """
     Loads the DNS config as a global var if it exists

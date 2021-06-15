@@ -35,7 +35,6 @@ def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, str], Any, Any]:
                     stage = 'none'
                 yield plugin, plugindir, stage
 
-@utils.critical
 def initPlugins():
     """
     Loads any valid plugins into a global dict named *pluginmap*, in which keys are any used plugin stages, aswell as an *all* stage which contains all initialised plugins.
