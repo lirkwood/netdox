@@ -1,7 +1,9 @@
+from os import stat
 from typing import Union
 from kubernetes import client, config
 import re, yaml, json, utils, pageseeder, pluginmaster
 from bs4 import BeautifulSoup
+from flask import Response
 
 ## Load config and init client for given context
 def initContext(context: str=None):
@@ -226,7 +228,15 @@ def runner(forward_dns,_):
 
 # 2do: add replicas spec
 def create_app(uri: Union[str, int]):
+    """
+    Used to create apps from a combination of boilerplate yaml and properties from a PageSeeder document
+    """
     name = BeautifulSoup(pageseeder.get_fragment(uri, 'title'), features='xml').find('heading').string
+    uriDetails = json.loads(pageseeder.get_uri(uri))
+
+    ## Find cluster
+    path = uriDetails['decodedpath'].split('/')
+    cluster = path[-2]
 
     ## Container info
     containers = []
@@ -262,16 +272,6 @@ def create_app(uri: Union[str, int]):
         else:
             lastContainer = True
 
-    ## Find cluster
-    toc = BeautifulSoup(pageseeder.get_toc(uri, {'publicationid':'_nd_k8s_pub'}), features='xml')
-    for parent in toc.find(content='true').parents:
-        if 'level' in parent.attrs and parent['level'] == '1':
-            cluster = parent.find('document-ref')['title']
-    try:
-        cluster
-    except UnboundLocalError:
-        raise RuntimeError('Failed to infer cluster from ToC; Check that the approved document is in the correct publication.')
-
     ## Find any domains for ingress
     domainFrag = BeautifulSoup(pageseeder.get_fragment(uri, 'domains'), features='xml')
     domains = []
@@ -289,15 +289,21 @@ def create_app(uri: Union[str, int]):
         if container['project'] == 'psberlioz-simple':
             create_simple(name, container, domains, cluster)
 
+    return Response(status=201)
+
 
 ##########################
 # App specific functions #
 ##########################
 
 def create_simple(name: str, container: dict, domains: list, cluster: str):
+    """
+    Downstream function for create_app if specified image ID is a berlioz simple site image
+    """
     initContext(cluster)
 
     volume = list(container['volumes'])[0]
+
     templateVals = {
         'depname': name,
         'domain': domains[0],
@@ -305,7 +311,7 @@ def create_simple(name: str, container: dict, domains: list, cluster: str):
         'image': container['imageLink'],
         'pvc': volume,
         'sub_path': container['volumes'][volume]['sub_path'],
-        'mount_path': container['volumes'][volume]['mount_path']
+        'mount_path': '/tmp/jetty/appdata'
     } 
 
     with open(f'plugins/kubernetes/src/templates/simple.yml', 'r') as stream:
@@ -318,9 +324,12 @@ def create_simple(name: str, container: dict, domains: list, cluster: str):
 
     api = client.AppsV1Api(apiClient)
     api.create_namespaced_deployment(body = deployment, namespace = 'default')
+    print(f'[INFO][kubernetes] Created deployment {name}')
 
     api = client.CoreV1Api(apiClient)
     api.create_namespaced_service(body = service, namespace = 'default')
+    print(f'[INFO][kubernetes] Created service for {name}')
 
     api = client.ExtensionsV1beta1Api(apiClient)
     api.create_namespaced_ingress(body = ingress, namespace = 'default')
+    print(f'[INFO][kubernetes] Created ingress for {name}')
