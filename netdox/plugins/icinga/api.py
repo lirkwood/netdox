@@ -1,6 +1,8 @@
 from plugins.icinga.ssh import set_host, rm_host, reload
 from typing import Tuple
 import requests, json
+from shutil import rmtree
+from os import rename
 import utils
 
 icinga_hosts = utils.auth()['plugins']['icinga']
@@ -195,3 +197,8 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
             for addr in stale:
                 rm_host(addr, icinga=icinga)
             reload(icinga=icinga)
+            
+    utils.writeDNS(forward_dns, 'src/dns.json')
+    utils.xslt('plugins/icinga/services.xsl', 'out/DNS', 'out/tmp')
+    rmtree('out/DNS')
+    rename('out/tmp', 'out/DNS')
