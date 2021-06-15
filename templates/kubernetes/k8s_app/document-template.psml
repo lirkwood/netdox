@@ -1,0 +1,35 @@
+<document level="portable" type="k8s_app">
+
+    <documentinfo>
+        <uri title="k8s_app: "/>
+    </documentinfo>
+
+    <metadata>
+        <properties>
+            <property name="template_version" title="Template version" value="2.1" />
+        </properties>
+    </metadata>
+
+    <section id="title">
+        <fragment id="title">
+            <heading level="1"/>
+        </fragment>
+    </section>
+
+    <section id="template" title="Pod Template">
+
+        <properties-fragment id="container_0">
+            <property name="container" title="Container Name" value="" />
+            <property name="image" title="Image ID" value="" />
+            <property name="pvc" title="Persistent Volume Claim" value="" />
+            <property name="mount_path" title="Path in Container" value="" />
+            <property name="sub_path" title="Path in PVC" value="" />
+        </properties-fragment>
+
+        <properties-fragment id="domains">
+            <property name="domain" title="Domain" datatype="xref" />
+        </properties-fragment>
+
+    </section>
+
+</document>
