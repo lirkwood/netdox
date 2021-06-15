@@ -1,9 +1,9 @@
 from flask import Flask, request
 from flask import Response
 
-from traceback import format_exc
+from traceback import format_exc, print_exc
 from bs4 import BeautifulSoup
-import json, re
+import json, sys, re
 
 import pageseeder, utils, iptools, pluginmaster
 
@@ -19,6 +19,7 @@ def webhooks():
     Main route for PageSeeder webhooks. Sorts events and sends them to downstream functions
     """
     try:
+        print(request.get_data())
         if request.content_length and request.content_length < 10**6 and request.is_json:
             body = request.get_json()
             for event in body['webevents']:
@@ -28,9 +29,6 @@ def webhooks():
 
                 elif event['type'] == 'workflow.updated':
                     return workflow_updated(event)
-                
-                else:
-                    print(json.dumps(body, indent=4))
             else:
                 return Response(status=400)
         return Response(status=200)
@@ -60,9 +58,14 @@ def workflow_updated(event):
             if document_type in doctypeMap:
                 plugin = pluginmaster.pluginmap['all'][doctypeMap[document_type]]
                 try:
-                    getattr(plugin, document_type)()
+                    print(f'[INFO][webhooks] Delegating to {plugin.__name__} for document type {document_type}')
+                    return getattr(plugin, document_type)(document_uri)
                 except Exception:
-                    print(f'[ERROR][webhooks] Failed to run function {document_type} from {plugin.__name__}')
+                    print_exc()
+                    return Response(status=500)
+            else:
+                print(f'[ERROR][webhooks] No function has been specified for the document type {document_type}')
+                return Response(status=500)
 
 
 def approved_dns(uri):
@@ -106,7 +109,7 @@ def approved_dns(uri):
     else:
         print('[ERROR][webhooks] Missing mandatory fields: name or root')
 
-    return Response(status=200)
+    return Response(status=201)
 
 
 def approved_ip(uri):
@@ -142,7 +145,7 @@ def approved_ip(uri):
     else:
         print('[ERROR][webhooks] Missing mandatory fields: ipv4')
                 
-    return Response(status=200)
+    return Response(status=201)
 
 
 # def approved_vm(uri):
@@ -171,7 +174,7 @@ def approved_ip(uri):
 
 doctypeMap = {} 
 psproperties = {}
-if __name__ == '__main__': 
+if 'gunicorn' in sys.argv[0]:
     pluginmaster.initPlugins()  
     with open('src/pageseeder.properties', 'r') as stream:
         for line in stream.read().splitlines():
@@ -179,5 +182,8 @@ if __name__ == '__main__':
             if property:
                 psproperties[property['key']] = property['value']
 
-    with open('src/webhooks.json', 'r') as stream:
-        doctypeMap = json.load(stream)
+    try:
+        with open('src/webhooks.json', 'r') as stream:
+            doctypeMap = json.load(stream)
+    except FileNotFoundError:
+        print('[WARNING][webhooks] Webhooks config file not found')
