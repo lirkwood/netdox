@@ -94,16 +94,17 @@ def auth(func):
 
 # global urimap
 global _urimap
+_urimap = {}
+
 def urimap():
     """
     Returns value of default urimap if it has already been fetched. If not, it is fetched and returned.
 
     :Returns:
-        Same as ``getUrimap()``
+        Urimap of *website* directory at root of PageSeeder group
     """
-    try:
-        return _urimap
-    except NameError:
+    global _urimap
+    if not _urimap:
         group = utils.auth()["pageseeder"]["group"]
         websiteDirCheck = json.loads(search({
             'filters': f'pstype:folder,psfilename:website,psfolder:/ps/{group.replace("-","/")}'
@@ -112,9 +113,9 @@ def urimap():
             for field in websiteDirCheck['results']['result'][0]['fields']:
                 if field['name'] == 'psid':
                     _urimap = get_urimap(field['value'])
-                    return _urimap
         else:
-            raise RuntimeError(f'[ERROR][pageseeder] Directory \'website\' not present at root of group {group}.')
+            raise RuntimeError(f'Directory \'website\' not present at root of group {group}.')
+    return _urimap
 
 
 ##########################
@@ -327,7 +328,7 @@ def pfrag2dict(fragment):
         try:
             fragment = BeautifulSoup(str(fragment), features='xml')
         except Exception:
-            raise TypeError(f'[ERROR][pageseeder] Fragment must be valid PSML')
+            raise TypeError(f'Fragment must be valid PSML')
     
     d = {}
     for property in fragment("property"):
@@ -339,7 +340,7 @@ def pfrag2dict(fragment):
             elif property['datatype'] == 'link':
                 d[property['name']] = property.link['href']
             else:
-                raise NotImplementedError('[ERROR][pageseeder] Unimplemented property type')
+                raise NotImplementedError('Unimplemented property type')
     
     if d:
         return d
