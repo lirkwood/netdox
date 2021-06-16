@@ -17,8 +17,12 @@ from functools import wraps
 from sys import argv
 
 ## Global vars
+
 global authdict
+authdict = {}
+
 def auth():
+    global authdict
     """
     Returns the contents of the main configuration file, ``authentication.json``.
     If the file has not yet been opened in this instance, it is opened and read first.
@@ -26,12 +30,10 @@ def auth():
     :Returns:
         A dictionary containing the authentication/configuration details for PageSeeder and any plugins which use it.
     """
-    try:
-        return authdict
-    except NameError:
+    if authdict:
         with open('src/authentication.json', 'r') as stream:
             authdict = json.load(stream)
-        return authdict
+    return authdict
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
@@ -64,16 +66,18 @@ def handle(func):
 # Location helper function #
 ############################
 
+
+global location_map, location_pivot
+location_map, location_pivot = {}, {}
+
 def loadLocations():
-    global location_map
-    global location_pivot
+    global location_map, location_pivot
     try:
         with open('src/locations.json', 'r') as stream:
             location_map = json.load(stream)
     except Exception:
-        location_map = {}
+        return None
 
-    location_pivot = {}
     for location in location_map:
         for subnet in location_map[location]:
             location_pivot[subnet] = location
@@ -244,7 +248,8 @@ class DNSRecord:
     def update(self):
         for ip in self.private_ips:
             self.subnets.add(iptools.sort(ip))
-        self.location = locate(self.ips)
+        if location_map:
+            self.location = locate(self.ips)
 
 
 class PTRRecord:
@@ -324,7 +329,6 @@ def merge_sets(dns1: DNSRecord, dns2: DNSRecord) -> DNSRecord:
     else:
         raise TypeError(f'Arguments must be dns objects, not {type(dns1)}, {type(dns2)}')
 
-@handle
 def loadDNS(file: Union[str, DirEntry]) -> dict[str, DNSRecord]:
     """
     Loads some json file as a set of DNSRecords
