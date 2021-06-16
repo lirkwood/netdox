@@ -9,7 +9,7 @@
 <xsl:variable name="slugname" select="substring-before(tokenize(base-uri(), '/')[last()], '.psml')"/>
 
 <xsl:template match="/">
-    <xsl:result-document href="out/DNS/{$slugname}.psml">
+    <xsl:result-document href="{$slugname}.psml">
         <xsl:apply-templates/>
     </xsl:result-document>
 </xsl:template>
