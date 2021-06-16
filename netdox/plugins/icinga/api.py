@@ -179,7 +179,7 @@ def setServices(dns_set: dict[str, utils.DNSRecord], depth: int=0):
         # if some objects had invalid monitors, retest using new data.
         if tmp: setServices(tmp, depth+1)
     else:
-        print(f'[WARNING][icinga] Abandoning domains without proper monitor: {dns_set.keys()}')
+        print(f'[WARNING][icinga] Abandoning domains without proper monitor: {", ".join(dns_set.keys())}')
 
 
 ## Plugin runner
@@ -203,7 +203,3 @@ def runner(forward_dns: dict[str, utils.DNSRecord], _):
     utils.xslt('plugins/icinga/services.xsl', 'out/DNS', 'out/tmp')
     rmtree('out/DNS')
     rename('out/tmp', 'out/DNS')
-
-    for file in scandir('out/DNS'):
-        if file.name.endswith('.xml'):
-            rename(file.path, file.path.replace('.xml',''))
