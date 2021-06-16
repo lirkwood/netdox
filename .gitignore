@@ -19,4 +19,6 @@ netdox/logs
 !netdox/src/pageseeder.properties
 !netdox/src/nat.txt
 
+!netdox/plugins/kubernetes/src/templates/
+
 docs/_build/
