@@ -35,18 +35,20 @@ def fetchPlugins() -> Generator[Tuple[Any, os.DirEntry, str], Any, Any]:
                     stage = 'none'
                 yield plugin, plugindir, stage
 
+global pluginmap
+pluginmap = {
+    'all':{},
+    'dns': {},
+    'resources': {},
+    'pre-write': {},
+    'post-write': {}
+}
+
 def initPlugins():
     """
     Loads any valid plugins into a global dict named *pluginmap*, in which keys are any used plugin stages, aswell as an *all* stage which contains all initialised plugins.
     """
     global pluginmap
-    pluginmap = {
-        'all':{},
-        'dns': {},
-        'resources': {},
-        'pre-write': {},
-        'post-write': {}
-    }
     for plugin, plugindir, stage in fetchPlugins():
         if stage not in pluginmap:
             pluginmap[stage] = {}
@@ -91,7 +93,7 @@ if __name__ == '__main__':
         forward_dns = utils.loadDNS('src/dns.json')
         reverse_dns = utils.loadDNS('src/reverse.json')
     except Exception:
-        raise FileNotFoundError('[ERROR][pluginmaster] Unable to load DNS')
+        raise FileNotFoundError('Unable to load DNS')
 
     if sys.argv[1] and sys.argv[1] in ('stage', 'plugin'):
         if sys.argv[1] == 'stage':
@@ -99,7 +101,7 @@ if __name__ == '__main__':
             if stage in pluginmap:
                 runStage(stage, forward_dns, reverse_dns)
             else:
-                raise ValueError(f'[ERROR][pluginmaster] Uknown stage: {stage}')
+                raise ValueError(f'Uknown stage: {stage}')
         elif sys.argv[1] == 'plugin':
             plugin = sys.argv[2]
             found = False
@@ -108,4 +110,4 @@ if __name__ == '__main__':
                     runPlugin(pluginset[plugin], forward_dns, reverse_dns)
                     found = True
             if not found:
-                raise ImportError(f'[ERROR][pluginmaster] Plugin {plugin} not found')
+                raise ImportError(f'Plugin {plugin} not found')
