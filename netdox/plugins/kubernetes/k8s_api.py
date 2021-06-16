@@ -153,14 +153,18 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     # map domains to their destination pods
     podDomains = {}
     for service, domains in serviceDomains.items():
-        labelHash = hash(json.dumps(serviceMatchLabels[service], sort_keys=True))
-        if labelHash in podsByLabel:
-            pods = podsByLabel[labelHash]
-            for pod in pods:
-                podName = pod['name']
-                if podName not in podDomains:
-                    podDomains[podName] = set()
-                podDomains[podName] |= domains
+        if service in serviceMatchLabels:
+            labelHash = hash(json.dumps(serviceMatchLabels[service], sort_keys=True))
+            if labelHash in podsByLabel:
+                pods = podsByLabel[labelHash]
+                for pod in pods:
+                    podName = pod['name']
+                    if podName not in podDomains:
+                        podDomains[podName] = set()
+                    podDomains[podName] |= domains
+        else:
+            print(f'[WARNING][kubernetes] Domains {", ".join(domains)} are being routed to non-existent service {service}'
+            +f' (cluster: {context}, namespace: {namespace})')
     
     # construct app by mapping deployment to pods
     deploymentDetails = getDeploymentDetails(namespace)
@@ -168,8 +172,8 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
         labels = details['labels']
         apps[deployment] = {
             'pods':{},
-            'domains':set(),
-            'cluster':context,
+            'domains': set(),
+            'cluster': context,
             'labels': labels,
             'template': details['template']
         }
