@@ -6,16 +6,22 @@
 
 <xsl:output method="xml" indent="yes" />
 <xsl:variable name="dns" select="json-to-xml(unparsed-text('/opt/app/src/dns.json'))"/>
+<xsl:variable name="slugname" select="substring-before(tokenize(base-uri(), '/')[last()], '.psml')"/>
+
+<xsl:template match="/">
+    <xsl:result-document href="out/DNS/{$slugname}.psml">
+        <xsl:apply-templates/>
+    </xsl:result-document>
+</xsl:template>
 
 <xsl:template match="*">
     <xsl:copy>
-        <xsl:copy-of select="@*|node()"/>
+        <xsl:copy-of select="@*"/>
         <xsl:apply-templates/>
     </xsl:copy>
 </xsl:template>
 
 <xsl:template match="properties-fragment[@id = 'resources']">
-    <xsl:variable name="slugname" select="substring-before(tokenize(base-uri(), '/')[last()], '.psml')"/>
     <xsl:variable name="context" select="$dns//xpf:map[@key = translate($slugname,'_','.')]/xpf:map[@key = 'icinga']"/>
     <properties-fragment id="icinga">
     <xsl:if test="$context">
