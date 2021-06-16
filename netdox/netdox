@@ -8,7 +8,8 @@ function serve {
 
 ## Refresh DNS data and upload to PageSeeder
 function refresh {
-    _refresh 2>&1 | tee "/var/log/refresh-$(date +%F-T%T).log"
+    if [[ -z /etc/ext/log ]]; then mkdir /etc/ext/log; fi
+    _refresh 2>&1 | tee "/etc/ext/log/refresh-$(date +%F-T%T).log"
 }
 function _refresh {
     for dir in /opt/app/out/*; do
@@ -84,7 +85,7 @@ for arg in "$@"; do
         esac
     elif [[ $arg == 'start' ]]
         then if init
-            then refresh & serve
+            then serve
         fi
     fi
 done
