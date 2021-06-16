@@ -69,20 +69,17 @@ def runPlugin(plugin, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict
         reverse_dns:
             A dictionary where keys are unique DNS names and values are a ``utils.PTRRecord`` class describing all reverse DNS records with that name.
     """
-    print(f'[INFO][pluginmaster] Running {plugin.__name__}')
     try:
         plugin.runner(forward_dns, reverse_dns)
     except Exception:
         print(f'[ERROR][pluginmaster] {plugin.__name__} threw an exception: \n{format_exc()}')
-    else:
-        print(f'[INFO][pluginmaster] {plugin.__name__} completed successfully')
 
 def runStage(stage: str, forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.PTRRecord]):
     """
     Calls *runPlugin* on all plugins in a specified stage.
     """
     global pluginmap
-    print(f'[INFO][pluginmaster] Running all plugins in stage {stage}')
+    print(f'[INFO][pluginmaster] Started stage: {stage}')
     for _, plugin in pluginmap[stage].items():
         runPlugin(plugin, forward_dns, reverse_dns)
 
