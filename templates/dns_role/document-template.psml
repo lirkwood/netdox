@@ -16,9 +16,7 @@
     <properties-fragment id="config">
       <property name="name" title="Name" value="" />
       <property name="desc" title="Description" value="" />
-      <property name="template" title="Default Icinga Template" value="" />
       <property name="screenshot" title="Screenshot" value="yes|no" />
     </properties-fragment>
   </section>
 </document>
-
