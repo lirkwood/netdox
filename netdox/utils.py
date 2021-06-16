@@ -39,29 +39,6 @@ dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 # Decorators #
 ##############
 
-def critical(func):
-    """
-    Prints timestamped debug messages before and after running the passed function.
-    Also prints an additional message for clarity if the function raises an exception.
-    """
-    funcname = func.__name__
-    funcmodule = func.__module__
-    if funcmodule == '__main__':
-        funcmodule = argv[0].replace('.py','')
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} was called')
-        try:
-            returned = func(*args, **kwargs)
-        except Exception as e:
-            print(f'[ERROR][utils] Essential function {funcmodule}.{funcname} threw an exception:\n')
-            raise e
-        else:
-            print(f'[DEBUG][utils] [{datetime.now()}] Function {funcmodule}.{funcname} returned')
-            return returned
-    return wrapper
-
 def handle(func):
     """
     Catches any exceptions raised by the passed function, prints the traceback, and returns *None*.
