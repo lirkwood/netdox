@@ -1,10 +1,8 @@
 """
-The pluginmaster class initialises and exposes plugins as imported modules for use by Netdox and other plugins.
+The pluginmanager class initialises and exposes plugins as imported modules for use by Netdox and other plugins.
 
 Initially the default plugins were baked in features, but it became obvious that in order for Netdox to be useful anywhere outside of an internal context, it needed completely modular inputs at least.
 This was quickly expanded to allow custom code to be executed at multiple points of interest, which became the plugin stages.
-This script may also be used to manually run a plugin or plugin stage. 
-Usage: ``python3 pluginmaster.py <plugin|stage> <name>``
 """
 
 from traceback import format_exc
@@ -14,6 +12,9 @@ import importlib, os
 
 
 class pluginmanager:
+    """
+    Used to find, import, and run plugins.
+    """
     pluginmap: dict[str, dict[str, ModuleType]]
     stages: KeysView[str]
 
@@ -29,7 +30,7 @@ class pluginmanager:
         self.stages = self.pluginmap.keys()
         self.loadPlugins('plugins')
     
-    def __getitem__(self, key) -> ModuleType:
+    def __getitem__(self, key: str) -> ModuleType:
         """
         Returns a plugin by name.
 
@@ -37,6 +38,9 @@ class pluginmanager:
             The module object of the specified plugin
         """
         return self.pluginmap['all'][key]
+
+    def __contains__(self, key: str) -> ModuleType:
+        return self.pluginmap['all'].__contains__(key)
 
     def add(self, name: str, module: ModuleType, stage: str = 'none') -> None:
         """
@@ -50,8 +54,10 @@ class pluginmanager:
             stage: str
                 The stage at which to call *runner* for this plugin ('none' to never call)
         """
-        self.pluginmap[stage][name] = module
         self.pluginmap['all'][name] = module
+        if stage not in self.pluginmap:
+            self.pluginmap[stage] = {}
+        self.pluginmap[stage][name] = module
     
     def loadPlugins(self, dir: str) -> None:
         """
@@ -94,7 +100,7 @@ class pluginmanager:
         try:
             plugin.runner(forward_dns, reverse_dns)
         except Exception:
-            print(f'[ERROR][pluginmaster] {plugin.__name__} threw an exception: \n{format_exc()}')
+            print(f'[ERROR][pluginmanager] {plugin.__name__} threw an exception: \n{format_exc()}')
 
     def runStage(self, stage: str, forward_dns: dict = {}, reverse_dns: dict = {}) -> None:
         """
@@ -111,5 +117,6 @@ class pluginmanager:
         if stage not in self.pluginmap:
             raise ValueError(f'Unknown stage: {stage}')
 
+        print(f'[INFO][pluginmanager] Starting stage: {stage}')
         for pluginName, plugin in self.pluginmap[stage].items():
             self.runPlugin(pluginName, plugin, forward_dns, reverse_dns)
