@@ -49,7 +49,7 @@ def authenticate(func):
         global websocket
         async with websockets.connect(url, max_size=3000000) as websocket:
             if 'error' in await call('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']}):
-                raise RuntimeError(f'[ERROR][xo_api.py] Failed to sign in with user {creds["username"]}')
+                raise RuntimeError(f'Failed to sign in with user {creds["username"]}')
             else:
                 return await func(*args, **kwargs)
     return wrapper
@@ -168,11 +168,11 @@ async def fetchObjects(dns):
                     if vm['mainIpAddress'] in dns[domain].ips:
                         vm['domains'].append(domain)
             else:
-                print(f'[WARNING][xo_api.py] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
+                print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
                 del vm['mainIpAddress']
         else:
             if vm['power_state'] == 'Running':
-                print(f'[WARNING][xo_api.py] VM {vm["name_label"]} has no IP address')
+                print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has no IP address')
     writeJson(vms, 'vms')
     writeJson(poolHosts, 'devices')
     writeJson(hostVMs, 'residents')
@@ -188,7 +188,7 @@ async def createVM(uuid, name=None):
     """
     info = await fetchObj(uuid)
     if len(info.keys()) > 1:
-        raise ValueError(f'[ERROR][xo_api.py] Ambiguous UUID {uuid}')
+        raise ValueError(f'Ambiguous UUID {uuid}')
     else:
 
         object = info[list(info)[0]]
@@ -210,7 +210,7 @@ async def createVM(uuid, name=None):
             })
 
         else:
-            raise ValueError(f'[ERROR][xo_api.py] Invalid template type {object["type"]}')
+            raise ValueError(f'Invalid template type {object["type"]}')
 
 
 @utils.handle

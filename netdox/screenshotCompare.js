@@ -94,7 +94,7 @@ async function newBrowser(array) {
 
 
 (async () => {
-	console.log('[INFO][screenshotCompare.js] Taking screenshots...')
+	console.log('[INFO][screenshotCompare] Taking screenshots...')
 	var domains = [];
 	for (const [role, config] of Object.entries(domainsrc)) {
 		if (config.screenshot) {
