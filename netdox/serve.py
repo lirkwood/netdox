@@ -5,7 +5,7 @@ from traceback import format_exc, print_exc
 from bs4 import BeautifulSoup
 import json, sys, re
 
-import pageseeder, utils, iptools, pluginmaster
+import pageseeder, utils, iptools, plugins
 
 app = Flask(__name__)
 
@@ -174,7 +174,7 @@ def approved_ip(uri):
 doctypeMap = {} 
 psproperties = {}
 if 'gunicorn' in sys.argv[0]:
-    pluginmaster.initPlugins()  
+    pluginmaster = plugins.pluginmanager() 
     with open('src/pageseeder.properties', 'r') as stream:
         for line in stream.read().splitlines():
             property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
