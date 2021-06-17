@@ -1,7 +1,7 @@
-from os import stat
 from typing import Union
 from kubernetes import client, config
-import re, yaml, json, utils, pageseeder, pluginmaster
+import re, yaml, json, utils, pageseeder
+from plugins import pluginmanager
 from bs4 import BeautifulSoup
 from flask import Response
 
@@ -141,7 +141,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServiceDomains(namespace)
     workerAddrs = getWorkerAddresses()
-    if 'xenorchestra' in pluginmaster.pluginmap['all']:
+    if 'xenorchestra' in pluginmaster:
         from asyncio import run
         workerVMs = run(getWorkerVMs(workerAddrs))
     else:
@@ -199,6 +199,8 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
 
 def runner(forward_dns,_):
     auth = utils.auth()['plugins']['kubernetes']
+    global pluginmaster
+    pluginmaster = pluginmanager()
     allApps = {}
     workers = {}
     for context in auth:
@@ -216,7 +218,9 @@ def runner(forward_dns,_):
             c_workers = workers[context]
             for _, pod in app['pods'].items():
                 if pod['nodeName'] not in c_workers:
-                    c_workers[pod['nodeName']] = {'vm':pod['vm'],'apps':[]}
+                    c_workers[pod['nodeName']] = {'apps':[]}
+                    if 'xenorchestra' in pluginmaster:
+                        c_workers[pod['nodeName']]['vm'] = pod['vm']
             c_workers[pod['nodeName']]['apps'].append(appName)
     
     with open('plugins/kubernetes/src/apps.json', 'w') as stream:
