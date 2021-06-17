@@ -6,6 +6,7 @@ It contains the two main classes used within Netdox, *DNSRecord* and *PTRRecord*
 It also defines two decorators which are used throughout Netdox, and some other functions which became useful across multiple scripts.
 """
 
+from __future__ import annotations
 from collections import defaultdict
 import iptools, json, re
 import subprocess
@@ -30,7 +31,7 @@ def auth():
     :Returns:
         A dictionary containing the authentication/configuration details for PageSeeder and any plugins which use it.
     """
-    if authdict:
+    if not authdict:
         with open('src/authentication.json', 'r') as stream:
             authdict = json.load(stream)
     return authdict
@@ -146,7 +147,10 @@ class DNSRecord:
     def __init__(self, name: str=None, root: str=None):
         if re.fullmatch(dns_name_pattern, name):
             self.name = name.lower()
-            if root: self.root = root.lower()
+            if root: 
+                self.root = root.lower()
+            else:
+                self.root = None
             self.location = None
             self.role = None
 
@@ -162,9 +166,9 @@ class DNSRecord:
             raise ValueError('Must provide a valid name for dns record (some FQDN)')
 
     @classmethod
-    def from_json(cls, object: dict):
+    def from_dict(cls, object: dict):
         """
-        Instantiates a DNSRecord from JSON.
+        Instantiates a DNSRecord from a dictionary.
         """
         record = cls(object['name'])
         for k, v in object.items():
@@ -269,7 +273,10 @@ class PTRRecord:
             self.ipv4 = ip
             self.name = ip
             self.subnet = iptools.sort(ip)
-            if root: self.root = root.lower()
+            if root: 
+                self.root = root.lower()
+            else:
+                self.root = None
             self.source = source
             self.unused = unused
             self.location = locate(self.ipv4)
@@ -288,10 +295,100 @@ class PTRRecord:
     def ptr(self):
         return [ptr for ptr,_ in self._ptr]
     
-    def discoverImpliedPTR(self, forward_dns: dict[str, DNSRecord]):
-        for domain, dns in forward_dns.items():
-            if self.name in dns.ips:
-                self.implied_ptr.add(domain)
+    def discoverImpliedPTR(self, forward_dns: DNSSet):
+        for record in forward_dns:
+            if self.name in record.ips:
+                self.implied_ptr.add(record.name)
+
+
+class DNSSet:
+    type: str
+    _records: dict[str, Union[DNSRecord, PTRRecord]]
+
+    def __init__(self, type: str = 'forward') -> None:
+        if type not in ('forward', 'reverse'):
+            raise ValueError(f'Unknown DNS set type {type}; Must be one of: forward, reverse')
+        self.type = type
+        self._records = {}
+
+    @property
+    def records(self):
+        return list(self._records.values())
+
+    @property
+    def names(self):
+        return list(self._records.keys())
+
+    def __getitem__(self, key: str) -> Union[DNSRecord, PTRRecord]:
+        """
+        Return a record given its name
+        """
+        return self._records[key]
+
+    def __setitem__(self, key: str, val: Union[DNSRecord, PTRRecord]) -> None:
+        """
+        Overwrite a record given its name
+        """
+        self._records[key] = val
+
+    def __delitem__(self, key: str) -> None:
+        """
+        Delete a record given its name
+        """
+        del self._records[key]
+
+    def __contains__(self, key: str) -> bool:
+        """
+        Returns true if the set has a record with the given name
+        """
+        return self._records.__contains__(key)
+
+    def __iter__(self) -> Union[DNSRecord, PTRRecord]:
+        """
+        Iterate over the records in the set
+        """
+        yield from self.records
+
+    def add(self, record: Union[DNSRecord, PTRRecord]) -> None:
+        """
+        Add a record to the set, or merge with existing record if necessary
+        """
+        if self.type == 'forward' and not isinstance(record, DNSRecord):
+            raise TypeError('Can only add DNSRecord to forward DNSSet')
+        elif self.type == 'reverse' and not isinstance(record, PTRRecord):
+            raise TypeError('Can only add PTRRecord to reverse DNSSet')
+
+        name = record.name.lower()
+        if name not in self._records:
+            self._records[name] = record
+        else:
+            self._records[name] = merge_records(self._records[name], record)
+    
+    def to_json(self) -> str:
+        """
+        Serialises the set to a JSON string
+        """
+        return json.dumps({
+            'type': self.type,
+            'records': self.records
+        }, indent = 2, cls = JSONEncoder)
+
+    @classmethod
+    def from_json(cls, constructor: str) -> DNSSet:
+        """
+        Deserialises a DNSSet from a JSON string
+        """
+        with json.loads(constructor) as spec:
+            if spec['type'] == 'forward':
+                recordClass = DNSRecord
+            else:
+                recordClass = PTRRecord
+
+            new_set = cls(spec['type'])
+            for record_dict in spec['records']:
+                record = recordClass.from_dict(record_dict)
+                new_set.add(record)
+        return new_set
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -308,48 +405,39 @@ class JSONEncoder(json.JSONEncoder):
             return sorted(obj)
         elif isinstance(obj, datetime):
             return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
-
-###################################
-# DNSRecord convenience functions #
-###################################
-
-def merge_sets(dns1: DNSRecord, dns2: DNSRecord) -> DNSRecord:
-    """
-    Simple merge of any sets of found in two dns objects
-    """
-    if isinstance(dns1, DNSRecord) and isinstance(dns2, DNSRecord):
-        dns1_inf = dns1.__dict__
-        dns2_inf = dns2.__dict__
-        for attr in dns2_inf:
-            if isinstance(dns2_inf[attr], set):
-                dns1_inf[attr] = dns1_inf[attr].union(dns2_inf[attr])
-        dns1.update()
-        return dns1
-    else:
-        raise TypeError(f'Arguments must be dns objects, not {type(dns1)}, {type(dns2)}')
-
-def loadDNS(file: Union[str, DirEntry]) -> dict[str, DNSRecord]:
-    """
-    Loads some json file as a set of DNSRecords
-    """
-    d = {}
-    with open(file, 'r') as stream:
-        jsondata = json.load(stream)
-        for name, constructor in jsondata.items():
-            d[name] = DNSRecord.from_json(constructor)
-    return d
-
-def writeDNS(dns_set: dict[str, DNSRecord], file: str):
-    """
-    Writes dns set to json file
-    """
-    with open(file, 'w') as dns:
-        dns.write(json.dumps(dns_set, cls=JSONEncoder, indent=2))
+        else:
+            return super().default(self, obj)
 
 #######################################
 # Miscellaneous convenience functions #
 #######################################
+
+def merge_records(dns1: DNSRecord, dns2: DNSRecord) -> DNSRecord:
+    """
+    Merge of two DNSRecords or two PTRRecords
+    """
+    if isinstance(dns1, (DNSRecord, PTRRecord)) and isinstance(dns2, (DNSRecord, PTRRecord)) and type(dns1) == type(dns2):
+        if dns1.name == dns2.name:
+            dns1_inf = dns1.__dict__
+            dns2_inf = dns2.__dict__
+            for attr, val in dns2_inf.items():
+                if isinstance(val, set):
+                    dns1_inf[attr] = dns1_inf[attr].union(dns2_inf[attr])
+
+            if not dns1.root and dns2.root:
+                dns1.root = dns2.root
+            
+            if isinstance(dns1, DNSRecord):
+                for resource, links in dns2_inf['resources'].items():
+                    dns1_inf['resources'][resource] = dns1_inf['resources'][resource].union(links)
+                dns1.update()
+            
+            return dns1
+        else:
+            raise ValueError('Cannot merge records with different names')
+    else:
+        raise TypeError(f'Arguments be similar dns objects, not {type(dns1)}, {type(dns2)}')
+
 
 def xslt(xsl, src, out=None):
     """
@@ -361,6 +449,8 @@ def xslt(xsl, src, out=None):
     else:
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
 
+global config
+config = {'exclusions': []}
 
 def loadConfig():
     """
@@ -371,7 +461,7 @@ def loadConfig():
         with open('src/config.json', 'r') as stream:
             config = json.load(stream)
     except FileNotFoundError:
-        config = {'exclusions': []}
+        pass
 
 
 def fileFetchRecursive(dir: Union[str, DirEntry]) -> list[str]:
