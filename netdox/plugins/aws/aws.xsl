@@ -13,7 +13,7 @@
 
   <xsl:template match="xpf:array[@key = 'Instances']/xpf:map">
     <xsl:result-document href="out/aws/{xpf:string[@key = 'InstanceId']}.psml" method="xml" indent="yes" omit-xml-declaration="yes">
-      <document type="ec2" level="portable">
+      <document type="aws_ec2" level="portable">
         <documentinfo>
           <uri title="{xpf:string[@key='KeyName']}" docid="_nd_{xpf:string[@key = 'InstanceId']}" />
         </documentinfo>

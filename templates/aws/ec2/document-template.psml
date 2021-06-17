@@ -1,4 +1,4 @@
-<document type="ec2" level="portable">
+<document type="aws_ec2" level="portable">
 
     <metadata>
       <properties>
