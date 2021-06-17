@@ -6,7 +6,7 @@ It runs some initialisation first, then calls the *dns* plugins, the *resource* 
 then calls the final plugin stage and writes PSML. The upload is managed by the caller executable Netdox (see :ref:`file_netdox`)
 """
 
-import pluginmaster, license_inf, cleanup, iptools, pageseeder, utils   # utility scripts
+import license_inf, cleanup, iptools, pageseeder, plugins, utils
 import subprocess, shutil, json, os
 from distutils.util import strtobool
 from bs4 import BeautifulSoup
@@ -34,7 +34,8 @@ def init():
             os.remove(folder)
 
     # Initialise plugins
-    pluginmaster.initPlugins()
+    global pluginmaster
+    pluginmaster = plugins.pluginmanager()
 
     # Load user-defined locations
     utils.loadLocations()
@@ -111,21 +112,6 @@ def init():
 ######################
 # Critical functions #
 ######################
-
-def flatten(dns_set: dict[str, utils.DNSRecord]):
-    """
-    Takes a set of DNS records and resolves any conflicts caused by capitalisation.
-
-    Modifies the given DNS set in place by combining any DNS records with names that are the same except for captalisation.
-
-    :Args:
-        A dictionary of DNS records (see :ref:`utils`)
-    """
-    domains = list(dns_set.keys())
-    for domain in domains:
-        if domain.lower() in dns_set and domain.lower() != domain:
-            dns_set[domain.lower()] = utils.merge_sets(dns_set[domain.lower()], dns_set[domain])
-            del dns_set[domain]
 
 def apply_roles(dns_set: dict[str, utils.DNSRecord]):
     """
@@ -275,12 +261,13 @@ def main():
     """
     # Run DNS and ext resource plugins
     forward, reverse = {}, {}
+
+    global pluginmaster
     pluginmaster.runStage('dns', forward, reverse)
     pluginmaster.runStage('resource', forward, reverse)
 
     # apply additional modifications/filters
     ips(forward, reverse)
-    flatten(forward)
     apply_roles(forward)
     if utils.location_map:
         locations(forward)
