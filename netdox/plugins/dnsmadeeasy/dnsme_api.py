@@ -59,7 +59,7 @@ def fetchDNS(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRe
 
 
 @utils.handle
-def add_A(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
+def add_A(dns_set: utils.DNSSet, record: dict, root: str):
 	"""
 	Integrates one A record into a dns set from json returned by DNSME api
 	"""
@@ -68,11 +68,11 @@ def add_A(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	fqdn = assemble_fqdn(subdomain, root)
 
 	if fqdn not in dns_set:
-		dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+		dns_set.add(utils.DNSRecord(fqdn, root=root))
 	dns_set[fqdn].link(ip, 'ipv4', 'DNSMadeEasy')
 
 @utils.handle
-def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
+def add_CNAME(dns_set: utils.DNSSet, record: dict, root: str):
 	"""
 	Integrates one CNAME record into a dns set from json returned by DNSME api
 	"""
@@ -82,11 +82,11 @@ def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	dest = assemble_fqdn(value, root)
 
 	if fqdn not in dns_set:
-		dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+		dns_set.add(utils.DNSRecord(fqdn, root=root))
 	dns_set[fqdn].link(dest, 'domain', 'DNSMadeEasy')	
 
 @utils.handle
-def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
+def add_PTR(dns_set: utils.DNSSet, record: dict, root: str):
 	"""
 	Integrates one PTR record into a dns set from json returned by DNSME api
 	"""
@@ -98,7 +98,7 @@ def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict, root: str):
 	
 	if iptools.valid_ip(ip):
 		if ip not in dns_set:
-			dns_set[ip] = utils.PTRRecord(ip, source='DNSMadeEasy', root=root)
+			dns_set.add(utils.PTRRecord(ip, source='DNSMadeEasy', root=root))
 		dns_set[ip].link(fqdn, 'DNSMadeEasy')
 
 
@@ -122,7 +122,8 @@ def create_A(name: str, ip: str, zone: str):
 	Creates an A record in DNSMadeEasy
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-		dns = utils.loadDNS('src/dns.json')
+		with open('src/dns.json') as stream:
+			dns = utils.DNSSet.from_json(stream.read())
 		if (ip, 'DNSMadeEasy') in dns[name]._ips:
 			return None
 
@@ -152,7 +153,8 @@ def create_CNAME(name: str, value: str, zone: str):
 	Creates a CNAME record in DNSMadeEasy
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
-		dns = utils.loadDNS('src/dns.json')
+		with open('src/dns.json') as stream:
+			dns = utils.DNSSet.from_json(stream.read())
 		if (value, 'DNSMadeEasy') in dns[name]._cnames:
 			return None
 

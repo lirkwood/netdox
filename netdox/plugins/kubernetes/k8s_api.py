@@ -209,7 +209,7 @@ def runner(forward_dns,_):
         for appName, app in allApps[context].items():
             for domain in app['domains']:
                 if domain not in forward_dns:
-                    forward_dns[domain] = utils.DNSRecord(domain)
+                    forward_dns.add(utils.DNSRecord(domain))
                 elif not forward_dns[domain].location:
                     if 'location' in auth[context]:
                         forward_dns[domain].location = auth[context]['location']

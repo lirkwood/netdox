@@ -113,7 +113,7 @@ def init():
 # Critical functions #
 ######################
 
-def apply_roles(dns_set: dict[str, utils.DNSRecord]):
+def apply_roles(dns_set: utils.DNSSet):
     """
     Applies custom roles defined in the PageSeeder config.
 
@@ -126,7 +126,7 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
         if domain in dns_set:
             del dns_set[domain]
     
-    unassigned = list(dns_set.keys())
+    unassigned = list(dns_set.names)
     for role in config.keys():
         if role != 'exclusions':
             for domain in config[role]['domains']:
@@ -140,25 +140,24 @@ def apply_roles(dns_set: dict[str, utils.DNSRecord]):
         dns_set[domain].role = 'default'
         config['default']['domains'].append(domain)
 
-def ips(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.PTRRecord]):
+def ips(forward: utils.DNSSet, reverse: utils.DNSSet):
     """
     Populates a reverse dns set with any missing IPs from a forward dns set.
 
     Iterates over every unique and private subnet and generates empty PTR records for any unused IPv4 addresses.
     """
     subnets = set()
-    for domain in forward:
-        dns = forward[domain]
+    for dns in forward:
         for ip in dns.ips:
             if ip not in reverse:
-                reverse[ip] = utils.PTRRecord(ip)
+                reverse.add(utils.PTRRecord(ip))
             if not iptools.public_ip(ip):
                 subnets.add(reverse[ip].subnet)
     
     for subnet in subnets:
         for ip in iptools.subn_iter(subnet):
             if ip not in reverse:
-                reverse[ip] = utils.PTRRecord(ip, unused=True)
+                reverse.add(utils.PTRRecord(ip, unused=True))
 
 def screenshots():
     """
@@ -173,14 +172,14 @@ def screenshots():
 ###########################
 
 @utils.handle
-def locations(dns_set: dict[str, utils.DNSRecord]):
+def locations(dns_set: utils.DNSSet):
     """
     Attempts to extract location data from CNAME records for those DNS records that have none.
 
     Iterates over the cnames of a record. If any of them have location data, inject into the initial record.
     """
     unlocated = []
-    for domain, dns in dns_set.items():
+    for dns in dns_set:
         if not dns.location:
             for alias in dns.cnames:
                 try:
@@ -190,14 +189,14 @@ def locations(dns_set: dict[str, utils.DNSRecord]):
                     pass
         
         if not dns.location:
-            unlocated.append(domain)
+            unlocated.append(dns.name)
     if unlocated:
         print('[WARNING][refresh] Some records are missing location data. For a complete list see /var/log/unlocated.json')
         with open('/var/log/unlocated.json', 'w') as stream:
             stream.write(json.dumps(unlocated, indent=2))
 
 @utils.handle
-def license_keys(dns_set: dict[str, utils.DNSRecord]):
+def license_keys(dns_set: utils.DNSSet):
     """
     Sets the *license* attribute for any domains with a PageSeeder license.
 
@@ -212,20 +211,20 @@ def license_keys(dns_set: dict[str, utils.DNSRecord]):
                 print(f'[WARNING][refresh.py] {dns.name} has a PageSeeder license but is using role {dns.role}')
 
 @utils.handle
-def license_orgs(dns_set: dict[str, utils.DNSRecord]):
+def license_orgs(dns_set: utils.DNSSet):
     """
     Sets the *org* attribute using the associated PageSeeder license.
 
     Uses the functionality found in :ref:`file_licenses` to add organisation data to records.
     """
-    for domain, dns in dns_set.items():
-        if 'license' in dns.__dict__:
-            org_id = license_inf.org(dns.license)
+    for record in dns_set:
+        if 'license' in record.__dict__:
+            org_id = license_inf.org(record.license)
             if org_id:
-                dns.org = org_id
+                record.org = org_id
 
 @utils.handle
-def labels(dns_set: dict[str, utils.DNSRecord]):
+def labels(dns_set: utils.DNSSet):
     """
     Applies any relevant document labels
 
@@ -239,13 +238,13 @@ def labels(dns_set: dict[str, utils.DNSRecord]):
     #         dns.labels.append('icinga_not_monitored')
 
 @utils.handle
-def implied_ptrs(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.PTRRecord]):
+def implied_ptrs(forward_dns: utils.DNSSet, reverse_dns: utils.DNSSet):
     """
     Calls the ``discoverImpliedPTR`` class method on all PTR records in a reverse dns set.
 
     For more see :ref:`utils`.
     """
-    for _, ptr in reverse_dns.items():
+    for ptr in reverse_dns:
         ptr.discoverImpliedPTR(forward_dns)
 
 
@@ -259,8 +258,8 @@ def main():
 
     Calls most other functions in this script in the required order.
     """
-    # Run DNS and ext resource plugins
-    forward, reverse = {}, {}
+    forward = utils.DNSSet('forward')
+    reverse = utils.DNSSet('reverse')
 
     global pluginmaster
     pluginmaster.runStage('dns', forward, reverse)
@@ -277,8 +276,10 @@ def main():
 
     pluginmaster.runStage('pre-write', forward, reverse)
 
-    utils.writeDNS(forward, 'src/dns.json')
-    utils.writeDNS(reverse, 'src/ips.json')
+    with open('src/dns.json', 'w') as stream:
+        stream.write(forward.to_json())
+    with open('src/ips.json', 'w') as stream:
+        stream.write(reverse.to_json())
     # Write DNS documents
     utils.xslt('dns.xsl', 'src/dns.xml')
     # Write IP documents

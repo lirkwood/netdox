@@ -33,7 +33,7 @@ def fetchJson() -> os.DirEntry:
 
 
 @utils.handle
-def add_A(dns_set: dict[str, utils.DNSRecord], record: dict):
+def add_A(dns_set: utils.DNSSet, record: dict):
     """
 	Integrates one A record into a dns set from json returned by AD api
     """
@@ -50,12 +50,12 @@ def add_A(dns_set: dict[str, utils.DNSRecord], record: dict):
 
     # Integrate
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+        dns_set.add(utils.DNSRecord(fqdn, root=root))
     dns_set[fqdn].link(dest, 'ipv4', 'ActiveDirectory')
 
 
 @utils.handle
-def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict):
+def add_CNAME(dns_set: utils.DNSSet, record: dict):
     """
 	Integrates one CNAME record into a dns set from json returned by AD api
     """
@@ -73,12 +73,12 @@ def add_CNAME(dns_set: dict[str, utils.DNSRecord], record: dict):
                 dest = dest.strip('.')
 
     if fqdn not in dns_set:
-        dns_set[fqdn] = utils.DNSRecord(fqdn, root=root)
+        dns_set.add(utils.DNSRecord(fqdn, root=root))
     dns_set[fqdn].link(dest, 'domain', 'ActiveDirectory')
 
 
 @utils.handle
-def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict):
+def add_PTR(dns_set: utils.DNSSet, record: dict):
     """
 	Integrates one PTR record into a dns set from json returned by AD api
     """
@@ -93,7 +93,7 @@ def add_PTR(dns_set: dict[str, utils.DNSRecord], record: dict):
 
     if ip.valid:
         if ip.ipv4 not in dns_set:
-            dns_set[ip.ipv4] = utils.PTRRecord(ip.ipv4, root=zone)
+            dns_set.add(utils.PTRRecord(ip.ipv4, root=zone))
         dns_set[ip.ipv4].link(dest, 'ActiveDirectory')
 
 
@@ -114,7 +114,8 @@ def create_forward(name: str, ip: str, zone: str, type: str):
     Schedules a DNS record for creation in ActiveDirectory
     """
     if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-        dns = utils.loadDNS('src/dns.json')
+        with open('src/dns.json') as stream:
+            dns = utils.DNSSet.from_json(stream.read())
         if (ip, 'ActiveDirectory') in dns[name]._ips:
             return None
 

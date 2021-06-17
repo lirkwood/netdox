@@ -18,8 +18,7 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     pfsense = subprocess.check_output('node plugins/nat/pfsense.js', shell=True)
     natDict |= json.loads(pfsense)
 
-    for domain in forward_dns:
-        dns = forward_dns[domain]
-        for ip in dns.ips:
+    for record in forward_dns:
+        for ip in record.ips:
             if ip in natDict:
-                dns.link(natDict[ip], 'ipv4', 'NAT')
+                record.link(natDict[ip], 'ipv4', 'NAT')

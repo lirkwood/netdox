@@ -117,17 +117,6 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
 
-    # Link domains to vms
-    for domain in forward_dns:
-        dns = forward_dns[domain]
-        for uuid in vms:
-            vm = vms[uuid]
-            try:
-                if vm['mainIpAddress'] in dns.ips:
-                    dns.link(uuid, 'vm')
-            except KeyError:
-                pass
-
 @authenticate
 async def fetchObjects(dns):
     """
@@ -164,9 +153,10 @@ async def fetchObjects(dns):
         if 'mainIpAddress' in vm:
             if iptools.valid_ip(vm['mainIpAddress']):
                 vm['subnet'] = iptools.sort(vm['mainIpAddress'])
-                for domain in dns:
-                    if vm['mainIpAddress'] in dns[domain].ips:
-                        vm['domains'].append(domain)
+                for record in dns:
+                    if vm['mainIpAddress'] in record.ips:
+                        vm['domains'].append(record.name)
+                        record.link(vm['uuid'], 'vm')
             else:
                 print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
                 del vm['mainIpAddress']

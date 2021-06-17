@@ -26,7 +26,7 @@ with open(f'plugins/aws/src/aws.xml','w') as stream:
     ]>
     <aws>&json;</aws>""").strip())
 
-def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+def runner(forward_dns: utils.DNSSet, reverse_dns: utils.DNSSet):
     """
     Links domains to AWS EC2 instances with the same IP
     """
@@ -34,13 +34,13 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     allEC2 = client.describe_instances()
     for reservation in allEC2['Reservations']:
         for instance in reservation['Instances']:
-            for _, dns in forward_dns.items():
+            for dns in forward_dns:
                 if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
                     dns.link(instance['InstanceId'], 'ec2')
             
             for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
                 if ip not in reverse_dns:
-                    reverse_dns[ip] = utils.PTRRecord(ip, source='AWS')
+                    reverse_dns.add(utils.PTRRecord(ip, source='AWS'))
 
     with open('plugins/aws/src/aws.json', 'w') as stream:
         stream.write(json.dumps(allEC2, indent=2, cls=utils.JSONEncoder))
