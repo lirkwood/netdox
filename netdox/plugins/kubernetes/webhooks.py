@@ -1,4 +1,5 @@
 from plugins.kubernetes import initContext
+from kubernetes.client.rest import ApiException
 from kubernetes import client
 from bs4 import BeautifulSoup
 from typing import Union
@@ -31,37 +32,41 @@ def create_app(name: str, cluster: str, uri: Union[str, int]):
     """
     ## Container info
     containers = []
-    lastContainer = False
     container = None
     volume = None
-    while not lastContainer:
-        containerPSML = BeautifulSoup(pageseeder.get_fragment(uri, f'container_{len(containers) + 1}'), features='xml')
-        if containerPSML.find('properties-fragment'):
-            for property in containerPSML('property'):
-                if property['name'] == 'container':
-                    containers.append({
-                        'name': property['value'],
-                        'volumes': {}
-                    })
-                    container = containers[-1]
-                
-                elif property['name'] == 'image':
-                    container['imageLink'] = property['value']
-                    imageInf = re.search(r'registry-gitlab.allette.com.au/([a-zA-Z0-9-]+/)*(?P<project>[a-zA-Z0-9-]+):(?P<tag>.*)$',
-                                        container['imageLink'])
-                    container['project'] = imageInf['project']
-                    container['imageTag'] = imageInf['tag']
+    while True:
+        hasPrefix = BeautifulSoup(pageseeder.get_fragment(uri, f'container_{len(containers) + 1}'), features='xml')
+        noPrefix = BeautifulSoup(pageseeder.get_fragment(uri, f'{len(containers) + 1}'), features='xml')
+        containerPSML = None
+        for response in (hasPrefix, noPrefix):
+            if response.find('properties-fragment'):
+                containerPSML = response
+        if not containerPSML:
+            break
 
-                elif property['name'] == 'pvc':
-                    container['volumes'][property['value']] = {}
-                    volume = container['volumes'][list(container['volumes'])[-1]]
+        for property in containerPSML('property'):
+            if property['name'] == 'container':
+                containers.append({
+                    'name': property['value'],
+                    'volumes': {}
+                })
+                container = containers[-1]
+            
+            elif property['name'] == 'image':
+                container['imageLink'] = property['value']
+                imageInf = re.search(r'registry-gitlab.allette.com.au/([a-zA-Z0-9-]+/)*(?P<project>[a-zA-Z0-9-]+):(?P<tag>.*)$',
+                                    container['imageLink'])
+                container['project'] = imageInf['project']
+                container['imageTag'] = imageInf['tag']
 
-                elif property['name'] == 'mount_path':
-                    volume['mount_path'] = property['value']
-                elif property['name'] == 'sub_path':
-                    volume['sub_path'] = property['value']
-        else:
-            lastContainer = True
+            elif property['name'] == 'pvc':
+                container['volumes'][property['value']] = {}
+                volume = container['volumes'][list(container['volumes'])[-1]]
+
+            elif property['name'] == 'mount_path':
+                volume['mount_path'] = property['value']
+            elif property['name'] == 'sub_path':
+                volume['sub_path'] = property['value']
 
     ## Find any domains for ingress
     domainFrag = BeautifulSoup(pageseeder.get_fragment(uri, 'domains'), features='xml')
@@ -130,16 +135,24 @@ def create_simple(name: str, container: dict, domains: list, cluster: str):
     deployment, service, ingress = [yaml.safe_load(template) for template in re.split(r'\n\s*---\s*\n', templateRaw)]
 
     api = client.AppsV1Api(apiClient)
-    api.create_namespaced_deployment(body = deployment, namespace = 'default')
-    print(f'[INFO][kubernetes] Created deployment {name}')
+    try:
+        api.create_namespaced_deployment(body = deployment, namespace = 'default')
+    except ApiException as e:
+        depScale = api.read_namespaced_deployment_scale(name, namespace = 'default')
+        if depScale.spec.replicas == 0:
+            scale_app(name, cluster, 1)
+        else:
+            raise e
+    else:
+        print(f'[INFO][kubernetes] Created deployment {name}')
 
-    api = client.CoreV1Api(apiClient)
-    api.create_namespaced_service(body = service, namespace = 'default')
-    print(f'[INFO][kubernetes] Created service for {name}')
+        api = client.CoreV1Api(apiClient)
+        api.create_namespaced_service(body = service, namespace = 'default')
+        print(f'[INFO][kubernetes] Created service for {name}')
 
-    api = client.ExtensionsV1beta1Api(apiClient)
-    api.create_namespaced_ingress(body = ingress, namespace = 'default')
-    print(f'[INFO][kubernetes] Created ingress for {name}')
+        api = client.ExtensionsV1beta1Api(apiClient)
+        api.create_namespaced_ingress(body = ingress, namespace = 'default')
+        print(f'[INFO][kubernetes] Created ingress for {name}')
 
 if __name__ == '__main__':
     scale_app('netdox-test-simple', 'dev', 0)
