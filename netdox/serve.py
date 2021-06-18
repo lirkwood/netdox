@@ -41,24 +41,26 @@ def workflow_updated(event):
     Main route. If workflow is 'Approved' netdox attempts to realise the links in the document.
     """
     status = event['workflow']['status']
-    if status == 'Approved':
+    if status in ('Approved', 'Suspended'):
         comment = event['workflow']['comments'][0]
         comment_details = json.loads(pageseeder.get_comment(comment['id']))
         document_uri = comment_details['context']['uri']['id']
         document_type = comment_details['context']['uri']['documenttype']
 
-        if document_type == 'dns':
-            return approved_dns(document_uri)
+        if document_type in ('dns' 'ip'):
+            if status == 'Approved':
+                if document_type == 'dns':
+                    return approved_dns(document_uri)
 
-        elif document_type == 'ip':
-            return approved_ip(document_uri)
+                elif document_type == 'ip':
+                    return approved_ip(document_uri)
 
         else:
             if document_type in doctypeMap:
                 plugin = pluginmaster.pluginmap['all'][doctypeMap[document_type]]
                 try:
                     print(f'[INFO][webhooks] Delegating to {plugin.__name__} for document type {document_type}')
-                    return getattr(plugin, document_type)(document_uri)
+                    return getattr(plugin, document_type)(document_uri, status)
                 except Exception:
                     print_exc()
                     return Response(status=500)
