@@ -82,10 +82,7 @@ def add_PTR(dns_set: utils.DNSSet, record: dict):
     """
 	Integrates one PTR record into a dns set from json returned by AD api
     """
-    try:
-        zone = record['DistinguishedName'].split(',')[1].strip('DC=')
-    except Exception:
-        print(record)
+    zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
     address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
     ip = iptools.ipv4(subnet +'.'+ address)
