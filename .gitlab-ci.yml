@@ -2,6 +2,9 @@ build:
   stage: build
   script:
     - docker build -t ${CI_REGISTRY}/${CI_PROJECT_PATH} .
+  only:
+    - tags
+    - testdev
 
 tag-image:
   stage: .post
