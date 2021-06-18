@@ -3,7 +3,7 @@
 ## Serve webhook listener
 function serve {
     echo -e '[INFO][netdox] Starting gunicorn server on 0.0.0.0:8080\n'
-    gunicorn --reload -b '0.0.0.0:8080' serve:app &>/dev/null
+    gunicorn --reload -b '0.0.0.0:8080' serve:app
 }
 
 ## Refresh DNS data and upload to PageSeeder
