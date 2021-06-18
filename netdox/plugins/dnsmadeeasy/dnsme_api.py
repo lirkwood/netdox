@@ -93,7 +93,7 @@ def add_PTR(dns_set: utils.DNSSet, record: dict, root: str):
 	subnet = '.'.join(root.replace('.in-addr.arpa','').split('.')[::-1])
 	addr = record['name']
 	value = record['value']
-	ip = addr +'.'+ subnet
+	ip = subnet +'.'+ addr
 	fqdn = assemble_fqdn(value, root)
 	
 	if iptools.valid_ip(ip):

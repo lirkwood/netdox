@@ -9,12 +9,12 @@
 <xsl:variable name="auth" select="json-to-xml(unparsed-text('src/authentication.json'))/xpf:map"/>
 
 <xsl:template match="/">
-    <xsl:variable name="dns" select="json-to-xml(dns)"/>
-    <xsl:apply-templates select="$dns/xpf:map/xpf:map"/>
+    <xsl:variable name="dns" select="json-to-xml(forward)"/>
+    <xsl:apply-templates select="$dns/xpf:map/xpf:array[@key = 'records']/xpf:map"/>
 </xsl:template>
 
 <xsl:template match="xpf:map">
-    <xsl:variable name="name" select="@key"/>
+    <xsl:variable name="name" select="xpf:string[@key = 'name']"/>
     <xsl:try>
         <xsl:result-document href="out/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
             <document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
