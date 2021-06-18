@@ -1,16 +1,7 @@
-from typing import Union
-from kubernetes import client, config
-import re, yaml, json, utils, pageseeder
+from plugins.kubernetes import initContext
+from kubernetes import client
 from plugins import pluginmanager
-from bs4 import BeautifulSoup
-from flask import Response
-
-## Load config and init client for given context
-def initContext(context: str=None):
-    config.load_kube_config('plugins/kubernetes/src/kubeconfig', context=context)
-    global apiClient
-    apiClient = client.ApiClient()
-
+import json, utils
 
 def getDeploymentDetails(namespace: str='default') -> dict[str, dict[str, str]]:
     """
@@ -136,7 +127,8 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     Returns a JSON object usable by apps.xsl
     """
     apps = {}
-    initContext(context)
+    global apiClient
+    apiClient = initContext(context)
     podsByLabel = getPodsByLabel(namespace)
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServiceDomains(namespace)
@@ -232,112 +224,3 @@ def runner(forward_dns,_):
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
     utils.xslt('plugins/kubernetes/clusters.xsl', 'plugins/kubernetes/src/workers.xml')
     utils.xslt('plugins/kubernetes/pub.xsl', 'plugins/kubernetes/src/apps.xml', 'out/kubernetes_pub.psml')
-
-
-# 2do: add replicas spec
-def create_app(uri: Union[str, int]):
-    """
-    Used to create apps from a combination of boilerplate yaml and properties from a PageSeeder document
-    """
-    name = BeautifulSoup(pageseeder.get_fragment(uri, 'title'), features='xml').find('heading').string
-    uriDetails = json.loads(pageseeder.get_uri(uri))
-
-    ## Find cluster
-    path = uriDetails['decodedpath'].split('/')
-    cluster = path[-2]
-
-    ## Container info
-    containers = []
-    lastContainer = False
-    container = None
-    volume = None
-    while not lastContainer:
-        containerPSML = BeautifulSoup(pageseeder.get_fragment(uri, f'container_{len(containers) + 1}'), features='xml')
-        if containerPSML.find('properties-fragment'):
-            for property in containerPSML('property'):
-                if property['name'] == 'container':
-                    containers.append({
-                        'name': property['value'],
-                        'volumes': {}
-                    })
-                    container = containers[-1]
-                
-                elif property['name'] == 'image':
-                    container['imageLink'] = property['value']
-                    imageInf = re.search(r'registry-gitlab.allette.com.au/([a-zA-Z0-9-]+/)*(?P<project>[a-zA-Z0-9-]+):(?P<tag>.*)$',
-                                        container['imageLink'])
-                    container['project'] = imageInf['project']
-                    container['imageTag'] = imageInf['tag']
-
-                elif property['name'] == 'pvc':
-                    container['volumes'][property['value']] = {}
-                    volume = container['volumes'][list(container['volumes'])[-1]]
-
-                elif property['name'] == 'mount_path':
-                    volume['mount_path'] = property['value']
-                elif property['name'] == 'sub_path':
-                    volume['sub_path'] = property['value']
-        else:
-            lastContainer = True
-
-    ## Find any domains for ingress
-    domainFrag = BeautifulSoup(pageseeder.get_fragment(uri, 'domains'), features='xml')
-    domains = []
-    for property in domainFrag('property'):
-        domains.append(property.xref.string)
-
-
-    if len(containers) != 1:
-        if len(containers) > 1:
-            raise NotImplementedError('Creating deployments with multiple containers has not been implemented yet.')
-        else:
-            raise ValueError('At least one container spec is required')
-    else:
-        container = containers[0]
-        if container['project'] == 'psberlioz-simple':
-            create_simple(name, container, domains, cluster)
-
-    return Response(status=201)
-
-
-##########################
-# App specific functions #
-##########################
-
-def create_simple(name: str, container: dict, domains: list, cluster: str):
-    """
-    Downstream function for create_app if specified image ID is a berlioz simple site image
-    """
-    initContext(cluster)
-
-    volume = list(container['volumes'])[0]
-
-    templateVals = {
-        'depname': name,
-        'domain': domains[0],
-        'containername': container['name'],
-        'image': container['imageLink'],
-        'pvc': volume,
-        'sub_path': container['volumes'][volume]['sub_path'],
-        'mount_path': '/tmp/jetty/appdata'
-    } 
-
-    with open(f'plugins/kubernetes/src/templates/simple.yml', 'r') as stream:
-        templateRaw = stream.read()
-
-    for key, val in templateVals.items():
-        templateRaw = re.sub(rf'<{key}>', val, templateRaw)
-    
-    deployment, service, ingress = [yaml.safe_load(template) for template in re.split(r'\n\s*---\s*\n', templateRaw)]
-
-    api = client.AppsV1Api(apiClient)
-    api.create_namespaced_deployment(body = deployment, namespace = 'default')
-    print(f'[INFO][kubernetes] Created deployment {name}')
-
-    api = client.CoreV1Api(apiClient)
-    api.create_namespaced_service(body = service, namespace = 'default')
-    print(f'[INFO][kubernetes] Created service for {name}')
-
-    api = client.ExtensionsV1beta1Api(apiClient)
-    api.create_namespaced_ingress(body = ingress, namespace = 'default')
-    print(f'[INFO][kubernetes] Created ingress for {name}')

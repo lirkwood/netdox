@@ -1,13 +1,31 @@
-from plugins.kubernetes.k8s_api import runner as runner
-from plugins.kubernetes.k8s_api import create_app as k8s_app
+from kubernetes.client import ApiClient
+from kubernetes import config
 from textwrap import dedent
-import os, utils
+import os
+import utils
 stage = 'resource'
+
+##  Private Functions
+
+def initContext(context: str = None):
+    """
+    Load config and init an api client for given context
+    """
+    config.load_kube_config('plugins/kubernetes/src/kubeconfig', context=context)
+    return ApiClient()
+
+## Public functions
+
+from plugins.kubernetes.refresh import runner
+from plugins.kubernetes.webhooks import app_action as k8s_app
+
+
+## Initialisation
 
 # Create output dir
 for dir in ('out', 'src'):
-  if not os.path.exists(f'plugins/kubernetes/{dir}'):
-      os.mkdir(f'plugins/kubernetes/{dir}')
+    if not os.path.exists(f'plugins/kubernetes/{dir}'):
+        os.mkdir(f'plugins/kubernetes/{dir}')
 
 auth = utils.auth()['plugins']['kubernetes']
 with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
@@ -46,7 +64,7 @@ with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
         """))
 
 for type in ('workers', 'apps'):
-    with open(f'plugins/kubernetes/src/{type}.xml','w') as stream:
+    with open(f'plugins/kubernetes/src/{type}.xml', 'w') as stream:
         stream.write(dedent(f"""
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE {type} [
