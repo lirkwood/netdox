@@ -37,7 +37,8 @@ function _refresh {
             echo '[ERROR][netdox] Python exited with non-zero status. Cancelling upload...'
     fi
 
-    cp /opt/app/src/dns.json /etc/ext/cfg/dns.json &> /dev/null
+    cp /opt/app/src/forward.json /etc/ext/forward.json &> /dev/null
+    cp /opt/app/src/reverse.json /etc/ext/reverse.json &> /dev/null
 }
 
 ## Initialise container to allow other processes to run
@@ -45,6 +46,9 @@ function init {
     echo "[INFO][netdox] Initalising container as: $(id)"
     
     [[ -d /etc/ext/log ]] || mkdir /etc/ext/log
+
+    cp /etc/ext/forward.json /opt/app/src/forward.json &> /dev/null
+    cp /etc/ext/reverse.json /opt/app/src/reverse.json &> /dev/null
 
     # make all scripts executable
     chmod 777 /opt/app/*
