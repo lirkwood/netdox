@@ -3,7 +3,7 @@ from flask import Response
 
 from traceback import format_exc, print_exc
 from bs4 import BeautifulSoup
-import json, sys, re
+import subprocess, json, sys, re
 
 import pageseeder, utils, iptools, plugins
 
@@ -12,6 +12,13 @@ app = Flask(__name__)
 @app.route('/')
 def root():
     return Response(status=200)
+
+@app.route('/refresh', methods=['POST'])
+def refresh():
+    """
+    Calls refresh
+    """
+    subprocess.run('/opt/app/netdox refresh')
 
 @app.route('/webhooks', methods=['POST'])
 def webhooks():
