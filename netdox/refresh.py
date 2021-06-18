@@ -282,9 +282,9 @@ def main():
     with open('src/reverse.json', 'w') as stream:
         stream.write(reverse.to_json())
     # Write DNS documents
-    utils.xslt('dns.xsl', 'src/dns.xml')
+    utils.xslt('dns.xsl', 'src/forward.xml')
     # Write IP documents
-    utils.xslt('ips.xsl', 'src/ips.xml')
+    utils.xslt('ips.xsl', 'src/reverse.xml')
 
     pluginmaster.runStage('post-write', forward, reverse)
 
