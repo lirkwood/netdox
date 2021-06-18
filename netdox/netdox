@@ -2,8 +2,8 @@
 
 ## Serve webhook listener
 function serve {
-    echo -e '[INFO][netdox] Starting gunicorn server on 8080\n'
-    gunicorn --reload -b '0.0.0.0:8080' serve:app
+    echo -e '[INFO][netdox] Starting gunicorn server on 0.0.0.0:8080\n'
+    gunicorn --reload -b '0.0.0.0:8080' serve:app &>/dev/null
 }
 
 ## Refresh DNS data and upload to PageSeeder
@@ -44,6 +44,10 @@ function _refresh {
 function init {
     echo "[INFO][netdox] Initalising container as: $(id)"
     
+    if [[ -z /etc/ext/log ]]; then
+        mkdir /etc/ext/log
+    fi
+
     # make all scripts executable
     chmod 777 /opt/app/*
     
