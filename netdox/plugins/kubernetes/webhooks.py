@@ -96,6 +96,7 @@ def scale_app(name: str, cluster: str, replicas: int):
         }
     }
     api.patch_namespaced_deployment_scale(name = name, namespace = 'default', body = body)
+    print(f'[INFO][kubernetes] Scaled {name} to {replicas} replicas')
 
 
 ##########################
