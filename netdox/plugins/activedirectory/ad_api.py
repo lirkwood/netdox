@@ -82,7 +82,10 @@ def add_PTR(dns_set: utils.DNSSet, record: dict):
     """
 	Integrates one PTR record into a dns set from json returned by AD api
     """
-    zone = record['DistinguishedName'].split(',')[1].strip('DC=')
+    try:
+        zone = record['DistinguishedName'].split(',')[1].strip('DC=')
+    except Exception:
+        print(record)
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
     address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
     ip = iptools.ipv4(subnet +'.'+ address)
@@ -143,8 +146,8 @@ def create_reverse(ip: str, value: str):
     """
     if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
         with open('src/reverse.json', 'r') as dnsstream:
-            dns = json.load(dnsstream)
-            if [value, 'ActiveDirectory'] in dns[ip]['_ptr']:
+            dns = utils.DNSSet.from_json(dnsstream.read())
+            if (value, 'ActiveDirectory') in dns[ip]._ptr:
                 return None
     
         addr = ip.split('.')[-1]
