@@ -114,7 +114,7 @@ def create_forward(name: str, ip: str, zone: str, type: str):
     Schedules a DNS record for creation in ActiveDirectory
     """
     if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-        with open('src/dns.json') as stream:
+        with open('src/forward.json') as stream:
             dns = utils.DNSSet.from_json(stream.read())
         if (ip, 'ActiveDirectory') in dns[name]._ips:
             return None

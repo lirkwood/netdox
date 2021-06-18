@@ -276,9 +276,10 @@ def main():
 
     pluginmaster.runStage('pre-write', forward, reverse)
 
-    with open('src/dns.json', 'w') as stream:
+    # Write DNS sets
+    with open('src/forward.json', 'w') as stream:
         stream.write(forward.to_json())
-    with open('src/ips.json', 'w') as stream:
+    with open('src/reverse.json', 'w') as stream:
         stream.write(reverse.to_json())
     # Write DNS documents
     utils.xslt('dns.xsl', 'src/dns.xml')

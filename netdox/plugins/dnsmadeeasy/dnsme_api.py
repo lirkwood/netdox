@@ -122,7 +122,7 @@ def create_A(name: str, ip: str, zone: str):
 	Creates an A record in DNSMadeEasy
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-		with open('src/dns.json') as stream:
+		with open('src/forward.json') as stream:
 			dns = utils.DNSSet.from_json(stream.read())
 		if (ip, 'DNSMadeEasy') in dns[name]._ips:
 			return None
@@ -153,7 +153,7 @@ def create_CNAME(name: str, value: str, zone: str):
 	Creates a CNAME record in DNSMadeEasy
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
-		with open('src/dns.json') as stream:
+		with open('src/forward.json') as stream:
 			dns = utils.DNSSet.from_json(stream.read())
 		if (value, 'DNSMadeEasy') in dns[name]._cnames:
 			return None

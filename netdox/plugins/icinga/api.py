@@ -211,7 +211,7 @@ def runner(forward_dns: utils.DNSSet, _):
                 rm_host(addr, icinga=icinga)
             reload(icinga=icinga)
             
-    with open('src/dns.json', 'w') as stream:
+    with open('src/forward.json', 'w') as stream:
         stream.write(forward_dns.to_json())
     mkdir('out/tmp')
     utils.xslt('plugins/icinga/services.xsl', 'out/DNS', 'out/tmp')

@@ -5,7 +5,7 @@
                 exclude-result-prefixes="#all">
 
 <xsl:output method="xml" indent="yes" />
-<xsl:variable name="dns" select="json-to-xml(unparsed-text('/opt/app/src/dns.json'))"/>
+<xsl:variable name="dns" select="json-to-xml(unparsed-text('/opt/app/src/forward.json'))"/>
 <xsl:variable name="slugname" select="substring-before(tokenize(base-uri(), '/')[last()], '.psml')"/>
 
 <xsl:template match="/">
@@ -21,10 +21,15 @@
     </xsl:copy>
 </xsl:template>
 
+
 <xsl:template match="properties-fragment[@id = 'resources']">
-    <xsl:variable name="context" select="$dns//xpf:map[@key = translate($slugname,'_','.')]/xpf:map[@key = 'icinga']"/>
+    <xsl:apply-templates select="$dns//xpf:string[@key = 'name' and text() = translate($slugname,'_','.')]"/>
+</xsl:template>
+
+<xsl:template match="xpf:string[@key = 'name']">
+    <xsl:variable name="context" select="parent::xpf:map/xpf:map[@key = 'icinga']"/>
     <properties-fragment id="icinga">
-    <xsl:if test="$context">
+    <xsl:if test="$context/*">
         <property name="host" title="Host Display Name" value="{$context/xpf:string[@key = 'display']}" />
         <property name="template" title="Monitor Template" value="{$context/xpf:array[@key = 'templates']/xpf:string[1]}" />
         <xsl:for-each select="$context/xpf:array[@key = 'services']/xpf:string">
