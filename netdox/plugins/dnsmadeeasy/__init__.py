@@ -1,3 +1,6 @@
+"""
+Used to read and modify DNS records stored in DNSMadeEasy.
+"""
 import utils, json, os
 import hashlib, hmac
 from datetime import datetime
@@ -6,6 +9,9 @@ stage = 'dns'
 def genheader() -> dict[str, str]:
 	"""
 	Generates authentication header for DNSME api
+
+	:Returns:
+		A dictionary to be used as the HTTP header for any DNSMadeEasy request
 	"""
 	creds = utils.auth()['plugins']['dnsmadeeasy']
 	api = creds['api']

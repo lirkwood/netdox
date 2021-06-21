@@ -1,3 +1,9 @@
+"""
+Creating Records
+****************
+
+Provides some functions for creating DNS records in DNSMadeEasy
+"""
 import utils, iptools
 import re, json
 
@@ -5,6 +11,14 @@ import re, json
 def create_A(name: str, ip: str, zone: str):
 	"""
 	Creates an A record in DNSMadeEasy
+
+	:Args:
+		name: str
+			The name for the DNS record
+		ip: str
+			The IPv4 address for the record to resolve to
+		zone: str
+			The DNS zone to create the record in
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
 		with open('src/forward.json') as stream:
@@ -35,7 +49,15 @@ def create_A(name: str, ip: str, zone: str):
 @utils.handle
 def create_CNAME(name: str, value: str, zone: str):
 	"""
-	Creates a CNAME record in DNSMadeEasy
+	Creates an CNAME record in DNSMadeEasy
+
+	:Args:
+		name: str
+			The name for the DNS record
+		value: str
+			The domain for the record to resolve to
+		zone: str
+			The DNS zone to create the record in
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
 		with open('src/forward.json') as stream:
@@ -67,7 +89,13 @@ def create_CNAME(name: str, value: str, zone: str):
 @utils.handle
 def create_PTR(ip: str, value: str):
 	"""
-	Creates a PTR record in DNSMadeEasy
+	Creates an PTR record in DNSMadeEasy
+
+	:Args:
+		ip: str
+			The IPv4 address to use as the name for the record
+		value: str
+			The domain for the record to resolve to
 	"""
 	if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
 		with open('src/reverse.json', 'r') as dnsstream:
