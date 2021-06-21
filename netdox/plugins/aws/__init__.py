@@ -2,29 +2,30 @@ import utils, boto3, json, os
 from textwrap import dedent
 stage = 'resource'
 
-if not os.path.exists('plugins/aws/src'):
-    os.mkdir('plugins/aws/src')
-os.environ['AWS_CONFIG_FILE'] = f'{os.getcwd()}/plugins/aws/src/awsconfig'
+def init():
+    if not os.path.exists('plugins/aws/src'):
+        os.mkdir('plugins/aws/src')
+    os.environ['AWS_CONFIG_FILE'] = f'{os.getcwd()}/plugins/aws/src/awsconfig'
 
-auth = utils.auth()['plugins']['aws']
-# set up aws iam profile
-with open('plugins/aws/src/awsconfig', 'w') as stream:
-    stream.write(dedent(f"""
-    [default]
-    output = json
-    region = {auth['region']}
-    aws_access_key_id = {auth['aws_access_key_id']}
-    aws_secret_access_key = {auth['aws_secret_access_key']}
-    """).strip())
+    auth = utils.auth()['plugins']['aws']
+    # set up aws iam profile
+    with open('plugins/aws/src/awsconfig', 'w') as stream:
+        stream.write(dedent(f"""
+        [default]
+        output = json
+        region = {auth['region']}
+        aws_access_key_id = {auth['aws_access_key_id']}
+        aws_secret_access_key = {auth['aws_secret_access_key']}
+        """).strip())
 
 
-with open(f'plugins/aws/src/aws.xml','w') as stream:
-    stream.write(dedent(f"""
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE aws [
-    <!ENTITY json SYSTEM "aws.json">
-    ]>
-    <aws>&json;</aws>""").strip())
+    with open(f'plugins/aws/src/aws.xml','w') as stream:
+        stream.write(dedent(f"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE aws [
+        <!ENTITY json SYSTEM "aws.json">
+        ]>
+        <aws>&json;</aws>""").strip())
 
 def runner(forward_dns: utils.DNSSet, reverse_dns: utils.DNSSet):
     """
