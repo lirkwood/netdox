@@ -1,6 +1,8 @@
 """
 The pluginmanager class initialises and exposes plugins as imported modules for use by Netdox and other plugins.
 
+When a plugin is loaded it's *init* method is called if present and it is import via importlib.import_module()
+
 Initially the default plugins were baked in features, but it became obvious that in order for Netdox to be useful anywhere outside of an internal context, it needed completely modular inputs at least.
 This was quickly expanded to allow custom code to be executed at multiple points of interest, which became the plugin stages.
 """
@@ -8,6 +10,7 @@ This was quickly expanded to allow custom code to be executed at multiple points
 from traceback import format_exc
 from types import ModuleType
 from typing import KeysView
+from utils import DNSSet
 import importlib, os
 
 
@@ -33,13 +36,13 @@ class pluginmanager:
     def __getitem__(self, key: str) -> ModuleType:
         """
         Returns a plugin by name.
-
-        :Returns:
-            The module object of the specified plugin
         """
         return self.pluginmap['all'][key]
 
     def __contains__(self, key: str) -> ModuleType:
+        """
+        Tests if a plugin with the given name has been loaded
+        """
         return self.pluginmap['all'].__contains__(key)
 
     def add(self, name: str, module: ModuleType, stage: str = 'none') -> None:
@@ -75,10 +78,17 @@ class pluginmanager:
                         stage = plugin.stage.lower()
                     else:
                         stage = 'none'
+                    
+                    if hasattr(plugin, 'init'):
+                        try:
+                            plugin.init()
+                        except Exception:
+                            print(f'[ERROR][plugins] Failed to initialise {pluginName}: \n{format_exc()}')
+                        
                     self.add(pluginName, plugin, stage)
-    
 
-    def runPlugin(self, name: str = '', plugin: ModuleType = None, forward_dns: dict = {}, reverse_dns: dict = {}) -> None:
+
+    def runPlugin(self, name: str = '', plugin: ModuleType = None, forward_dns: DNSSet = DNSSet('forward'), reverse_dns: DNSSet = DNSSet('reverse')) -> None:
         """
         Runs the *runner* function from a given plugin with forward and reverse dns as arguments
 
@@ -102,7 +112,7 @@ class pluginmanager:
         except Exception:
             print(f'[ERROR][pluginmanager] {plugin.__name__} threw an exception: \n{format_exc()}')
 
-    def runStage(self, stage: str, forward_dns: dict = {}, reverse_dns: dict = {}) -> None:
+    def runStage(self, stage: str, forward_dns: DNSSet = DNSSet('forward'), reverse_dns: DNSSet = DNSSet('reverse')) -> None:
         """
         Runs all the plugins in a stage
 
