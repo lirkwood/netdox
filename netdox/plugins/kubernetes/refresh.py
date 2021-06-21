@@ -205,7 +205,7 @@ def runner(forward_dns,_):
                 elif not forward_dns[domain].location:
                     if 'location' in auth[context]:
                         forward_dns[domain].location = auth[context]['location']
-                forward_dns[domain].link(appName, 'k8s_app')
+                forward_dns[domain].link(appName, 'Kubernetes')
                 
             c_workers = workers[context]
             for _, pod in app['pods'].items():

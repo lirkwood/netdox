@@ -156,7 +156,7 @@ async def fetchObjects(dns):
                 for record in dns:
                     if vm['mainIpAddress'] in record.ips:
                         vm['domains'].append(record.name)
-                        record.link(vm['uuid'], 'vm')
+                        record.link(vm['uuid'], 'XenOrchestra')
             else:
                 print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
                 del vm['mainIpAddress']
