@@ -202,7 +202,7 @@ def runner(forward_dns,_):
             for domain in app['domains']:
                 if domain not in forward_dns:
                     forward_dns.add(utils.DNSRecord(domain))
-                elif not forward_dns[domain].location:
+                if not forward_dns[domain].location:
                     if 'location' in auth[context]:
                         forward_dns[domain].location = auth[context]['location']
                 forward_dns[domain].link(appName, 'k8s_app')
