@@ -1,18 +1,25 @@
+from plugins.icinga import icinga_hosts
 from paramiko import client, AutoAddPolicy
 from textwrap import dedent
 from functools import wraps
 from typing import Tuple
-import utils
-
-icinga_hosts = utils.auth()['plugins']['icinga']
 
 ###################################
 # Abstract Functions / Decorators #
 ###################################
 
-def exec(cmd: str, host: str) -> Tuple[str, str]:
+def exec(cmd: str, host: str) -> str:
     """
     Executes a command on the host machine through SSH.
+
+    :Args:
+        cmd:
+            The command to execute on the remote machine
+        host:
+            The remote machine to execute the command on
+
+    :Returns:
+        The string(s) printed to stdout by this operation
     """
     sshclient = client.SSHClient()
     sshclient.set_missing_host_key_policy(AutoAddPolicy())
@@ -64,6 +71,21 @@ def setloc(func):
 def set_host(address: str, icinga: str = '', location: str = '', template: str = 'generic-host', display_name: str = '') -> str:
     """
     Creates a file on an Icinga host containing a host object definition with the given template and the given address.
+
+    :Args:
+        address:
+            The address to use for the monitor
+        icinga:
+            The fqdn of an Icinga instance to create this monitor in (if not present *location* is required)
+        location:
+            The location of the Icinga instance to use, if there is one configured (if not present *icinga* is required)
+        template:
+            The template to use for the monitor
+        display_name:
+            The display name to give the monitor
+
+    :Returns:
+        The string(s) printed to stdout by this operation
     """
     if not display_name: display_name = address
 
@@ -82,7 +104,18 @@ def set_host(address: str, icinga: str = '', location: str = '', template: str =
 @setloc
 def rm_host(address: str, icinga: str = '', location: str = '') -> str:
     """
-    Removes the generated monitor for a host with a specified address.
+    Deletes the file on an Icinga host containing the host object definition with the given address.
+
+    :Args:
+        address:
+            The address to look for
+        icinga:
+            The fqdn of an Icinga instance to create this monitor in (if not present *location* is required)
+        location:
+            The location of the Icinga instance to use, if there is one configured (if not present *icinga* is required)
+
+    :Returns:
+        The string(s) printed to stdout by this operation
     """
     cmd = f'rm -f /etc/icinga2/conf.d/hosts/generated/{address.replace(".","_")}.conf'
 
@@ -93,6 +126,12 @@ def rm_host(address: str, icinga: str = '', location: str = '') -> str:
 def reload(icinga: str = '', location: str = '') -> str:
     """
     Validates config files and reloads the Icinga2 systemd service.
+
+    :Args:
+        icinga:
+            The fqdn of an Icinga instance to create this monitor in (if not present *location* is required)
+        location:
+            The location of the Icinga instance to use, if there is one configured (if not present *icinga* is required)
     """
     cmd = f'icinga2 daemon -C && systemctl reload icinga2'
 
