@@ -1,3 +1,6 @@
+"""
+Reads the NAT dump from FortiGate and calls the pfSense node script.
+"""
 import re, json, utils, iptools, subprocess
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}).+?(?P<dest>(\d{1,3}\.){3}\d{1,3}).*')
