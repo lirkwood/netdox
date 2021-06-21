@@ -1,3 +1,11 @@
+"""
+DNS Refresh
+***********
+
+Provides a function which links records to their relevant XenOrchestra VMs and generates some documents about said VMs.
+
+This script is used during the refresh process to link DNS records to the VMs they resolve to, and to trigger the generation of a publication which describes all VMs, their hosts, and their host's pool.
+"""
 from plugins.xenorchestra import call, authenticate
 import asyncio, json
 import iptools, utils
@@ -20,6 +28,10 @@ def writeJson(data, name):
 async def fetchType(type: str):
     """
     Fetches all objects of a given type
+
+    :Args:
+        type:
+            The type of object to filter for
     """
     return (await call('xo.getAllObjects', {
     'filter': {
@@ -30,6 +42,10 @@ async def fetchType(type: str):
 async def fetchObj(uuid: str):
     """
     Fetches an object by UUID
+
+    :Args:
+        uuid:
+            The UUID of the object to return
     """
     return (await call('xo.getAllObjects', {
     'filter': {
@@ -38,6 +54,13 @@ async def fetchObj(uuid: str):
 
 
 async def fetchObjByFields(fieldmap: dict[str, str]):
+    """
+    Returns an object which matches the fieldmap dictionary
+
+    :Args:
+        fieldmap:
+            A dictionary of fields and the values to filter for
+    """
     return (await call('xo.getAllObjects', {
     'filter': fieldmap}))['result']
 
@@ -45,10 +68,18 @@ async def fetchObjByFields(fieldmap: dict[str, str]):
 # User functions #
 ##################
 
-def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+def runner(forward_dns: utils.DNSSet, _):
+    """
+    Links DNSRecords to the Kubernetes apps they resolve to, and generates the xo_* documents.
+
+    :Args:
+        forward_dns:
+            A forward DNS set
+        _:
+            Any object - not used
+    """
     # Generate XO Docs
-    vms, pools, hosts = asyncio.run(fetchObjects(forward_dns))
-    del pools, hosts
+    vms, _,_ = asyncio.run(fetchObjects(forward_dns))
     utils.xslt('plugins/xenorchestra/vms.xsl', 'plugins/xenorchestra/src/vms.xml')
     utils.xslt('plugins/xenorchestra/hosts.xsl', 'plugins/xenorchestra/src/hosts.xml')
     utils.xslt('plugins/xenorchestra/pools.xsl', 'plugins/xenorchestra/src/pools.xml')
@@ -58,9 +89,21 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     asyncio.run(template_map(vms))
 
 @authenticate
-async def fetchObjects(dns):
+async def fetchObjects(dns: utils.DNSSet):
     """
     Fetches info about pools, hosts, and VMs
+
+    :Args:
+        dns:
+            A forward DNS set
+    
+    :Returns:
+        Tuple[0]:
+            A dictionary of VMs
+        Tuple[1]:
+            A dictionary of Hosts
+        Tupe[2]:
+            A dictionary of host Pools
     """
     controllers = set()
     poolHosts = {}
@@ -114,7 +157,11 @@ async def fetchObjects(dns):
 @authenticate
 async def template_map(vms):
     """
-    Generates json with all vms/snapshots/templates
+    Generates a PSML file of all objects that can be used to create a VM with ``createVM``
+
+    :Args:
+        vms:
+            A dictionary of VMs
     """
     vmSource = {
         'vms': {},

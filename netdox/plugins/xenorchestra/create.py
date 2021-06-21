@@ -1,12 +1,27 @@
+"""
+Webhook Actions
+***************
+
+Provides some functions which parse and act upon the impulse sent by a PageSeeder webhook.
+
+Can be used to create a XenOrchestra VM.
+"""
+
 from plugins.xenorchestra import call, authenticate
 from plugins.xenorchestra.fetch import fetchObj
 import utils
 
 @utils.handle
 @authenticate
-async def createVM(uuid, name=None):
+async def createVM(uuid: str, name: bool = None):
     """
     Given the UUID of some VM-like object, creates a clone VM
+
+    :Args:
+        uuid:
+            The UUID of an object which can be cloned or used as a VM template
+        name:
+            (Optional) The name to give the new VM
     """
     info = await fetchObj(uuid)
     if len(info.keys()) > 1:

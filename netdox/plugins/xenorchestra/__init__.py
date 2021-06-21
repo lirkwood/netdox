@@ -1,9 +1,18 @@
+"""
+Used to read and modify the VMs managed by Xen Orchestra
+"""
 from textwrap import dedent
+from functools import wraps
 import os, json, random, websockets
 import utils
 stage = 'resource'
 
 def init():
+    """
+    Some initialisation for the plugin to work correctly
+
+    :meta private:
+    """
     global creds
     creds = utils.auth()['plugins']['xenorchestra']
     global url
@@ -25,9 +34,20 @@ def init():
 # Generic websocket interactions #
 ##################################
 
-async def call(method, params={}, notification=False):
+async def call(method: str, params: dict = {}, notification: bool = False) -> dict:
     """
     Makes a call with some given method and params, returns a JSON object
+
+    :Args:
+        method:
+            The RPC method to call
+        params:
+            A dictionary of parameters to call the method with
+        notification:
+            If true no response is expected and no ID is sent
+
+    :Returns:
+        The JSON returned by the server
     """
     if notification:
         await websocket.send(json.dumps({
@@ -50,6 +70,7 @@ def authenticate(func):
     """
     Decorator used to establish a WSS connection before the function runs
     """
+    @wraps(func)
     async def wrapper(*args, **kwargs):
         global websocket
         async with websockets.connect(url, max_size=3000000) as websocket:
@@ -62,9 +83,16 @@ def authenticate(func):
 
 global frames
 frames = {}
-async def reciever(id):
+async def reciever(id: int) -> dict:
     """
     Consumes responses sent by websocket server, returns the one with the specified ID.
+
+    :Args:
+        id:
+            The ID generated alongside the outgoing message which identifies the response message
+    
+    :Returns:
+        The JSON returned by the server
     """
     if id in frames:
         return frames[id]
