@@ -1,10 +1,26 @@
+"""
+Creating Records
+****************
+
+Provides some functions for creating DNS records in ActiveDirectory
+"""
 import re, json, subprocess
 import utils, iptools
 
 
 def create_forward(name: str, ip: str, zone: str, type: str):
     """
-    Schedules a DNS record for creation in ActiveDirectory
+    Schedules a forward DNS record for creation in ActiveDirectory
+
+    :Args:
+        name: str
+            Name for the DNS record
+        ip: str
+            IPv4 address / domain for the record to resolve to
+        zone: str
+            DNS zone to create the record in
+        type: str
+            DNS Record type (A/CNAME)
     """
     if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
         with open('src/forward.json') as stream:
@@ -32,7 +48,13 @@ def create_forward(name: str, ip: str, zone: str, type: str):
 
 def create_reverse(ip: str, value: str):
     """
-    Schedules a PTR record for creation in ActiveDirectory
+    Schedules a reverse DNS record for creation in ActiveDirectory
+
+    :Args:
+        ip: str
+            IPv4 address to use as the name for the record
+        value: str
+            Domain for this record to resolve to
     """
     if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
         with open('src/reverse.json', 'r') as dnsstream:

@@ -1,9 +1,24 @@
+"""
+Fetching data
+*************
+
+Used to read DNS records from ActiveDirectory.
+
+Reads directory of JSON files, each corresponding to a DNS zone, and generates DNSRecords from them.
+"""
+
 import os, json
 import iptools, utils
 
-def fetchDNS(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRecord]):
+def fetchDNS(forward: utils.DNSSet, reverse: utils.DNSSet):
     """
-	Returns tuple containing forward and reverse DNS records from ActiveDirectory
+	Iterates over each source JSON file and adds any DNSRecords found to the forward/reverse sets.
+
+    :Args:
+        forward: DNSSet
+            A forward DNSSet
+        reverse: DNSSet
+            A reverse DNSSet 
     """
     for file in fetchJson():
         with open(file, 'r') as stream:
@@ -26,6 +41,9 @@ def fetchDNS(forward: dict[str, utils.DNSRecord], reverse: dict[str, utils.DNSRe
 def fetchJson() -> os.DirEntry:
     """
     Generator which yields a json file containing some DNS records
+
+    :Yields:
+        A DirEntry pointing to a json file containing DNS records
     """
     for file in os.scandir("plugins/activedirectory/records/"):
         if file.name.endswith('.json'):
@@ -35,7 +53,13 @@ def fetchJson() -> os.DirEntry:
 @utils.handle
 def add_A(dns_set: utils.DNSSet, record: dict):
     """
-	Integrates one A record into a dns set from json returned by AD api
+	Integrates one A record into a dns set from json given by ActiveDirectory
+
+    :Args:
+        dns_set: DNSSet
+            A forward DNSSet to add a record to
+        record: dict
+            A JSON object describing a DNS A record
     """
     # Get name
     distinguished_name = record['DistinguishedName'].split(',')    #get hostname
@@ -57,7 +81,13 @@ def add_A(dns_set: utils.DNSSet, record: dict):
 @utils.handle
 def add_CNAME(dns_set: utils.DNSSet, record: dict):
     """
-	Integrates one CNAME record into a dns set from json returned by AD api
+	Integrates one CNAME record into a dns set from json given by ActiveDirectory
+
+    :Args:
+        dns_set: DNSSet
+            A forward DNSSet to add a record to
+        record: dict
+            A JSON object describing a DNS CNAME record
     """
     distinguished_name = record['DistinguishedName'].split(',')
     subdomain = distinguished_name[0].strip('DC=')
@@ -80,7 +110,13 @@ def add_CNAME(dns_set: utils.DNSSet, record: dict):
 @utils.handle
 def add_PTR(dns_set: utils.DNSSet, record: dict):
     """
-	Integrates one PTR record into a dns set from json returned by AD api
+	Integrates one PTR record into a dns set from json given by ActiveDirectory
+
+    :Args:
+        dns_set: DNSSet
+            A reverse DNSSet to add a record to
+        record: dict
+            A JSON object describing a DNS PTR record
     """
     zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order

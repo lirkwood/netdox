@@ -1,3 +1,9 @@
+"""
+Used to read and modify DNS records stored in ActiveDirectory.
+
+This plugin uses a shared storage location in order to pass information back and forth between the Netdox host and the ActiveDirectory DNS server.
+"""
+
 ## Runner
 from plugins.activedirectory.fetch import fetchDNS as runner
 stage = 'dns'
