@@ -1,2 +1,2 @@
-from plugins.cloudflare.cf_domains import main as runner
+from plugins.cloudflare.fetch import main as runner
 stage = 'dns'
