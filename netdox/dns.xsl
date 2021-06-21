@@ -32,7 +32,7 @@
 
                 <metadata>
                     <properties>
-                        <property name="template_version"     title="Template version"   value="5.3" />
+                        <property name="template_version"     title="Template version"   value="6.0" />
                     </properties>
                 </metadata>
 
@@ -109,16 +109,17 @@
                     </properties-fragment>
                     </xsl:for-each>
 
-                    <properties-fragment id="resources">
                     <xsl:for-each select="xpf:map[@key='resources']/xpf:array">
-                        <xsl:variable name="resource" select="@key"/>
+                        <xsl:variable name="plugin" select="@key"/>
                         <xsl:for-each select="xpf:string">
-                        <property name="{$resource}" title="Resource: {$resource}" datatype="xref">
+                    <properties-fragment id="resource_{position()}">
+                        <property name="resource" title="Resource" datatype="xref">
                             <xref frag="default" docid="_nd_{.}" />
                         </property>
+                        <property name="source" title="Source Plugin" value="{$plugin}"/>
+                    </properties-fragment>
                         </xsl:for-each>
                     </xsl:for-each>
-                    </properties-fragment>
                     
                     <properties-fragment id="subnets">
                     <xsl:for-each select="xpf:array[@key = 'subnets']/xpf:string">
