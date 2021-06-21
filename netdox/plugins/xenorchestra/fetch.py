@@ -1,12 +1,8 @@
-from requests.api import request
-import websockets, asyncio, random, json, re
+from plugins.xenorchestra import call, authenticate
+import asyncio, json
 import iptools, utils
 
 ## Some initialisation
-
-creds = utils.auth()['plugins']['xenorchestra']
-global url
-url = f"wss://{creds['host']}/api/"
 
 def writeJson(data, name):
     """
@@ -15,62 +11,6 @@ def writeJson(data, name):
     with open(f'plugins/xenorchestra/src/{name}.json', 'w') as stream:
         stream.write(json.dumps(data, indent=2))
     del data
-
-##################################
-# Generic websocket interactions #
-##################################
-
-async def call(method, params={}, notification=False):
-    """
-    Makes a call with some given method and params, returns a JSON object
-    """
-    if notification:
-        await websocket.send(json.dumps({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params
-        }))
-    else:
-        id = f"netdox-{random.randint(0, 99)}"
-        await websocket.send(json.dumps({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": id
-        }))
-        return await reciever(id)
-
-
-def authenticate(func):
-    """
-    Decorator used to establish a WSS connection before the function runs
-    """
-    async def wrapper(*args, **kwargs):
-        global websocket
-        async with websockets.connect(url, max_size=3000000) as websocket:
-            if 'error' in await call('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']}):
-                raise RuntimeError(f'Failed to sign in with user {creds["username"]}')
-            else:
-                return await func(*args, **kwargs)
-    return wrapper
-
-
-global frames
-frames = {}
-async def reciever(id):
-    """
-    Consumes responses sent by websocket server, returns the one with the specified ID.
-    """
-    if id in frames:
-        return frames[id]
-    async for message in websocket:
-        message = json.loads(message)
-        if 'id' not in message:
-            pass
-        elif message['id'] == id:
-            return message
-        else:
-            frames[message['id']] = message
 
 
 #########################
@@ -168,39 +108,6 @@ async def fetchObjects(dns):
     writeJson(hostVMs, 'residents')
 
     return vms, hosts, pools
-
-
-@utils.handle
-@authenticate
-async def createVM(uuid, name=None):
-    """
-    Given the UUID of some VM-like object, creates a clone VM
-    """
-    info = await fetchObj(uuid)
-    if len(info.keys()) > 1:
-        raise ValueError(f'Ambiguous UUID {uuid}')
-    else:
-
-        object = info[list(info)[0]]
-        if not name:
-            name = f"{object['name_label']} CLONE"
-        # if given
-        if object['type'] == 'VM' or object['type'] == 'VM-snapshot':
-            return await call('vm.clone', {
-                'id': uuid,
-                'name': name,
-                'full_copy': True
-            })
-
-        elif object['type'] == 'VM-template':
-            return await call('vm.create', {
-                'bootAfterCreate': True,
-                'template': uuid,
-                'name_label': name
-            })
-
-        else:
-            raise ValueError(f'Invalid template type {object["type"]}')
 
 
 @utils.handle
