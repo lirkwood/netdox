@@ -1,3 +1,12 @@
+"""
+Webhook Actions
+***************
+
+Provides some functions which parse and act upon the impulse sent by a PageSeeder webhook.
+
+Can be used to create or scale a Kubernetes application.
+"""
+
 from plugins.kubernetes import initContext
 from kubernetes.client.rest import ApiException
 from kubernetes import client
@@ -8,9 +17,18 @@ import json, yaml, re
 import pageseeder
 
 
-def app_action(uri, status):
+def app_action(uri: Union[str, int], status: str) -> Response:
     """
-    Delegates to downstream functions based on workflow status
+    Delegates to downstream functions based on the workflow status of the webhook impulse
+
+    :Args:
+        uri:
+            The URI of the document which triggered the webhook
+        status:
+            The workflow status of the document
+
+    :Returns:
+        A flask Response object
     """
     name = BeautifulSoup(pageseeder.get_fragment(uri, 'title'), features='xml').find('heading').string
     uriDetails = json.loads(pageseeder.get_uri(uri))
@@ -20,15 +38,23 @@ def app_action(uri, status):
     cluster = path[-2]
 
     if status == 'Approved':
-        create_app(name, cluster, uri)
+        return create_app(name, cluster, uri)
     elif status == 'Suspended':
-        scale_app(name, cluster, 0)
+        return scale_app(name, cluster, 0)
         
 
 # 2do: add replicas spec
 def create_app(name: str, cluster: str, uri: Union[str, int]):
     """
     Used to create apps from a combination of boilerplate yaml and properties from a PageSeeder document
+
+    :Args:
+        name:
+            The name to give the new app
+        cluster:
+            The cluster in which to create the new app
+        uri:
+            The URI of the document which triggered the webhook
     """
     ## Container info
     containers = []
@@ -83,13 +109,19 @@ def create_app(name: str, cluster: str, uri: Union[str, int]):
     else:
         container = containers[0]
         if container['project'] == 'psberlioz-simple':
-            create_simple(name, container, domains, cluster)
-
-    return Response(status=201)
+            return create_simple(name, container, domains, cluster)
 
 def scale_app(name: str, cluster: str, replicas: int):
     """
     Used to modify the number of replicas of an app
+
+    :Args:
+        name:
+            The name of the app to scale
+        cluster:
+            The cluster the app is running in
+        replicas:
+            The number of replicas to scale the app to
     """
     apiClient = initContext(cluster)
     api = client.AppsV1Api(apiClient)
@@ -103,6 +135,8 @@ def scale_app(name: str, cluster: str, replicas: int):
     api.patch_namespaced_deployment_scale(name = name, namespace = 'default', body = body)
     print(f'[INFO][kubernetes] Scaled {name} to {replicas} replicas')
 
+    return Response(status=200)
+
 
 ##########################
 # App specific functions #
@@ -111,6 +145,16 @@ def scale_app(name: str, cluster: str, replicas: int):
 def create_simple(name: str, container: dict, domains: list, cluster: str):
     """
     Downstream function for create_app if specified image ID is a berlioz simple site image
+
+    :Args:
+        name:
+            The name of the new Simple site instance
+        container:
+            Some details about the container to create
+        domains:
+            A list of domains which will resolve to this Simple site
+        cluster:
+            The cluster the Simple site should run in
     """
     apiClient = initContext(cluster)
 
@@ -140,7 +184,7 @@ def create_simple(name: str, container: dict, domains: list, cluster: str):
     except ApiException as e:
         depScale = api.read_namespaced_deployment_scale(name, namespace = 'default')
         if depScale.spec.replicas == 0:
-            scale_app(name, cluster, 1)
+            return scale_app(name, cluster, 1)
         else:
             raise e
     else:
@@ -153,6 +197,8 @@ def create_simple(name: str, container: dict, domains: list, cluster: str):
         api = client.ExtensionsV1beta1Api(apiClient)
         api.create_namespaced_ingress(body = ingress, namespace = 'default')
         print(f'[INFO][kubernetes] Created ingress for {name}')
+
+    return Response(status=201)
 
 if __name__ == '__main__':
     scale_app('netdox-test-simple', 'dev', 0)

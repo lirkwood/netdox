@@ -1,3 +1,13 @@
+"""
+DNS Refresh
+***********
+
+Provides a function which links records to their relevant Kubernetes apps and generates some documents about said apps.
+
+This script is used during the refresh process to link DNS records to their apps and to trigger the generation of a publication
+which describes all apps running from deployments in the configured Kubernetes clusters.
+"""
+
 from plugins.kubernetes import initContext
 from kubernetes import client
 from plugins import pluginmanager
@@ -6,6 +16,13 @@ import json, utils
 def getDeploymentDetails(namespace: str='default') -> dict[str, dict[str, str]]:
     """
     Maps deployments in a given namespace to their labels and pod template
+
+    :Args:
+        namespace:
+            (Optional) The namespace in which to search for deployments
+
+    :Returns:
+        A dictionary of all deployments in the namespace/context, their labels and the pod templates they define.
     """
     depDetails = {}
     api = client.AppsV1Api(apiClient)
@@ -44,6 +61,13 @@ def getDeploymentDetails(namespace: str='default') -> dict[str, dict[str, str]]:
 def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
     """
     Maps the digest of a pod's labels to the name of the pod and its host node
+
+    :Args:
+        namespace:
+            (Optional) The namespace in which to search for pods
+
+    :Returns:
+        A dictionary mapping pod names to the sha1 digest of their metadata labels
     """
     podsByLabel = {}
     api = client.CoreV1Api(apiClient)
@@ -65,6 +89,13 @@ def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
 def getServiceMatchLabels(namespace: str='default') -> dict[str, dict[str, str]]:
     """
     Maps a service in a given namespace to its match labels
+
+    :Args:
+        namespace:
+            (Optional) The namespace in which to search for services
+
+    :Returns:
+        A dictionary mapping service names to a dictionary of their selector labels
     """
     serviceMatchLabels = {}
     api = client.CoreV1Api(apiClient)
@@ -77,6 +108,13 @@ def getServiceMatchLabels(namespace: str='default') -> dict[str, dict[str, str]]
 def getServiceDomains(namespace: str='default') -> dict[str, set]:
     """
     Maps a service in a given namespace to any domains that resolve to it
+
+    :Args:
+        namespace:
+            (Optional) The namespace in which to search for services
+
+    :Returns:
+        A dictionary mapping service names to a list of domains that resolve to that service
     """
     serviceDomains = {}
     api = client.ExtensionsV1beta1Api(apiClient)
@@ -93,6 +131,9 @@ def getServiceDomains(namespace: str='default') -> dict[str, set]:
 def getWorkerAddresses() -> dict[str, dict[str, str]]:
     """
     Maps workers to a specified address type
+
+    :Returns:
+        A dictionary mapping worker node names to their addresses (domain name, ipv4, etc.)
     """
     workers = {}
     api = client.CoreV1Api(apiClient)
@@ -105,7 +146,17 @@ def getWorkerAddresses() -> dict[str, dict[str, str]]:
 
     return workers
 
-async def getWorkerVMs(workerAddrs: dict):
+async def getWorkerVMs(workerAddrs: dict) -> dict[str, str]:
+    """
+    Talks to the *xenorchestra* plugin in order to map worker names to the VMs they're running in.
+
+    :Args:
+        workerAddrs:
+            A dictionary like that which is returned by ``getWorkerAddresses``
+
+    :Returns:
+        A dictionary mapping worker names to their VM UUID
+    """
     from plugins.xenorchestra import xo_api
     VMs = await xo_api.authenticate(xo_api.fetchType)('VM')
     vmsByIP = {}
@@ -124,7 +175,16 @@ async def getWorkerVMs(workerAddrs: dict):
 
 def getApps(context: str, namespace: str='default') -> dict[str]:
     """
-    Returns a JSON object usable by apps.xsl
+    Returns a JSON object of apps in the format expected by apps.xsl
+
+    :Args:
+        context:
+            The context defined in ``authentication.json`` to perform all actions in.
+        namespace:
+            (Optional) The namespace to look for resources in (inherited by called functions)
+
+    :Returns:
+        A dictionary describing the apps running in this context/namespace
     """
     apps = {}
     global apiClient
@@ -189,7 +249,16 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     return apps
     
 
-def runner(forward_dns,_):
+def runner(forward_dns: utils.DNSSet,_):
+    """
+    Links DNSRecords to the Kubernetes apps they resolve to, and generates the k8s_* documents.
+
+    :Args:
+        forward_dns:
+            A forward DNS set
+        _:
+            Any object - not used
+    """
     auth = utils.auth()['plugins']['kubernetes']
     global pluginmaster
     pluginmaster = pluginmanager()
