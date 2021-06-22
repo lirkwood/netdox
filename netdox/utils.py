@@ -223,6 +223,9 @@ class DNSRecord:
 
     @property
     def destinations(self) -> dict:
+        """
+        Property: returns a dictionary of all outgoing links from this record.
+        """
         return (self.resources | {
             'public_ips': self.public_ips,
             'private_ips': self.private_ips,
@@ -235,21 +238,36 @@ class DNSRecord:
 
     @property
     def public_ips(self) -> list[str]:
+        """
+        Property: returns all IPs from this record that are outside of protected ranges.
+        """
         return list(set([ip for ip,_ in self._public_ips]))
 
     @property
     def private_ips(self) -> list[str]:
+        """
+        Property: returns all IPs from this record that are inside a protected range.
+        """
         return list(set([ip for ip,_ in self._private_ips]))
 
     @property
     def ips(self) -> list[str]:
+        """
+        Property: returns all IPs from this record.
+        """
         return list(set(self.public_ips + self.private_ips))
 
     @property
     def cnames(self) -> list[str]:
+        """
+        Property: returns all CNAMEs from this record.
+        """
         return list(set([cname for cname,_ in self._cnames]))
 
     def update(self):
+        """
+        Updates subnet and location data for this record.
+        """
         for ip in self.private_ips:
             self.subnets.add(iptools.sort(ip))
         if location_map:
@@ -288,11 +306,17 @@ class PTRRecord:
             raise ValueError('Must provide a valid name for ptr record (some IPv4)')
 
     def link(self, name, source):
+        """
+        Adds a link to a domain.
+        """
         if re.fullmatch(dns_name_pattern, name):
             self._ptr.add((name, source))
     
     @property
     def ptr(self):
+        """
+        Property: returns all domains from this record.
+        """
         return [ptr for ptr,_ in self._ptr]
     
     def discoverImpliedPTR(self, forward_dns: DNSSet):
@@ -302,6 +326,9 @@ class PTRRecord:
 
 
 class DNSSet:
+    """
+    Container class for DNSRecords or PTRRecords
+    """
     type: str
     _records: dict[str, Union[DNSRecord, PTRRecord]]
 
@@ -311,12 +338,21 @@ class DNSSet:
         self.type = type
         self._records = {}
 
+    def __repr__(self) -> str:
+        return f'{self.type.capitalize()} DNS set'
+
     @property
     def records(self):
+        """
+        Property: returns a list of DNSRecord/PTRRecord objects in this set.
+        """
         return list(self._records.values())
 
     @property
     def names(self):
+        """
+        Property: returns a list of all record names in this set.
+        """
         return list(self._records.keys())
 
     def __getitem__(self, key: str) -> Union[DNSRecord, PTRRecord]:
@@ -412,7 +448,7 @@ class JSONEncoder(json.JSONEncoder):
 # Miscellaneous convenience functions #
 #######################################
 
-def merge_records(dns1: DNSRecord, dns2: DNSRecord) -> DNSRecord:
+def merge_records(dns1: Union[DNSRecord, PTRRecord], dns2: Union[DNSRecord, PTRRecord]) -> Union[DNSRecord, PTRRecord]:
     """
     Merge of two DNSRecords or two PTRRecords
     """
@@ -439,7 +475,7 @@ def merge_records(dns1: DNSRecord, dns2: DNSRecord) -> DNSRecord:
         raise TypeError(f'Arguments be similar dns objects, not {type(dns1)}, {type(dns2)}')
 
 
-def xslt(xsl, src, out=None):
+def xslt(xsl: str, src: str, out: bool = None):
     """
     Runs some xslt using Saxon
     """

@@ -10,6 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import re
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../netdox'))
@@ -23,7 +24,7 @@ copyright = '2021, Linus Kirkwood'
 author = 'Linus Kirkwood'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+release = '1.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -62,24 +63,35 @@ html_static_path = ['../_static']
 # -- Autodoc configuration ---------------------------------------------------
 
 autodoc_member_order = 'bysource'
-autodoc_mock_imports = ['ps_api']
 add_module_names = False
 
 # -- Linkcode configuration --------------------------------------------------
 
-from re import search
 def linkcode_resolve(domain, info):
     if domain != 'py':
         return None
     if not info['module']:
         return None
+    
+    modulepath = info["module"].replace('.','/')
+    
+    if os.path.isfile(f'../netdox/{modulepath}.py'):
+        path = f'../netdox/{modulepath}.py'
+    elif os.path.isdir(f'../netdox/{modulepath}'):
+        path = f'../netdox/{modulepath}/__init__.py'
 
-    with open(f'../netdox/{info["module"]}.py', 'r', encoding='utf-8') as stream:
-        lines = stream.readlines()
+    try:
+        with open(path, 'r', encoding='utf-8') as stream:
+            lines = stream.readlines()
+            functionLine = None
+            for lineNum in range(len(lines)):
+                if re.search(rf'(def|class) {info["fullname"]}', lines[lineNum]):
+                    functionLine = lineNum + 1
+    except Exception as e:
+        print('Linkcode threw: ')
+        print(e)
+        print(info)
         functionLine = None
-        for lineNum in range(len(lines)):
-            if search(rf'(def|class) {info["fullname"]}', lines[lineNum]):
-                functionLine = lineNum + 1
 
     base = 'gitlab.allette.com.au/allette/devops/network-documentation/-/tree/master/netdox'
     if functionLine:

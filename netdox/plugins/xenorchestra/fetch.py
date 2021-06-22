@@ -1,12 +1,16 @@
-from requests.api import request
-import websockets, asyncio, random, json, re
+"""
+DNS Refresh
+***********
+
+Provides a function which links records to their relevant XenOrchestra VMs and generates some documents about said VMs.
+
+This script is used during the refresh process to link DNS records to the VMs they resolve to, and to trigger the generation of a publication which describes all VMs, their hosts, and their host's pool.
+"""
+from plugins.xenorchestra import call, authenticate
+import asyncio, json
 import iptools, utils
 
 ## Some initialisation
-
-creds = utils.auth()['plugins']['xenorchestra']
-global url
-url = f"wss://{creds['host']}/api/"
 
 def writeJson(data, name):
     """
@@ -16,62 +20,6 @@ def writeJson(data, name):
         stream.write(json.dumps(data, indent=2))
     del data
 
-##################################
-# Generic websocket interactions #
-##################################
-
-async def call(method, params={}, notification=False):
-    """
-    Makes a call with some given method and params, returns a JSON object
-    """
-    if notification:
-        await websocket.send(json.dumps({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params
-        }))
-    else:
-        id = f"netdox-{random.randint(0, 99)}"
-        await websocket.send(json.dumps({
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": id
-        }))
-        return await reciever(id)
-
-
-def authenticate(func):
-    """
-    Decorator used to establish a WSS connection before the function runs
-    """
-    async def wrapper(*args, **kwargs):
-        global websocket
-        async with websockets.connect(url, max_size=3000000) as websocket:
-            if 'error' in await call('session.signInWithPassword', {'email': creds['username'], 'password': creds['password']}):
-                raise RuntimeError(f'Failed to sign in with user {creds["username"]}')
-            else:
-                return await func(*args, **kwargs)
-    return wrapper
-
-
-global frames
-frames = {}
-async def reciever(id):
-    """
-    Consumes responses sent by websocket server, returns the one with the specified ID.
-    """
-    if id in frames:
-        return frames[id]
-    async for message in websocket:
-        message = json.loads(message)
-        if 'id' not in message:
-            pass
-        elif message['id'] == id:
-            return message
-        else:
-            frames[message['id']] = message
-
 
 #########################
 # Convenience functions #
@@ -80,6 +28,10 @@ async def reciever(id):
 async def fetchType(type: str):
     """
     Fetches all objects of a given type
+
+    :Args:
+        type:
+            The type of object to filter for
     """
     return (await call('xo.getAllObjects', {
     'filter': {
@@ -90,6 +42,10 @@ async def fetchType(type: str):
 async def fetchObj(uuid: str):
     """
     Fetches an object by UUID
+
+    :Args:
+        uuid:
+            The UUID of the object to return
     """
     return (await call('xo.getAllObjects', {
     'filter': {
@@ -98,6 +54,13 @@ async def fetchObj(uuid: str):
 
 
 async def fetchObjByFields(fieldmap: dict[str, str]):
+    """
+    Returns an object which matches the fieldmap dictionary
+
+    :Args:
+        fieldmap:
+            A dictionary of fields and the values to filter for
+    """
     return (await call('xo.getAllObjects', {
     'filter': fieldmap}))['result']
 
@@ -105,10 +68,18 @@ async def fetchObjByFields(fieldmap: dict[str, str]):
 # User functions #
 ##################
 
-def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+def runner(forward_dns: utils.DNSSet, _):
+    """
+    Links DNSRecords to the Kubernetes apps they resolve to, and generates the xo_* documents.
+
+    :Args:
+        forward_dns:
+            A forward DNS set
+        _:
+            Any object - not used
+    """
     # Generate XO Docs
-    vms, pools, hosts = asyncio.run(fetchObjects(forward_dns))
-    del pools, hosts
+    vms, _,_ = asyncio.run(fetchObjects(forward_dns))
     utils.xslt('plugins/xenorchestra/vms.xsl', 'plugins/xenorchestra/src/vms.xml')
     utils.xslt('plugins/xenorchestra/hosts.xsl', 'plugins/xenorchestra/src/hosts.xml')
     utils.xslt('plugins/xenorchestra/pools.xsl', 'plugins/xenorchestra/src/pools.xml')
@@ -118,9 +89,21 @@ def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils
     asyncio.run(template_map(vms))
 
 @authenticate
-async def fetchObjects(dns):
+async def fetchObjects(dns: utils.DNSSet):
     """
     Fetches info about pools, hosts, and VMs
+
+    :Args:
+        dns:
+            A forward DNS set
+    
+    :Returns:
+        Tuple[0]:
+            A dictionary of VMs
+        Tuple[1]:
+            A dictionary of Hosts
+        Tupe[2]:
+            A dictionary of host Pools
     """
     controllers = set()
     poolHosts = {}
@@ -156,7 +139,7 @@ async def fetchObjects(dns):
                 for record in dns:
                     if vm['mainIpAddress'] in record.ips:
                         vm['domains'].append(record.name)
-                        record.link(vm['uuid'], 'vm')
+                        record.link(vm['uuid'], 'XenOrchestra')
             else:
                 print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
                 del vm['mainIpAddress']
@@ -172,42 +155,13 @@ async def fetchObjects(dns):
 
 @utils.handle
 @authenticate
-async def createVM(uuid, name=None):
-    """
-    Given the UUID of some VM-like object, creates a clone VM
-    """
-    info = await fetchObj(uuid)
-    if len(info.keys()) > 1:
-        raise ValueError(f'Ambiguous UUID {uuid}')
-    else:
-
-        object = info[list(info)[0]]
-        if not name:
-            name = f"{object['name_label']} CLONE"
-        # if given
-        if object['type'] == 'VM' or object['type'] == 'VM-snapshot':
-            return await call('vm.clone', {
-                'id': uuid,
-                'name': name,
-                'full_copy': True
-            })
-
-        elif object['type'] == 'VM-template':
-            return await call('vm.create', {
-                'bootAfterCreate': True,
-                'template': uuid,
-                'name_label': name
-            })
-
-        else:
-            raise ValueError(f'Invalid template type {object["type"]}')
-
-
-@utils.handle
-@authenticate
 async def template_map(vms):
     """
-    Generates json with all vms/snapshots/templates
+    Generates a PSML file of all objects that can be used to create a VM with ``createVM``
+
+    :Args:
+        vms:
+            A dictionary of VMs
     """
     vmSource = {
         'vms': {},

@@ -1,9 +1,23 @@
+"""
+Fetching data
+*************
+
+Used to read DNS records from CloudFlare.
+
+Requests all managed DNS zones and then all records in each zone.
+"""
 import json, requests
 import utils
 
 def main(forward: utils.DNSSet, reverse: utils.DNSSet):
     """
-    Returns tuple containing forward and reverse DNS records from Cloudflare
+    Reads all DNS records from CloudFlare and adds them to forward/reverse
+
+	:Args:
+		forward: DNSSet
+			A forward DNS set
+		reverse: DNSSet
+			A reverse DNS set
     """
     init()
     for id in fetch_zones():
@@ -20,6 +34,9 @@ def main(forward: utils.DNSSet, reverse: utils.DNSSet):
 
 
 def init():
+    """
+    Defines some global variables for usage in the plugin
+    """
     global base
     base = "https://api.cloudflare.com/client/v4/"
 
@@ -33,6 +50,9 @@ def init():
 def fetch_zones():
     """
     Generator which returns one zone ID
+
+    :Yields:
+        The ID of a DNS zone in CloudFlare
     """
     service = "zones"
     response = requests.get(base+service, headers=header).text
@@ -44,7 +64,15 @@ def fetch_zones():
 @utils.handle
 def add_A(dns_set: utils.DNSSet, record: dict):
     """
-    Integrates one A record into a dns set from json returned by Cloudflare api
+    Integrates one A record into a dns set from json returned by DNSME api
+
+    :Args:
+        dns_set: DNSSet
+            A forward DNS set
+        record: dict
+            Some JSON describing a DNS record
+        root: str
+            The root domain the record comes from
     """
     fqdn = record['name'].lower()
     root = record['zone_name']
@@ -57,7 +85,15 @@ def add_A(dns_set: utils.DNSSet, record: dict):
 @utils.handle
 def add_CNAME(dns_set: utils.DNSSet, record: dict):
     """
-    Integrates one CNAME record into a dns set from json returned by Cloudflare api
+    Integrates one CNAME record into a dns set from json returned by CloudFlare api
+
+    :Args:
+        dns_set: DNSSet
+            A forward DNS set
+        record: dict
+            Some JSON describing a DNS record
+        root: str
+            The root domain the record comes from
     """
     fqdn = record['name'].lower()
     root = record['zone_name']
@@ -70,7 +106,7 @@ def add_CNAME(dns_set: utils.DNSSet, record: dict):
 @utils.handle
 def add_PTR(dns_set: utils.DNSSet, record: dict):
     """
-    Integrates one PTR record into a dns set from json returned by Cloudflare api
+    Not Implemented
     """
     # Not implemented - Cloudflare recommends against using PTR outside of PTR zones
 

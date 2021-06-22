@@ -1,2 +1,5 @@
-from plugins.nat.nat_inf import runner
+"""
+Used to retrieve NAT information from FortiGate and pfSense
+"""
+from plugins.nat.fetch import runner
 stage = 'resource'

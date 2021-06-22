@@ -5,7 +5,6 @@ Utility functions
 
 .. automodule:: utils
     :members:
-    :exclude-members: critical, handle
+    :exclude-members: handle
 
-    .. autodecorator:: utils.critical
     .. autodecorator:: utils.handle
