@@ -157,8 +157,8 @@ async def getWorkerVMs(workerAddrs: dict) -> dict[str, str]:
     :Returns:
         A dictionary mapping worker names to their VM UUID
     """
-    from plugins.xenorchestra import xo_api
-    VMs = await xo_api.authenticate(xo_api.fetchType)('VM')
+    from plugins.xenorchestra import fetch as xo
+    VMs = await xo.authenticate(xo.fetchType)('VM')
     vmsByIP = {}
     for uuid, vm in VMs.items():
         if '0/ipv4/0' in vm['addresses']:
@@ -249,7 +249,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     return apps
     
 
-def runner(forward_dns: utils.DNSSet,_):
+def runner(forward_dns: utils.DNSSet,*_):
     """
     Links DNSRecords to the Kubernetes apps they resolve to, and generates the k8s_* documents.
 

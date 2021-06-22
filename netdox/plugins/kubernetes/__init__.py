@@ -4,7 +4,7 @@ Used to read and modify the deployments running on the configured clusters.
 from kubernetes.client import ApiClient
 from kubernetes import config
 from textwrap import dedent
-import os
+import os, yaml
 import utils
 stage = 'resource'
 
@@ -45,39 +45,36 @@ def init():
 
     auth = utils.auth()['plugins']['kubernetes']
     with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
-        clusters = ''
-        users = ''
-        contexts = ''
-        for context in auth:
-            clusters += f"""
-            - cluster:
-                    server: {auth[context]['server']}/k8s/clusters/{auth[context]['clusterId']}
-                name: {context}"""
+        clusters = []
+        users = []
+        contexts = []
+        for contextName, details in auth.items():
+            clusters.append({
+                'cluster': {'server': f"{details['server']}/k8s/clusters/{details['clusterId']}"},
+                'name': contextName
+            })
 
-            users += f"""
-            - name: {context}
-                user:
-                    token: {auth[context]['token']}
-            """
+            users.append({
+                'name': contextName,
+                'user': {'token': details['token']}
+            })
 
-            contexts += f"""
-            - context:
-                cluster: {context}
-                    user: {context}
-                    name: {context}
-            """
+            contexts.append({
+                'context': {
+                    'cluster': contextName,
+                    'user': contextName
+                },
+                'name': contextName
+            })
 
-            current = context
-
-            stream.write(dedent(f"""
-            apiVersion: v1
-            Kind: Config
-            current-context: {current}
-            preferences: {{}}
-            clusters: {clusters}
-            users: {users}
-            contexts: {contexts}
-            """))
+        stream.write(yaml.dump({
+        'apiVersion': 'v1',
+        'Kind': 'Config',
+        'current-context': list(auth)[0],
+        'clusters': clusters,
+        'users': users,
+        'contexts': contexts
+        }))
 
     for type in ('workers', 'apps'):
         with open(f'plugins/kubernetes/src/{type}.xml', 'w') as stream:
