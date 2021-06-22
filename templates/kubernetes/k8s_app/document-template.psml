@@ -1,8 +1,19 @@
-<document level="portable" type="k8s_app">
+<document level="portable" type="k8s_app" xmlns:t="http://pageseeder.com/psml/template">
+  
+    <t:fragment type="container" title="Container">
+        <t:description>Adds a container to the app</t:description>
+        <properties-fragment id="container">
+            <property name="container" title="Container Name" value="" />
+            <property name="image" title="Image ID" value="" />
+            <property name="pvc" title="Persistent Volume Claim" value="" />
+            <property name="mount_path" title="Path in Container" value="" />
+            <property name="sub_path" title="Path in PVC" value="" />
+        </properties-fragment>
+    </t:fragment>
 
     <metadata>
         <properties>
-            <property name="template_version" title="Template version" value="2.1" />
+            <property name="template_version" title="Template version" value="2.2" />
         </properties>
     </metadata>
 
@@ -13,14 +24,6 @@
     </section>
 
     <section id="template" title="Pod Template">
-
-        <properties-fragment id="container_1">
-            <property name="container" title="Container Name" value="" />
-            <property name="image" title="Image ID" value="" />
-            <property name="pvc" title="Persistent Volume Claim" value="" />
-            <property name="mount_path" title="Path in Container" value="" />
-            <property name="sub_path" title="Path in PVC" value="" />
-        </properties-fragment>
 
         <properties-fragment id="domains">
             <property name="domain" title="Domain" datatype="xref" />

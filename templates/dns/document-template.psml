@@ -2,9 +2,37 @@
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="5.3" />
+            <property name="template_version"     title="Template version"   value="6.0" />
         </properties>
     </metadata>
+  
+    <t:fragment type="destination" title="Private IP">
+      <properties-fragment>
+       <property name="ipv4" title="Private IP" datatype="xref"/>
+       <property name="source" title="Source Plugin" value=""/>
+     </properties-fragment>
+    </t:fragment>
+  
+    <t:fragment type="destination" title="Public IP">
+      <properties-fragment>
+       <property name="ipv4" title="Public IP" datatype="xref"/>
+       <property name="source" title="Source Plugin" value=""/>
+     </properties-fragment>
+    </t:fragment>
+  
+    <t:fragment type="destination" title="CNAME">
+      <properties-fragment>
+       <property name="cname" title="CNAME" datatype="xref"/>
+       <property name="source" title="Source Plugin" value=""/>
+     </properties-fragment>
+    </t:fragment>
+  
+    <t:fragment type="destination" title="Resource">
+     <properties-fragment>
+       <property name="resource" title="Resource" datatype="xref" />
+       <property name="source" title="Source Plugin" value=""/>
+     </properties-fragment>
+    </t:fragment>
 
     <section id="title">
       <fragment xmlns:t="http://pageseeder.com/psml/template" id="title">
@@ -26,24 +54,6 @@
    </section>
   
    <section id="dest" title="Destinations">
-      <properties-fragment id="private_ip_0">
-         <property name="ipv4" title="Private IP" datatype="xref"/>
-         <property name="source" title="Source Plugin" value=""/>
-     </properties-fragment>
-      <properties-fragment id="public_ip_0">
-         <property name="ipv4" title="Public IP" datatype="xref"/>
-         <property name="source" title="Source Plugin" value=""/>
-     </properties-fragment>
-      <properties-fragment id="cname_0">
-         <property name="cname" title="CNAME" datatype="xref"/>
-         <property name="source" title="Source Plugin" value=""/>
-     </properties-fragment>
-     
-     <properties-fragment id="resources">
-       <property name="k8s_app" title="Resource: k8s_app" datatype="xref" />
-       <property name="xo_vm" title="Resource: xo_vm" datatype="xref" />
-       <property name="aws_ec2" title="Resource: aws_ec2" datatype="xref" />
-     </properties-fragment>
      
       <properties-fragment id="subnets" xmlns:t="http://pageseeder.com/psml/template">
          <property name="subnet" title="Subnet" value=""/>

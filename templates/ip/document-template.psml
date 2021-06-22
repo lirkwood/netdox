@@ -2,10 +2,17 @@
 
   <metadata>
     <properties>
-      <property name="template_version"     title="Template version"   value="2.2" />
+      <property name="template_version"     title="Template version"   value="3.0" />
     </properties>
   </metadata>
-
+  
+  <t:fragment type="destination" title="PTR">
+    <properties-fragment id="reversedns">
+      <property name="ptr" title="PTR Record" datatype="xref"/>
+      <property name="source" title="Source Plugin" value=""/>
+    </properties-fragment>
+  </t:fragment>
+  
   <section id="title">
     <fragment id="title">
       <heading level="2">IP Address</heading>
@@ -20,11 +27,6 @@
       <property name="subnet"               title="subnet"          value="" />
       <property name="location"               title="Location"          value="" /> 
       <property name="nat" title="NAT Destination" datatype="xref"/>
-    </properties-fragment>
-
-    <properties-fragment id="reversedns">
-      <property name="ptr" title="PTR Record" datatype="xref"/>
-      <property name="source" title="Source Plugin" value=""/>
     </properties-fragment>
     
     <properties-fragment id="for-search" labels="s-hide-content">
