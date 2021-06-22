@@ -1,11 +1,19 @@
 """
-Reads the NAT dump from FortiGate and calls the pfSense node script.
+Fetching data
+*************
 """
 import re, json, utils, iptools, subprocess
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}).+?(?P<dest>(\d{1,3}\.){3}\d{1,3}).*')
 
-def runner(forward_dns: dict[str, utils.DNSRecord], reverse_dns: dict[str, utils.DNSRecord]):
+def runner(forward_dns: dict[str, utils.DNSRecord], *_):
+    """
+    Reads the NAT dump from FortiGate and calls the pfSense node script.
+
+    :Args:
+        forward_dns:
+            A forward DNS set
+    """
     # Gather FortiGate NAT
     with open('src/nat.txt','r') as stream:
         natDict = {}
