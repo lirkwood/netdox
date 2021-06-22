@@ -60,10 +60,10 @@
         <fragment id="stale_title">
             <heading level="2">Stale DNS records</heading>
         </fragment>
-    <xsl:for-each select="$review//xpf:array[@key = 'stale']/xpf:string">
+    <xsl:for-each select="$review//xpf:map[@key = 'stale']/xpf:string">
         <properties-fragment id="stale_{position()}">
-            <property name="page" title="Webpage DNS Record" datatype="xref">
-                <xref frag="default" reversetitle="Status Update" docid="_nd_{translate(@key, '.', '_')}" />
+            <property name="record" title="DNS Record" datatype="xref">
+                <xref frag="default" reversetitle="Status Update" uriid="{@key}" />
             </property>
             <property name="expiry" title="Expiry Date" value="{.}" />
         </properties-fragment>
