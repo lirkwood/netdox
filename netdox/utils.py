@@ -105,6 +105,8 @@ def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
         for ip in ip_set:
             if not iptools.valid_ip(ip):
                 raise ValueError(f'Invalid IP in set: {ip}')
+    else:
+        raise TypeError(f'IP set must be one of: str, Iterable[str]; Not {type(ip_set)}')
 
     # sort every declared subnet that matches one of ips by mask size
     matches = {}
@@ -144,7 +146,7 @@ class DNSRecord:
     root: str
     location: str
 
-    def __init__(self, name: str=None, root: str=None):
+    def __init__(self, name: str, root: str = None):
         if re.fullmatch(dns_name_pattern, name):
             self.name = name.lower()
             if root: 
