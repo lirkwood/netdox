@@ -22,7 +22,7 @@
             <document level="portable" type="k8s_app">
 
                 <documentinfo>
-                    <uri title="k8s_app: {@key}" docid="_nd_{@key}" />
+                    <uri title="k8s_app: {@key}" docid="_nd_{$context}_{@key}" />
                 </documentinfo>
 
                 <metadata>
