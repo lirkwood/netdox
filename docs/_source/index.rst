@@ -39,7 +39,7 @@ Furthermore, this tracking of IP address usage means it is trivial to capture th
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    config.rst
    utils.rst
