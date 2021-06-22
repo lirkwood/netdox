@@ -310,6 +310,18 @@ class PSMLTranslator(SphinxTranslator):
         
     ## Emphasis/Inline ##
 
+    # Block quote
+    def visit_block_quote(self, node: nodes.Node) -> None:
+        if self.in_textelem:
+            self.depart_textelem()
+        self.indent += 1
+        self.visit_paragraph()
+
+    
+    def depart_block_quote(self, node: nodes.Node) -> None:
+        self.indent -= 1
+        self.depart_paragraph()
+
     # Bold
     def visit_strong(self, node: nodes.Node = None) -> None:
         self.body += '<bold>'
