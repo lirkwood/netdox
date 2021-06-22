@@ -1,4 +1,9 @@
-from plugins.icinga import icinga_hosts
+"""
+API Functions
+*************
+
+Provides functions for interacting with the Icinga API and a class for managing Netdox-generated monitors.
+"""
 from plugins.icinga.ssh import set_host, rm_host, reload
 from os import rename, mkdir
 from shutil import rmtree
@@ -23,7 +28,10 @@ def fetchType(type: str, icinga_host: str) -> dict:
     :Returns:
         The JSON returned by the server
     """
-    auth = icinga_hosts[icinga_host]
+    try:
+        auth = utils.auth()['plugins']['icinga'][icinga_host]
+    except KeyError:
+        raise ValueError(f'Unrecognised Icinga host: {icinga_host}')
     r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(auth["username"], auth["password"]), verify=False)
     jsondata = json.loads(r.text)
     return jsondata
@@ -41,7 +49,10 @@ def fetchTemplates(type: str, icinga_host: str) -> dict:
     :Returns:
         The JSON returned by the server
     """ 
-    auth = icinga_hosts[icinga_host]
+    try:
+        auth = utils.auth()['plugins']['icinga'][icinga_host]
+    except KeyError:
+        raise ValueError(f'Unrecognised Icinga host: {icinga_host}')
     r = requests.get(f'https://{icinga_host}:5665/v1/templates/{type}', auth=(auth['username'], auth['password']), verify=False)
     jsondata = json.loads(r.text)
     return jsondata
@@ -50,20 +61,20 @@ def fetchTemplates(type: str, icinga_host: str) -> dict:
 # Main plugin functions #
 #########################
 
-global manual, generated
-manual, generated = {}, {}
-
-def objectsByDomain() -> Tuple[dict, dict]:
+def objectsByDomain(icingas: list[str]) -> Tuple[dict, dict]:
     """
     Returns a map of Icinga host objects to their services
+
+    :Args:
+        icingas:
+            A list of Icinga instance endpoints to query
 
     :Returns:
         A dictionary of the services monitoring each address, sorted by Icinga instance
     """
-    global manual, generated
-    for icinga in icinga_hosts:
+    manual, generated = {}, {}
+    for icinga in icingas:
         manual[icinga] = {}
-        generated[icinga] = {}
 
         hosts = fetchType('hosts', icinga)
         services = fetchType('services', icinga)
@@ -82,164 +93,167 @@ def objectsByDomain() -> Tuple[dict, dict]:
             if host['attrs']['groups'] == ['generated']:
                 group = generated
             else:
-                group = manual
+                group = manual[icinga]
 
-            if addr not in group[icinga]:
-                group[icinga][addr] = {
+            if addr not in group:
+                group[addr] = {
+                    "icinga": icinga,
                     "templates": host['attrs']['templates'],
                     "services": [host['attrs']['check_command']],
                     "display": name
                 }
                 if name in hostServices:
-                    group[icinga][addr]['services'] += hostServices[name]
+                    group[addr]['services'] += hostServices[name]
                 # remove top template; should be specific to host
-                if group[icinga][addr]['templates'][0] == name:
-                    del group[icinga][addr]['templates'][0]
-                else:
-                    # remove this
-                    print(f'[WARNING][icinga] Unexpected behaviour: Top level template has name {group[icinga][addr][0]} for host {name}')
+                del group[addr]['templates'][0]
             else:
                 print(f'[WARNING][icinga] Duplicate monitor for {name} in {icinga}')
     return manual, generated
 
-def lookupManual(dns: utils.DNSRecord) -> bool:
+class MonitorManager():
     """
-    Tests if a domain is manually monitored
-
-    :Args:
-        dns:
-            A DNS record
-    
-    :Returns:
-        True if there is a manually specified monitor on the DNS record name
+    Manages the Icinga monitors created by Netdox
     """
-    global manual
-    manual_monitor = False
-    for selector in [dns.name] + list(dns.ips):
-        for icinga_host in manual:
-            # if has a manually created monitor, just load info
-            if selector in manual[icinga_host]:
-                manual_monitor = True
-                if dns.icinga:
-                    print(f'[WARNING][icinga] {dns.name} has duplicate manual monitors in {icinga_host}')
-                dns.icinga = manual[icinga_host][selector]
+    icingas: list[str]
+    manual: dict = {}
+    generated: dict = {}
 
-    return manual_monitor
+    def __init__(self) -> None:
+        self.icingas = dict(utils.auth()['plugins']['icinga'])
 
+        self.locationIcingas = {location: None for location in list(utils.location_map)}
+        for icinga, details in self.icingas.items():
+            icingaLocations = details['locations']
+            for location in icingaLocations:
+                self.locationIcingas[location] = icinga
 
-def validateTemplate(dns: utils.DNSRecord, icinga_host: str) -> bool:
-    """
-    Validates the template being used by the generated monitor for a dns record against its role, modifies if necessary.
+        self.refreshMonitorInfo()
 
-    :Args:
-        dns:
-            A DNS record
-        icinga_host:
-            The Icinga instance to query
+    def refreshMonitorInfo(self) -> None:
+        """
+        Updates the stored monitor details
+        """
+        self.manual, self.generated = objectsByDomain(self.icingas)
 
-    :Returns:
-        True if the generated monitor on the DNS record name already matches the configured role. False otherwise.
-    """
-    global generated
-    current = generated[icinga_host][dns.name]['templates'][0]
-    try:
-        desired = utils.config[dns.role]['template']
-    except KeyError:
-        return True
+    def manualMonitor(self, dns: utils.DNSRecord) -> bool:
+        """
+        Tests if a domain or any of its IPs are manually monitored
 
-    if dns.role != 'unmonitored' and desired != current:
-        set_host(dns.name, icinga = icinga_host, template = utils.config[dns.role]['template'])
-
-    elif dns.role == 'unmonitored':
-        rm_host(dns.name, icinga = icinga_host)
-    
-    else:
-        return True
-    return False
-
-
-def dnsLookup(dns: utils.DNSRecord) -> bool:
-    """
-    Add details of any Icinga objects monitoring the host a record resolves to (through name, IP, or CNAME).
-    If the monitoring is managed by Netdox, validate current template against the record's role.
-    If the validation fails, the template will be updated and the function will return False. The record will not be changed.
-    If the record is not currently monitored, one will be applied and the function will return False. The record will not be changed.
-
-    :Args:
-        dns:
-            A DNS record
-
-    :Returns:
-        True if the Icinga monitor on the DNS record name is already correct. False otherwise.
-    """ 
-    manual_monitor = lookupManual(dns)
-    for icinga_host in generated:
-        if dns.name in generated[icinga_host]:
-            if manual_monitor:
-                print(f'[WARNING][icinga] {dns.name} has manual and generated monitor object. Removing generated object...')
-                rm_host(dns.name, icinga = icinga_host)
-            else:
-                # if template already valid, load service info
-                if validateTemplate(dns, icinga_host):
-                    if dns.icinga:
-                        print(f'[WARNING][icinga] {dns.name} has duplicate generated monitors')
-                    dns.icinga = generated[icinga_host][dns.name]
-                else:
-                    return False
-
-    # if has no monitor, assign one
-    if not dns.icinga and dns.location and 'template' in utils.config[dns.role]:
-        if dns.role != 'unmonitored':
-            try:
-                set_host(dns.name, location = dns.location, template = utils.config[dns.role]['template'])
-            except ValueError:
-                pass
-        else:
-            return True
+        :Args:
+            dns:
+                A DNS record
+        
+        :Returns:
+            True if monitored, False otherwise
+        """
+        for selector in [dns.name] + list(dns.ips):
+            for icinga_host in self.icingas:
+                # if has a manually created monitor, just load info
+                if selector in self.manual[icinga_host]:
+                    return True
         return False
 
-    return True
+    def validateRecord(self, record: utils.DNSRecord) -> bool:
+        """
+        Validates the current monitor on a DNS record. Modifies if necessary.
 
+        :Args:
+            record:
+                A DNS record to validate the monitoring status of
 
-def setServices(dns_set: list[utils.DNSRecord]) -> Tuple[list[utils.DNSRecord], list[utils.DNSRecord]]:
-    """
-    Iterate over every record in the DNS and set the correct monitors for it, then import the monitoring information into the record.
+        :Returns:
+            True if the monitor on the record was already valid. False otherwise.
+        """
+        if (self.manualMonitor(record) or
+            'template' not in utils.config[record.role] or
+            utils.config[record.role]['template'] == 'None'):
+            
+            if record.name in self.generated:
+                rm_host(record.name, icinga = self.generated[record.name]['icinga'])
+                return False
 
-    :Args:
-        dns_set:
-            A list of DNS records
-
-    :Returns:
-        Tuple[0]:
-            A list of DNS records which have valid Icinga monitors
-        Tuple[1]:
-            The complement of Tuple[0]; A list of DNS records which have/had invalid monitors.
-    """
-    # populate global vars generated and manual
-    objectsByDomain()
-    valid = []
-    invalid = []
-    for record in dns_set:
-        if not hasattr(record, 'icinga'):
-            setattr(record, 'icinga', {})
-
-        # search icinga for objects with address == domain (or any ip for that domain)
-        # if found object matches desired template, valid
-        if dnsLookup(record):
-            valid.append(record)
         else:
-            invalid.append(record)
+            if record.location and self.locationIcingas[record.location] is not None:
+                if record.name in self.generated:
+                    if self.generated[record.name]['templates'][0] != utils.config[record.role]['template']:
+                        set_host(record.name, location = record.location, template = utils.config[record.role]['template'])
+                        return False
+                else:
+                    set_host(record.name, location = record.location, template = utils.config[record.role]['template'])
+                    return False
 
-    # reload icinga services to update information coming from api
-    for icinga in icinga_hosts:
-        reload(icinga=icinga)
+        return True
 
-    # if some objects had invalid monitors, retest using new data.
-    return valid, invalid
+    def validateRecordSet(self, record_set: list[utils.DNSRecord]) -> list[utils.DNSRecord]:
+        """
+        Calls validateRecord on each record in a given set, and reloads the relevant Icinga if invalid.
+
+        :Args:
+            record_set:
+                An iterable of DNSRecords to validate
+            
+        :Returns:
+            A list of DNSRecords which had invalid monitors.
+        """
+        invalid = []
+        needsReload = set()
+        for record in record_set:
+            if self.validateRecord(record):
+                if record.name in self.generated:
+                    setattr(record, 'icinga', self.generated[record.name])
+                
+                else:
+                    for icinga in self.icingas:
+                        if record.name in self.manual[icinga]:
+                            setattr(record, 'icinga', self.manual[icinga][record.name])
+            else:
+                invalid.append(record)
+                needsReload.add(self.locationIcingas[record.location])
+
+        for icinga in needsReload:
+            reload(icinga = icinga)
+        
+        return invalid
+
+    def validateDNSSet(self, dns_set: utils.DNSSet) -> None:
+        """
+        Validates the Icinga monitors of every record in the set, and modifies them to be valid if necessary.
+
+        :Args:
+            dns_set:
+                A forward DNSSet
+        """
+        tries = 0
+        invalid = list(dns_set)
+        while tries < 2:
+            if tries:
+                self.refreshMonitorInfo()
+            tries += 1
+            invalid = self.validateRecordSet(invalid)
+        
+        if invalid:
+            print(f'[WARNING][icinga] Unable to resolve invalid monitors for: {", ".join([r.name for r in invalid])}')
+
+    def pruneGenerated(self, protected: list[str]) -> None:
+        """
+        Removes all generated monitors whose address is not in *protected*
+
+        :Args:
+            protected:
+                An iterable containing addresses whose monitors should **not** be removed
+        """
+        needsReload = set()
+        for address, details in self.generated.items():
+            if address not in protected:
+                rm_host(address, icinga = details['icinga'])
+                needsReload.add(details['icinga'])
+        
+        for icinga in needsReload:
+            reload(icinga = icinga)
 
 
 ## Plugin runner
-def runner(forward_dns: utils.DNSSet, _):
+def runner(forward_dns: utils.DNSSet, *_):
     """
     Adds Icinga monitor information to the DNS records in some set.
     If the monitor does not match that of the configured DNS role, this function will attempt to modify it.
@@ -252,30 +266,9 @@ def runner(forward_dns: utils.DNSSet, _):
         _:
             Any object - not used
     """
-
-    invalid = list(forward_dns.records)
-    depth = 0
-    while invalid and depth <= 1:
-        depth += 1
-        valid, invalid = setServices(invalid)
-
-        for record in valid:
-            forward_dns[record.name] = record
-    
-    if invalid:
-        print(f'[WARNING][icinga] Abandoning domains without proper monitor: {", ".join([r.name for r in invalid])}')
-
-    # Removes any generated monitors for domains no longer in the DNS
-    for icinga, addr_set in generated.items():
-        stale = []
-        for addr in addr_set:
-            if addr not in forward_dns:
-                stale.append(addr)
-        if stale:
-            print(f'[INFO][icinga] Found stale monitors in {icinga}: {", ".join(stale)}')
-            for addr in stale:
-                rm_host(addr, icinga=icinga)
-            reload(icinga=icinga)
+    mgr = MonitorManager()
+    mgr.pruneGenerated(forward_dns.names)
+    mgr.validateDNSSet(forward_dns)
             
     with open('src/forward.json', 'w') as stream:
         stream.write(forward_dns.to_json())

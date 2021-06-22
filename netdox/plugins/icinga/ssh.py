@@ -1,8 +1,14 @@
-from plugins.icinga import icinga_hosts
+"""
+SSH Functions
+*************
+
+Provides functions for executing commands on Icinga instances over SSH,
+and some convenience functions for creating/deleting generated monitors etc.
+"""
 from paramiko import client, AutoAddPolicy
 from textwrap import dedent
 from functools import wraps
-from typing import Tuple
+import utils
 
 ###################################
 # Abstract Functions / Decorators #
@@ -46,7 +52,7 @@ def setloc(func):
             host = kwargs['icinga']
 
         elif 'location' in kwargs:
-            for icinga, conf in icinga_hosts.items():
+            for icinga, conf in utils.auth()['plugins']['icinga'].items():
                 if kwargs['location'] in conf['locations']:
                     host = icinga
 
