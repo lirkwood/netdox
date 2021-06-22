@@ -74,7 +74,7 @@ class pluginmanager:
                 except Exception:
                     raise ImportError(f'[ERROR][plugins] Failed to import {pluginName}: \n{format_exc()}')
                 else:
-                    if hasattr(plugin, 'stage'):
+                    if hasattr(plugin, 'stage') and isinstance(plugin.stage, str):
                         stage = plugin.stage.lower()
                     else:
                         stage = 'none'
