@@ -112,7 +112,7 @@
                     <xsl:for-each select="xpf:map[@key='resources']/xpf:array">
                         <xsl:variable name="plugin" select="@key"/>
                         <xsl:for-each select="xpf:string">
-                    <properties-fragment id="resource_{position()}">
+                    <properties-fragment id="{$plugin}_{position()}">
                         <property name="resource" title="Resource" datatype="xref">
                             <xref frag="default" docid="_nd_{.}" />
                         </property>
