@@ -5,39 +5,10 @@ SSH Functions
 Provides functions for executing commands on Icinga instances over SSH,
 and some convenience functions for creating/deleting generated monitors etc.
 """
-from paramiko import client, AutoAddPolicy
+from plugins.ssh import exec
 from textwrap import dedent
 from functools import wraps
 import utils
-
-###################################
-# Abstract Functions / Decorators #
-###################################
-
-def exec(cmd: str, host: str) -> str:
-    """
-    Executes a command on the host machine through SSH.
-
-    :Args:
-        cmd:
-            The command to execute on the remote machine
-        host:
-            The remote machine to execute the command on
-
-    :Returns:
-        The string(s) printed to stdout by this operation
-    """
-    sshclient = client.SSHClient()
-    sshclient.set_missing_host_key_policy(AutoAddPolicy())
-    sshclient.connect(host, username='root', key_filename='src/ssh/ssh-ed25519')
-    stdin, stdout, stderr = sshclient.exec_command(cmd)
-    stdin.close()
-    stdout = str(stdout.read(), encoding='utf-8')
-    stderr = str(stderr.read(), encoding='utf-8')
-    if stderr:
-        raise RuntimeError(f'Command "{cmd}" failed over SSH on {host}: \n{stderr}')
-    else:
-        return stdout
 
 def setloc(func):
     """
