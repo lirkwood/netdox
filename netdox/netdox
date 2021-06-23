@@ -42,8 +42,6 @@ function _refresh {
 
 ## Initialise container to allow other processes to run
 function init {
-    echo "[INFO][netdox] Initalising container as: $(id)"
-    
     [[ -d /etc/ext/log ]] || mkdir /etc/ext/log
 
     cp /etc/ext/forward.json /opt/app/src/forward.json &> /dev/null
@@ -72,8 +70,6 @@ function init {
             echo '[ERROR][netdox] Python initialisation unsuccessful. Terminating...'
             exit 1
     fi
-
-    crontab <<< '15 6 * * * "/opt/app/netdox refresh"'
 }
 
 
