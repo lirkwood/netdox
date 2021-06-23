@@ -3,6 +3,17 @@
 Releases
 ========
 
+v1.2
+---
+
+- Added the DNSSet class as a container for DNSRecord/PTRRecords
+- Added the pluginmanager class to make plugin interactions more efficient
+- ``netdox start`` now only calls serve after successful initialisation
+- Updated urimap (finally instnace independent)
+- Added performing plugin actions in response to webhooks using the ``webhooks.json`` config file
+- Added creating Simple site apps from Netdox documents using webhook actions
+- Normalised filenames and serialised DNS sets are now ``forward.json`` and ``reverse.json`` respectively.
+
 v1.1
 ---
 
