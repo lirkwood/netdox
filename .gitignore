@@ -5,6 +5,7 @@
 
 .vscode
 .dockerignore
+docker-compose.yml
 *.code-workspace
 netdox-backend*.yml
 netdox-src
