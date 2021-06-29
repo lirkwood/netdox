@@ -20,9 +20,9 @@
             <heading level="1">Status Update on <xsl:value-of select="$dateTime"/></heading>
         </fragment>
         <properties-fragment id="stats">
-            <property name="total" title="No. of domains up for review" value="{count($review//xpf:string)}" />
             <property name="imgdiff" title="No. of sites that look different today" value="{count($review//xpf:array[@key = 'imgdiff']/xpf:string)}" />
-            <property name="no_base" title="No. of sites which did not have a base image" value="{count($review//xpf:array[@key = 'no_base']/xpf:string)}" />
+            <!-- <property name="no_base" title="No. of sites which did not have a base image" value="{count($review//xpf:array[@key = 'no_base']/xpf:string)}" /> -->
+            <property name="stale" title="No. of stale DNS records in Netdox today" value="{count($review//xpf:array[@key = 'stale']/xpf:string)}" />
             <property name="no_ss" title="No. of sites Puppeteer failed to screenshot" value="{count($review//xpf:array[@key = 'no_ss']/xpf:string)}" />
         </properties-fragment>
     </section>
@@ -69,7 +69,7 @@
         </properties-fragment>
     </xsl:for-each>
     </section>
-    <section id="no_base">
+    <!-- <section id="no_base">
         <fragment id="no_base_title">
             <heading level="2">Sites with no base image</heading>
         </fragment>
@@ -85,7 +85,7 @@
             </block>
         </fragment>
     </xsl:for-each>
-    </section>
+    </section> -->
     <section id="no_ss">
         <fragment id="no_ss_title">
             <heading level="2">Sites Puppeteer failed to screenshot</heading>
