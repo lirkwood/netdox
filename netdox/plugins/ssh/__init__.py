@@ -1,3 +1,7 @@
+"""
+This is a utility plugin, providing some convenience functions for executing commands over SSH.
+"""
+
 from typing import Union
 from paramiko import client, AutoAddPolicy
 
