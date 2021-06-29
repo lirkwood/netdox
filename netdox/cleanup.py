@@ -100,7 +100,7 @@ def sentenceStale():
     Should a document exist that was sentenced to expire today or in the past, Netdox will archive it.
 
     :Returns:
-        A dictionary of any URIs that were newly marked as stale, and the date they expire on.
+        A dictionary of any URIs that were newly marked as stale, sorted by date they expire on.
     """
     today = datetime.now().date()
     group_path = f"/ps/{utils.auth()['pageseeder']['group'].replace('-','/')}"
@@ -154,7 +154,7 @@ def sentenceStale():
                         labels = re.sub(r',$','', labels) # remove trailing commas
                         labels = re.sub(r'^,','', labels) # remove leading commas
                         pageseeder.patch_uri(uri, {'labels':labels})
-    return stale
+    return {k: v for k, v in sorted(stale.items(), key = lambda item: item[1])}
             
 
 # best guess at the transformation PageSeeder applies
