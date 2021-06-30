@@ -8,6 +8,7 @@ This script is used during the refresh process to link DNS records to their apps
 which describes all apps running from deployments in the configured Kubernetes clusters.
 """
 
+from network import Domain, Network
 from plugins.kubernetes import initContext
 from kubernetes import client
 from plugins import pluginmanager
@@ -249,15 +250,13 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     return apps
     
 
-def runner(forward_dns: utils.DNSSet,*_):
+def runner(network: Network) -> None:
     """
     Links DNSRecords to the Kubernetes apps they resolve to, and generates the k8s_* documents.
 
     :Args:
-        forward_dns:
-            A forward DNS set
-        _:
-            Any object - not used
+        network:
+            A Network object
     """
     auth = utils.auth()['plugins']['kubernetes']
     global pluginmaster
@@ -269,12 +268,11 @@ def runner(forward_dns: utils.DNSSet,*_):
         workers[context] = {}
         for appName, app in allApps[context].items():
             for domain in app['domains']:
-                if domain not in forward_dns:
-                    forward_dns.add(utils.DNSRecord(domain))
-                if not forward_dns[domain].location:
+                if domain not in network.domains:
+                    network.domains.add(Domain(domain))
+                if not network.domains[domain].location:
                     if 'location' in auth[context]:
-                        forward_dns[domain].location = auth[context]['location']
-                forward_dns[domain].link(f'{context}_{appName}', 'Kubernetes')
+                        network.domains[domain].location = auth[context]['location']
                 
             c_workers = workers[context]
             for _, pod in app['pods'].items():
