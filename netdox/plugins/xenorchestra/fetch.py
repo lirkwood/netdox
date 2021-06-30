@@ -6,6 +6,7 @@ Provides a function which links records to their relevant XenOrchestra VMs and g
 
 This script is used during the refresh process to link DNS records to the VMs they resolve to, and to trigger the generation of a publication which describes all VMs, their hosts, and their host's pool.
 """
+from network import IPv4Address, Network
 from plugins.xenorchestra import call, authenticate
 import asyncio, json
 import iptools, utils
@@ -68,7 +69,7 @@ async def fetchObjByFields(fieldmap: dict[str, str]):
 # User functions #
 ##################
 
-def runner(forward_dns: utils.DNSSet, _):
+def runner(network: Network):
     """
     Links DNSRecords to the Kubernetes apps they resolve to, and generates the xo_* documents.
 
@@ -79,7 +80,7 @@ def runner(forward_dns: utils.DNSSet, _):
             Any object - not used
     """
     # Generate XO Docs
-    vms, _,_ = asyncio.run(fetchObjects(forward_dns))
+    vms, _,_ = asyncio.run(fetchObjects(network))
     utils.xslt('plugins/xenorchestra/vms.xsl', 'plugins/xenorchestra/src/vms.xml')
     utils.xslt('plugins/xenorchestra/hosts.xsl', 'plugins/xenorchestra/src/hosts.xml')
     utils.xslt('plugins/xenorchestra/pools.xsl', 'plugins/xenorchestra/src/pools.xml')
@@ -89,13 +90,13 @@ def runner(forward_dns: utils.DNSSet, _):
     asyncio.run(template_map(vms))
 
 @authenticate
-async def fetchObjects(dns: utils.DNSSet):
+async def fetchObjects(network: Network):
     """
     Fetches info about pools, hosts, and VMs
 
     :Args:
-        dns:
-            A forward DNS set
+        network:
+            A Network object
     
     :Returns:
         Tuple[0]:
@@ -136,10 +137,10 @@ async def fetchObjects(dns: utils.DNSSet):
         if 'mainIpAddress' in vm:
             if iptools.valid_ip(vm['mainIpAddress']):
                 vm['subnet'] = iptools.sort(vm['mainIpAddress'])
-                for record in dns:
-                    if vm['mainIpAddress'] in record.ips:
-                        vm['domains'].append(record.name)
-                        record.link(vm['uuid'], 'XenOrchestra')
+                if vm['mainIpAddress'] not in network.ips:
+                    network.add(IPv4Address(vm['mainIpAddress']))
+                vm['domains'] = network.ips[vm['mainIpAddress']].domains
+
             else:
                 print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
                 del vm['mainIpAddress']
