@@ -8,16 +8,15 @@ Requests all managed DNS zones and then all records in each zone.
 """
 import json, requests
 import utils
+from network import Network, Domain
 
-def main(forward: utils.DNSSet, reverse: utils.DNSSet):
+def main(network: Network) -> None:
     """
     Reads all DNS records from CloudFlare and adds them to forward/reverse
 
 	:Args:
-		forward: DNSSet
-			A forward DNS set
-		reverse: DNSSet
-			A reverse DNS set
+		network:
+			A Network object
     """
     init()
     for id in fetch_zones():
@@ -26,14 +25,14 @@ def main(forward: utils.DNSSet, reverse: utils.DNSSet):
         records = json.loads(response)['result']
         for record in records:
             if record['type'] == 'A':
-                add_A(forward, record)
+                add_A(network, record)
             elif record['type'] == 'CNAME':
-                add_CNAME(forward, record)
+                add_CNAME(network, record)
             elif record['type'] == 'PTR':
-                add_PTR(reverse, record)
+                add_PTR(network, record)
 
 
-def init():
+def init() -> None:
     """
     Defines some global variables for usage in the plugin
     """
@@ -47,7 +46,7 @@ def init():
     }
 
 
-def fetch_zones():
+def fetch_zones() -> str:
     """
     Generator which returns one zone ID
 
@@ -62,13 +61,13 @@ def fetch_zones():
 
 
 @utils.handle
-def add_A(dns_set: utils.DNSSet, record: dict):
+def add_A(network: Network, record: dict) -> None:
     """
-    Integrates one A record into a dns set from json returned by DNSME api
+    Integrates one A record into a Network from json returned by DNSME api
 
     :Args:
-        dns_set: DNSSet
-            A forward DNS set
+		network:
+			A Network object
         record: dict
             Some JSON describing a DNS record
         root: str
@@ -78,14 +77,14 @@ def add_A(dns_set: utils.DNSSet, record: dict):
     root = record['zone_name']
     ip = record['content']
 
-    if fqdn not in dns_set:
-        dns_set.add(utils.DNSRecord(fqdn, root))
-    dns_set[fqdn].link(ip, 'ipv4', 'Cloudflare')
+    if fqdn not in network.domains:
+        network.add(Domain(fqdn, root))
+    network.domains[fqdn].link(ip, 'Cloudflare')	
 
 @utils.handle
-def add_CNAME(dns_set: utils.DNSSet, record: dict):
+def add_CNAME(network: Network, record: dict) -> None:
     """
-    Integrates one CNAME record into a dns set from json returned by CloudFlare api
+    Integrates one CNAME record into a Network from json returned by CloudFlare api
 
     :Args:
         dns_set: DNSSet
@@ -99,16 +98,17 @@ def add_CNAME(dns_set: utils.DNSSet, record: dict):
     root = record['zone_name']
     dest = record['content']
 
-    if fqdn not in dns_set:
-        dns_set.add(utils.DNSRecord(fqdn, root))
-    dns_set[fqdn].link(dest, 'domain', 'Cloudflare')
+    if fqdn not in network.domains:
+        network.add(Domain(fqdn, root))
+    network.domains[fqdn].link(dest, 'Cloudflare')
 
 @utils.handle
-def add_PTR(dns_set: utils.DNSSet, record: dict):
+def add_PTR(network: Network, record: dict) -> None:
     """
     Not Implemented
     """
     # Not implemented - Cloudflare recommends against using PTR outside of PTR zones
+    raise NotImplementedError
 
 if __name__ == '__main__':
     forward, reverse = main()
