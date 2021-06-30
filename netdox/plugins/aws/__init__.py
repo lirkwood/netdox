@@ -1,3 +1,4 @@
+from network import IPv4Address, Network
 import utils, boto3, json, os
 from textwrap import dedent
 stage = 'resource'
@@ -27,7 +28,7 @@ def init():
         ]>
         <aws>&json;</aws>""").strip())
 
-def runner(forward_dns: utils.DNSSet, reverse_dns: utils.DNSSet):
+def runner(network: Network):
     """
     Links domains to AWS EC2 instances with the same IP
     """
@@ -35,13 +36,13 @@ def runner(forward_dns: utils.DNSSet, reverse_dns: utils.DNSSet):
     allEC2 = client.describe_instances()
     for reservation in allEC2['Reservations']:
         for instance in reservation['Instances']:
-            for dns in forward_dns:
-                if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
-                    dns.link(instance['InstanceId'], 'ec2')
+            # for domain in network.domains:
+            #     if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
+            #         dns.link(instance['InstanceId'], 'ec2')
             
             for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
-                if ip not in reverse_dns:
-                    reverse_dns.add(utils.PTRRecord(ip, source='AWS'))
+                if ip not in network.ips:
+                    network.add(IPv4Address(ip))
 
     with open('plugins/aws/src/aws.json', 'w') as stream:
         stream.write(json.dumps(allEC2, indent=2, cls=utils.JSONEncoder))
