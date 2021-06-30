@@ -7,15 +7,18 @@ It also defines two decorators which are used throughout Netdox, and some other 
 """
 
 from __future__ import annotations
-from collections import defaultdict
-import iptools, json, re
+
+import json
+import re
 import subprocess
-from typing import Iterable, Tuple, Union
-from os import scandir, DirEntry
-from traceback import format_exc
 from datetime import datetime
 from functools import wraps
+from os import DirEntry, scandir
 from sys import argv
+from traceback import format_exc
+from typing import Iterable, Union
+
+import iptools
 
 ## Global vars
 
@@ -63,25 +66,21 @@ def handle(func):
             return returned
     return wrapper
 
-############################
-# Location helper function #
-############################
-
+#################
+# Location Data #
+#################
 
 global location_map, location_pivot
-location_map, location_pivot = {}, {}
+try:
+    with open('src/locations.json', 'r') as stream:
+        location_map = json.load(stream)
+except Exception:
+    location_map = {}
+location_pivot = {}
 
-def loadLocations():
-    global location_map, location_pivot
-    try:
-        with open('src/locations.json', 'r') as stream:
-            location_map = json.load(stream)
-    except Exception:
-        return None
-
-    for location in location_map:
-        for subnet in location_map[location]:
-            location_pivot[subnet] = location
+for location in location_map:
+    for subnet in location_map[location]:
+        location_pivot[subnet] = location
 
 def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
     """
@@ -107,6 +106,8 @@ def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
                 raise ValueError(f'Invalid IP in set: {ip}')
     else:
         raise TypeError(f'IP set must be one of: str, Iterable[str]; Not {type(ip_set)}')
+
+    global location_map, location_pivot
 
     # sort every declared subnet that matches one of ips by mask size
     matches = {}
@@ -138,297 +139,105 @@ def locate(ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
 # Classes #
 ###########
 
-class DNSRecord:
-    """
-    Forward DNS record
-    """
-    name: str
-    root: str
-    location: str
 
-    def __init__(self, name: str, root: str = None):
-        if re.fullmatch(dns_name_pattern, name):
-            self.name = name.lower()
-            if root: 
-                self.root = root.lower()
-            else:
-                self.root = None
-            self.location = None
-            self.role = None
+# class DomainSet:
+#     """
+#     Container class for Domains
+#     """
 
-            # destinations
-            self._public_ips = set()
-            self._private_ips = set()
-            self._cnames = set()
-            self.resources = defaultdict(set)
+#     def __init__(self, domains: list[Domain]) -> None:
+#         self.domains = domains
 
-            self.subnets = set()
+#     def __repr__(self) -> str:
+#         return f'{self.type.capitalize()} DNS set'
 
-        else:
-            raise ValueError('Must provide a valid name for dns record (some FQDN)')
+#     @property
+#     def records(self):
+#         """
+#         Property: returns a list of DNSRecord/PTRRecord objects in this set.
+#         """
+#         return list(self._records.values())
 
-    @classmethod
-    def from_dict(cls, object: dict):
-        """
-        Instantiates a DNSRecord from a dictionary.
-        """
-        record = cls(object['name'])
-        for k, v in object.items():
-            setattr(record, k, v)
+#     @property
+#     def names(self):
+#         """
+#         Property: returns a list of all record names in this set.
+#         """
+#         return list(self._records.keys())
 
-        for attr in ('_public_ips','_private_ips','_cnames'):
-            value = set()
-            for list in record.__dict__[attr]:
-                value.add(tuple(list))
-            setattr(record, attr, value)
+#     def __getitem__(self, key: str) -> Union[DNSRecord, PTRRecord]:
+#         """
+#         Return a record given its name
+#         """
+#         return self._records[key]
 
-        for type, list in record.resources.items():
-            record.resources[type] = set(list)
+#     def __setitem__(self, key: str, val: Union[DNSRecord, PTRRecord]) -> None:
+#         """
+#         Overwrite a record given its name
+#         """
+#         self._records[key] = val
 
-        record.subnets = set(record.subnets)
-        record.update()
-        
-        return record
+#     def __delitem__(self, key: str) -> None:
+#         """
+#         Delete a record given its name
+#         """
+#         del self._records[key]
 
-    def link(self, string: str, type: str, source: str=None):
-        """
-        Adds a link to the given object. Source is required for ip/ipv4 and domain link types.
-        """
-        if isinstance(string, str):
-            string = string.lower().strip()
-            if type in ('ipv4', 'ip', 'domain', 'cname'):
-                if source:
-                    if type in ('ipv4', 'ip'):
-                        if iptools.valid_ip(string):
-                            if iptools.public_ip(string):
-                                self._public_ips.add((string, source))
-                            else:
-                                self._private_ips.add((string, source))
-                        else:
-                            raise ValueError(f'"{string}" is not a valid ipv4 address.')
+#     def __contains__(self, key: str) -> bool:
+#         """
+#         Returns true if the set has a record with the given name
+#         """
+#         return self._records.__contains__(key)
 
-                    elif type in ('domain', 'cname'):
-                        if re.fullmatch(dns_name_pattern, string):
-                            self._cnames.add((string, source))
-                        else:
-                            raise ValueError(f'Domain {string} is not valid.')
-                else:
-                    raise ValueError(f'Source is required for links of type {type}')
-                
-            else:
-                self.resources[type].add(string)
-            
-            self.update()
+#     def __iter__(self) -> Union[DNSRecord, PTRRecord]:
+#         """
+#         Iterate over the records in the set
+#         """
+#         yield from self.records
 
-        else:
-            raise TypeError('DNS destination must be provided as string')
+#     def add(self, record: Union[DNSRecord, PTRRecord]) -> None:
+#         """
+#         Add a record to the set, or merge with existing record if necessary
+#         """
+#         if self.type == 'forward' and not isinstance(record, DNSRecord):
+#             raise TypeError('Can only add DNSRecord to forward DNSSet')
+#         elif self.type == 'reverse' and not isinstance(record, PTRRecord):
+#             raise TypeError('Can only add PTRRecord to reverse DNSSet')
 
-    @property
-    def destinations(self) -> dict:
-        """
-        Property: returns a dictionary of all outgoing links from this record.
-        """
-        return (self.resources | {
-            'public_ips': self.public_ips,
-            'private_ips': self.private_ips,
-            'cnames': self.cnames,
-        })
-
-    @property
-    def _ips(self) -> set[Tuple[str, str]]:
-        return self._public_ips.union(self._private_ips)
-
-    @property
-    def public_ips(self) -> list[str]:
-        """
-        Property: returns all IPs from this record that are outside of protected ranges.
-        """
-        return list(set([ip for ip,_ in self._public_ips]))
-
-    @property
-    def private_ips(self) -> list[str]:
-        """
-        Property: returns all IPs from this record that are inside a protected range.
-        """
-        return list(set([ip for ip,_ in self._private_ips]))
-
-    @property
-    def ips(self) -> list[str]:
-        """
-        Property: returns all IPs from this record.
-        """
-        return list(set(self.public_ips + self.private_ips))
-
-    @property
-    def cnames(self) -> list[str]:
-        """
-        Property: returns all CNAMEs from this record.
-        """
-        return list(set([cname for cname,_ in self._cnames]))
-
-    def update(self):
-        """
-        Updates subnet and location data for this record.
-        """
-        for ip in self.private_ips:
-            self.subnets.add(iptools.sort(ip))
-        if location_map:
-            self.location = locate(self.ips)
-
-
-class PTRRecord:
-    """
-    Reverse DNS record
-    """
-    ipv4: str
-    name: str
-    subnet: str
-    root: str
-    location: str
-    unused: bool
-    nat: str
-
-    def __init__(self, ip: str, root: str=None, source: str=None, unused: bool=False):
-        if iptools.valid_ip(ip):
-            self.ipv4 = ip
-            self.name = ip
-            self.subnet = iptools.sort(ip)
-            if root: 
-                self.root = root.lower()
-            else:
-                self.root = None
-            self.source = source
-            self.unused = unused
-            self.location = locate(self.ipv4)
-
-            self._ptr = set()
-            self.implied_ptr = set()
-            self.nat = None
-        else:
-            raise ValueError('Must provide a valid name for ptr record (some IPv4)')
-
-    def link(self, name, source):
-        """
-        Adds a link to a domain.
-        """
-        if re.fullmatch(dns_name_pattern, name):
-            self._ptr.add((name, source))
+#         name = record.name.lower()
+#         if name not in self._records:
+#             self._records[name] = record
+#         else:
+#             self._records[name] = merge_records(self._records[name], record)
     
-    @property
-    def ptr(self):
-        """
-        Property: returns all domains from this record.
-        """
-        return [ptr for ptr,_ in self._ptr]
-    
-    def discoverImpliedPTR(self, forward_dns: DNSSet):
-        for record in forward_dns:
-            if self.name in record.ips:
-                self.implied_ptr.add(record.name)
+#     def to_json(self) -> str:
+#         """
+#         Serialises the set to a JSON string
+#         """
+#         return json.dumps({
+#             'type': self.type,
+#             'records': self.records
+#         }, indent = 2, cls = JSONEncoder)
+
+#     @classmethod
+#     def from_json(cls, constructor: str) -> DNSSet:
+#         """
+#         Deserialises a DNSSet from a JSON string
+#         """
+#         with json.loads(constructor) as spec:
+#             if spec['type'] == 'forward':
+#                 recordClass = DNSRecord
+#             else:
+#                 recordClass = PTRRecord
+
+#             new_set = cls(spec['type'])
+#             for record_dict in spec['records']:
+#                 record = recordClass.from_dict(record_dict)
+#                 new_set.add(record)
+#         return new_set
 
 
-class DNSSet:
-    """
-    Container class for DNSRecords or PTRRecords
-    """
-    type: str
-    _records: dict[str, Union[DNSRecord, PTRRecord]]
-
-    def __init__(self, type: str = 'forward') -> None:
-        if type not in ('forward', 'reverse'):
-            raise ValueError(f'Unknown DNS set type {type}; Must be one of: forward, reverse')
-        self.type = type
-        self._records = {}
-
-    def __repr__(self) -> str:
-        return f'{self.type.capitalize()} DNS set'
-
-    @property
-    def records(self):
-        """
-        Property: returns a list of DNSRecord/PTRRecord objects in this set.
-        """
-        return list(self._records.values())
-
-    @property
-    def names(self):
-        """
-        Property: returns a list of all record names in this set.
-        """
-        return list(self._records.keys())
-
-    def __getitem__(self, key: str) -> Union[DNSRecord, PTRRecord]:
-        """
-        Return a record given its name
-        """
-        return self._records[key]
-
-    def __setitem__(self, key: str, val: Union[DNSRecord, PTRRecord]) -> None:
-        """
-        Overwrite a record given its name
-        """
-        self._records[key] = val
-
-    def __delitem__(self, key: str) -> None:
-        """
-        Delete a record given its name
-        """
-        del self._records[key]
-
-    def __contains__(self, key: str) -> bool:
-        """
-        Returns true if the set has a record with the given name
-        """
-        return self._records.__contains__(key)
-
-    def __iter__(self) -> Union[DNSRecord, PTRRecord]:
-        """
-        Iterate over the records in the set
-        """
-        yield from self.records
-
-    def add(self, record: Union[DNSRecord, PTRRecord]) -> None:
-        """
-        Add a record to the set, or merge with existing record if necessary
-        """
-        if self.type == 'forward' and not isinstance(record, DNSRecord):
-            raise TypeError('Can only add DNSRecord to forward DNSSet')
-        elif self.type == 'reverse' and not isinstance(record, PTRRecord):
-            raise TypeError('Can only add PTRRecord to reverse DNSSet')
-
-        name = record.name.lower()
-        if name not in self._records:
-            self._records[name] = record
-        else:
-            self._records[name] = merge_records(self._records[name], record)
-    
-    def to_json(self) -> str:
-        """
-        Serialises the set to a JSON string
-        """
-        return json.dumps({
-            'type': self.type,
-            'records': self.records
-        }, indent = 2, cls = JSONEncoder)
-
-    @classmethod
-    def from_json(cls, constructor: str) -> DNSSet:
-        """
-        Deserialises a DNSSet from a JSON string
-        """
-        with json.loads(constructor) as spec:
-            if spec['type'] == 'forward':
-                recordClass = DNSRecord
-            else:
-                recordClass = PTRRecord
-
-            new_set = cls(spec['type'])
-            for record_dict in spec['records']:
-                record = recordClass.from_dict(record_dict)
-                new_set.add(record)
-        return new_set
-
-
+from network import NetworkObject
 class JSONEncoder(json.JSONEncoder):
     """
     JSON Encoder compatible with DNSRecord and PTRRecord, sets, and datetime objects
@@ -437,7 +246,7 @@ class JSONEncoder(json.JSONEncoder):
         """
         :meta private:
         """
-        if isinstance(obj, DNSRecord) or isinstance(obj, PTRRecord):
+        if issubclass(obj, NetworkObject):
             return obj.__dict__
         elif isinstance(obj, set):
             return sorted(obj)
@@ -450,31 +259,29 @@ class JSONEncoder(json.JSONEncoder):
 # Miscellaneous convenience functions #
 #######################################
 
-def merge_records(dns1: Union[DNSRecord, PTRRecord], dns2: Union[DNSRecord, PTRRecord]) -> Union[DNSRecord, PTRRecord]:
-    """
-    Merge of two DNSRecords or two PTRRecords
-    """
-    if isinstance(dns1, (DNSRecord, PTRRecord)) and isinstance(dns2, (DNSRecord, PTRRecord)) and type(dns1) == type(dns2):
-        if dns1.name == dns2.name:
-            dns1_inf = dns1.__dict__
-            dns2_inf = dns2.__dict__
-            for attr, val in dns2_inf.items():
-                if isinstance(val, set):
-                    dns1_inf[attr] = dns1_inf[attr].union(dns2_inf[attr])
+# def merge_records(dns1: Union[DNSRecord, PTRRecord], dns2: Union[DNSRecord, PTRRecord]) -> Union[DNSRecord, PTRRecord]:
+#     """
+#     Merge of two DNSRecords or two PTRRecords
+#     """
+#     if isinstance(dns1, (DNSRecord, PTRRecord)) and isinstance(dns2, (DNSRecord, PTRRecord)) and type(dns1) == type(dns2):
+#         if dns1.name == dns2.name:
+#             dns1_inf = dns1.__dict__
+#             dns2_inf = dns2.__dict__
+#             for attr, val in dns2_inf.items():
+#                 if isinstance(val, set):
+#                     dns1_inf[attr] = dns1_inf[attr].union(dns2_inf[attr])
 
-            if not dns1.root and dns2.root:
-                dns1.root = dns2.root
+#             if not dns1.root and dns2.root:
+#                 dns1.root = dns2.root
             
-            if isinstance(dns1, DNSRecord):
-                for resource, links in dns2_inf['resources'].items():
-                    dns1_inf['resources'][resource] = dns1_inf['resources'][resource].union(links)
-                dns1.update()
+#             if isinstance(dns1, DNSRecord):
+#                 dns1.update()
             
-            return dns1
-        else:
-            raise ValueError('Cannot merge records with different names')
-    else:
-        raise TypeError(f'Arguments be similar dns objects, not {type(dns1)}, {type(dns2)}')
+#             return dns1
+#         else:
+#             raise ValueError('Cannot merge records with different names')
+#     else:
+#         raise TypeError(f'Arguments be similar dns objects, not {type(dns1)}, {type(dns2)}')
 
 
 def xslt(xsl: str, src: str, out: bool = None):
