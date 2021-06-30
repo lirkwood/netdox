@@ -10,6 +10,7 @@ from plugins.dnsmadeeasy import genheader
 from typing import Any, Generator, Tuple
 import json, requests
 import iptools, utils
+from network import Network, Domain, IPv4Address
 
 
 
@@ -32,15 +33,13 @@ def fetchDomains() -> Generator[Tuple[str, str], Any, Any]:
 			yield (record['id'], record['name'])
 
 
-def fetchDNS(forward: utils.DNSSet, reverse: utils.DNSSet):
+def fetchDNS(network: Network):
 	"""
-	Reads all DNS records from DNSMadeEasy and adds them to forward/reverse
+	Reads all DNS records from DNSMadeEasy and adds them to a Network object
 
 	:Args:
-		forward: DNSSet
-			A forward DNS set
-		reverse: DNSSet
-			A reverse DNS set
+		network:
+			A Network object
 	"""
 
 	for id, domain in fetchDomains():
@@ -49,23 +48,23 @@ def fetchDNS(forward: utils.DNSSet, reverse: utils.DNSSet):
 
 		for record in records:
 			if record['type'] == 'A':
-				add_A(forward, record, domain)
+				add_A(network, record, domain)
 			
 			elif record['type'] == 'CNAME':
-				add_CNAME(forward, record, domain)
+				add_CNAME(network, record, domain)
 
 			elif record['type'] == 'PTR':
-				add_PTR(reverse, record, domain)
+				add_PTR(network, record, domain)
 
 
 @utils.handle
-def add_A(dns_set: utils.DNSSet, record: dict, root: str):
+def add_A(network: Network, record: dict, root: str):
 	"""
-	Integrates one A record into a dns set from json returned by DNSME api
+	Integrates one A record into a Network from json returned by DNSME api
 
 	:Args:
-		dns_set: DNSSet
-			A forward DNS set
+		network:
+			A Network object
 		record: dict
 			Some JSON describing a DNS record
 		root: str
@@ -75,18 +74,18 @@ def add_A(dns_set: utils.DNSSet, record: dict, root: str):
 	ip = record['value']
 	fqdn = assemble_fqdn(subdomain, root)
 
-	if fqdn not in dns_set:
-		dns_set.add(utils.DNSRecord(fqdn, root=root))
-	dns_set[fqdn].link(ip, 'ipv4', 'DNSMadeEasy')
+	if fqdn not in network.domains:
+		network.add(Domain(fqdn, root))
+	network.domains[fqdn].link(ip, 'DNSMadeEasy')	
 
 @utils.handle
-def add_CNAME(dns_set: utils.DNSSet, record: dict, root: str):
+def add_CNAME(network: Network, record: dict, root: str):
 	"""
-	Integrates one CNAME record into a dns set from json returned by DNSME api
+	Integrates one CNAME record into a Network from json returned by DNSME api
 
 	:Args:
-		dns_set: DNSSet
-			A forward DNS set
+		network:
+			A Network object
 		record: dict
 			Some JSON describing a DNS record
 		root: str
@@ -97,18 +96,18 @@ def add_CNAME(dns_set: utils.DNSSet, record: dict, root: str):
 	fqdn = assemble_fqdn(subdomain, root)
 	dest = assemble_fqdn(value, root)
 
-	if fqdn not in dns_set:
-		dns_set.add(utils.DNSRecord(fqdn, root=root))
-	dns_set[fqdn].link(dest, 'domain', 'DNSMadeEasy')	
+	if fqdn not in network.domains:
+		network.add(Domain(fqdn, root))
+	network.domains[fqdn].link(dest, 'DNSMadeEasy')	
 
 @utils.handle
-def add_PTR(dns_set: utils.DNSSet, record: dict, root: str):
+def add_PTR(network: Network, record: dict, root: str):
 	"""
-	Integrates one PTR record into a dns set from json returned by DNSME api
+	Integrates one PTR record into a Network from json returned by DNSME api
 
 	:Args:
-		dns_set: DNSSet
-			A reverse DNS set
+		network:
+			A Network object
 		record: dict
 			Some JSON describing a DNS record
 		root: str
@@ -121,9 +120,9 @@ def add_PTR(dns_set: utils.DNSSet, record: dict, root: str):
 	fqdn = assemble_fqdn(value, root)
 	
 	if iptools.valid_ip(ip):
-		if ip not in dns_set:
-			dns_set.add(utils.PTRRecord(ip, source='DNSMadeEasy', root=root))
-		dns_set[ip].link(fqdn, 'DNSMadeEasy')
+		if ip not in network.ips:
+			network.add(IPv4Address(ip))
+		network.ips[ip].link(fqdn, 'DNSMadeEasy')
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
