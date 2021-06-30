@@ -10,7 +10,7 @@ This was quickly expanded to allow custom code to be executed at multiple points
 from traceback import format_exc
 from types import ModuleType
 from typing import KeysView
-from utils import DNSSet
+from network import Network
 import importlib, os
 
 
@@ -88,7 +88,7 @@ class pluginmanager:
                     self.add(pluginName, plugin, stage)
 
 
-    def runPlugin(self, name: str = '', plugin: ModuleType = None, forward_dns: DNSSet = DNSSet('forward'), reverse_dns: DNSSet = DNSSet('reverse')) -> None:
+    def runPlugin(self, name: str = '', plugin: ModuleType = None, network: Network = None) -> None:
         """
         Runs the *runner* function from a given plugin with forward and reverse dns as arguments
 
@@ -106,13 +106,15 @@ class pluginmanager:
             raise RuntimeError('Must provide one of: plugin name, plugin')
         elif not plugin:
             plugin = self[name]
+
+        network = network or Network()
         
         try:
-            plugin.runner(forward_dns, reverse_dns)
+            plugin.runner(network)
         except Exception:
             print(f'[ERROR][pluginmanager] {plugin.__name__} threw an exception: \n{format_exc()}')
 
-    def runStage(self, stage: str, forward_dns: DNSSet = DNSSet('forward'), reverse_dns: DNSSet = DNSSet('reverse')) -> None:
+    def runStage(self, stage: str, network: Network) -> None:
         """
         Runs all the plugins in a stage
 
@@ -129,4 +131,4 @@ class pluginmanager:
 
         print(f'[INFO][pluginmanager] Starting stage: {stage}')
         for pluginName, plugin in self.pluginmap[stage].items():
-            self.runPlugin(pluginName, plugin, forward_dns, reverse_dns)
+            self.runPlugin(pluginName, plugin, network)
