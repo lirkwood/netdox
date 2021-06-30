@@ -2,11 +2,12 @@
 Fetching data
 *************
 """
-import re, json, utils, iptools, subprocess
+import re, json, iptools, subprocess
+from network import Network
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}).+?(?P<dest>(\d{1,3}\.){3}\d{1,3}).*')
 
-def runner(forward_dns: dict[str, utils.DNSRecord], *_):
+def runner(network: Network):
     """
     Reads the NAT dump from FortiGate and calls the pfSense node script.
 
@@ -29,7 +30,6 @@ def runner(forward_dns: dict[str, utils.DNSRecord], *_):
     pfsense = subprocess.check_output('node plugins/nat/pfsense.js', shell=True)
     natDict |= json.loads(pfsense)
 
-    for record in forward_dns:
-        for ip in record.ips:
-            if ip in natDict:
-                record.link(natDict[ip], 'ipv4', 'NAT')
+    for ip in network.ips:
+        if ip.addr in natDict:
+            ip.nat = natDict[ip.addr]
