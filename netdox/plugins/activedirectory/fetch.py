@@ -9,8 +9,9 @@ Reads directory of JSON files, each corresponding to a DNS zone, and generates D
 
 import os, json
 import iptools, utils
+from network import Network, Domain, IPv4Address
 
-def fetchDNS(forward: utils.DNSSet, reverse: utils.DNSSet):
+def fetchDNS(network: Network) -> None:
     """
 	Iterates over each source JSON file and adds any DNSRecords found to the forward/reverse sets.
 
@@ -29,13 +30,13 @@ def fetchDNS(forward: utils.DNSSet, reverse: utils.DNSSet):
             else:
                 for record in jsondata:
                     if record['RecordType'] == 'A':
-                        add_A(forward, record)
+                        add_A(network, record)
 
                     elif record['RecordType'] == 'CNAME':
-                        add_CNAME(forward, record)
+                        add_CNAME(network, record)
                     
                     elif record['RecordType'] == 'PTR':
-                        add_PTR(reverse, record)
+                        add_PTR(network, record)
 
 
 def fetchJson() -> os.DirEntry:
@@ -51,13 +52,13 @@ def fetchJson() -> os.DirEntry:
 
 
 @utils.handle
-def add_A(dns_set: utils.DNSSet, record: dict):
+def add_A(network: Network, record: dict):
     """
-	Integrates one A record into a dns set from json given by ActiveDirectory
+	Adds one A record to a Network from JSON returned by ActiveDirectory
 
     :Args:
-        dns_set: DNSSet
-            A forward DNSSet to add a record to
+        network: Network
+            The network object to add the record to
         record: dict
             A JSON object describing a DNS A record
     """
@@ -73,19 +74,19 @@ def add_A(dns_set: utils.DNSSet, record: dict):
             dest = item['Value'].strip('.')
 
     # Integrate
-    if fqdn not in dns_set:
-        dns_set.add(utils.DNSRecord(fqdn, root=root))
-    dns_set[fqdn].link(dest, 'ipv4', 'ActiveDirectory')
+    if fqdn not in network.domains:
+        network.add(Domain(fqdn, root))
+    network.domains[fqdn].link(dest, 'ActiveDirectory')
 
 
 @utils.handle
-def add_CNAME(dns_set: utils.DNSSet, record: dict):
+def add_CNAME(network: Network, record: dict):
     """
-	Integrates one CNAME record into a dns set from json given by ActiveDirectory
+	Adds one CNAME record to a Network from JSON returned by ActiveDirectory
 
     :Args:
-        dns_set: DNSSet
-            A forward DNSSet to add a record to
+        network: Network
+            The network object to add the record to
         record: dict
             A JSON object describing a DNS CNAME record
     """
@@ -102,35 +103,34 @@ def add_CNAME(dns_set: utils.DNSSet, record: dict):
             else:
                 dest = dest.strip('.')
 
-    if fqdn not in dns_set:
-        dns_set.add(utils.DNSRecord(fqdn, root=root))
-    dns_set[fqdn].link(dest, 'domain', 'ActiveDirectory')
+    if fqdn not in network.domains:
+        network.add(Domain(fqdn, root))
+    network.domains[fqdn].link(dest, 'ActiveDirectory')
 
 
 @utils.handle
-def add_PTR(dns_set: utils.DNSSet, record: dict):
+def add_PTR(network: Network, record: dict):
     """
-	Integrates one PTR record into a dns set from json given by ActiveDirectory
+	Adds one PTR record to a Network from JSON returned by ActiveDirectory
 
     :Args:
-        dns_set: DNSSet
-            A reverse DNSSet to add a record to
+        network: Network
+            The network object to add the record to
         record: dict
             A JSON object describing a DNS PTR record
     """
     zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
     address = record['DistinguishedName'].split(',')[0].strip('DC=')        #... backwards subnet.
-    ip = iptools.ipv4(subnet +'.'+ address)
+    ip = subnet +'.'+ address
 
     for item in record['RecordData']['CimInstanceProperties']:
         if item['Name'] == 'PtrDomainName':
             dest = item['Value'].strip('.')
-
-    if ip.valid:
-        if ip.ipv4 not in dns_set:
-            dns_set.add(utils.PTRRecord(ip.ipv4, root=zone))
-        dns_set[ip.ipv4].link(dest, 'ActiveDirectory')
+    if iptools.valid_ip(ip):
+        if ip not in network.ips:
+            network.add(IPv4Address(ip))
+        network.domains[ip].link(dest, 'ActiveDirectory')
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
