@@ -6,10 +6,20 @@ It runs some initialisation first, then calls the *dns* plugins, the *resource* 
 then calls the final plugin stage and writes PSML. The upload is managed by the caller executable Netdox (see :ref:`file_netdox`)
 """
 
-import license_inf, cleanup, iptools, pageseeder, plugins, utils
-import subprocess, shutil, json, os
+import json
+import os
+import shutil
+import subprocess
 from distutils.util import strtobool
+
 from bs4 import BeautifulSoup
+
+import cleanup
+import license_inf
+import pageseeder
+import plugins
+import utils
+from network import Network
 
 ##################
 # Initialisation #
@@ -36,10 +46,6 @@ def init():
     # Initialise plugins
     global pluginmaster
     pluginmaster = plugins.pluginmanager()
-
-    # Load user-defined locations
-    utils.loadLocations()
-
 
     config = {"exclusions": []}
     roles = {}
@@ -113,51 +119,51 @@ def init():
 # Critical functions #
 ######################
 
-def apply_roles(dns_set: utils.DNSSet):
-    """
-    Applies custom roles defined in the PageSeeder config.
+# def apply_roles(dns_set: utils.DNSSet):
+#     """
+#     Applies custom roles defined in the PageSeeder config.
 
-    Deletes any DNS records with names specified in the main config file, and sets the *role* attribute on all other records.
-    If a record's name does not appear in the config, it is assigned the *default* role.
-    """
-    config = utils.config
+#     Deletes any DNS records with names specified in the main config file, and sets the *role* attribute on all other records.
+#     If a record's name does not appear in the config, it is assigned the *default* role.
+#     """
+#     config = utils.config
 
-    for domain in config['exclusions']:
-        if domain in dns_set:
-            del dns_set[domain]
+#     for domain in config['exclusions']:
+#         if domain in dns_set:
+#             del dns_set[domain]
     
-    unassigned = list(dns_set.names)
-    for role in config.keys():
-        if role != 'exclusions':
-            for domain in config[role]['domains']:
-                try:
-                    dns_set[domain].role = role
-                    unassigned.remove(domain)
-                except KeyError:
-                    pass
+#     unassigned = list(dns_set.names)
+#     for role in config.keys():
+#         if role != 'exclusions':
+#             for domain in config[role]['domains']:
+#                 try:
+#                     dns_set[domain].role = role
+#                     unassigned.remove(domain)
+#                 except KeyError:
+#                     pass
     
-    for domain in unassigned:
-        dns_set[domain].role = 'default'
-        config['default']['domains'].append(domain)
+#     for domain in unassigned:
+#         dns_set[domain].role = 'default'
+#         config['default']['domains'].append(domain)
 
-def ips(forward: utils.DNSSet, reverse: utils.DNSSet):
-    """
-    Populates a reverse dns set with any missing IPs from a forward dns set.
+# def ips(forward: utils.DNSSet, reverse: utils.DNSSet):
+#     """
+#     Populates a reverse dns set with any missing IPs from a forward dns set.
 
-    Iterates over every unique and private subnet and generates empty PTR records for any unused IPv4 addresses.
-    """
-    subnets = set()
-    for dns in forward:
-        for ip in dns.ips:
-            if ip not in reverse:
-                reverse.add(utils.PTRRecord(ip))
-            if not iptools.public_ip(ip):
-                subnets.add(reverse[ip].subnet)
+#     Iterates over every unique and private subnet and generates empty PTR records for any unused IPv4 addresses.
+#     """
+#     subnets = set()
+#     for dns in forward:
+#         for ip in dns.ips:
+#             if ip not in reverse:
+#                 reverse.add(utils.PTRRecord(ip))
+#             if not iptools.public_ip(ip):
+#                 subnets.add(reverse[ip].subnet)
     
-    for subnet in subnets:
-        for ip in iptools.subn_iter(subnet):
-            if ip not in reverse:
-                reverse.add(utils.PTRRecord(ip, unused=True))
+#     for subnet in subnets:
+#         for ip in iptools.subn_iter(subnet):
+#             if ip not in reverse:
+#                 reverse.add(utils.PTRRecord(ip, unused=True))
 
 def screenshots():
     """
@@ -171,81 +177,57 @@ def screenshots():
 # Non-essential functions #
 ###########################
 
-@utils.handle
-def locations(dns_set: utils.DNSSet):
-    """
-    Attempts to extract location data from CNAME records for those DNS records that have none.
+# @utils.handle
+# def locations(dns_set: utils.DNSSet):
+#     """
+#     Attempts to extract location data from CNAME records for those DNS records that have none.
 
-    Iterates over the cnames of a record. If any of them have location data, inject into the initial record.
-    """
-    unlocated = []
-    for dns in dns_set:
-        if not dns.location:
-            for alias in dns.cnames:
-                try:
-                    if dns_set[alias].location:
-                        dns.location = dns_set[alias].location
-                except KeyError:
-                    pass
+#     Iterates over the cnames of a record. If any of them have location data, inject into the initial record.
+#     """
+#     unlocated = []
+#     for dns in dns_set:
+#         if not dns.location:
+#             for alias in dns.cnames:
+#                 try:
+#                     if dns_set[alias].location:
+#                         dns.location = dns_set[alias].location
+#                 except KeyError:
+#                     pass
         
-        if not dns.location:
-            unlocated.append(dns.name)
-    if unlocated:
-        print('[WARNING][refresh] Some records are missing location data. For a complete list see /var/log/unlocated.json')
-        with open('/var/log/unlocated.json', 'w') as stream:
-            stream.write(json.dumps(unlocated, indent=2))
+#         if not dns.location:
+#             unlocated.append(dns.name)
+#     if unlocated:
+#         print('[WARNING][refresh] Some records are missing location data. For a complete list see /var/log/unlocated.json')
+#         with open('/var/log/unlocated.json', 'w') as stream:
+#             stream.write(json.dumps(unlocated, indent=2))
 
-@utils.handle
-def license_keys(dns_set: utils.DNSSet):
-    """
-    Sets the *license* attribute for any domains with a PageSeeder license.
+# @utils.handle
+# def license_keys(dns_set: utils.DNSSet):
+#     """
+#     Sets the *license* attribute for any domains with a PageSeeder license.
 
-    Uses the functionality found in :ref:`file_licenses` to add license data to records.
-    """
-    licenses = license_inf.fetch()
-    for domain in licenses:
-        if domain in dns_set:
-            dns = dns_set[domain]
-            dns.license = licenses[domain]
-            if dns.role != 'pageseeder':
-                print(f'[WARNING][refresh.py] {dns.name} has a PageSeeder license but is using role {dns.role}')
+#     Uses the functionality found in :ref:`file_licenses` to add license data to records.
+#     """
+#     licenses = license_inf.fetch()
+#     for domain in licenses:
+#         if domain in dns_set:
+#             dns = dns_set[domain]
+#             dns.license = licenses[domain]
+#             if dns.role != 'pageseeder':
+#                 print(f'[WARNING][refresh.py] {dns.name} has a PageSeeder license but is using role {dns.role}')
 
-@utils.handle
-def license_orgs(dns_set: utils.DNSSet):
-    """
-    Sets the *org* attribute using the associated PageSeeder license.
+# @utils.handle
+# def license_orgs(dns_set: utils.DNSSet):
+#     """
+#     Sets the *org* attribute using the associated PageSeeder license.
 
-    Uses the functionality found in :ref:`file_licenses` to add organisation data to records.
-    """
-    for record in dns_set:
-        if 'license' in record.__dict__:
-            org_id = license_inf.org(record.license)
-            if org_id:
-                record.org = org_id
-
-@utils.handle
-def labels(dns_set: utils.DNSSet):
-    """
-    Applies any relevant document labels
-
-    :meta private:
-    """
-    # for domain in dns_set:
-    #     dns = dns_set[domain]
-    #     dns.labels = []
-    #     # Icinga
-    #     if 'icinga' in dns.__dict__:
-    #         dns.labels.append('icinga_not_monitored')
-
-@utils.handle
-def implied_ptrs(forward_dns: utils.DNSSet, reverse_dns: utils.DNSSet):
-    """
-    Calls the ``discoverImpliedPTR`` class method on all PTR records in a reverse dns set.
-
-    For more see :ref:`utils`.
-    """
-    for ptr in reverse_dns:
-        ptr.discoverImpliedPTR(forward_dns)
+#     Uses the functionality found in :ref:`file_licenses` to add organisation data to records.
+#     """
+#     for record in dns_set:
+#         if 'license' in record.__dict__:
+#             org_id = license_inf.org(record.license)
+#             if org_id:
+#                 record.org = org_id
 
 
 #############
@@ -258,40 +240,38 @@ def main():
 
     Calls most other functions in this script in the required order.
     """
-    forward = utils.DNSSet('forward')
-    reverse = utils.DNSSet('reverse')
+    init()
+    network = Network(config = utils.config)
 
     global pluginmaster
-    pluginmaster.runStage('dns', forward, reverse)
-    pluginmaster.runStage('resource', forward, reverse)
+    pluginmaster.runStage('dns', network)
+    network.ips.fillSubnets()
+
+    pluginmaster.runStage('nodes', network)
 
     # apply additional modifications/filters
-    ips(forward, reverse)
-    apply_roles(forward)
-    if utils.location_map:
-        locations(forward)
-    license_keys(forward)
-    license_orgs(forward)
-    labels(forward)
+    # ips(forward, reverse)
+    # apply_roles(forward)
+    # license_keys(network)
+    # license_orgs(network)
 
-    pluginmaster.runStage('pre-write', forward, reverse)
+    pluginmaster.runStage('pre-write', network)
 
     # Write DNS sets
-    with open('src/forward.json', 'w') as stream:
-        stream.write(forward.to_json())
-    with open('src/reverse.json', 'w') as stream:
-        stream.write(reverse.to_json())
+    # with open('src/forward.json', 'w') as stream:
+    #     stream.write(forward.to_json())
+    # with open('src/reverse.json', 'w') as stream:
+    #     stream.write(reverse.to_json())
     # Write DNS documents
-    utils.xslt('dns.xsl', 'src/forward.xml')
+    utils.xslt('domains.xsl', 'src/forward.xml')
     # Write IP documents
     utils.xslt('ips.xsl', 'src/reverse.xml')
 
-    pluginmaster.runStage('post-write', forward, reverse)
+    pluginmaster.runStage('post-write', network)
 
     screenshots()
     cleanup.pre_upload()
 
 
 if __name__ == '__main__':
-    init()
     main()
