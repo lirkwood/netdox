@@ -6,7 +6,7 @@ Provides a function which links records to their relevant XenOrchestra VMs and g
 
 This script is used during the refresh process to link DNS records to the VMs they resolve to, and to trigger the generation of a publication which describes all VMs, their hosts, and their host's pool.
 """
-from network import IPv4Address, Network
+from networkobjs import IPv4Address, Network
 from plugins.xenorchestra import call, authenticate
 import asyncio, json
 import iptools, utils

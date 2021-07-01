@@ -7,9 +7,13 @@ Used to read DNS records from ActiveDirectory.
 Reads directory of JSON files, each corresponding to a DNS zone, and generates DNSRecords from them.
 """
 
-import os, json
-import iptools, utils
-from network import Network, Domain, IPv4Address
+import json
+import os
+
+import iptools
+import utils
+from networkobjs import Domain, IPv4Address, Network
+
 
 def fetchDNS(network: Network) -> None:
     """
@@ -130,7 +134,7 @@ def add_PTR(network: Network, record: dict):
     if iptools.valid_ip(ip):
         if ip not in network.ips:
             network.add(IPv4Address(ip))
-        network.domains[ip].link(dest, 'ActiveDirectory')
+        network.ips[ip].link(dest, 'ActiveDirectory')
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:

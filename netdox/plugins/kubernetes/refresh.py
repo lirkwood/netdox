@@ -8,11 +8,15 @@ This script is used during the refresh process to link DNS records to their apps
 which describes all apps running from deployments in the configured Kubernetes clusters.
 """
 
-from network import Domain, Network
-from plugins.kubernetes import initContext
-from kubernetes import client
+import json
+
+import utils
+from networkobjs import Domain, Network, JSONEncoder
 from plugins import pluginmanager
-import json, utils
+from plugins.kubernetes import initContext
+
+from kubernetes import client
+
 
 def getDeploymentDetails(namespace: str='default') -> dict[str, dict[str, str]]:
     """
@@ -283,9 +287,9 @@ def runner(network: Network) -> None:
             c_workers[pod['nodeName']]['apps'].append(appName)
     
     with open('plugins/kubernetes/src/apps.json', 'w') as stream:
-        stream.write(json.dumps(allApps, indent=2, cls=utils.JSONEncoder))
+        stream.write(json.dumps(allApps, indent=2, cls=JSONEncoder))
     with open('plugins/kubernetes/src/workers.json', 'w') as stream:
-        stream.write(json.dumps(workers, indent=2, cls=utils.JSONEncoder))
+        stream.write(json.dumps(workers, indent=2, cls=JSONEncoder))
         
     utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/src/apps.xml')
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')

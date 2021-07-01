@@ -6,7 +6,7 @@ from kubernetes import config
 from textwrap import dedent
 import os, yaml
 import utils
-stage = 'resource'
+stage = 'nodes'
 
 ##  Private Functions
 

@@ -2,8 +2,12 @@
 Fetching data
 *************
 """
-import re, json, iptools, subprocess
-from network import Network
+import json
+import re
+import subprocess
+
+import iptools
+from networkobjs import Network
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}).+?(?P<dest>(\d{1,3}\.){3}\d{1,3}).*')
 

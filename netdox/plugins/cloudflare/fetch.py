@@ -6,9 +6,12 @@ Used to read DNS records from CloudFlare.
 
 Requests all managed DNS zones and then all records in each zone.
 """
-import json, requests
+import json
+
+import requests
 import utils
-from network import Network, Domain
+from networkobjs import Domain, Network
+
 
 def main(network: Network) -> None:
     """

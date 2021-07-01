@@ -5,7 +5,7 @@ from textwrap import dedent
 from functools import wraps
 import os, json, random, websockets
 import utils
-stage = 'resource'
+stage = 'nodes'
 
 def init():
     """

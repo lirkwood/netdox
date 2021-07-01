@@ -1,7 +1,12 @@
-from network import IPv4Address, Network
-import utils, boto3, json, os
+import json
+import os
 from textwrap import dedent
-stage = 'resource'
+
+import boto3
+import utils
+from networkobjs import IPv4Address, Network, JSONEncoder
+
+stage = 'nodes'
 
 def init():
     if not os.path.exists('plugins/aws/src'):
@@ -45,5 +50,5 @@ def runner(network: Network):
                     network.add(IPv4Address(ip))
 
     with open('plugins/aws/src/aws.json', 'w') as stream:
-        stream.write(json.dumps(allEC2, indent=2, cls=utils.JSONEncoder))
+        stream.write(json.dumps(allEC2, indent=2, cls=JSONEncoder))
     utils.xslt('plugins/aws/aws.xsl', 'plugins/aws/src/aws.xml')

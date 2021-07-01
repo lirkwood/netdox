@@ -6,12 +6,14 @@ Used to read DNS records from DNSMadeEasy.
 
 Requests all managed domains and then all the records under each domain.
 """
-from plugins.dnsmadeeasy import genheader
+import json
 from typing import Any, Generator, Tuple
-import json, requests
-import iptools, utils
-from network import Network, Domain, IPv4Address
 
+import iptools
+import requests
+import utils
+from networkobjs import Domain, IPv4Address, Network
+from plugins.dnsmadeeasy import genheader
 
 
 def fetchDomains() -> Generator[Tuple[str, str], Any, Any]:
