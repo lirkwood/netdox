@@ -13,7 +13,7 @@
 <xsl:template match="xpf:map">
     <xsl:variable name="ip" select="xpf:string[@key = 'ipv4']"/>
     <xsl:variable name="subnetdir" select="translate(xpf:string[@key = 'subnet'],'/','_')"/>
-    <xsl:result-document href="out/IPs/{$subnetdir}/{translate($ip,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/ips/{$subnetdir}/{translate($ip,'.','_')}.psml" method="xml" indent="yes">
     <document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
         <xsl:variable name="labels">
@@ -22,7 +22,7 @@
         </xsl:variable>
 
         <documentinfo>
-            <uri docid="_nd_{translate($ip,'.','_')}" title="{$ip}">
+            <uri docid="{xpf:string[@key = 'docid']}" title="{$ip}">
                 <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
             </uri>
         </documentinfo>
@@ -58,7 +58,7 @@
             <xsl:for-each select="xpf:array[@key = 'ptr']/xpf:array">
             <properties-fragment id="ptr_{position()}">
                 <property name="ptr" title="PTR Record" datatype="xref">
-                    <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="Reverse DNS destination" />
+                    <xref frag="default" docid="_nd_domain_{translate(xpf:string[1],'.','_')}" reversetitle="Reverse DNS destination" />
                 </property>
                 <property name="source" title="Source Plugin" value="{xpf:string[2]}"/>
             </properties-fragment>

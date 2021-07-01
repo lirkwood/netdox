@@ -9,15 +9,15 @@
 <xsl:variable name="auth" select="json-to-xml(unparsed-text('src/authentication.json'))/xpf:map"/>
 
 <xsl:template match="/">
-    <xsl:variable name="dns" select="json-to-xml(forward)"/>
-    <xsl:apply-templates select="$dns/xpf:map/xpf:array[@key = 'records']/xpf:map"/>
+    <xsl:variable name="domains" select="json-to-xml(domains)"/>
+    <xsl:apply-templates select="$domains/xpf:map/xpf:array[@key = 'records']/xpf:map"/>
 </xsl:template>
 
 <xsl:template match="xpf:map">
     <xsl:variable name="name" select="xpf:string[@key = 'name']"/>
     <xsl:try>
-        <xsl:result-document href="out/DNS/{translate($name,'.','_')}.psml" method="xml" indent="yes">
-            <document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+        <xsl:result-document href="out/domains/{translate($name,'.','_')}.psml" method="xml" indent="yes">
+            <document type="domain" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <xsl:variable name="labels">
                 <xsl:for-each select="xpf:array[@key = 'labels']/xpf:string">,<xsl:value-of select="."/></xsl:for-each>
@@ -25,7 +25,7 @@
             <xsl:variable name="role" select="xpf:string[@key = 'role']/text()"/>
 
                 <documentinfo>
-                    <uri docid="_nd_{translate($name,'.','_')}" title="{$name}">
+                    <uri docid="{xpf:string[@key = 'docid']}" title="{$name}">
                         <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
                     </uri>
                 </documentinfo>
@@ -38,7 +38,7 @@
 
                 <section id="title">
                     <fragment id="title">
-                        <heading level="2">DNS Record</heading>
+                        <heading level="2">Domain name</heading>
                     <xsl:choose>
                         <xsl:when test="contains($name, '_wildcard_')">
                             <heading level="1"><xsl:value-of select="replace($name,'_wildcard_','*')"/></heading>
@@ -87,7 +87,7 @@
                     <xsl:for-each select="xpf:array[@key = '_private_ips']/xpf:array">
                     <properties-fragment id="private_ip_{position()}">
                         <property name="ipv4" title="Private IP" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="xpf:string[1]"/></xref>
+                            <xref frag="default" docid="_nd_ip_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="xpf:string[1]"/></xref>
                         </property>
                         <property name="source" title="Source Plugin" value="{xpf:string[2]}" />
                     </properties-fragment>
@@ -95,7 +95,7 @@
                     <xsl:for-each select="xpf:array[@key = '_public_ips']/xpf:array">
                     <properties-fragment id="public_ip_{position()}">
                         <property name="ipv4" title="Public IP" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="xpf:string[1]"/></xref>
+                            <xref frag="default" docid="_nd_ip_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this IP"><xsl:value-of select="xpf:string[1]"/></xref>
                         </property>
                         <property name="source" title="Source Plugin" value="{xpf:string[2]}" />
                     </properties-fragment>
@@ -103,22 +103,10 @@
                     <xsl:for-each select="xpf:array[@key = '_cnames']/xpf:array">
                     <properties-fragment id="cname_{position()}">
                         <property name="cname" title="CNAME" datatype="xref">
-                            <xref frag="default" docid="_nd_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this domain"><xsl:value-of select="xpf:string[1]"/></xref>
+                            <xref frag="default" docid="_nd_domain_{translate(xpf:string[1],'.','_')}" reversetitle="DNS record resolving to this domain"><xsl:value-of select="xpf:string[1]"/></xref>
                         </property>
                         <property name="source" title="Source Plugin" value="{xpf:string[2]}" />
                     </properties-fragment>
-                    </xsl:for-each>
-
-                    <xsl:for-each select="xpf:map[@key='resources']/xpf:array">
-                        <xsl:variable name="plugin" select="@key"/>
-                        <xsl:for-each select="xpf:string">
-                    <properties-fragment id="{$plugin}_{position()}">
-                        <property name="resource" title="Resource" datatype="xref">
-                            <xref frag="default" docid="_nd_{.}" />
-                        </property>
-                        <property name="source" title="Source Plugin" value="{$plugin}"/>
-                    </properties-fragment>
-                        </xsl:for-each>
                     </xsl:for-each>
                     
                     <properties-fragment id="subnets">
