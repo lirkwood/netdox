@@ -29,16 +29,16 @@
                 <properties-fragment id="domains">
                     <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
                         <property name="domain" title="Domain" datatype="xref">
-                            <xref frag="default" docid="_nd_domain_{.}" />
+                            <xref frag="default" docid="_nd_domain_{translate(.,'.','_')}" />
                         </property>
                     </xsl:for-each>
                 </properties-fragment>
 
                 <properties-fragment id="ips">
                     <property name="ipv4" title="Private IP" datatype="xref">
-                        <xref frag="default" docid="_nd_ip_{translate(xpf:string[@key = '_private_ip'],'.','_')}" />
+                        <xref frag="default" docid="_nd_ip_{translate(xpf:string[@key = 'private_ip'],'.','_')}" />
                     </property>
-                    <xsl:for-each select="xpf:array[@key = '_public_ips']/xpf:string">
+                    <xsl:for-each select="xpf:array[@key = 'public_ips']/xpf:string">
                         <property name="ipv4" title="Public IP" datatype="xref">
                             <xref frag="default" docid="_nd_ip_{translate(.,'.','_')}" />
                         </property>
