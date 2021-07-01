@@ -23,7 +23,10 @@
 
 
 <xsl:template match="section[@id = 'plugininf']">
-    <xsl:apply-templates select="$domains//xpf:string[@key = 'name' and text() = translate($slugname,'_','.')]"/>
+    <xsl:copy>
+        <xsl:copy-of select="@*"/>
+        <xsl:apply-templates select="$domains//xpf:string[@key = 'name' and text() = translate($slugname,'_','.')]"/>
+    </xsl:copy>
 </xsl:template>
 
 <xsl:template match="xpf:string[@key = 'name']">

@@ -273,4 +273,4 @@ def runner(network: Network):
     mkdir('out/tmp')
     utils.xslt('plugins/icinga/services.xsl', 'out/domains', 'out/tmp')
     rmtree('out/domains')
-    rename('out/tmp', 'out/DNS')
+    rename('out/tmp', 'out/domains')
