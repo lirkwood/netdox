@@ -6,12 +6,12 @@
 <xsl:output method="xml" indent="yes" />
 
 <xsl:template match="/">
-    <xsl:variable name="ips" select="json-to-xml(reverse)"/>
-    <xsl:apply-templates select="$ips/xpf:map/xpf:array[@key = 'records']/xpf:map"/>
+    <xsl:variable name="ips" select="json-to-xml(ips)"/>
+    <xsl:apply-templates select="$ips/xpf:map/xpf:array[@key = 'objects']/xpf:map"/>
 </xsl:template>
 
 <xsl:template match="xpf:map">
-    <xsl:variable name="ip" select="xpf:string[@key = 'ipv4']"/>
+    <xsl:variable name="ip" select="xpf:string[@key = 'addr']"/>
     <xsl:variable name="subnetdir" select="translate(xpf:string[@key = 'subnet'],'/','_')"/>
     <xsl:result-document href="out/ips/{$subnetdir}/{translate($ip,'.','_')}.psml" method="xml" indent="yes">
     <document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
@@ -48,14 +48,14 @@
                 <property name="location"               title="Location"          value="{xpf:string[@key = 'location']}" />
                 <xsl:if test="xpf:string[@key = 'nat']">
                 <property name="nat" title="NAT Destination" datatype="xref">
-                    <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'nat'],'.','_')}" reversetitle="NAT alias" />
+                    <xref frag="default" docid="_nd_ip_{translate(xpf:string[@key = 'nat'],'.','_')}" reversetitle="NAT alias" />
                 </property>
                 </xsl:if>
             </properties-fragment>
 
         </section>
         <section id="reversedns" title="Reverse DNS Records">
-            <xsl:for-each select="xpf:array[@key = 'ptr']/xpf:array">
+            <xsl:for-each select="xpf:array[@key = '_ptr']/xpf:array">
             <properties-fragment id="ptr_{position()}">
                 <property name="ptr" title="PTR Record" datatype="xref">
                     <xref frag="default" docid="_nd_domain_{translate(xpf:string[1],'.','_')}" reversetitle="Reverse DNS destination" />
@@ -67,7 +67,7 @@
             <properties-fragment id="impliedptr">
             <xsl:for-each select="xpf:array[@key = 'implied_ptr']/xpf:string">
                 <property name="impliedptr" title="Implied PTR Record" datatype="xref" >
-                    <xref frag="default" docid="_nd_{translate(.,'.','_')}" />
+                    <xref frag="default" docid="_nd_domain_{translate(.,'.','_')}" />
                 </property>
             </xsl:for-each>
             </properties-fragment>
