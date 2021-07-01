@@ -13,7 +13,7 @@ import json
 import utils
 from networkobjs import Domain, Network, JSONEncoder
 from plugins import pluginmanager
-from plugins.kubernetes import initContext
+from plugins.kubernetes import initContext, App, Worker
 
 from kubernetes import client
 
@@ -82,6 +82,7 @@ def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
             podinfo = {
                 'name': pod.metadata.name,
                 'nodeName': pod.spec.node_name,
+                'nodeIP': pod.status.host_ip
             }
             del pod.metadata.labels['pod-template-hash']
             labelHash = hash(json.dumps(pod.metadata.labels, sort_keys=True))
@@ -228,6 +229,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     for deployment, details in deploymentDetails.items():
         labels = details['labels']
         apps[deployment] = {
+            'name': deployment,
             'pods':{},
             'domains': set(),
             'cluster': context,
@@ -265,31 +267,30 @@ def runner(network: Network) -> None:
     auth = utils.auth()['plugins']['kubernetes']
     global pluginmaster
     pluginmaster = pluginmanager()
-    allApps = {}
-    workers = {}
     for context in auth:
-        allApps[context] = getApps(context)
-        workers[context] = {}
-        for appName, app in allApps[context].items():
-            for domain in app['domains']:
+        apps = getApps(context)
+        location = auth[context]['location'] if 'location' in auth[context] else None
+        
+        for appName, app in apps.items():
+            appnode = App(**app)
+            appnode.location = location
+            network.add(appnode)
+
+            for domain in appnode.domains:
                 if domain not in network.domains:
                     network.domains.add(Domain(domain))
                 if not network.domains[domain].location:
-                    if 'location' in auth[context]:
-                        network.domains[domain].location = auth[context]['location']
-                
-            c_workers = workers[context]
-            for _, pod in app['pods'].items():
-                if pod['nodeName'] not in c_workers:
-                    c_workers[pod['nodeName']] = {'apps':[]}
-                    if 'xenorchestra' in pluginmaster:
-                        c_workers[pod['nodeName']]['vm'] = pod['vm']
-            c_workers[pod['nodeName']]['apps'].append(appName)
+                    network.domains[domain].location = location
+            
+            for pod in app['pods'].values():
+                if pod['nodeIP'] in network.nodes:
+                    workernode = Worker(pod['nodeName'], context, pod['nodeIP'])
+                    network.nodes[pod['nodeIP']] = workernode.merge(network.nodes[pod['nodeIP']])
+                if 'xenorchestra' in pluginmaster:
+                    network.nodes[pod['nodeName']].vm = pod['vm']
+
+            network.nodes[pod['nodeName']].apps.append(appName)
     
-    with open('plugins/kubernetes/src/apps.json', 'w') as stream:
-        stream.write(json.dumps(allApps, indent=2, cls=JSONEncoder))
-    with open('plugins/kubernetes/src/workers.json', 'w') as stream:
-        stream.write(json.dumps(workers, indent=2, cls=JSONEncoder))
         
     utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/src/apps.xml')
     utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
