@@ -1,14 +1,17 @@
 """
 Used to read and modify the deployments running on the configured clusters.
 """
+from __future__ import annotations
+from typing import Iterable, Union
 from kubernetes.client import ApiClient
 from kubernetes import config
 from textwrap import dedent
 import os, yaml
 import utils
+from networkobjs import Node
 stage = 'nodes'
 
-##  Private Functions
+##  Private Objects
 
 def initContext(context: str = None) -> ApiClient:
     """
@@ -23,6 +26,66 @@ def initContext(context: str = None) -> ApiClient:
     """
     config.load_kube_config('plugins/kubernetes/src/kubeconfig', context=context)
     return ApiClient()
+
+
+class App(Node):
+    """
+    Kubernetes app from a namespaced deployment
+    """
+    cluster: str
+    labels: dict
+    template: dict
+    pods: dict
+
+    def __init__(self, 
+            name: str, 
+            domains: list[str],
+            cluster: str, 
+            labels: dict = None, 
+            pods: dict = None, 
+            template: dict = None
+        ) -> None:
+
+        self.name = name.lower()
+        self.docid = f'_nd_node_k8app_{self.cluster}_{self.name.replace(".","_")}'
+        self.domains = set(domains)
+        self.cluster = cluster
+        self.labels = labels or {}
+        self.pods = pods or {}
+        self.template = template or {}
+
+        self.type = 'Kubernetes App'
+
+class Worker(Node):
+    """
+    Kubernetes worker node
+    """
+    cluster: str
+    apps: list
+    vm: str
+
+    def __init__(self, 
+            name: str, 
+            private_ip: str, 
+            cluster: str,
+            vm: str = None,
+            public_ips: Iterable[str] = None, 
+            domains: Iterable[str] = None,
+            ) -> None:
+        super().__init__(name, private_ip, public_ips=public_ips, domains=domains, type='Kubernetes Worker')
+
+        self.cluster = cluster
+        self.vm = vm
+
+    def merge(self, node: Union[Node, App]) -> None:
+        if self.private_ip == node.private_ip:
+            if node.type == self.type:
+                self.domains = self.domains.union(node.domains)
+                self.apps = list(set(self.apps + node.apps))
+            elif node.type == 'default':
+                self.domains
+
+
 
 ## Public functions
 
