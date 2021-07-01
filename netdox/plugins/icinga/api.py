@@ -271,6 +271,6 @@ def runner(network: Network):
     # with open('src/forward.json', 'w') as stream:
     #     stream.write(forward_dns.to_json())
     mkdir('out/tmp')
-    utils.xslt('plugins/icinga/services.xsl', 'out/DNS', 'out/tmp')
-    rmtree('out/DNS')
+    utils.xslt('plugins/icinga/services.xsl', 'out/domains', 'out/tmp')
+    rmtree('out/domains')
     rename('out/tmp', 'out/DNS')
