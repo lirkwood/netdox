@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from datetime import datetime
 from ipaddress import IPv4Address as BaseIP
 from typing import Any, Iterable, Tuple, Union
 
@@ -124,10 +123,13 @@ class Domain(NetworkObject):
     A domain defined in a managed DNS server.
     Contains all A/CNAME DNS records from managed servers using this domain as the record name.
     """
-    name: str
     root: str
-    location: str
     role: str
+    _public_ips: set[str]
+    _private_ips: set[str]
+    _cnames: set[str]
+    implied_ips: set[str]
+    subnets: set[str]
 
     def __init__(self, name: str, root: str = None, role: str = None):
         if re.fullmatch(dns_name_pattern, name):
@@ -142,6 +144,7 @@ class Domain(NetworkObject):
             self._private_ips = set()
             self._cnames = set()
 
+            self.implied_ips = set()
             self.subnets = set()
         else:
             raise ValueError('Must provide a valid name for dns record (some FQDN)')
@@ -226,7 +229,14 @@ class Domain(NetworkObject):
         """
         Property: returns all IPs from this record.
         """
-        return list(set(self.public_ips + self.private_ips))
+        return [ip for ip, _ in self._ips]
+
+    @property
+    def iplinks(self) -> list[str]:
+        """
+        Property: returns all ips that this domain points to, or that point back
+        """
+        return list(set(self.ips) + self.implied_ips)
 
     @property
     def cnames(self) -> list[str]:
@@ -374,6 +384,7 @@ class Node(NetworkObject):
         self.docid = f'_nd_node_{self.private_ip.replace(".","_")}'
         self.public_ips = set(public_ips) or set()
         self.domains = set(domains) or set()
+        
         self.type = type
 
     @property
@@ -643,26 +654,31 @@ class Network:
 
     @property
     def records(self) -> dict:
-        f_implied = defaultdict([])
-        for ip in self.ips:
-            for domain in ip.domains:
-                f_implied[domain].append(ip)
-
-        r_implied = defaultdict([])
-        for domain in self.domains:
-            for ip in domain.ips:
-                r_implied[ip].append(domain)
-
+        """
+        A dictionary of the defined links between domains and IPs
+        """
         return {
             'forward': {domain.name: domain.destinations for domain in self.domains},
             'reverse': {ip.addr: ip.ptr for ip in self.ips}
         }
 
-    def discoverImpliedPTR(self) -> None:
+    @property
+    def implied_records(self) -> dict:
+        return {
+            'forward': {ip.addr: ip.domains for ip in self.ips},
+            'reverse': {domain.name: domain.iplinks for domain in self.domains}
+        }
+
+    def discoverImpliedLinks(self) -> None:
         for domain, ips in self.records['forward'].items():
             for ip in ips:
-                if ip in self.ips:
+                if ip in self.ips and domain not in self.ips[ip].ptr:
                     self.ips[ip].implied_ptr.add(domain)
+
+        for ip, domains in self.records['reverse'].items():
+            for domain in domains:
+                if domain in self.domains and ip not in self.domains[domain].ips:
+                    self.domains[domain].implied_ips.add(ip)
 
     def writeSet(self, set: str, path: str) -> None:
         """
