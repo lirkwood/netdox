@@ -1,4 +1,4 @@
-<document type="dns" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+<document type="domain" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
     <metadata>
         <properties>
@@ -26,17 +26,10 @@
        <property name="source" title="Source Plugin" value=""/>
      </properties-fragment>
     </t:fragment>
-  
-    <t:fragment type="destination" title="Resource">
-     <properties-fragment>
-       <property name="resource" title="Resource" datatype="xref" />
-       <property name="source" title="Source Plugin" value=""/>
-     </properties-fragment>
-    </t:fragment>
 
     <section id="title">
       <fragment xmlns:t="http://pageseeder.com/psml/template" id="title">
-        <heading level="2">DNS Record</heading>
+        <heading level="2">Domain name</heading>
          <heading level="1"/>
       </fragment>
    </section>
@@ -45,7 +38,6 @@
       <properties-fragment id="info" xmlns:t="http://pageseeder.com/psml/template">
          <property name="name" title="Name" value=""/>
          <property name="root" title="Root Domain" value=""/>
-         <property name="source" title="DNS Source" value=""/>
          <property name="role"   title="DNS Role"    datatype="xref">
            <xref frag="default" docid="_nd_role_default" />
         </property>
