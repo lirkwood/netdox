@@ -164,15 +164,17 @@ def main():
     global pluginmaster
     pluginmaster.runStage('dns', network)
     network.ips.fillSubnets()
+    network.discoverImpliedLinks()
 
     # generate generic nodes
     for ip in network.ips.used:
-        network.nodes.add(Node(
-            name = ip.addr,
-            private_ip = ip.addr, 
-            public_ips = [ip.nat] if ip.nat else [],
-            domains = ip.domains
-        ))
+        if ip.is_private:
+            network.nodes.add(Node(
+                name = ip.addr,
+                private_ip = ip.addr, 
+                public_ips = [ip.nat] if ip.nat else [],
+                domains = ip.domains
+            ))
 
     ## Read hardware docs here
 
