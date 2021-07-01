@@ -7,11 +7,13 @@ Initially the default plugins were baked in features, but it became obvious that
 This was quickly expanded to allow custom code to be executed at multiple points of interest, which became the plugin stages.
 """
 
+import importlib
+import os
 from traceback import format_exc
 from types import ModuleType
 from typing import KeysView
-from network import Network
-import importlib, os
+
+from networkobjs import Network
 
 
 class pluginmanager:
