@@ -115,45 +115,6 @@ def init():
     utils.loadConfig()
 
 
-######################
-# Critical functions #
-######################
-
-# def apply_roles(dns_set: utils.DNSSet):
-#     """
-#     Applies custom roles defined in the PageSeeder config.
-
-#     Deletes any DNS records with names specified in the main config file, and sets the *role* attribute on all other records.
-#     If a record's name does not appear in the config, it is assigned the *default* role.
-#     """
-#     config = utils.config
-
-#     for domain in config['exclusions']:
-#         if domain in dns_set:
-#             del dns_set[domain]
-    
-#     unassigned = list(dns_set.names)
-#     for role in config.keys():
-#         if role != 'exclusions':
-#             for domain in config[role]['domains']:
-#                 try:
-#                     dns_set[domain].role = role
-#                     unassigned.remove(domain)
-#                 except KeyError:
-#                     pass
-    
-#     for domain in unassigned:
-#         dns_set[domain].role = 'default'
-#         config['default']['domains'].append(domain)
-
-def screenshots():
-    """
-    Runs screenshotCompare (see :ref:`file_screenshot`) and writes output using xslt.
-    """
-    subprocess.run('node screenshotCompare.js', check=True, shell=True)
-    utils.xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
-
-
 ###########################
 # Non-essential functions #
 ###########################
@@ -223,28 +184,19 @@ def main():
     
     network.dumpNetwork()
     
-    # # Write DNS documents
-    # utils.xslt('domains.xsl', 'src/forward.xml')
-    # # Write IP documents
-    # utils.xslt('ips.xsl', 'src/reverse.xml')
-
-    # apply additional modifications/filters
-    # ips(forward, reverse)
-    # apply_roles(forward)
-    # license_keys(network)
-    # license_orgs(network)
-
-
-    # Write DNS sets
-    # with open('src/forward.json', 'w') as stream:
-    #     stream.write(forward.to_json())
-    # with open('src/reverse.json', 'w') as stream:
-    #     stream.write(reverse.to_json())
+    # Write Domain documents
+    utils.xslt('domains.xsl', 'src/domains.xml')
+    # Write IPv4Address documents
+    utils.xslt('ips.xsl', 'src/ips.xml')
+    # Write Node documents
+    utils.xslt('nodes.xsl', 'src/nodes.xml')
 
 
     pluginmaster.runStage('post-write', network)
 
-    screenshots()
+    subprocess.run('node screenshotCompare.js', check=True, shell=True)
+    utils.xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
+
     cleanup.pre_upload()
 
 

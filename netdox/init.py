@@ -26,12 +26,12 @@ def init():
         if not os.path.exists(path):
             os.mkdir(path)
             
-    for path in ('domains', 'ips', 'screenshots', 'screenshot_history', 'review', 'config'):
+    for path in ('domains', 'ips', 'nodes', 'screenshots', 'screenshot_history', 'review', 'config'):
         if not os.path.exists('out/'+path):
             os.mkdir('out/'+path)
     
     # generate xslt json import files
-    for type in ('domains', 'ips', 'review'):
+    for type in ('domains', 'ips', 'nodes', 'review'):
         with open(f'src/{type}.xml','w') as stream:
             stream.write(dedent(f"""
             <?xml version="1.0" encoding="UTF-8"?>
