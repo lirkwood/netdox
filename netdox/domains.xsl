@@ -10,7 +10,7 @@
 
 <xsl:template match="/">
     <xsl:variable name="domains" select="json-to-xml(domains)"/>
-    <xsl:apply-templates select="$domains/xpf:map/xpf:array[@key = 'records']/xpf:map"/>
+    <xsl:apply-templates select="$domains/xpf:map/xpf:array[@key = 'objects']/xpf:map"/>
 </xsl:template>
 
 <xsl:template match="xpf:map">
@@ -26,7 +26,7 @@
 
                 <documentinfo>
                     <uri docid="{xpf:string[@key = 'docid']}" title="{$name}">
-                        <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
+                        <labels>show-reversexrefs,role_<xsl:value-of select="xpf:string[@key='role']"/><xsl:value-of select="$labels"/></labels>
                     </uri>
                 </documentinfo>
 
@@ -133,6 +133,7 @@
                     </properties-fragment>
                     
                 </section>
+                <section id="plugininf"/>
             
             </document>
         </xsl:result-document>
