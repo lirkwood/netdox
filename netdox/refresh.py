@@ -19,7 +19,7 @@ import license_inf
 import pageseeder
 import plugins
 import utils
-from network import Network
+from networkobjs import Network, Node
 
 ##################
 # Initialisation #
@@ -146,25 +146,6 @@ def init():
 #         dns_set[domain].role = 'default'
 #         config['default']['domains'].append(domain)
 
-# def ips(forward: utils.DNSSet, reverse: utils.DNSSet):
-#     """
-#     Populates a reverse dns set with any missing IPs from a forward dns set.
-
-#     Iterates over every unique and private subnet and generates empty PTR records for any unused IPv4 addresses.
-#     """
-#     subnets = set()
-#     for dns in forward:
-#         for ip in dns.ips:
-#             if ip not in reverse:
-#                 reverse.add(utils.PTRRecord(ip))
-#             if not iptools.public_ip(ip):
-#                 subnets.add(reverse[ip].subnet)
-    
-#     for subnet in subnets:
-#         for ip in iptools.subn_iter(subnet):
-#             if ip not in reverse:
-#                 reverse.add(utils.PTRRecord(ip, unused=True))
-
 def screenshots():
     """
     Runs screenshotCompare (see :ref:`file_screenshot`) and writes output using xslt.
@@ -176,30 +157,6 @@ def screenshots():
 ###########################
 # Non-essential functions #
 ###########################
-
-# @utils.handle
-# def locations(dns_set: utils.DNSSet):
-#     """
-#     Attempts to extract location data from CNAME records for those DNS records that have none.
-
-#     Iterates over the cnames of a record. If any of them have location data, inject into the initial record.
-#     """
-#     unlocated = []
-#     for dns in dns_set:
-#         if not dns.location:
-#             for alias in dns.cnames:
-#                 try:
-#                     if dns_set[alias].location:
-#                         dns.location = dns_set[alias].location
-#                 except KeyError:
-#                     pass
-        
-#         if not dns.location:
-#             unlocated.append(dns.name)
-#     if unlocated:
-#         print('[WARNING][refresh] Some records are missing location data. For a complete list see /var/log/unlocated.json')
-#         with open('/var/log/unlocated.json', 'w') as stream:
-#             stream.write(json.dumps(unlocated, indent=2))
 
 # @utils.handle
 # def license_keys(dns_set: utils.DNSSet):
@@ -247,7 +204,29 @@ def main():
     pluginmaster.runStage('dns', network)
     network.ips.fillSubnets()
 
+    # generate generic nodes
+    for ip in network.ips.used:
+        network.nodes.add(Node(
+            name = ip.addr,
+            private_ip = ip.addr, 
+            public_ips = [ip.nat] if ip.nat else [],
+            domains = ip.domains
+        ))
+
+    ## Read hardware docs here
+
     pluginmaster.runStage('nodes', network)
+
+    network.applyDomainRoles()
+    
+    pluginmaster.runStage('pre-write', network)
+    
+    network.dumpNetwork()
+    
+    # # Write DNS documents
+    # utils.xslt('domains.xsl', 'src/forward.xml')
+    # # Write IP documents
+    # utils.xslt('ips.xsl', 'src/reverse.xml')
 
     # apply additional modifications/filters
     # ips(forward, reverse)
@@ -255,17 +234,13 @@ def main():
     # license_keys(network)
     # license_orgs(network)
 
-    pluginmaster.runStage('pre-write', network)
 
     # Write DNS sets
     # with open('src/forward.json', 'w') as stream:
     #     stream.write(forward.to_json())
     # with open('src/reverse.json', 'w') as stream:
     #     stream.write(reverse.to_json())
-    # Write DNS documents
-    utils.xslt('domains.xsl', 'src/forward.xml')
-    # Write IP documents
-    utils.xslt('ips.xsl', 'src/reverse.xml')
+
 
     pluginmaster.runStage('post-write', network)
 
