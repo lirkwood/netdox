@@ -7,7 +7,7 @@ import re
 import subprocess
 
 import iptools
-from networkobjs import Network
+from networkobjs import IPv4Address, Network
 
 patt_nat = re.compile(r'(?P<alias>(\d{1,3}\.){3}\d{1,3}).+?(?P<dest>(\d{1,3}\.){3}\d{1,3}).*')
 
@@ -34,6 +34,7 @@ def runner(network: Network):
     pfsense = subprocess.check_output('node plugins/nat/pfsense.js', shell=True)
     natDict |= json.loads(pfsense)
 
-    for ip in network.ips:
-        if ip.addr in natDict:
-            ip.nat = natDict[ip.addr]
+    for ip in natDict:
+        if ip not in network.ips:
+            network.ips.add(IPv4Address(ip, True))
+        network.ips[ip].nat = natDict[ip]
