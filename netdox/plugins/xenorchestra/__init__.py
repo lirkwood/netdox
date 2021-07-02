@@ -1,34 +1,16 @@
 """
 Used to read and modify the VMs managed by Xen Orchestra
 """
-from textwrap import dedent
+import json
+import os
+import random
 from functools import wraps
-import os, json, random, websockets
+from textwrap import dedent
+
 import utils
-stage = 'nodes'
-
-def init():
-    """
-    Some initialisation for the plugin to work correctly
-
-    :meta private:
-    """
-    global creds
-    creds = utils.auth()['plugins']['xenorchestra']
-    global url
-    url = f"wss://{creds['host']}/api/"
-    if not os.path.exists('plugins/xenorchestra/src'):
-        os.mkdir('plugins/xenorchestra/src')
-
-    for type in ('vms', 'hosts', 'pools', 'templates'):
-        with open(f'plugins/xenorchestra/src/{type}.xml','w') as stream:
-            stream.write(dedent(f"""
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE {type} [
-            <!ENTITY json SYSTEM "{type}.json">
-            ]>
-            <{type}>&json;</{type}>""").strip())
-
+import websockets
+from networkobjs import Network
+from plugins import Plugin as BasePlugin
 
 ##################################
 # Generic websocket interactions #
@@ -105,4 +87,35 @@ async def reciever(id: int) -> dict:
                 frames[message['id']] = message
 
 
+## Plugin
+
 from plugins.xenorchestra.fetch import runner
+
+class Plugin(BasePlugin):
+    name = 'xenorchestra'
+    stage = 'nodes'
+
+    def init(self) -> None:
+        """
+        Some initialisation for the plugin to work correctly
+
+        :meta private:
+        """
+        global creds
+        creds = utils.auth()['plugins']['xenorchestra']
+        global url
+        url = f"wss://{creds['host']}/api/"
+        if not os.path.exists('plugins/xenorchestra/src'):
+            os.mkdir('plugins/xenorchestra/src')
+
+        for type in ('vms', 'hosts', 'pools', 'templates'):
+            with open(f'plugins/xenorchestra/src/{type}.xml','w') as stream:
+                stream.write(dedent(f"""
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE {type} [
+                <!ENTITY json SYSTEM "{type}.json">
+                ]>
+                <{type}>&json;</{type}>""").strip())
+
+    def runner(self, network: Network) -> None:
+        runner(network)
