@@ -5,7 +5,7 @@ import re
 from abc import ABC, abstractmethod
 from datetime import datetime
 from ipaddress import IPv4Address as BaseIP
-from typing import Any, Iterable, Tuple, Union
+from typing import Iterable, Iterator, Tuple, Union
 
 import iptools
 
@@ -34,7 +34,7 @@ class Locator:
             for subnet in self.location_map[location]:
                 self.location_pivot[subnet] = location
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         yield from self.location_map.keys()
 
     def locate(self, ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
@@ -452,16 +452,16 @@ class NetworkObjectContainer(ABC):
         self.objects = {object.name: object for object in objectSet}
         self.network = network
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> NetworkObject:
         return self.objects[key]
 
-    def __setitem__(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: NetworkObject) -> None:
         self.objects[key] = value
 
     def __delitem__(self, key: str) -> None:
         del self.objects[key]
 
-    def __iter__(self) -> Any:
+    def __iter__(self) -> Iterator[NetworkObject]:
         yield from self.objects.values()
 
     def __contains__(self, key: str) -> bool:
@@ -495,6 +495,10 @@ class DomainSet(NetworkObjectContainer):
     """
     objectType: str = 'domains'
 
+    ## Re-implemented to type hint
+    def __iter__(self) -> Iterator[Domain]:
+        yield from super().__iter__()
+
     @property
     def domains(self) -> dict:
         return self.objects
@@ -511,6 +515,9 @@ class IPv4AddressSet(NetworkObjectContainer):
     def __init__(self, ips: list[IPv4Address] = []) -> None:
         self.objects = {ip.addr: ip for ip in ips}
         self.subnets = set()
+
+    def __iter__(self) -> Iterator[IPv4Address]:
+        yield from super().__iter__()
 
     def add(self, ip: IPv4Address) -> None:
         """
@@ -552,6 +559,9 @@ class NodeSet(NetworkObjectContainer):
     Container for a set of Nodes
     """
     objectType: str = 'nodes'
+
+    def __iter__(self) -> Iterator[Node]:
+        yield from super().__iter__()
 
     @property
     def nodes(self) -> dict:
