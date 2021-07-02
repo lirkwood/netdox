@@ -5,9 +5,9 @@ Dev
 
 Netdox Overview
 ---------------
-The following pages are for developers that need to maintain or extend Netdox, a collection of code that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
+The following pages are for developers that need to maintain or extend Netdox, an application that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
 
-Netdox is a containerised application built with Python, XSLT and some Node.js.
+Netdox is a highly modular, containerised application built with primarily with Python (although it utilises Java and Node.js for certain tasks).
 The objective of Netdox is to improve the productivity of network administrators by consolidating information from a range of systems.
 This reduces the need for administrators to move between many different interfaces, and minimises the familiarity required with each service.
 The documentation is updated and pruned daily to keep data current and accurate, and can be refreshed at any time.
@@ -36,6 +36,13 @@ This provides Netdox with an anchor that can be used to identify a node's positi
 As IP addresses are deployed, released and redeployed, all changes are captured in PageSeeder through the document history.
 This can help to identify the cause of a problem, or even resolve one before it arises.
 Furthermore, this tracking of IP address usage means it is trivial to capture the next unused address for use within other automated services.
+
+Objects and their meaning
+-------------------------
+The most important objects in Netdox are the NetworkObjects and their containers.
+There are three subclasses of NetworkObject in the core code; The Domain, IPv4Address, and Node objects.
+Domain and IPv4Address are both containers for DNS records with the same name. For example, a Domain with the name 'netdox.allette.com.au' contains all the A and CNAME DNS records which have that name.
+For more details on how these classes can be used / extended, see :ref:`networkobjs` and :ref:`plugins`.
 
 
 .. toctree::
