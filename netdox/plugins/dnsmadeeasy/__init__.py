@@ -1,10 +1,16 @@
 """
 Used to read and modify DNS records stored in DNSMadeEasy.
 """
-import utils, json, os
-import hashlib, hmac
+import hashlib
+import hmac
+import json
+import os
 from datetime import datetime
-stage = 'dns'
+
+import utils
+from networkobjs import Network
+from plugins import Plugin as BasePlugin
+
 
 def genheader() -> dict[str, str]:
 	"""
@@ -29,18 +35,36 @@ def genheader() -> dict[str, str]:
 	
 	return header
 
-def init():
-    zones = {}
-    for id, domain in fetchDomains():
-        zones[domain] = id
 
-    if not os.path.exists('plugins/dnsmadeeasy/src'):
-        os.mkdir('plugins/dnsmadeeasy/src')
-    with open('plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
-        stream.write(json.dumps(zones, indent=2))
+from plugins.dnsmadeeasy.create import create_A, create_CNAME, create_PTR
+from plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
+
+
+class Plugin(BasePlugin):
+	name = 'dnsmadeeasy'
+	stage = 'dns'
+
+	def init(self) -> None:
+		zones = {}
+		for id, domain in fetchDomains():
+			zones[domain] = id
+
+		if not os.path.exists('plugins/dnsmadeeasy/src'):
+			os.mkdir('plugins/dnsmadeeasy/src')
+		with open('plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
+			stream.write(json.dumps(zones, indent=2))
+
+	def runner(self, network: Network) -> None:
+		fetchDNS(network)
+
+	def create_A(self, name:str, ip: str, zone: str) -> None:
+		create_A(name, ip, zone)
+
+	def create_CNAME(self, name: str, value: str, zone: str) -> None:
+		create_CNAME(name, value, zone)
+
+	def create_PTR(self, ip: str, value: str) -> None:
+		create_PTR(ip, value)
 
 
 ## Imports
-from plugins.dnsmadeeasy.fetch import fetchDNS as runner
-from plugins.dnsmadeeasy.fetch import fetchDomains
-from plugins.dnsmadeeasy.create import create_A, create_CNAME, create_PTR
