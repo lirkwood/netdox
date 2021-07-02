@@ -3,16 +3,27 @@ Used to read and modify DNS records stored in ActiveDirectory.
 
 This plugin uses a shared storage location in order to pass information back and forth between the Netdox host and the ActiveDirectory DNS server.
 """
+from networkobjs import Network
+from plugins import Plugin as BasePlugin
+from plugins.activedirectory.create import create_forward, create_reverse
+from plugins.activedirectory.fetch import fetchDNS
 
-## Runner
-from plugins.activedirectory.fetch import fetchDNS as runner
-stage = 'dns'
 
-## DNS Actions
-from plugins.activedirectory.create import create_forward, create_reverse as create_PTR
+class Plugin(BasePlugin):
+    name = 'activedirectory'
+    stage = 'dns'
 
-def create_A(name: str, ip: str, zone: str):
-    create_forward(name, ip, zone, 'A')
+    def init(self) -> None:
+        pass
 
-def create_CNAME(name: str, value: str, zone: str):
-    create_forward(name, value, zone, 'CNAME')
+    def runner(self, network: Network) -> None:
+        fetchDNS(network)
+
+    def create_A(self, name: str, ip: str, zone: str):
+        create_forward(name, ip, zone, 'A')
+
+    def create_CNAME(self, name: str, value: str, zone: str):
+        create_forward(name, value, zone, 'CNAME')
+
+    def create_PTR(self, ip: str, value: str):
+        create_reverse(ip, value)
