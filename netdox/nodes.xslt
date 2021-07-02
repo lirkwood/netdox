@@ -24,7 +24,18 @@
                 </properties>
             </metadata>
 
-            <section id="network" title="Network Details">
+            <section id="title">
+                <fragment id="title">
+                    <heading level="1"><xsl:value-of select="xpf:string[@key = 'name']"/></heading>
+                </fragment>
+            </section>
+
+            <section id="details" title="Node Details">
+
+                <properties-fragment id="summary">
+                    <property name="nodename" title="Name" value="{xpf:string[@key = 'name']}" />
+                    <property name="nodetype" title="Type" value="{xpf:string[@key = 'type']}" />
+                </properties-fragment>
 
                 <properties-fragment id="domains">
                     <xsl:for-each select="xpf:array[@key = 'domains']/xpf:string">
