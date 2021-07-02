@@ -9,60 +9,93 @@ This was quickly expanded to allow custom code to be executed at multiple points
 
 import importlib
 import os
+from abc import ABC, abstractmethod
+from collections import defaultdict
 from traceback import format_exc
 from types import ModuleType
-from typing import KeysView
+from typing import Iterator, KeysView
 
 from networkobjs import Network
 
 
-class pluginmanager:
+class Plugin(ABC):
+    """
+    Base class for plugins
+    """
+    name: str
+    stage: str
+    node_types: list[str]
+
+    @abstractmethod
+    def init(self) -> None:
+        """
+        Any initialisation that should be done before the runner is called.
+        """
+        pass
+
+    @abstractmethod
+    def runner(self, network: Network) -> None:
+        """
+        The main function of the plugin.
+        """
+        pass
+
+
+class PluginManager:
     """
     Used to find, import, and run plugins.
     """
-    pluginmap: dict[str, dict[str, ModuleType]]
+    pluginmap: defaultdict[dict[str, Plugin]]
+    nodemap: dict[str, Plugin]
     stages: KeysView[str]
 
     def __init__(self) -> None:
+        self.pluginmap = defaultdict(dict)
         self.pluginmap = {
             'all':{},
             'dns': {},
-            'resources': {},
+            'nodes': {},
             'pre-write': {},
-            'post-write': {},
-            'none': {}
+            'post-write': {}
         }
         self.stages = self.pluginmap.keys()
         self.loadPlugins('plugins')
+
+    def __iter__(self) -> Iterator[Plugin]:
+        yield from self.plugins.values()
     
-    def __getitem__(self, key: str) -> ModuleType:
+    def __getitem__(self, key: str) -> Plugin:
         """
         Returns a plugin by name.
         """
-        return self.pluginmap['all'][key]
+        return self.plugins[key]
 
-    def __contains__(self, key: str) -> ModuleType:
+    def __contains__(self, key: str) -> bool:
         """
         Tests if a plugin with the given name has been loaded
         """
-        return self.pluginmap['all'].__contains__(key)
+        return self.plugins.__contains__(key)
 
-    def add(self, name: str, module: ModuleType, stage: str = 'none') -> None:
+    @property
+    def plugins(self) -> dict:
+        """
+        A dictionary of all plugins in the pluginmap
+        """
+        return self.pluginmap['all']
+
+    def add(self, plugin: Plugin) -> None:
         """
         Adds a plugin to the pluginmap.
 
         :Args:
-            name: str
-                The name of the plugin to add
-            module: ModuleType
-                The module object to add as the plugin
-            stage: str
-                The stage at which to call *runner* for this plugin ('none' to never call)
+            plugin:
+                An instance of the Plugin abstract base class
         """
-        self.pluginmap['all'][name] = module
-        if stage not in self.pluginmap:
-            self.pluginmap[stage] = {}
-        self.pluginmap[stage][name] = module
+        self.plugins[plugin.name] = plugin
+        for node_type in plugin.node_types:
+            self.nodemap[node_type] = plugin
+        if plugin.stage:
+            self.pluginmap[plugin.stage][plugin.name] = plugin
     
     def loadPlugins(self, dir: str) -> None:
         """
@@ -76,19 +109,19 @@ class pluginmanager:
                 except Exception:
                     raise ImportError(f'[ERROR][plugins] Failed to import {pluginName}: \n{format_exc()}')
                 else:
-                    if hasattr(plugin, 'stage') and isinstance(plugin.stage, str):
-                        stage = plugin.stage.lower()
-                    else:
-                        stage = 'none'
-                    
-                    if hasattr(plugin, 'init'):
-                        try:
-                            plugin.init()
-                        except Exception:
-                            print(f'[ERROR][plugins] Failed to initialise {pluginName}: \n{format_exc()}')
-                        
-                    self.add(pluginName, plugin, stage)
+                    if hasattr(plugin, 'Plugin'):
+                        self.add(plugin.Plugin())
 
+    def initPlugin(self, plugin_name: str) -> None:
+        self.plugins[plugin_name].init()
+
+    def initStage(self, stage: str) -> None:
+        for plugin in self.pluginmap[stage]:
+            plugin.init()
+
+    def initPlugins(self) -> None:
+        for plugin in self:
+            plugin.init()
 
     def runPlugin(self, name: str = '', plugin: ModuleType = None, network: Network = None) -> None:
         """
