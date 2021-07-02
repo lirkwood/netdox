@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import subprocess, json, sys, re
 
 import pageseeder, utils, iptools, plugins
+from networkobjs import dns_name_pattern
 
 app = Flask(__name__)
 
@@ -58,20 +59,22 @@ def workflow_updated(event):
         document_uri = comment_details['context']['uri']['id']
         document_type = comment_details['context']['uri']['documenttype']
 
-        if document_type in ('dns' 'ip'):
+        if document_type in ('domain' 'ip'):
             if status == 'Approved':
                 if document_type == 'dns':
-                    return approved_dns(document_uri)
+                    return approved_domain(document_uri)
 
                 elif document_type == 'ip':
                     return approved_ip(document_uri)
 
-        else:
+        elif document_type == 'node':
+            summary = pageseeder.pfrag2dict(pageseeder.get_fragment(document_uri, 'summary'))
+            node_type = summary['type']
             if document_type in doctypeMap:
-                plugin = pluginmaster.pluginmap['all'][doctypeMap[document_type]]
+                plugin = pluginmaster.nodemap[node_type]
                 try:
-                    print(f'[INFO][webhooks] Delegating to {plugin.__name__} for document type {document_type}')
-                    return getattr(plugin, document_type)(document_uri, status)
+                    print(f'[INFO][webhooks] Delegating to {plugin.name} for node type {node_type}')
+                    return plugin.approved_node(document_uri)
                 except Exception:
                     print_exc()
                     return Response(status=500)
@@ -80,7 +83,7 @@ def workflow_updated(event):
                 return Response(status=500)
 
 
-def approved_dns(uri):
+def approved_domain(uri):
     """
     Handles ratifying changes specified in a DNS document.
     """
@@ -99,7 +102,7 @@ def approved_dns(uri):
                         dest = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
                         sourcePlugin = dest['source'].lower()
                         if sourcePlugin in pluginmaster.pluginmap['all']:
-                            plugin = pluginmaster.pluginmap['all'][sourcePlugin]
+                            plugin = pluginmaster[sourcePlugin]
                             if link['type'] == 'ipv4':
                                 if iptools.valid_ip(value):
                                     try:
@@ -107,7 +110,7 @@ def approved_dns(uri):
                                     except AttributeError:
                                         print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating an A record.')
                             else:
-                                if re.fullmatch(utils.dns_name_pattern, value):
+                                if re.fullmatch(dns_name_pattern, value):
                                     if not value.endswith('.'):
                                         value += '.'
                                     try:
@@ -187,7 +190,8 @@ def approved_ip(uri):
 doctypeMap = {} 
 psproperties = {}
 if 'gunicorn' in sys.argv[0]:
-    pluginmaster = plugins.pluginmanager() 
+    pluginmaster = plugins.PluginManager()
+    pluginmaster.initPlugins() 
     with open('src/pageseeder.properties', 'r') as stream:
         for line in stream.read().splitlines():
             property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
