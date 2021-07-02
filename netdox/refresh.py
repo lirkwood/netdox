@@ -45,7 +45,7 @@ def init():
 
     # Initialise plugins
     global pluginmaster
-    pluginmaster = plugins.pluginmanager()
+    pluginmaster = plugins.PluginManager()
 
     config = {"exclusions": []}
     roles = {}
@@ -162,6 +162,7 @@ def main():
     network = Network(config = utils.config)
 
     global pluginmaster
+    pluginmaster.initStage('dns')
     pluginmaster.runStage('dns', network)
     network.ips.fillSubnets()
     network.discoverImpliedLinks()
@@ -178,10 +179,12 @@ def main():
 
     ## Read hardware docs here
 
+    pluginmaster.initStage('nodes')
     pluginmaster.runStage('nodes', network)
 
     network.applyDomainRoles()
     
+    pluginmaster.initStage('pre-write')
     pluginmaster.runStage('pre-write', network)
     
     network.dumpNetwork()
@@ -194,6 +197,7 @@ def main():
     utils.xslt('nodes.xsl', 'src/nodes.xml')
 
 
+    pluginmaster.initStage('post-write')
     pluginmaster.runStage('post-write', network)
 
     subprocess.run('node screenshotCompare.js', check=True, shell=True)
