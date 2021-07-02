@@ -5,6 +5,16 @@ and modify the monitors based on values configured in PageSeeder.
 The 'template' property, if present in a DNS role, will provide the desired monitor template for a domain.
 If there is a manually specified monitor on an address, no modifications will be made and any generated monitors will be removed.
 """
-stage = 'post-write'
-
+from plugins import Plugin as BasePlugin
 from plugins.icinga.api import runner
+from networkobjs import Network
+
+class Plugin(BasePlugin):
+    name = 'icinga'
+    stage = 'post-write'
+
+    def init(self) -> None:
+        pass
+
+    def runner(self, network: Network) -> None:
+        runner(network)
