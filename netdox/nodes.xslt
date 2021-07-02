@@ -57,8 +57,8 @@
                 </properties-fragment>
 
             </section>
-            <section id="details"/>
             <section id="plugininf"/>
+            <section id="other" />
 
         </document>
     </xsl:result-document>
