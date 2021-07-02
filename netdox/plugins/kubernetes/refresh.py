@@ -12,7 +12,7 @@ import json
 
 import utils
 from networkobjs import Domain, Network, JSONEncoder
-from plugins import pluginmanager
+from plugins import PluginManager
 from plugins.kubernetes import initContext, App, Worker
 
 from kubernetes import client
@@ -266,7 +266,7 @@ def runner(network: Network) -> None:
     """
     auth = utils.auth()['plugins']['kubernetes']
     global pluginmaster
-    pluginmaster = pluginmanager()
+    pluginmaster = PluginManager()
     for context in auth:
         apps = getApps(context)
         location = auth[context]['location'] if 'location' in auth[context] else None

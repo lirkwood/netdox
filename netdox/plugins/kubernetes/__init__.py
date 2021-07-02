@@ -2,16 +2,21 @@
 Used to read and modify the deployments running on the configured clusters.
 """
 from __future__ import annotations
-from typing import Iterable, Union
-from kubernetes.client import ApiClient
-from kubernetes import config
-from textwrap import dedent
-import os, yaml
-import utils
-from networkobjs import Node
-stage = 'nodes'
 
-##  Private Objects
+import os
+from typing import Iterable, Union
+
+import pageseeder
+import utils
+import yaml
+from flask import Response
+from networkobjs import Network, Node
+from plugins import Plugin as BasePlugin
+
+from kubernetes import config
+from kubernetes.client import ApiClient
+
+##  Plugin functions
 
 def initContext(context: str = None) -> ApiClient:
     """
@@ -27,6 +32,8 @@ def initContext(context: str = None) -> ApiClient:
     config.load_kube_config('plugins/kubernetes/src/kubeconfig', context=context)
     return ApiClient()
 
+
+## Plugin node classes
 
 class App(Node):
     """
@@ -79,71 +86,71 @@ class Worker(Node):
 
     def merge(self, node: Union[Node, App]) -> None:
         if self.private_ip == node.private_ip:
+            self.domains = self.domains.union(node.domains)
             if node.type == self.type:
-                self.domains = self.domains.union(node.domains)
                 self.apps = list(set(self.apps + node.apps))
             elif node.type == 'default':
-                self.domains
+                self.location = self.location or node.location
 
-
-
-## Public functions
+## Public plugin class
 
 from plugins.kubernetes.refresh import runner
-from plugins.kubernetes.webhooks import app_action as k8s_app
+from plugins.kubernetes.webhooks import create_app
 
 
-## Initialisation
+class Plugin(BasePlugin):
+    name = 'kubernetes'
+    stage = 'nodes'
 
-def init():
-    """
-    Some initialisation for the plugin to work correctly
+    def init(self) -> None:
+        """
+        Some initialisation for the plugin to work correctly
 
-    :meta private:
-    """
-    # Create output dir
-    for dir in ('out', 'src'):
-        if not os.path.exists(f'plugins/kubernetes/{dir}'):
-            os.mkdir(f'plugins/kubernetes/{dir}')
+        :meta private:
+        """
+        # Create output dir
+        for dir in ('out', 'src'):
+            if not os.path.exists(f'plugins/kubernetes/{dir}'):
+                os.mkdir(f'plugins/kubernetes/{dir}')
 
-    auth = utils.auth()['plugins']['kubernetes']
-    with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
-        clusters = []
-        users = []
-        contexts = []
-        for contextName, details in auth.items():
-            clusters.append({
-                'cluster': {'server': f"{details['server']}/k8s/clusters/{details['clusterId']}"},
-                'name': contextName
-            })
+        auth = utils.auth()['plugins']['kubernetes']
+        with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
+            clusters = []
+            users = []
+            contexts = []
+            for contextName, details in auth.items():
+                clusters.append({
+                    'cluster': {'server': f"{details['server']}/k8s/clusters/{details['clusterId']}"},
+                    'name': contextName
+                })
 
-            users.append({
-                'name': contextName,
-                'user': {'token': details['token']}
-            })
+                users.append({
+                    'name': contextName,
+                    'user': {'token': details['token']}
+                })
 
-            contexts.append({
-                'context': {
-                    'cluster': contextName,
-                    'user': contextName
-                },
-                'name': contextName
-            })
+                contexts.append({
+                    'context': {
+                        'cluster': contextName,
+                        'user': contextName
+                    },
+                    'name': contextName
+                })
 
-        stream.write(yaml.dump({
-        'apiVersion': 'v1',
-        'Kind': 'Config',
-        'current-context': list(auth)[0],
-        'clusters': clusters,
-        'users': users,
-        'contexts': contexts
-        }))
+            stream.write(yaml.dump({
+            'apiVersion': 'v1',
+            'Kind': 'Config',
+            'current-context': list(auth)[0],
+            'clusters': clusters,
+            'users': users,
+            'contexts': contexts
+            }))
 
-    for type in ('workers', 'apps'):
-        with open(f'plugins/kubernetes/src/{type}.xml', 'w') as stream:
-            stream.write(dedent(f"""
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE {type} [
-            <!ENTITY json SYSTEM "{type}.json">
-            ]>
-            <{type}>&json;</{type}>""").strip())
+    def runner(self, network: Network) -> None:
+        runner(network)
+
+    def approved_node(self, uri: str) -> Response:
+        summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
+        if summary['type'] == 'Kubernetes App':
+            # create_app(some args go here)
+            pass
