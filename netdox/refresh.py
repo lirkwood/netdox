@@ -48,7 +48,6 @@ def init():
     pluginmaster = plugins.PluginManager()
 
     roles = {"exclusions": []}
-    tempRoles = {}
     # load dns config from pageseeder
     psConfigInf = json.loads(pageseeder.get_uri('_nd_config'))
     if 'title' in psConfigInf and psConfigInf['title'] == 'DNS Config':
@@ -59,17 +58,19 @@ def init():
             roleName = roleConfig['name']
 
             # # set role for configured domains
+            domains = set()
             revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['docid']), features='xml')
             for revXref in revXrefs("reversexref"):
+                ## change to 'domain'
                 if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'dns':
-                    tempRoles[revXref['urititle']] = roleName
+                    domains.add(revXref['urititle'])
             
             screenshot = strtobool(roleConfig['screenshot'])
             del roleConfig['name'], roleConfig['screenshot']
             
             roles[roleName] = (roleConfig | {
                 "screenshot": screenshot,
-                "domains": []
+                "domains": list(domains)
             })
 
         # load exclusions
