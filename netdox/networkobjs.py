@@ -113,7 +113,7 @@ class NetworkObject(ABC):
     def merge(self, object: NetworkObject) -> None:
         """
         In place merge of two NetworkObject instances of the same type.
-        This method should be called on the object already existing in the set.
+        This method should always be called on the object entering the set.
         """
         pass
 
@@ -266,12 +266,14 @@ class Domain(NetworkObject):
     def merge(self, domain: Domain) -> None:
         """
         In place merge of two Domain objects
-        This method should be called on the object already existing in the set.
+        This method should always be called on the object entering the set.
         """
         if self.name == domain.name:
-            self._private_ips = domain._private_ips | self._private_ips
-            self._public_ips = domain._public_ips | self._public_ips
-            self._cnames = domain._cnames | self._cnames
+            self._private_ips |= domain._private_ips
+            self._public_ips |= domain._public_ips
+            self._cnames |= domain._cnames
+            if domain.network:
+                self._network = domain.network
             self.update()
         else:
             raise ValueError('Cannot merge two Domains with different names')
@@ -325,12 +327,14 @@ class IPv4Address(BaseIP, NetworkObject):
     def merge(self, ip: IPv4Address) -> None:
         """
         In place merge of two IPv4Address objects
-        This method should be called on the object already existing in the set.
+        This method should always be called on the object entering the set.
         """
         if self.addr == ip.addr:
-            self._ptr = ip._ptr | self._ptr
-            self.implied_ptr = ip.implied_ptr | self.implied_ptr
-            self.nat = self.nat or ip.nat
+            self._ptr |= ip._ptr
+            self.implied_ptr |= ip.implied_ptr
+            self.nat = ip.nat or self.nat
+            if ip.network:
+                self.network = ip.network
         else:
             raise ValueError('Cannot merge two IPv4Addresses with different names')
 
@@ -403,13 +407,13 @@ class Node(NetworkObject):
     def merge(self, node: Node) -> None:
         """
         In place merge of two Node objects.
-        This method should be called on the object already existing in the set.
+        This method should always be called on the object entering the set.
         """
         if self.type == node.type and self.private_ip == node.private_ip:
-            self.public_ips = node.public_ips | self.public_ips
-            self.domains = node.domains | self.domains
-            if self.network:
-                self.location = self.network.locator.locate(self.ips)
+            self.public_ips |= node.public_ips
+            self.domains |= node.domains
+            if node.network:
+                self.network = node.network
         else:
             raise TypeError('Cannot merge two Nodes of different types')
 
@@ -482,7 +486,7 @@ class NetworkObjectContainer(ABC):
         Add a single network object to the set, merge if an object with that name is already present.
         """
         if object.name in self:
-            self[object.name] = self[object.name].merge(object)
+            self[object.name] = object.merge(self[object.name])
         else:
             if self.network:
                 object.network = self.network
