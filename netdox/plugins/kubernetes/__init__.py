@@ -24,7 +24,7 @@ def initContext(context: str = None) -> ApiClient:
 
     :Args:
       context:
-        The context (configured in ``authentication.json``) to initialise
+        The context (configured in ``config.json``) to initialise
 
     :Returns:
       An ApiClient object connected to the given context
@@ -54,22 +54,35 @@ class App(Node):
         ) -> None:
 
         self.name = name.lower()
+        self.cluster = cluster
         self.docid = f'_nd_node_k8app_{self.cluster}_{self.name.replace(".","_")}'
         self.domains = set(domains)
-        self.cluster = cluster
         self.labels = labels or {}
         self.pods = pods or {}
         self.template = template or {}
 
         self.type = 'Kubernetes App'
 
+    @property
+    def network(self) -> Network:
+        return self._network
+
+    @network.setter
+    def network(self, new_network: Network) -> None:
+        self._network = new_network
+
+    def merge(self, object: App) -> App:
+        ## Deal with apps with duped names
+        raise NotImplementedError
+
+
 class Worker(Node):
     """
     Kubernetes worker node
     """
     cluster: str
-    apps: list
     vm: str
+    apps: list
 
     def __init__(self, 
             name: str, 
@@ -82,7 +95,9 @@ class Worker(Node):
         super().__init__(name, private_ip, public_ips=public_ips, domains=domains, type='Kubernetes Worker')
 
         self.cluster = cluster
+        self.docid = f'_nd_node_k8worker_{self.cluster}_{self.name.replace(".","_")}'
         self.vm = vm
+        self.apps = []
 
     def merge(self, node: Union[Node, App]) -> None:
         if self.private_ip == node.private_ip:
@@ -91,6 +106,7 @@ class Worker(Node):
                 self.apps = list(set(self.apps + node.apps))
             elif node.type == 'default':
                 self.location = self.location or node.location
+        return self
 
 ## Public plugin class
 
@@ -113,7 +129,7 @@ class Plugin(BasePlugin):
             if not os.path.exists(f'plugins/kubernetes/{dir}'):
                 os.mkdir(f'plugins/kubernetes/{dir}')
 
-        auth = utils.auth()['plugins']['kubernetes']
+        auth = utils.config()['plugins']['kubernetes']
         with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
             clusters = []
             users = []
