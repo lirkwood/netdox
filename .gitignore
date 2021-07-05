@@ -5,7 +5,7 @@
 
 .vscode
 .dockerignore
-authentication.json
+config.json
 docker-compose.yml
 *.code-workspace
 netdox-backend*.yml
