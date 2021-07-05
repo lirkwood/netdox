@@ -47,8 +47,8 @@ def init():
     global pluginmaster
     pluginmaster = plugins.PluginManager()
 
-    config = {"exclusions": []}
-    roles = {}
+    roles = {"exclusions": []}
+    tempRoles = {}
     # load dns config from pageseeder
     psConfigInf = json.loads(pageseeder.get_uri('_nd_config'))
     if 'title' in psConfigInf and psConfigInf['title'] == 'DNS Config':
@@ -58,16 +58,16 @@ def init():
             roleConfig = pageseeder.pfrag2dict(pageseeder.get_fragment(xref['docid'], 'config'))
             roleName = roleConfig['name']
 
-            # set role for configured domains
+            # # set role for configured domains
             revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['docid']), features='xml')
             for revXref in revXrefs("reversexref"):
                 if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'dns':
-                    roles[revXref['urititle']] = roleName
+                    tempRoles[revXref['urititle']] = roleName
             
             screenshot = strtobool(roleConfig['screenshot'])
             del roleConfig['name'], roleConfig['screenshot']
             
-            config[roleName] = (roleConfig | {
+            roles[roleName] = (roleConfig | {
                 "screenshot": screenshot,
                 "domains": []
             })
@@ -75,7 +75,7 @@ def init():
         # load exclusions
         exclusionSoup = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'exclude'), features='xml')
         for para in exclusionSoup("para"):
-            config['exclusions'].append(para.string)
+            roles['exclusions'].append(para.string)
 
     else:
         print('[WARNING][refresh] No DNS config found on PageSeeder')
@@ -85,72 +85,31 @@ def init():
                 with open(file, 'r') as stream:
                     soup = BeautifulSoup(stream.read(), features='xml')
                     roleConfig = pageseeder.pfrag2dict(soup.find(id="config")) | {'domains':[]}
-                    config[roleConfig['name']] = roleConfig
+                    roles[roleConfig['name']] = roleConfig
 
             shutil.copyfile(file.path, f'out/config/{file.name}')
 
 
-    # load batch defined roles
-    tmp = {}
+    # load preconfigured roles
     try:
         with open('src/roles.json', 'r') as stream:
-            batchroles = json.load(stream)
+            preconfigured = json.load(stream)
     except FileNotFoundError:
-        batchroles = {}
+        preconfigured = {}
 
-    for role, domainset in batchroles.items():
-        for domain in domainset:
-            tmp[domain] = role
-    batchroles = tmp
-    # overwrite roles with batchroles where necessary
-    roles |= batchroles
+    # merge preconfigured and ps configured role sets
+    for role, roleConfig in preconfigured.items():
+        if role == 'exclusions':
+            roles[role] = sorted(set(roles[role] + preconfigured[role]))
+        else:
+            for attribute, value in roleConfig.items():
+                if attribute == 'domains':
+                    roles[role][attribute] = sorted(set(roles[role][attribute] + value))
+                else:
+                    roles[role][attribute] = value
 
-    for domain, role in roles.items():
-        if role in config:
-            config[role]['domains'].append(domain)
-
-    with open('src/config.json', 'w') as stream:
-        stream.write(json.dumps(config, indent=2))
-    
-    utils.loadConfig()
-
-
-###########################
-# Non-essential functions #
-###########################
-
-# @utils.handle
-# def license_keys(dns_set: utils.DNSSet):
-#     """
-#     Sets the *license* attribute for any domains with a PageSeeder license.
-
-#     Uses the functionality found in :ref:`file_licenses` to add license data to records.
-#     """
-#     licenses = license_inf.fetch()
-#     for domain in licenses:
-#         if domain in dns_set:
-#             dns = dns_set[domain]
-#             dns.license = licenses[domain]
-#             if dns.role != 'pageseeder':
-#                 print(f'[WARNING][refresh.py] {dns.name} has a PageSeeder license but is using role {dns.role}')
-
-# @utils.handle
-# def license_orgs(dns_set: utils.DNSSet):
-#     """
-#     Sets the *org* attribute using the associated PageSeeder license.
-
-#     Uses the functionality found in :ref:`file_licenses` to add organisation data to records.
-#     """
-#     for record in dns_set:
-#         if 'license' in record.__dict__:
-#             org_id = license_inf.org(record.license)
-#             if org_id:
-#                 record.org = org_id
-
-
-#############
-# Main flow #
-#############
+    with open('src/roles.json', 'w') as stream:
+        stream.write(json.dumps(roles, indent=2))
 
 def main():
     """
@@ -159,7 +118,7 @@ def main():
     Calls most other functions in this script in the required order.
     """
     init()
-    network = Network(config = utils.config)
+    network = Network(config = utils.config(), roles = utils.roles())
 
     global pluginmaster
     pluginmaster.initStage('dns')
