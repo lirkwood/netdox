@@ -8,7 +8,6 @@ from ipaddress import IPv4Address as BaseIP
 from typing import Iterable, Iterator, Tuple, Union
 
 import iptools
-from plugins import PluginManager
 import utils
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
@@ -112,12 +111,13 @@ class NetworkObject(ABC):
         self.location = new_network.locator.locate(self)
     
     @abstractmethod
-    def merge(self, object: NetworkObject) -> None:
+    def merge(self, object: NetworkObject) -> NetworkObject:
         """
         In place merge of two NetworkObject instances of the same type.
+        Must return self.
         This method should always be called on the object entering the set.
         """
-        pass
+        return self
 
 
 class Domain(NetworkObject):
@@ -265,7 +265,7 @@ class Domain(NetworkObject):
         self._network = new_network
         self.location = new_network.locator.locate(self.ips)
 
-    def merge(self, domain: Domain) -> None:
+    def merge(self, domain: Domain) -> Domain:
         """
         In place merge of two Domain objects
         This method should always be called on the object entering the set.
@@ -277,6 +277,7 @@ class Domain(NetworkObject):
             if domain.network:
                 self._network = domain.network
             self.update()
+            return self
         else:
             raise ValueError('Cannot merge two Domains with different names')
 
@@ -298,10 +299,12 @@ class IPv4Address(BaseIP, NetworkObject):
         self.addr = str(address)
         self.name = self.addr
         self.docid = f'_nd_ip_{self.addr.replace(".","_")}'
+        self.location = None
+        self.unused = unused
+        
         self._ptr = set()
         self.implied_ptr = set()
         self.nat = None
-        self.unused = unused
 
     @property
     def ptr(self):
@@ -326,7 +329,7 @@ class IPv4Address(BaseIP, NetworkObject):
         self._network = new_network
         self.location = new_network.locator.locate(self.addr)
 
-    def merge(self, ip: IPv4Address) -> None:
+    def merge(self, ip: IPv4Address) -> IPv4Address:
         """
         In place merge of two IPv4Address objects
         This method should always be called on the object entering the set.
@@ -337,6 +340,7 @@ class IPv4Address(BaseIP, NetworkObject):
             self.nat = ip.nat or self.nat
             if ip.network:
                 self.network = ip.network
+            return self
         else:
             raise ValueError('Cannot merge two IPv4Addresses with different names')
 
@@ -383,15 +387,16 @@ class Node(NetworkObject):
 
         self.name = name
         self.docid = f'_nd_node_{self.name.replace(".","_")}'
-        if iptools.valid_ip(private_ip):
+        self.type = type
+        self.location = None
+
+        if iptools.valid_ip(private_ip) and not iptools.public_ip(private_ip):
             self.private_ip = private_ip
         else:
-            raise ValueError(f'Invalid private IP {private_ip}')
-        self.docid = f'_nd_node_{self.private_ip.replace(".","_")}'
-        self.public_ips = set(public_ips) or set()
-        self.domains = set(domains) or set()
-        
-        self.type = type
+            raise ValueError(f'Invalid private IP: {private_ip}')
+            
+        self.public_ips = set(public_ips) if public_ips else set()
+        self.domains = set(domains) if domains else set()
 
     @property
     def ips(self):
@@ -406,7 +411,7 @@ class Node(NetworkObject):
         self._network = new_network
         self.location = new_network.locator.locate(self.ips)
 
-    def merge(self, node: Node) -> None:
+    def merge(self, node: Node) -> Node:
         """
         In place merge of two Node objects.
         This method should always be called on the object entering the set.
@@ -416,6 +421,7 @@ class Node(NetworkObject):
             self.domains |= node.domains
             if node.network:
                 self.network = node.network
+            return self
         else:
             raise TypeError('Cannot merge two Nodes of different types')
 
@@ -502,7 +508,7 @@ class DomainSet(NetworkObjectContainer):
     objectType: str = 'domains'
     roles: dict
 
-    def __init__(self, objectSet: list, network: Network = None, roles: dict = None) -> None:
+    def __init__(self, objectSet: list = [], network: Network = None, roles: dict = None) -> None:
         super().__init__(objectSet, network)
         self.roles = roles or utils.DEFAULT_ROLES
 
@@ -536,8 +542,8 @@ class IPv4AddressSet(NetworkObjectContainer):
     public_ips: list
     subnets: set
 
-    def __init__(self, ips: list[IPv4Address] = []) -> None:
-        self.objects = {ip.addr: ip for ip in ips}
+    def __init__(self, ips: list[IPv4Address] = [], network: Network = None) -> None:
+        super().__init__(ips, network)
         self.subnets = set()
 
     def __iter__(self) -> Iterator[IPv4Address]:
@@ -605,15 +611,14 @@ class Network:
     nodes: NodeSet
     records: dict
     config: dict
-    pluginmaster: PluginManager
+    roles: dict
 
     def __init__(self, 
             domains: DomainSet = None, 
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
             config: dict = None,
-            roles: dict = None,
-            pluginmaster: PluginManager = None
+            roles: dict = None
         ) -> None:
 
         self.domains = domains or DomainSet(network = self, roles = roles)
@@ -622,7 +627,6 @@ class Network:
         
         self.config = config or utils.DEFAULT_CONFIG
         self.locator = Locator()
-        self.pluginmaster = pluginmaster
 
     def __contains__(self, object: str) -> bool:
         return (
@@ -664,14 +668,15 @@ class Network:
 
     @property
     def roles(self) -> dict:
-        return {k: v for k, v in self.config.items() if k != 'exclusions'}
+        return self.domains.roles
 
     def applyDomainRoles(self) -> None:
         """
         Sets the role attribute on domains in the network DomainSet where possible
         """
-        if self.config:
-            for role, roleConfig in self.config.items():
+        print(self.roles)
+        if self.roles:
+            for role, roleConfig in self.roles.items():
                 if role == 'exclusions':
                     for domain in roleConfig:
                         if domain in self.domains:
