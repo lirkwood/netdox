@@ -21,7 +21,7 @@ def refreshToken(credentials: dict) -> str:
     Requests a new PageSeeder API authentication token and saves it to disk.
 
     :Args:
-        A dictionary containing some authentication/configuration details. Found in ``authentication.json``.
+        A dictionary containing some authentication/configuration details. Found in ``config.json``.
 
     :Returns:
         A string containing a valid PageSeeder API token.
