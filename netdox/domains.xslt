@@ -6,7 +6,7 @@
 
 <xsl:output method="xml" indent="yes" />
 <xsl:variable name="config" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
-<xsl:variable name="auth" select="json-to-xml(unparsed-text('src/authentication.json'))/xpf:map"/>
+<xsl:variable name="auth" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
 
 <xsl:template match="/">
     <xsl:variable name="domains" select="json-to-xml(domains)"/>
