@@ -33,7 +33,7 @@ Running plugins
 Plugins have no mandatory attributes, but in order for Netdox to auto-run your plugin it must expose a function named 'runner' at the top level of the module.
 This function will be called with two arguments, a forward and reverse DNS set (for more see :ref:`utils`)
 
-Any configuration values needed for your plugins to run should be placed in authentication.json (for more see :ref:`config`).
+Any configuration values needed for your plugins to run should be placed in config.json (for more see :ref:`config`).
 
 
 pluginmanager

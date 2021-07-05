@@ -3,10 +3,10 @@
 Configuring Netdox
 ==================
 
-Most of the configuration for Netdox is done through PageSeeder, but any plugin settings must be set through the file ``authentication.json`` (a template is available in the root of the git repository). 
+Most of the configuration for Netdox is done through PageSeeder, but any plugin settings must be set through the file ``config.json`` (a template is available in the root of the git repository). 
 There are also two additional recognised configuration files, ``locations.json`` and ``roles.json``. 
 These files allow you to assign locations to IP address ranges and override the DNS role for a domain respectively (for more see :ref:`locations` and :ref:`roles`).
-The files are stored in the ``cfg`` directory in persistent storage, but ``authentication.json`` is encrypted (see :ref:`security`) and its contents are available through the ``utils.auth`` function (for more see :ref:`utils`).
+The files are stored in the ``cfg`` directory in persistent storage, but ``config.json`` is encrypted (see :ref:`security`) and its contents are available through the ``utils.auth`` function (for more see :ref:`utils`).
 
 The main config file on PageSeeder (path: ``config/config.psml``  docid: ``_nd_config``) configures the exclusion list aswell as DNS roles.
 In order to add a domain to the exclusion list, and therefore remove it entirely from Netdox and ignore it wherever it may appear, simply add it to the *exclude* fragment in a line on its own.
