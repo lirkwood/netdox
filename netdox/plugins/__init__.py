@@ -12,9 +12,9 @@ import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from traceback import format_exc
-from types import ModuleType
 from typing import Iterator, KeysView
 
+import yaml
 from networkobjs import Network
 
 
@@ -24,6 +24,7 @@ class Plugin(ABC):
     """
     name: str
     stage: str
+    stage_priority: int
     node_types: list[str]
 
     @abstractmethod
@@ -59,6 +60,13 @@ class PluginManager:
             'post-write': {}
         }
         self.stages = self.pluginmap.keys()
+
+        try:
+            with open('src/pluginconf.yml', 'r') as stream:
+                self.config = yaml.safe_load(stream)['plugins']
+        except Exception:
+            self.config = {}
+
         self.loadPlugins('plugins')
 
     def __iter__(self) -> Iterator[Plugin]:
@@ -92,8 +100,15 @@ class PluginManager:
                 An instance of the Plugin abstract base class
         """
         self.plugins[plugin.name] = plugin
-        for node_type in plugin.node_types:
-            self.nodemap[node_type] = plugin
+        
+        if plugin.name in self.config:
+            for attr, value in self.config[plugin.name].items():
+                setattr(plugin, attr, value)
+
+        if hasattr(plugin, 'node_types'):
+            for node_type in plugin.node_types:
+                self.nodemap[node_type] = plugin
+
         if plugin.stage:
             self.pluginmap[plugin.stage][plugin.name] = plugin
     
@@ -116,14 +131,14 @@ class PluginManager:
         self.plugins[plugin_name].init()
 
     def initStage(self, stage: str) -> None:
-        for plugin in self.pluginmap[stage]:
+        for plugin in self.pluginmap[stage].values():
             plugin.init()
 
     def initPlugins(self) -> None:
         for plugin in self:
             plugin.init()
 
-    def runPlugin(self, name: str = '', plugin: ModuleType = None, network: Network = None) -> None:
+    def runPlugin(self, name: str = '', plugin: Plugin = None, network: Network = None) -> None:
         """
         Runs the *runner* function from a given plugin with forward and reverse dns as arguments
 
@@ -147,7 +162,7 @@ class PluginManager:
         try:
             plugin.runner(network)
         except Exception:
-            print(f'[ERROR][pluginmanager] {plugin.__name__} threw an exception: \n{format_exc()}')
+            print(f'[ERROR][pluginmanager] {plugin.name} threw an exception: \n{format_exc()}')
 
     def runStage(self, stage: str, network: Network) -> None:
         """
@@ -161,9 +176,6 @@ class PluginManager:
             reverse_dns:
                 A reverse DNS set
         """
-        if stage not in self.pluginmap:
-            raise ValueError(f'Unknown stage: {stage}')
-
         print(f'[INFO][pluginmanager] Starting stage: {stage}')
         for pluginName, plugin in self.pluginmap[stage].items():
             self.runPlugin(pluginName, plugin, network)

@@ -1,0 +1,35 @@
+plugins:
+
+  - kubernetes:
+      stage: nodes
+      stage_priority: 1
+      clusters:
+        - name: production
+          location: Equinix
+          server: https://rancher-sy4.allette.com.au/
+          clusterId: c-57mj6
+          projectId: p-b8h5z
+
+        - name: dev
+          location: Pyrmont
+          server: https://rancher-pyr.allette.com.au/
+          clusterId: c-rh5z2
+          projectId: p-zd28j
+
+  - icinga:
+      stage: post-write
+      instances:
+        - name: pyr
+          host: icinga-pyr.allette.com.au
+          locations:
+            - Pyrmont
+            - Other
+
+        - name: sy4
+          host: icinga-sy4.allette.com.au
+          locations:
+            - Equinix
+
+  - xenorchestra:
+      stage: nodes
+      host: xo.allette.com.au

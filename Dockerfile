@@ -92,5 +92,6 @@ RUN rm -rf /var/lib/apt/lists/* && \
 #copy main files and node deps
 COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
+COPY pluginconf.yml /opt/app/src/pluginconf.yml
 
 CMD [ "/bin/bash", "netdox", "start" ]
