@@ -7,7 +7,7 @@
 <xsl:output method="xml" indent="yes" />
 
 <xsl:template match="/">
-    <xsl:variable name="auth" select="json-to-xml(unparsed-text('src/authentication.json'))/xpf:map"/>
+    <xsl:variable name="auth" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
     <xsl:variable name="review" select="json-to-xml(review)"/>
     <xsl:variable name="date" select="format-date(current-date(), '[Y0001]-[M01]-[D01]')"/>
     <xsl:variable name="dateTime" select="format-dateTime(adjust-dateTime-to-timezone(current-dateTime(), xs:dayTimeDuration('PT10H')), '[Y0001]-[M01]-[D01] at [H01]:[m01] [z]')"/>
