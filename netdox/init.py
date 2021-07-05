@@ -13,7 +13,7 @@ from pageseeder import urimap
 
 def init():
     """
-    Copies any values configured in ``authentication.json`` into ``pageseeder.properties`` and ``build.xml``,
+    Copies any values configured in ``config.json`` into ``pageseeder.properties`` and ``build.xml``,
     creates output directories, and generates some XML to import JSON for core XSLT operations.
     """
     psauth = utils.config()['pageseeder']
