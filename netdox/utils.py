@@ -9,36 +9,59 @@ It also defines two decorators which are used throughout Netdox, and some other 
 from __future__ import annotations
 
 import json
-import re
 import subprocess
-from datetime import datetime
 from functools import wraps
 from os import DirEntry, scandir
 from sys import argv
 from traceback import format_exc
 from typing import Union
 
-##################
-# Authentication #
-##################
+#########################
+# Global datastructures #
+#########################
 
-global authdict
-authdict = {}
+global DEFAULT_CONFIG, _cofig
+DEFAULT_CONFIG = {
+    'pageseeder': {
+        'id': '',
+        'secret': '',
+        'username': '',
+        'password': '',
+        'host': '',
+        'group': ''
+    },
+    'plugins': {}
+}
+_config = dict(DEFAULT_CONFIG)
 
-def auth():
-    global authdict
+def config():
     """
-    Returns the contents of the main configuration file, ``authentication.json``.
-    If the file has not yet been opened in this instance, it is opened and read first.
-
-    :Returns:
-        A dictionary containing the authentication/configuration details for PageSeeder and any plugins which use it.
+    Loads the config file as a global var if it exists
     """
-    if not authdict:
-        with open('src/authentication.json', 'r') as stream:
-            authdict = json.load(stream)
-    return authdict
+    global _config
+    try:
+        with open('src/config.json', 'r') as stream:
+            _config = json.load(stream)
+    except FileNotFoundError:
+        print('[WARNING][utils] Failed to load Netdox configuration file')
+    return _config
 
+
+global DEFAULT_ROLES, _roles
+DEFAULT_ROLES = {'exclusions': []}
+_roles = dict(DEFAULT_ROLES)
+
+def roles():
+    """
+    Loads the DNS roles file as a global var if it exists
+    """
+    global _roles
+    try:
+        with open('src/config.json', 'r') as stream:
+            _roles = json.load(stream)
+    except FileNotFoundError:
+        print('[WARNING][utils] Failed to load DNS roles configuration file')
+    return _roles
 
 ##############
 # Decorators #
@@ -79,21 +102,6 @@ def xslt(xsl: str, src: str, out: bool = None):
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src} -o:{out}', shell=True)
     else:
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
-
-
-global config
-config = {'exclusions': []}
-
-def loadConfig():
-    """
-    Loads the DNS config as a global var if it exists
-    """
-    global config
-    try:
-        with open('src/config.json', 'r') as stream:
-            config = json.load(stream)
-    except FileNotFoundError:
-        pass
 
 
 def fileFetchRecursive(dir: Union[str, DirEntry]) -> list[str]:
