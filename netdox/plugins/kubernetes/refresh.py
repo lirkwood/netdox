@@ -185,7 +185,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
 
     :Args:
         context:
-            The context defined in ``authentication.json`` to perform all actions in.
+            The context defined in ``config.json`` to perform all actions in.
         namespace:
             (Optional) The namespace to look for resources in (inherited by called functions)
 
@@ -205,7 +205,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     else:
         workerVMs = {}
 
-    contextDetails = utils.auth()["plugins"]["kubernetes"][context]
+    contextDetails = utils.config()["plugins"]["kubernetes"][context]
     podLinkBase = f'{contextDetails["server"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
     # map domains to their destination pods
@@ -264,7 +264,7 @@ def runner(network: Network) -> None:
         network:
             A Network object
     """
-    auth = utils.auth()['plugins']['kubernetes']
+    auth = utils.config()['plugins']['kubernetes']
     global pluginmaster
     pluginmaster = PluginManager()
     for context in auth:
@@ -284,8 +284,10 @@ def runner(network: Network) -> None:
             
             for pod in app['pods'].values():
                 if pod['nodeIP'] in network.nodes:
-                    workernode = Worker(pod['nodeName'], context, pod['nodeIP'])
-                    network.nodes[pod['nodeIP']] = workernode.merge(network.nodes[pod['nodeIP']])
+                    workernode = Worker(pod['nodeName'], pod['nodeIP'], context)
+                    if pod['nodeIP'] in network.nodes:
+                        network.nodes.add(workernode.merge(network.nodes[pod['nodeIP']]))
+                        del network.nodes[pod['nodeIP']]
                 if 'xenorchestra' in pluginmaster:
                     network.nodes[pod['nodeName']].vm = pod['vm']
 
