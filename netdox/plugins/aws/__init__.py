@@ -16,7 +16,7 @@ class Plugin(BasePlugin):
             os.mkdir('plugins/aws/src')
         os.environ['AWS_CONFIG_FILE'] = f'{os.getcwd()}/plugins/aws/src/awsconfig'
 
-        auth = utils.auth()['plugins']['aws']
+        auth = utils.config()['plugins']['aws']
         # set up aws iam profile
         with open('plugins/aws/src/awsconfig', 'w') as stream:
             stream.write(dedent(f"""

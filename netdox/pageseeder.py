@@ -61,7 +61,7 @@ def auth(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
 
-        credentials = utils.auth()['pageseeder']
+        credentials = utils.config()['pageseeder']
         try:
             with open('src/pstoken.json', 'r') as stream:
                 details = json.load(stream)
@@ -105,7 +105,7 @@ def urimap():
     """
     global _urimap
     if not _urimap:
-        group = utils.auth()["pageseeder"]["group"]
+        group = utils.config()["pageseeder"]["group"]
         websiteDirCheck = json.loads(search({
             'filters': f'pstype:folder,psfilename:website,psfolder:/ps/{group.replace("-","/")}'
         }))

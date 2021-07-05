@@ -103,7 +103,7 @@ def sentenceStale():
         A dictionary of any URIs that were newly marked as stale, sorted by date they expire on.
     """
     today = datetime.now().date()
-    group_path = f"/ps/{utils.auth()['pageseeder']['group'].replace('-','/')}"
+    group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
     stale = {}
     # for every folder in context on pageseeder
     for folder, folder_uri in pageseeder.urimap().items():
@@ -142,7 +142,7 @@ def sentenceStale():
                     else:
                         plus_thirty = today + timedelta(days = 30)
                         if labels: labels += ','
-                        labels += f'expires-{plus_thirty}'
+                        labels += f'stale,expires-{plus_thirty}'
                         pageseeder.patch_uri(uri, {'labels':labels})
                         print(f'[INFO][cleanup] File {commonpath} is stale and has been sentenced.')
                         stale[uri] = str(plus_thirty)

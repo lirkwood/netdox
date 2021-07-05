@@ -16,7 +16,7 @@ def init():
     Copies any values configured in ``authentication.json`` into ``pageseeder.properties`` and ``build.xml``,
     creates output directories, and generates some XML to import JSON for core XSLT operations.
     """
-    psauth = utils.auth()['pageseeder']
+    psauth = utils.config()['pageseeder']
 
     # check that urimap can be generated
     urimap()

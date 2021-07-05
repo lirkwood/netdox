@@ -30,7 +30,7 @@ def fetchType(type: str, icinga_host: str) -> dict:
         The JSON returned by the server
     """
     try:
-        auth = utils.auth()['plugins']['icinga'][icinga_host]
+        auth = utils.config()['plugins']['icinga'][icinga_host]
     except KeyError:
         raise ValueError(f'Unrecognised Icinga host: {icinga_host}')
     r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(auth["username"], auth["password"]), verify=False)
@@ -51,7 +51,7 @@ def fetchTemplates(type: str, icinga_host: str) -> dict:
         The JSON returned by the server
     """ 
     try:
-        auth = utils.auth()['plugins']['icinga'][icinga_host]
+        auth = utils.config()['plugins']['icinga'][icinga_host]
     except KeyError:
         raise ValueError(f'Unrecognised Icinga host: {icinga_host}')
     r = requests.get(f'https://{icinga_host}:5665/v1/templates/{type}', auth=(auth['username'], auth['password']), verify=False)
@@ -120,7 +120,7 @@ class MonitorManager:
     generated: dict = {}
 
     def __init__(self, network: Network) -> None:
-        self.icingas = dict(utils.auth()['plugins']['icinga'])
+        self.icingas = dict(utils.config()['plugins']['icinga'])
         self.network = network
 
         self.locationIcingas = {location: None for location in self.network.locator}
@@ -167,8 +167,8 @@ class MonitorManager:
             True if the monitor on the record was already valid. False otherwise.
         """
         if (self.manualMonitor(domain) or
-            'template' not in utils.config[domain.role] or
-            utils.config[domain.role]['template'] == 'None'):
+            'template' not in utils.roles[domain.role] or
+            utils.roles[domain.role]['template'] == 'None'):
             
             if domain.name in self.generated:
                 rm_host(domain.name, icinga = self.generated[domain.name]['icinga'])
@@ -177,11 +177,11 @@ class MonitorManager:
         else:
             if domain.location and self.locationIcingas[domain.location] is not None:
                 if domain.name in self.generated:
-                    if self.generated[domain.name]['templates'][0] != utils.config[domain.role]['template']:
-                        set_host(domain.name, location = domain.location, template = utils.config[domain.role]['template'])
+                    if self.generated[domain.name]['templates'][0] != utils.roles[domain.role]['template']:
+                        set_host(domain.name, location = domain.location, template = utils.roles[domain.role]['template'])
                         return False
                 else:
-                    set_host(domain.name, location = domain.location, template = utils.config[domain.role]['template'])
+                    set_host(domain.name, location = domain.location, template = utils.roles[domain.role]['template'])
                     return False
 
         return True

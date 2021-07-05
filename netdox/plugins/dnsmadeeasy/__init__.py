@@ -19,7 +19,7 @@ def genheader() -> dict[str, str]:
 	:Returns:
 		A dictionary to be used as the HTTP header for any DNSMadeEasy request
 	"""
-	creds = utils.auth()['plugins']['dnsmadeeasy']
+	creds = utils.config()['plugins']['dnsmadeeasy']
 	api = creds['api']
 	secret = creds['secret']
 

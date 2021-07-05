@@ -102,7 +102,7 @@ class Plugin(BasePlugin):
         :meta private:
         """
         global creds
-        creds = utils.auth()['plugins']['xenorchestra']
+        creds = utils.config()['plugins']['xenorchestra']
         global url
         url = f"wss://{creds['host']}/api/"
         if not os.path.exists('plugins/xenorchestra/src'):
