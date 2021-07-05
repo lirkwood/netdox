@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 var { imgDiff } = require("img-diff-js");
 const fs = require('fs');
-const domainsrc = require('./src/config.json')
+const domainsrc = require('./src/roles.json')
 var review = {
 	"no_ss": {},
 	"no_base": [],
