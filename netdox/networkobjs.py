@@ -8,6 +8,8 @@ from ipaddress import IPv4Address as BaseIP
 from typing import Iterable, Iterator, Tuple, Union
 
 import iptools
+from plugins import PluginManager
+import utils
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
@@ -498,6 +500,11 @@ class DomainSet(NetworkObjectContainer):
     Container for a set of Domains
     """
     objectType: str = 'domains'
+    roles: dict
+
+    def __init__(self, objectSet: list, network: Network = None, roles: dict = None) -> None:
+        super().__init__(objectSet, network)
+        self.roles = roles or utils.DEFAULT_ROLES
 
     ## Re-implemented to type hint
     def __iter__(self) -> Iterator[Domain]:
@@ -506,6 +513,19 @@ class DomainSet(NetworkObjectContainer):
     @property
     def domains(self) -> dict:
         return self.objects
+    
+    @property
+    def roledomains(self) -> dict:
+        """
+        Returns dictionary of roles that aren't exclusions
+        """
+        return {k: v['domains'] for k, v in self.roles.items() if k != 'exclusions'}
+
+    def add(self, object: Domain) -> None:
+        super().add(object)
+        for role, domains in self.roles.items():
+            if object.name in domains:
+                object.role = role
 
 class IPv4AddressSet(NetworkObjectContainer):
     """
@@ -585,25 +605,24 @@ class Network:
     nodes: NodeSet
     records: dict
     config: dict
+    pluginmaster: PluginManager
 
     def __init__(self, 
             domains: DomainSet = None, 
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
-            config: dict = None
+            config: dict = None,
+            roles: dict = None,
+            pluginmaster: PluginManager = None
         ) -> None:
 
-        self.domains = domains or DomainSet()
-        self.domains.network = self
-
-        self.ips = ips or IPv4AddressSet()
-        self.ips.network = self
+        self.domains = domains or DomainSet(network = self, roles = roles)
+        self.ips = ips or IPv4AddressSet(network = self)
+        self.nodes = nodes or NodeSet(network = self)
         
-        self.nodes = nodes or NodeSet()
-        self.nodes.network = self
-        
-        self.config = config or {'exclusions': []}
+        self.config = config or utils.DEFAULT_CONFIG
         self.locator = Locator()
+        self.pluginmaster = pluginmaster
 
     def __contains__(self, object: str) -> bool:
         return (
