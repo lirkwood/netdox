@@ -142,7 +142,7 @@ def main():
     pluginmaster.initStage('nodes')
     pluginmaster.runStage('nodes', network)
 
-    network.applyDomainRoles()
+    network.domains.applyRoles()
     
     pluginmaster.initStage('pre-write')
     pluginmaster.runStage('pre-write', network)
@@ -150,18 +150,18 @@ def main():
     network.dumpNetwork()
     
     # Write Domain documents
-    utils.xslt('domains.xsl', 'src/domains.xml')
+    utils.xslt('domains.xslt', 'src/domains.xml')
     # Write IPv4Address documents
-    utils.xslt('ips.xsl', 'src/ips.xml')
+    utils.xslt('ips.xslt', 'src/ips.xml')
     # Write Node documents
-    utils.xslt('nodes.xsl', 'src/nodes.xml')
+    utils.xslt('nodes.xslt', 'src/nodes.xml')
 
 
     pluginmaster.initStage('post-write')
     pluginmaster.runStage('post-write', network)
 
     subprocess.run('node screenshotCompare.js', check=True, shell=True)
-    utils.xslt('status.xsl', 'src/review.xml', 'out/status_update.psml')
+    utils.xslt('status.xslt', 'src/review.xml', 'out/status_update.psml')
 
     cleanup.pre_upload()
 
