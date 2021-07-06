@@ -167,8 +167,8 @@ class MonitorManager:
             True if the monitor on the record was already valid. False otherwise.
         """
         if (self.manualMonitor(domain) or
-            'template' not in utils.roles[domain.role] or
-            utils.roles[domain.role]['template'] == 'None'):
+            'template' not in utils.roles()[domain.role] or
+            utils.roles()[domain.role]['template'] == 'None'):
             
             if domain.name in self.generated:
                 rm_host(domain.name, icinga = self.generated[domain.name]['icinga'])
@@ -177,11 +177,11 @@ class MonitorManager:
         else:
             if domain.location and self.locationIcingas[domain.location] is not None:
                 if domain.name in self.generated:
-                    if self.generated[domain.name]['templates'][0] != utils.roles[domain.role]['template']:
-                        set_host(domain.name, location = domain.location, template = utils.roles[domain.role]['template'])
+                    if self.generated[domain.name]['templates'][0] != utils.roles()[domain.role]['template']:
+                        set_host(domain.name, location = domain.location, template = utils.roles()[domain.role]['template'])
                         return False
                 else:
-                    set_host(domain.name, location = domain.location, template = utils.roles[domain.role]['template'])
+                    set_host(domain.name, location = domain.location, template = utils.roles()[domain.role]['template'])
                     return False
 
         return True
