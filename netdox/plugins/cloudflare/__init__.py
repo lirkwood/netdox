@@ -8,10 +8,10 @@ from plugins.cloudflare.fetch import main
 
 class Plugin(BasePlugin):
     name = 'cloudflare'
-    stage = 'dns'
+    stages = ['dns']
 
     def init(self) -> None:
         pass
 
-    def runner(self, network: Network) -> None:
+    def runner(self, network: Network, *_) -> None:
         main(network)
