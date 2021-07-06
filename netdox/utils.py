@@ -57,7 +57,7 @@ def roles():
     """
     global _roles
     try:
-        with open('src/config.json', 'r') as stream:
+        with open('src/roles.json', 'r') as stream:
             _roles = json.load(stream)
     except FileNotFoundError:
         print('[WARNING][utils] Failed to load DNS roles configuration file')
