@@ -9,7 +9,7 @@ from plugins import Plugin as BasePlugin
 
 class Plugin(BasePlugin):
     name = 'aws'
-    stage = 'nodes'
+    stages = ['nodes']
 
     def init(self) -> None:
         if not os.path.exists('plugins/aws/src'):
@@ -36,7 +36,7 @@ class Plugin(BasePlugin):
             ]>
             <aws>&json;</aws>""").strip())
 
-    def runner(self, network: Network) -> None:
+    def runner(self, network: Network, *_) -> None:
         """
         Links domains to AWS EC2 instances with the same IP
         """
