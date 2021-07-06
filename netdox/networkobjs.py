@@ -485,7 +485,7 @@ class NetworkObjectContainer(ABC):
 
     def to_json(self) -> str:
         return json.dumps({
-            'objectType': self.objects,
+            'objectType': self.objectType,
             'objects': [object for object in self]
         }, indent = 2, cls = JSONEncoder)
 
@@ -506,11 +506,11 @@ class DomainSet(NetworkObjectContainer):
     Container for a set of Domains
     """
     objectType: str = 'domains'
-    roles: dict
+    _roles: dict
 
     def __init__(self, objectSet: list = [], network: Network = None, roles: dict = None) -> None:
         super().__init__(objectSet, network)
-        self.roles = roles or utils.DEFAULT_ROLES
+        self._roles = roles or utils.DEFAULT_ROLES
 
     ## Re-implemented to type hint
     def __iter__(self) -> Iterator[Domain]:
@@ -518,20 +518,56 @@ class DomainSet(NetworkObjectContainer):
 
     @property
     def domains(self) -> dict:
+        """
+        Returns the underlying objects dict
+        """
         return self.objects
     
     @property
-    def roledomains(self) -> dict:
+    def roles(self) -> dict:
         """
         Returns dictionary of roles that aren't exclusions
         """
-        return {k: v['domains'] for k, v in self.roles.items() if k != 'exclusions'}
+        return {k: v['domains'] for k, v in self._roles.items() if k != 'exclusions'}
+
+    @roles.setter
+    def roles(self, value: dict) -> None:
+        self._roles = value
+
+    @roles.deleter
+    def roles(self) -> None:
+        del self._roles
+
+    @property
+    def exclusions(self) -> list[str]:
+        """
+        Returns a list of excluded domains
+        """
+        return self.roles['exclusions']
 
     def add(self, object: Domain) -> None:
         super().add(object)
         for role, domains in self.roles.items():
             if object.name in domains:
                 object.role = role
+
+    def applyRoles(self) -> None:
+        """
+        Sets the role attribute on domains in set where it is configured, 'default' otherwise.
+        """
+        for role, roleConfig in self._roles.items():
+            if role == 'exclusions':
+                for domain in roleConfig:
+                    if domain in self:
+                        del self[domain]
+            else:
+                for domain in roleConfig['domains']:
+                    if domain in self:
+                        self[domain].role = role
+    
+        for domain in self:
+            if domain.role is None:
+                domain.role = 'default'
 
 class IPv4AddressSet(NetworkObjectContainer):
     """
@@ -560,25 +596,44 @@ class IPv4AddressSet(NetworkObjectContainer):
 
     @property
     def ips(self) -> dict:
+        """
+        Returns the underlying objects dict
+        """
         return self.objects
 
     @property
     def private_ips(self) -> list[IPv4Address]:
+        """
+        Returns all IPs in the set that are part of the private namespace
+        """
         return [ip for ip in self if ip.is_private]
 
     @property
     def public_ips(self) -> list[IPv4Address]:
+        """
+        Returns the complement to private_ips
+        """
         return [ip for ip in self if not ip.is_private]
 
     @property
     def unused(self) -> list[IPv4Address]:
+        """
+        Returns all IPs in the set that have the *unused* flag set.
+        """
         return [ip for ip in self if ip.unused]
 
     @property
     def used(self) -> list[IPv4Address]:
+        """
+        Returns the complement to unused
+        """
         return [ip for ip in self if not ip.unused]
 
     def fillSubnets(self) -> None:
+        """
+        Iterates over each unique private subnet this set has IP addresses in, 
+        and generates IPv4Addresses for each IP in the subnet not already in the set (with the unused attribute set).
+        """
         for subnet in self.subnets:
             for ip in iptools.subn_iter(subnet):
                 if ip not in self:
@@ -595,6 +650,9 @@ class NodeSet(NetworkObjectContainer):
 
     @property
     def nodes(self) -> dict:
+        """
+        Returns the underlying objects dict
+        """
         return self.objects
 
 
@@ -641,10 +699,18 @@ class Network:
         """
         if isinstance(object, Domain):
             self.domains.add(object)
+            for ip in object.ips:
+                if ip not in self.ips:
+                    self.ips.add(IPv4Address(ip))
+                self.ips[ip].link(object)
         elif isinstance(object, IPv4Address):
             self.ips.add(object)
         elif isinstance(object, Node):
             self.nodes.add(object)
+            for ip in object.ips:
+                if ip not in self.ips:
+                    self.ips.add(IPv4Address(ip))
+                self.ips[ip].link(object)
 
     def addSet(self, object_set: NetworkObjectContainer) -> None:
         """
@@ -661,34 +727,6 @@ class Network:
         elif isinstance(object_set, NodeSet):
             object_set.network = self
             self.nodes = object_set
-
-    @property
-    def exclusions(self) -> list[str]:
-        return self.config['exclusions']
-
-    @property
-    def roles(self) -> dict:
-        return self.domains.roles
-
-    def applyDomainRoles(self) -> None:
-        """
-        Sets the role attribute on domains in the network DomainSet where possible
-        """
-        print(self.roles)
-        if self.roles:
-            for role, roleConfig in self.roles.items():
-                if role == 'exclusions':
-                    for domain in roleConfig:
-                        if domain in self.domains:
-                            del self.domains[domain]
-                else:
-                    for domain in roleConfig['domains']:
-                        if domain in self.domains:
-                            self.domains[domain].role = role
-        
-        for domain in self.domains:
-            if domain.role is None:
-                domain.role = 'default'
 
     @property
     def records(self) -> dict:
