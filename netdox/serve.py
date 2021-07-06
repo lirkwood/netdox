@@ -101,7 +101,7 @@ def approved_domain(uri):
 
                         dest = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
                         sourcePlugin = dest['source'].lower()
-                        if sourcePlugin in pluginmaster.pluginmap['all']:
+                        if sourcePlugin in pluginmaster:
                             plugin = pluginmaster[sourcePlugin]
                             if link['type'] == 'ipv4':
                                 if iptools.valid_ip(value):
