@@ -23,7 +23,7 @@ class Plugin(ABC):
     Base class for plugins
     """
     name: str
-    stage: str
+    stages: list[str]
     stage_priority: int
     node_types: list[str]
 
@@ -109,8 +109,8 @@ class PluginManager:
             for node_type in plugin.node_types:
                 self.nodemap[node_type] = plugin
 
-        if plugin.stage:
-            self.pluginmap[plugin.stage][plugin.name] = plugin
+        for stage in plugin.stages:
+            self.pluginmap[stage][plugin.name] = plugin
     
     def loadPlugins(self, dir: str) -> None:
         """
@@ -138,7 +138,7 @@ class PluginManager:
         for plugin in self:
             plugin.init()
 
-    def runPlugin(self, name: str = '', plugin: Plugin = None, network: Network = None) -> None:
+    def runPlugin(self, name: str = '', plugin: Plugin = None, network: Network = None, stage: str = None) -> None:
         """
         Runs the *runner* function from a given plugin with forward and reverse dns as arguments
 
@@ -160,7 +160,7 @@ class PluginManager:
         network = network or Network()
         
         try:
-            plugin.runner(network)
+            plugin.runner(network, stage)
         except Exception:
             print(f'[ERROR][pluginmanager] {plugin.name} threw an exception: \n{format_exc()}')
 
@@ -178,4 +178,4 @@ class PluginManager:
         """
         print(f'[INFO][pluginmanager] Starting stage: {stage}')
         for pluginName, plugin in self.pluginmap[stage].items():
-            self.runPlugin(pluginName, plugin, network)
+            self.runPlugin(pluginName, plugin, network, stage)
