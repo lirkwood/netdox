@@ -149,6 +149,19 @@ def main():
     
     network.dumpNetwork()
     
+    # Maybe just write plugins to json and use xslt?
+    xsltImports = BeautifulSoup('', features = 'xml')
+    for plugin in pluginmaster.pluginmap['nodes'].values():
+        if hasattr(plugin, 'xslt') and plugin.xslt:
+            importTag = xsltImports.new_tag('import', nsprefix = 'xsl', href = plugin.xslt)
+            xsltImports.append(importTag)
+    
+    with open('nodes.xslt', 'r', encoding = 'utf-8') as stream:
+        xslt = BeautifulSoup(stream.read(), features = 'xml')
+    xslt.stylesheet.insert(0, xsltImports)
+    with open('nodes.xslt', 'w', encoding = 'utf-8') as stream:
+        stream.write(xslt.prettify())
+    
     # Write Domain documents
     utils.xslt('domains.xslt', 'src/domains.xml')
     # Write IPv4Address documents
