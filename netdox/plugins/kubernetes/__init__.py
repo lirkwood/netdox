@@ -64,6 +64,10 @@ class App(Node):
         self.type = 'Kubernetes App'
 
     @property
+    def ips(self) -> list:
+        return []
+
+    @property
     def network(self) -> Network:
         return self._network
 
@@ -73,7 +77,13 @@ class App(Node):
 
     def merge(self, object: App) -> App:
         ## Deal with apps with duped names
-        raise NotImplementedError
+        if isinstance(object, App):
+            if self.cluster != object.cluster:
+                self.name = f'{self.cluster}__{self.name}'
+                object.name = f'{object.cluster}__{object.name}'
+                object.network.add(object)
+            else:
+                raise NotImplementedError('Handling for Apps in the same cluster with the same name is not defined')
 
 
 class Worker(Node):
@@ -116,7 +126,7 @@ from plugins.kubernetes.webhooks import create_app
 
 class Plugin(BasePlugin):
     name = 'kubernetes'
-    stage = 'nodes'
+    stages = ['nodes', 'post-write']
 
     def init(self) -> None:
         """
@@ -162,8 +172,11 @@ class Plugin(BasePlugin):
             'contexts': contexts
             }))
 
-    def runner(self, network: Network) -> None:
-        runner(network)
+    def runner(self, network: Network, stage: str) -> None:
+        if not stage or stage == 'nodes':
+            runner(network)
+        elif stage == 'post-write':
+            utils.xslt('plugins/kubernetes/appnodes.xslt', 'out/nodes')
 
     def approved_node(self, uri: str) -> Response:
         summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
