@@ -1,15 +1,18 @@
 """
 Used to read and modify the VMs managed by Xen Orchestra
 """
+from __future__ import annotations
+
 import json
 import os
 import random
 from functools import wraps
 from textwrap import dedent
 
+import iptools
 import utils
 import websockets
-from networkobjs import Network
+from networkobjs import Network, NetworkObject, Node
 from plugins import Plugin as BasePlugin
 
 ##################################
@@ -87,13 +90,69 @@ async def reciever(id: int) -> dict:
                 frames[message['id']] = message
 
 
+##################
+# Public objects #
+##################
+
+## Nodes
+
+class VirtualMachine(Node):
+    """
+    A VM running in XenOrchestra
+    """
+    uuid: str
+    pool: str
+    host: str
+
+    def __init__(self, 
+            name: str,
+            desc: str, 
+            uuid: str,
+            private_ip: str = None,
+            domains: set = None,
+            template: str = None,
+            os: dict = None,
+            host: str = None, 
+            pool: str = None,) -> None:
+        if private_ip and iptools.valid_ip(private_ip):
+            self.private_ip = private_ip
+        elif private_ip:
+            raise ValueError(f'Invalid private IP: {private_ip}')
+
+        self.name = name.lower()
+        self.desc = desc
+        self.uuid = uuid.lower()
+        self.docid = f'_nd_node_xovm_{self.uuid}'
+        self.private_ip = private_ip
+        self.domains = set(domains) if domains else set()
+        self.template = template
+        self.os = os or {}
+        self.host = host.lower() if host else None
+        self.pool = pool
+
+        self.type = 'XenOrchestra VM'
+
+    @property
+    def ips(self) -> list[str]:
+        return [self.private_ip]
+
+    def merge(self, object: NetworkObject) -> VirtualMachine:
+        if isinstance(object, VirtualMachine):
+            raise NotImplementedError('Merging VMs is not implemented yet')
+        else:
+            self.network = object.network
+            self.private_ip = object.private_ip
+            self.domains = list(set(self.domains))
+
 ## Plugin
 
 from plugins.xenorchestra.fetch import runner
 
+
 class Plugin(BasePlugin):
     name = 'xenorchestra'
     stages = ['nodes']
+    xslt = 'plugins/xenorchestra/nodes.xslt'
 
     def init(self) -> None:
         """
