@@ -271,7 +271,7 @@ def runner(network: Network) -> None:
         apps = getApps(context)
         location = auth[context]['location'] if 'location' in auth[context] else None
         
-        for appName, app in apps.items():
+        for app in apps.values():
             appnode = App(**app)
             appnode.location = location
             network.add(appnode)
@@ -279,22 +279,6 @@ def runner(network: Network) -> None:
             for domain in appnode.domains:
                 if domain not in network.domains:
                     network.domains.add(Domain(domain))
+
                 if not network.domains[domain].location:
                     network.domains[domain].location = location
-            
-            for pod in app['pods'].values():
-                if pod['nodeIP'] in network.nodes:
-                    workernode = Worker(pod['nodeName'], pod['nodeIP'], context)
-                    if pod['nodeIP'] in network.nodes:
-                        network.nodes.add(workernode.merge(network.nodes[pod['nodeIP']]))
-                        del network.nodes[pod['nodeIP']]
-                if 'xenorchestra' in pluginmaster:
-                    network.nodes[pod['nodeName']].vm = pod['vm']
-
-            network.nodes[pod['nodeName']].apps.append(appName)
-    
-        
-    utils.xslt('plugins/kubernetes/apps.xsl', 'plugins/kubernetes/src/apps.xml')
-    utils.xslt('plugins/kubernetes/workers.xsl', 'plugins/kubernetes/src/workers.xml')
-    utils.xslt('plugins/kubernetes/clusters.xsl', 'plugins/kubernetes/src/workers.xml')
-    utils.xslt('plugins/kubernetes/pub.xsl', 'plugins/kubernetes/src/apps.xml', 'out/kubernetes_pub.psml')

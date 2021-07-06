@@ -78,39 +78,6 @@ class App(Node):
     def merge(self, *_) -> NotImplementedError:
         raise NotImplementedError
 
-
-class Worker(Node):
-    """
-    Kubernetes worker node
-    """
-    cluster: str
-    vm: str
-    apps: list
-
-    def __init__(self, 
-            name: str, 
-            private_ip: str, 
-            cluster: str,
-            vm: str = None,
-            public_ips: Iterable[str] = None, 
-            domains: Iterable[str] = None,
-            ) -> None:
-        super().__init__(name, private_ip, public_ips=public_ips, domains=domains, type='Kubernetes Worker')
-
-        self.cluster = cluster
-        self.docid = f'_nd_node_k8worker_{self.cluster}_{self.name.replace(".","_")}'
-        self.vm = vm
-        self.apps = []
-
-    def merge(self, node: Union[Node, App]) -> None:
-        if self.private_ip == node.private_ip:
-            self.domains = self.domains.union(node.domains)
-            if node.type == self.type:
-                self.apps = list(set(self.apps + node.apps))
-            elif node.type == 'default':
-                self.location = self.location or node.location
-        return self
-
 ## Public plugin class
 
 from plugins.kubernetes.refresh import runner
