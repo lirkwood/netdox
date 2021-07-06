@@ -33,7 +33,7 @@ def initContext(context: str = None) -> ApiClient:
     return ApiClient()
 
 
-## Plugin node classes
+## Node subclasses
 
 class App(Node):
     """
@@ -75,18 +75,8 @@ class App(Node):
     def network(self, new_network: Network) -> None:
         self._network = new_network
 
-    def merge(self, object: App) -> App:
-        ## Deal with apps with duped names
-        if isinstance(object, App):
-            if self.cluster != object.cluster:
-                print(f'[WARNING][kubernetes] Deployment with name {self.name} exists in both {self.cluster} and {object.cluster} clusters.')
-                self.name = f'{self.cluster}__{self.name}'
-                del object.network.nodes[object.name]
-                object.name = f'{object.cluster}__{object.name}'
-                object.network.add(object)
-            else:
-                raise NotImplementedError('Handling for Apps in the same cluster with the same name is not defined')
-        return self
+    def merge(self, *_) -> NotImplementedError:
+        raise NotImplementedError
 
 
 class Worker(Node):
@@ -176,7 +166,7 @@ class Plugin(BasePlugin):
             'contexts': contexts
             }))
 
-    def runner(self, network: Network, stage: str) -> None:
+    def runner(self, network: Network, *_) -> None:
         runner(network)
 
     def approved_node(self, uri: str) -> Response:
