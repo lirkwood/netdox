@@ -7,7 +7,7 @@ Provides a function which links records to their relevant XenOrchestra VMs and g
 This script is used during the refresh process to link DNS records to the VMs they resolve to, and to trigger the generation of a publication which describes all VMs, their hosts, and their host's pool.
 """
 from networkobjs import IPv4Address, Network
-from plugins.xenorchestra import call, authenticate
+from plugins.xenorchestra import call, authenticate, VirtualMachine
 import asyncio, json
 import iptools, utils
 
@@ -81,10 +81,6 @@ def runner(network: Network):
     """
     # Generate XO Docs
     vms, _,_ = asyncio.run(fetchObjects(network))
-    utils.xslt('plugins/xenorchestra/vms.xsl', 'plugins/xenorchestra/src/vms.xml')
-    utils.xslt('plugins/xenorchestra/hosts.xsl', 'plugins/xenorchestra/src/hosts.xml')
-    utils.xslt('plugins/xenorchestra/pools.xsl', 'plugins/xenorchestra/src/pools.xml')
-    utils.xslt('plugins/xenorchestra/pub.xsl', 'plugins/xenorchestra/src/pools.xml', 'out/xenorchestra_pub.psml')
 
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
@@ -126,27 +122,35 @@ async def fetchObjects(network: Network):
     writeJson(hosts, 'hosts')
 
     hostVMs = {}
-    for vmId in vms:
-        vm = vms[vmId]
-        
-        if vm['$container'] not in hostVMs:
-            hostVMs[vm['$container']] = []
-        hostVMs[vm['$container']].append(vm['uuid'])
+    for uuid, vm in vms.items():
+        if vm['power_state'] == 'Running':
 
-        vm['domains'] = []
-        if 'mainIpAddress' in vm:
-            if iptools.valid_ip(vm['mainIpAddress']):
-                vm['subnet'] = iptools.sort(vm['mainIpAddress'])
-                if vm['mainIpAddress'] not in network.ips:
-                    network.add(IPv4Address(vm['mainIpAddress']))
-                vm['domains'] = network.ips[vm['mainIpAddress']].domains
+            if 'mainIpAddress' in vm:
+                if iptools.valid_ip(vm['mainIpAddress']):
+                    if vm['mainIpAddress'] not in network.ips:
+                        network.add(IPv4Address(vm['mainIpAddress']))
 
+                    network.add(VirtualMachine(
+                        name = vm['name_label'],
+                        uuid = uuid,
+                        desc = vm['name_description'],
+                        private_ip = vm['mainIpAddress'],
+                        domains = network.ips[vm['mainIpAddress']].domains,
+                        template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else None,
+                        os = vm['os_version'],
+                        host = vm['$container'],
+                        pool = vm['$pool']
+                    ))
+
+                else:
+                    print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
             else:
-                print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
-                del vm['mainIpAddress']
-        else:
-            if vm['power_state'] == 'Running':
                 print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has no IP address')
+        
+            if vm['$container'] not in hostVMs:
+                hostVMs[vm['$container']] = []
+            hostVMs[vm['$container']].append(vm['uuid'])
+
     writeJson(vms, 'vms')
     writeJson(poolHosts, 'devices')
     writeJson(hostVMs, 'residents')
