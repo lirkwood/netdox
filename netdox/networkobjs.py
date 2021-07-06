@@ -458,10 +458,9 @@ class NetworkObjectContainer(ABC):
     """
     objectType: str
     objects: dict
-    names: list
 
     def __init__(self, objectSet: list = [], network: Network = None) -> None:
-        self.objects = {object.name: object for object in objectSet}
+        self.objects = {object.docid: object for object in objectSet}
         self.network = network
 
     def __getitem__(self, key: str) -> NetworkObject:
@@ -479,10 +478,6 @@ class NetworkObjectContainer(ABC):
     def __contains__(self, key: str) -> bool:
         return self.objects.__contains__(key)
 
-    @property
-    def names(self) -> list[str]:
-        return list(self.objects.keys())
-
     def to_json(self) -> str:
         return json.dumps({
             'objectType': self.objectType,
@@ -493,12 +488,12 @@ class NetworkObjectContainer(ABC):
         """
         Add a single network object to the set, merge if an object with that name is already present.
         """
-        if object.name in self:
-            self[object.name] = object.merge(self[object.name])
+        if object.docid in self:
+            self[object.docid] = object.merge(self[object.docid])
         else:
             if self.network:
                 object.network = self.network
-            self[object.name] = object
+            self[object.docid] = object
 
 
 class DomainSet(NetworkObjectContainer):
@@ -545,11 +540,11 @@ class DomainSet(NetworkObjectContainer):
         """
         return self.roles['exclusions']
 
-    def add(self, object: Domain) -> None:
-        super().add(object)
+    def add(self, domain: Domain) -> None:
+        super().add(domain)
         for role, domains in self.roles.items():
-            if object.name in domains:
-                object.role = role
+            if domain.name in domains:
+                domain.role = role
 
     def applyRoles(self) -> None:
         """
