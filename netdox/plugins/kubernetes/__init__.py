@@ -79,11 +79,14 @@ class App(Node):
         ## Deal with apps with duped names
         if isinstance(object, App):
             if self.cluster != object.cluster:
+                print(f'[WARNING][kubernetes] Deployment with name {self.name} exists in both {self.cluster} and {object.cluster} clusters.')
                 self.name = f'{self.cluster}__{self.name}'
+                del object.network.nodes[object.name]
                 object.name = f'{object.cluster}__{object.name}'
                 object.network.add(object)
             else:
                 raise NotImplementedError('Handling for Apps in the same cluster with the same name is not defined')
+        return self
 
 
 class Worker(Node):
@@ -126,7 +129,8 @@ from plugins.kubernetes.webhooks import create_app
 
 class Plugin(BasePlugin):
     name = 'kubernetes'
-    stages = ['nodes', 'post-write']
+    stages = ['nodes']
+    xslt = 'plugins/kubernetes/nodes.xslt'
 
     def init(self) -> None:
         """
@@ -173,10 +177,7 @@ class Plugin(BasePlugin):
             }))
 
     def runner(self, network: Network, stage: str) -> None:
-        if not stage or stage == 'nodes':
-            runner(network)
-        elif stage == 'post-write':
-            utils.xslt('plugins/kubernetes/appnodes.xslt', 'out/nodes')
+        runner(network)
 
     def approved_node(self, uri: str) -> Response:
         summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
