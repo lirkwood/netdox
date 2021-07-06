@@ -7,10 +7,10 @@ from networkobjs import Network
 
 class Plugin(BasePlugin):
     name = 'nat'
-    stage = 'dns'
+    stages = ['dns']
 
     def init(self) -> None:
         pass
 
-    def runner(self, network: Network) -> None:
+    def runner(self, network: Network, *_) -> None:
         runner(network)
