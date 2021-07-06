@@ -42,7 +42,7 @@ from plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
 
 class Plugin(BasePlugin):
 	name = 'dnsmadeeasy'
-	stage = 'dns'
+	stages = ['dns']
 
 	def init(self) -> None:
 		zones = {}
@@ -54,7 +54,7 @@ class Plugin(BasePlugin):
 		with open('plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
 			stream.write(json.dumps(zones, indent=2))
 
-	def runner(self, network: Network) -> None:
+	def runner(self, network: Network, *_) -> None:
 		fetchDNS(network)
 
 	def create_A(self, name:str, ip: str, zone: str) -> None:
