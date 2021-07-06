@@ -27,12 +27,12 @@
         <properties-fragment id="pod_{position()}">
             <property name="pod"  title="Pod"  value="{@key}" />
             <property name="ipv4"  title="Worker IP"  datatype="xref" >
-                <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
+                <xref frag="default" docid="_nd_ip_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
                     reversetitle="App running on this IP" />
             </property>
             <xsl:if test="xpf:string[@key = 'vm']">
             <property name="worker_vm" title="Worker VM" datatype="xref" >
-                <xref frag="default" docid="_nd_{translate(xpf:string[@key = 'vm'],'.','_')}"
+                <xref frag="default" docid="_nd_node_xovm_{translate(xpf:string[@key = 'vm'],'.','_')}"
                 reversetitle="App running on this VM"/>
             </property>
             </xsl:if>
