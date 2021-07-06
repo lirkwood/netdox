@@ -93,7 +93,7 @@ from plugins.xenorchestra.fetch import runner
 
 class Plugin(BasePlugin):
     name = 'xenorchestra'
-    stage = 'nodes'
+    stages = ['nodes']
 
     def init(self) -> None:
         """
@@ -117,5 +117,5 @@ class Plugin(BasePlugin):
                 ]>
                 <{type}>&json;</{type}>""").strip())
 
-    def runner(self, network: Network) -> None:
+    def runner(self, network: Network, *_) -> None:
         runner(network)
