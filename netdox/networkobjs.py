@@ -488,12 +488,24 @@ class NetworkObjectContainer(ABC):
         """
         Add a single network object to the set, merge if an object with that name is already present.
         """
-        if object.docid in self:
-            self[object.docid] = object.merge(self[object.docid])
+        if object.name in self:
+            self[object.name] = object.merge(self[object.docid])
         else:
             if self.network:
                 object.network = self.network
-            self[object.docid] = object
+            self[object.name] = object
+
+    def replace(self, identifier: str, object: NetworkObject) -> None:
+        """
+        Replace the object with the specified identifier with a new object.
+        Calls merge on the new object with the object to be replaced passed as the argument.
+        If target object is not in the set, the new object is simply added as-is.
+        """
+        if identifier in self:
+            self.add(object.merge(self[identifier]))
+            del self[identifier]
+        else:
+            self.add(object)
 
 
 class DomainSet(NetworkObjectContainer):
@@ -650,6 +662,17 @@ class NodeSet(NetworkObjectContainer):
         """
         return self.objects
 
+    def add(self, node: Node) -> None:
+        """
+        Add a single network object to the set, merge if an object with that name is already present.
+        """
+        if node.docid in self:
+            self[node.docid] = object.merge(self[node.docid])
+        else:
+            if self.network:
+                node.network = self.network
+            self[node.docid] = node
+
 
 ######################
 # The Network Object #
@@ -694,18 +717,10 @@ class Network:
         """
         if isinstance(object, Domain):
             self.domains.add(object)
-            for ip in object.ips:
-                if ip not in self.ips:
-                    self.ips.add(IPv4Address(ip))
-                self.ips[ip].link(object)
         elif isinstance(object, IPv4Address):
             self.ips.add(object)
         elif isinstance(object, Node):
             self.nodes.add(object)
-            for ip in object.ips:
-                if ip not in self.ips:
-                    self.ips.add(IPv4Address(ip))
-                self.ips[ip].link(object)
 
     def addSet(self, object_set: NetworkObjectContainer) -> None:
         """
@@ -750,6 +765,15 @@ class Network:
             for domain in domains:
                 if domain in self.domains and ip not in self.domains[domain].ips:
                     self.domains[domain].implied_ips.add(ip)
+
+        for node in self.nodes:
+            for domain in node.domains:
+                if domain in self.domains:
+                    self.domains[domain].node = node.docid
+            for ip in node.ips:
+                if ip in self.ips:
+                    self.ips[ip].node = node.docid
+
 
     def writeSet(self, set: str, path: str) -> None:
         """
