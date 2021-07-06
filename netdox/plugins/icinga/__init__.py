@@ -11,10 +11,10 @@ from networkobjs import Network
 
 class Plugin(BasePlugin):
     name = 'icinga'
-    stage = 'post-write'
+    stages = ['post-write']
 
     def init(self) -> None:
         pass
 
-    def runner(self, network: Network) -> None:
+    def runner(self, network: Network, *_) -> None:
         runner(network)
