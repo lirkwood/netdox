@@ -11,12 +11,12 @@ from plugins.activedirectory.fetch import fetchDNS
 
 class Plugin(BasePlugin):
     name = 'activedirectory'
-    stage = 'dns'
+    stages = ['dns']
 
     def init(self) -> None:
         pass
 
-    def runner(self, network: Network) -> None:
+    def runner(self, network: Network, *_) -> None:
         fetchDNS(network)
 
     def create_A(self, name: str, ip: str, zone: str):
