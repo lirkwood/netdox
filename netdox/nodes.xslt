@@ -46,9 +46,11 @@
                 </properties-fragment>
 
                 <properties-fragment id="ips">
-                    <property name="ipv4" title="Private IP" datatype="xref">
-                        <xref frag="default" docid="_nd_ip_{translate(xpf:string[@key = 'private_ip'],'.','_')}" />
-                    </property>
+                    <xsl:if test="xpf:string[@key = 'private_ip']">
+                        <property name="ipv4" title="Private IP" datatype="xref">
+                            <xref frag="default" docid="_nd_ip_{translate(xpf:string[@key = 'private_ip'],'.','_')}" />
+                        </property>
+                    </xsl:if>
                     <xsl:for-each select="xpf:array[@key = 'public_ips']/xpf:string">
                         <property name="ipv4" title="Public IP" datatype="xref">
                             <xref frag="default" docid="_nd_ip_{translate(.,'.','_')}" />
@@ -57,11 +59,15 @@
                 </properties-fragment>
 
             </section>
-            <section id="plugininf"/>
+
+            <xsl:apply-imports />
+
             <section id="other" />
 
         </document>
     </xsl:result-document>
 </xsl:template>
+
+<xsl:template match="*" />
 
 </xsl:stylesheet>
