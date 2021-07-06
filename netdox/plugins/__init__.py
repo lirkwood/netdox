@@ -23,9 +23,16 @@ class Plugin(ABC):
     Base class for plugins
     """
     name: str
+    # The name to be used for logs, in documents, etc.
     stages: list[str]
+    # The stages to call runner at
     stage_priority: int
+    # An integer used to formalise plugin order within stages
+    
     node_types: list[str]
+    # The node types that this plugin adds to the network (if any)
+    xslt: str
+    # Path to an xslt file to import during the nodes transformation
 
     @abstractmethod
     def init(self) -> None:
