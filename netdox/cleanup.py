@@ -216,7 +216,7 @@ def pre_upload():
     with open('nodes.xslt', 'r') as stream:
         soup = BeautifulSoup(stream.read(), features = 'xml')
     for importTag in soup('import'):
-        soup.decompose(importTag)
+        importTag.decompose()
     with open('nodes.xslt', 'w') as stream:
         stream.write(soup.prettify())
 
