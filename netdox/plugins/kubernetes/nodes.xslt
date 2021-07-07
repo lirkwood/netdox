@@ -4,6 +4,8 @@
                 xmlns:err="http://www.w3.org/2005/xqt-errors"
                 exclude-result-prefixes="#all">
 
+<xsl:import href="vmApps.xslt"/>
+
 <xsl:template match="xpf:map[xpf:string[@key = 'type' and text() = 'Kubernetes App']]">
     <section id="template" title="Pod Template">
 
