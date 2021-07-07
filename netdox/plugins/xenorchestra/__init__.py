@@ -8,8 +8,8 @@ import os
 import random
 from functools import wraps
 from textwrap import dedent
+from typing import Iterable
 
-import iptools
 import utils
 import websockets
 from networkobjs import Network, NetworkObject, Node
@@ -99,50 +99,95 @@ async def reciever(id: int) -> dict:
 class VirtualMachine(Node):
     """
     A VM running in XenOrchestra
+
+    :param name: The name of the VM
+    :type name: str
+    :param desc: A brief description of the VMs purpose
+    :type desc: str
+    :param uuid: A unique alphanumeric identifier
+    :type uuid: str
+    :param template: The template the VM was created from
+    :type template: str
+    :param os: A dictionary of information about the VMs operating system, returned by the xo-server API under the key 'os_version'
+    :type os: dict
+    :param host: The uuid of the XenOrchestra Host this VM is running on
+    :type host: str
+    :param pool: The name of the pool this VMs host is in
+    :type pool: str
+    :param private_ip: The private IP address this VM has been assigned via VIF
+    :type private_ip: str
+    :param public_ips: Some public ips to associate with this VM, defaults to None
+    :type public_ips: Iterable[str], optional
+    :param domains: Some domains to associate with this VM, defaults to None
+    :type domains: Iterable[str], optional
     """
     uuid: str
     pool: str
     host: str
+    
 
     def __init__(self, 
             name: str,
             desc: str, 
             uuid: str,
-            private_ip: str = None,
-            domains: set = None,
-            template: str = None,
-            os: dict = None,
-            host: str = None, 
-            pool: str = None,) -> None:
-        if private_ip and iptools.valid_ip(private_ip):
-            self.private_ip = private_ip
-        elif private_ip:
-            raise ValueError(f'Invalid private IP: {private_ip}')
+            template: str,
+            os: dict,
+            host: str, 
+            pool: str,
+            private_ip: str,
+            public_ips: Iterable[str] = None,
+            domains: Iterable[str] = None
+        ) -> None:
+        
+        super().__init__(name, private_ip, public_ips, domains, 'XenOrchestra VM')
 
-        self.name = name.lower()
         self.desc = desc
         self.uuid = uuid.lower()
         self.docid = f'_nd_node_xovm_{self.uuid}'
-        self.private_ip = private_ip
-        self.domains = set(domains) if domains else set()
         self.template = template
-        self.os = os or {}
-        self.host = host.lower() if host else None
-        self.pool = pool
-
-        self.type = 'XenOrchestra VM'
-
-    @property
-    def ips(self) -> list[str]:
-        return [self.private_ip]
+        self.os = os
+        self.host = host.lower()
+        self.pool = pool.lower()
 
     def merge(self, object: NetworkObject) -> VirtualMachine:
-        if isinstance(object, VirtualMachine):
-            raise NotImplementedError('Merging VMs is not implemented yet')
-        else:
-            self.network = object.network
-            self.private_ip = object.private_ip
-            self.domains = list(set(self.domains))
+        self.public_ips = self.public_ips.union(set(object.public_ips))
+        self.domains = self.domains.union(set(object.domains))
+        self.network = object.network
+
+
+class Host(Node):
+    """
+    A host running XenOrchestra VMs
+    """
+    
+    def __init__(self, 
+            name: str, 
+            desc: str,
+            uuid: str,
+            cpus: dict,
+            bios: dict,
+            vms: Iterable[str],
+            pool: str,
+            private_ip: str, 
+            public_ips: Iterable[str] = None, 
+            domains: Iterable[str] = None
+        ) -> None:
+
+        super().__init__(name, private_ip, public_ips, domains, 'XenOrchestra Host')
+
+        self.desc = desc
+        self.uuid = uuid.lower()
+        self.docid = f'_nd_node_xohost_{self.uuid}'
+        self.cpus = cpus
+        self.bios = bios
+        self.vms = set(vms)
+        self.pool = pool
+
+    def merge(self, object: NetworkObject) -> Host:
+        self.public_ips = self.public_ips.union(set(object.public_ips))
+        self.domains = self.domains.union(set(object.domains))
+        self.network = object.network
+
 
 ## Plugin
 
