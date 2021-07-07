@@ -10,12 +10,11 @@
 </xsl:template>
 
 <xsl:template match="xpf:map">
-    <xsl:variable name="name" select="xpf:string[@key = 'name']"/>
-    <xsl:result-document href="out/nodes/{translate($name,'.','_')}.psml">
+    <xsl:result-document href="out/nodes/{xpf:string[@key = 'docid']}.psml">
         <document type="node" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
             <documentinfo>
-                <uri docid="{xpf:string[@key = 'docid']}" title="{$name}"/>
+                <uri docid="{xpf:string[@key = 'docid']}" title="{xpf:string[@key = 'name']}"/>
             </documentinfo>
 
             <metadata>
@@ -26,7 +25,7 @@
 
             <section id="title">
                 <fragment id="title">
-                    <heading level="1"><xsl:value-of select="xpf:string[@key = 'name']"/></heading>
+                    <heading level="1">Node: <xsl:value-of select="xpf:string[@key = 'name']"/></heading>
                 </fragment>
             </section>
 
@@ -34,7 +33,7 @@
 
                 <properties-fragment id="summary">
                     <property name="nodename" title="Name" value="{xpf:string[@key = 'name']}" />
-                    <property name="nodetype" title="Type" value="{xpf:string[@key = 'type']}" />
+                    <property name="nodetype" title="Node Type" value="{xpf:string[@key = 'type']}" />
                 </properties-fragment>
 
                 <properties-fragment id="domains">
