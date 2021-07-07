@@ -13,7 +13,7 @@
 <xsl:template match="xpf:map">
     <xsl:variable name="ip" select="xpf:string[@key = 'addr']"/>
     <xsl:variable name="subnetdir" select="translate(xpf:string[@key = 'subnet'],'/','_')"/>
-    <xsl:result-document href="out/ips/{$subnetdir}/{translate($ip,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/ips/{$subnetdir}/{xpf:string[@key = 'docid']}.psml" method="xml" indent="yes">
     <document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
         <xsl:variable name="labels">

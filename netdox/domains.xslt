@@ -15,7 +15,7 @@
 
 <xsl:template match="xpf:map">
     <xsl:variable name="name" select="xpf:string[@key = 'name']"/>
-    <xsl:result-document href="out/domains/{translate($name,'.','_')}.psml" method="xml" indent="yes">
+    <xsl:result-document href="out/domains/{xpf:string[@key = 'docid']}.psml" method="xml" indent="yes">
         <document type="domain" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
         <xsl:variable name="labels">
