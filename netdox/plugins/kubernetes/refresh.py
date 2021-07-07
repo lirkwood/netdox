@@ -11,9 +11,9 @@ which describes all apps running from deployments in the configured Kubernetes c
 import json
 
 import utils
-from networkobjs import Domain, Network, JSONEncoder
+from networkobjs import Domain, Network
 from plugins import PluginManager
-from plugins.kubernetes import initContext, App, Worker
+from plugins.kubernetes import initContext, App
 
 from kubernetes import client
 
