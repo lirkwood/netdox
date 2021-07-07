@@ -387,7 +387,7 @@ class Node(NetworkObject):
             type: str = 'default'
         ) -> None:
 
-        self.name = name
+        self.name = name.strip().lower()
         self.docid = f'_nd_node_{self.name.replace(".","_")}'
         self.type = type
         self.location = None
@@ -781,12 +781,13 @@ class Network:
                     self.domains[domain].implied_ips.add(ip)
 
         for node in self.nodes:
-            for domain in node.domains:
-                if domain in self.domains:
-                    self.domains[domain].node = node.docid
             for ip in node.ips:
                 if ip in self.ips:
                     self.ips[ip].node = node.docid
+                    node.domains |= self.ips[ip].domains
+            for domain in node.domains:
+                if domain in self.domains:
+                    self.domains[domain].node = node.docid
 
 
     def writeSet(self, set: str, path: str) -> None:
