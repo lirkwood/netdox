@@ -6,20 +6,11 @@ Provides a function which links records to their relevant XenOrchestra VMs and g
 
 This script is used during the refresh process to link DNS records to the VMs they resolve to, and to trigger the generation of a publication which describes all VMs, their hosts, and their host's pool.
 """
+from collections import defaultdict
 from networkobjs import IPv4Address, Network
-from plugins.xenorchestra import call, authenticate, VirtualMachine
+from plugins.xenorchestra import Host, call, authenticate, VirtualMachine
 import asyncio, json
 import iptools, utils
-
-## Some initialisation
-
-def writeJson(data, name):
-    """
-    Writes some data to a json file and then deletes it from memory
-    """
-    with open(f'plugins/xenorchestra/src/{name}.json', 'w') as stream:
-        stream.write(json.dumps(data, indent=2))
-    del data
 
 
 #########################
@@ -80,80 +71,76 @@ def runner(network: Network):
             Any object - not used
     """
     # Generate XO Docs
-    vms, _,_ = asyncio.run(fetchObjects(network))
+    vms, _,_ = asyncio.run(makeNodes(network))
 
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
 
 @authenticate
-async def fetchObjects(network: Network):
+async def makeNodes(network: Network):
     """
     Fetches info about pools, hosts, and VMs
-
-    :Args:
-        network:
-            A Network object
-    
-    :Returns:
-        Tuple[0]:
-            A dictionary of VMs
-        Tuple[1]:
-            A dictionary of Hosts
-        Tupe[2]:
-            A dictionary of host Pools
     """
-    controllers = set()
-    poolHosts = {}
     pools = await fetchType('pool')
     hosts = await fetchType('host')
     vms = await fetchType('VM')
     
-    for poolId in pools:
-        pool = pools[poolId]
-        poolHosts[poolId] = []
+    poolNames = {}
+    poolHosts = {}
+    controllers = set()
+    # Pool controller / devices
+    for uuid, pool in pools.items():
+        poolNames[uuid] = pool['name_label']
+        poolHosts[uuid] = []
         controllers.add(pool['master'])
-    writeJson(pools, 'pools')
 
-    for hostId in hosts:
-        host = hosts[hostId]
-        if hostId not in controllers:
-            poolHosts[host['$pool']].append(hostId)
-            host['subnet'] = iptools.sort(host['address'])
-    writeJson(hosts, 'hosts')
-
-    hostVMs = {}
+    # VMs
+    hostVMs = defaultdict(list)
     for uuid, vm in vms.items():
         if vm['power_state'] == 'Running':
-
             if 'mainIpAddress' in vm:
                 if iptools.valid_ip(vm['mainIpAddress']):
+
                     if vm['mainIpAddress'] not in network.ips:
                         network.add(IPv4Address(vm['mainIpAddress']))
 
+                    hostVMs[vm['$container']].append(vm['uuid'])
+
                     network.add(VirtualMachine(
                         name = vm['name_label'],
-                        uuid = uuid,
                         desc = vm['name_description'],
-                        private_ip = vm['mainIpAddress'],
-                        domains = network.ips[vm['mainIpAddress']].domains,
+                        uuid = uuid,
                         template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else None,
                         os = vm['os_version'],
                         host = vm['$container'],
-                        pool = vm['$pool']
+                        pool = poolNames[vm['$pool']],
+                        private_ip = vm['mainIpAddress'],
+                        domains = network.ips[vm['mainIpAddress']].domains
                     ))
 
                 else:
                     print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
             else:
                 print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has no IP address')
-        
-            if vm['$container'] not in hostVMs:
-                hostVMs[vm['$container']] = []
-            hostVMs[vm['$container']].append(vm['uuid'])
 
-    writeJson(vms, 'vms')
-    writeJson(poolHosts, 'devices')
-    writeJson(hostVMs, 'residents')
+    # Hosts
+    for uuid, host in hosts.items():
+        if uuid not in controllers:
+            poolHosts[host['$pool']].append(uuid)
+
+        existingNode = f'_nd_node_{host["address"].replace(".","_")}'
+        network.replace(existingNode, Host(
+            name = host['name_label'],
+            desc = host['name_description'],
+            uuid = uuid,
+            cpus = host['CPUs'],
+            bios = host['bios_strings'],
+            vms = hostVMs[uuid],
+            pool = poolNames[host['$pool']],
+            private_ip = host['address'],
+            public_ips = None,
+            domains = None
+        ))
 
     return vms, hosts, pools
 
