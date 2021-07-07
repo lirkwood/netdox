@@ -82,7 +82,7 @@
                         </xsl:if>
                     </properties-fragment>
                 </section>
-                <section id="dest" title="Destinations">
+                <section id="records" title="DNS Records">
 
                     <xsl:for-each select="xpf:array[@key = '_private_ips']/xpf:array">
                     <properties-fragment id="private_ip_{position()}">
