@@ -4,7 +4,6 @@ Used to read and modify the deployments running on the configured clusters.
 from __future__ import annotations
 
 import os
-from typing import Iterable, Union
 
 import pageseeder
 import utils
