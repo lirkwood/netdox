@@ -1,15 +1,42 @@
 import json
 import os
 from textwrap import dedent
+from typing import Iterable
 
 import boto3
 import utils
-from networkobjs import IPv4Address, Network, JSONEncoder
+from networkobjs import IPv4Address, Node, Network, JSONEncoder
 from plugins import Plugin as BasePlugin
+
+class EC2Instance(Node):
+    def __init__(self, 
+            name: str,
+            id: str,
+            mac: str,
+            type: str,
+            monitoring: str,
+            region: str, 
+            tags: Iterable[dict],
+            private_ip: str,
+            public_ips: Iterable[str] = None,
+            domains: Iterable[str] = None
+        ) -> None:
+        super().__init__(name, private_ip, public_ips, domains, 'AWS EC2 Instance')
+        self.id = id.strip().lower()
+        self.mac = mac.strip().lower()
+        self.instance_type = type
+        self.monitoring = monitoring
+        self.region = region
+
+        self.tags = {}
+        for tag in tags:
+            self.tags[tag['Key']] = tag['Value']
+
 
 class Plugin(BasePlugin):
     name = 'aws'
     stages = ['nodes']
+    xslt = 'plugins/aws/nodes.xslt'
 
     def init(self) -> None:
         if not os.path.exists('plugins/aws/src'):
@@ -28,14 +55,6 @@ class Plugin(BasePlugin):
             """).strip())
 
 
-        with open(f'plugins/aws/src/aws.xml','w') as stream:
-            stream.write(dedent(f"""
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE aws [
-            <!ENTITY json SYSTEM "aws.json">
-            ]>
-            <aws>&json;</aws>""").strip())
-
     def runner(self, network: Network, *_) -> None:
         """
         Links domains to AWS EC2 instances with the same IP
@@ -44,14 +63,20 @@ class Plugin(BasePlugin):
         allEC2 = client.describe_instances()
         for reservation in allEC2['Reservations']:
             for instance in reservation['Instances']:
-                # for domain in network.domains:
-                #     if instance['PrivateIpAddress'] in dns.ips or instance['PublicIpAddress'] in dns.ips:
-                #         dns.link(instance['InstanceId'], 'ec2')
+                netInf = instance['NetworkInterfaces'][0]
+
+                network.add(EC2Instance(
+                    name = instance['KeyName'],
+                    id = instance['InstanceID'],
+                    mac = netInf['MacAddress'],
+                    monitoring = instance['Monitoring']['State'],
+                    region = instance['Placement']['AvailabilityZone'],
+                    tags = instance['Tags'],
+                    private_ip = netInf['PrivateIpAddress'],
+                    public_ips = [netInf['Association']['PublicIp']],
+                    domains = [netInf['Association']['PublicDnsName']]
+                ))
                 
                 for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
                     if ip not in network.ips:
                         network.add(IPv4Address(ip))
-
-        with open('plugins/aws/src/aws.json', 'w') as stream:
-            stream.write(json.dumps(allEC2, indent=2, cls=JSONEncoder))
-        utils.xslt('plugins/aws/aws.xsl', 'plugins/aws/src/aws.xml')
