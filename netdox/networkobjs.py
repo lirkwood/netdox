@@ -312,14 +312,14 @@ class IPv4Address(BaseIP, NetworkObject):
         """
         A list of domains this IP address points to
         """
-        return sorted([domain for domain, _ in self._ptr])
+        return [domain for domain, _ in self._ptr]
 
     @property
     def domains(self):
         """
         The superset of domains this IP points to, and domains which point back.
         """
-        return sorted(set(self.ptr).union(self.implied_ptr))
+        return set(self.ptr).union(self.implied_ptr)
 
     @property
     def network(self):
