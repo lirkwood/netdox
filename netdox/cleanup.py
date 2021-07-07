@@ -10,6 +10,8 @@ and generating placeholder images for websites which Netdox failed to screenshot
 from datetime import timedelta, datetime, date
 from PIL import Image, UnidentifiedImageError
 import re, os, json, shutil
+
+from bs4 import BeautifulSoup
 import pageseeder, utils
 
 
@@ -209,6 +211,14 @@ def pre_upload():
         with open('src/review.json', 'w') as stream:
             review['stale'] = stale
             stream.write(json.dumps(review, indent=2))
+
+    # remove generated import statements
+    with open('nodes.xslt', 'r') as stream:
+        soup = BeautifulSoup(stream.read(), features = 'xml')
+    for importTag in soup('import'):
+        soup.decompose(importTag)
+    with open('nodes.xslt', 'w') as stream:
+        stream.write(soup.prettify())
 
 
 def post_upload():
