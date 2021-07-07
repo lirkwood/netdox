@@ -141,18 +141,19 @@ class VirtualMachine(Node):
         
         super().__init__(name, private_ip, public_ips, domains, 'XenOrchestra VM')
 
-        self.desc = desc
-        self.uuid = uuid.lower()
+        self.desc = desc.strip()
+        self.uuid = uuid.strip().lower()
         self.docid = f'_nd_node_xovm_{self.uuid}'
         self.template = template
         self.os = os
-        self.host = host.lower()
-        self.pool = pool.lower()
+        self.host = host.strip().lower()
+        self.pool = pool.strip().lower()
 
     def merge(self, object: NetworkObject) -> VirtualMachine:
         self.public_ips = self.public_ips.union(set(object.public_ips))
         self.domains = self.domains.union(set(object.domains))
         self.network = object.network
+        return self
 
 
 class Host(Node):
@@ -175,18 +176,19 @@ class Host(Node):
 
         super().__init__(name, private_ip, public_ips, domains, 'XenOrchestra Host')
 
-        self.desc = desc
-        self.uuid = uuid.lower()
+        self.desc = desc.strip()
+        self.uuid = uuid.strip().lower()
         self.docid = f'_nd_node_xohost_{self.uuid}'
         self.cpus = cpus
         self.bios = bios
         self.vms = set(vms)
-        self.pool = pool
+        self.pool = pool.strip().lower()
 
     def merge(self, object: NetworkObject) -> Host:
         self.public_ips = self.public_ips.union(set(object.public_ips))
         self.domains = self.domains.union(set(object.domains))
         self.network = object.network
+        return self
 
 
 ## Plugin
