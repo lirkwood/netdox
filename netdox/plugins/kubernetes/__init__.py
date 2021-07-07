@@ -54,7 +54,7 @@ class App(Node):
 
         self.name = name.lower()
         self.cluster = cluster
-        self.docid = f'_nd_node_k8app_{self.cluster}_{self.name.replace(".","_")}'
+        self.docid = f'_nd_node_k8sapp_{self.cluster}_{self.name.replace(".","_")}'
         self.domains = set(domains)
         self.labels = labels or {}
         self.pods = pods or {}
