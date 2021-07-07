@@ -71,13 +71,11 @@ def runner(network: Network):
             Any object - not used
     """
     # Generate XO Docs
-    vms, hostVMs, poolHosts = asyncio.run(makeNodes(network))
+    vms, _, poolHosts = asyncio.run(makeNodes(network))
 
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
 
-    with open('plugins/xenorchestra/src/hostVMs.json', 'w') as stream:
-        stream.write(json.dumps(hostVMs))
     with open('plugins/xenorchestra/src/poolHosts.json', 'w') as stream:
         stream.write(json.dumps(poolHosts))
     utils.xslt('plugins/xenorchestra/pub.xslt', 'plugins/xenorchestra/src/poolHosts.xml', 'out/xopub.psml')
