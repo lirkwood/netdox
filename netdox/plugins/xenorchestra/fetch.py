@@ -114,7 +114,7 @@ async def makeNodes(network: Network):
                         name = vm['name_label'],
                         desc = vm['name_description'],
                         uuid = uuid,
-                        template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else None,
+                        template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else '—',
                         os = vm['os_version'],
                         host = vm['$container'],
                         pool = poolNames[vm['$pool']],
