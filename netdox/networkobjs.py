@@ -722,6 +722,17 @@ class Network:
         elif isinstance(object, Node):
             self.nodes.add(object)
 
+    def replace(self, identifier: str, object: NetworkObject) -> None:
+        """
+        Replace a NetworkObject in the network
+        """
+        if isinstance(object, Domain):
+            self.domains.replace(identifier, object)
+        elif isinstance(object, IPv4Address):
+            self.ips.replace(identifier, object)
+        elif isinstance(object, Node):
+            self.nodes.replace(identifier, object)
+
     def addSet(self, object_set: NetworkObjectContainer) -> None:
         """
         Add a set of network objects to the network
