@@ -268,6 +268,7 @@ class Domain(NetworkObject):
     def merge(self, domain: Domain) -> Domain:
         """
         In place merge of two Domain objects
+        Must return self.
         This method should always be called on the object entering the set.
         """
         if self.name == domain.name:
@@ -331,7 +332,8 @@ class IPv4Address(BaseIP, NetworkObject):
 
     def merge(self, ip: IPv4Address) -> IPv4Address:
         """
-        In place merge of two IPv4Address objects
+        In place merge of two IPv4Address objects.
+        Must return self.
         This method should always be called on the object entering the set.
         """
         if self.addr == ip.addr:
@@ -414,6 +416,7 @@ class Node(NetworkObject):
     def merge(self, node: Node) -> Node:
         """
         In place merge of two Node objects.
+        Must return self.
         This method should always be called on the object entering the set.
         """
         if self.type == node.type and self.private_ip == node.private_ip:
