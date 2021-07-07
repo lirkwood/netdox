@@ -214,14 +214,14 @@ class Plugin(BasePlugin):
         if not os.path.exists('plugins/xenorchestra/src'):
             os.mkdir('plugins/xenorchestra/src')
 
-        for type in ('vms', 'hosts', 'pools', 'templates'):
+        for type in ('poolHosts', 'templates'):
             with open(f'plugins/xenorchestra/src/{type}.xml','w') as stream:
                 stream.write(dedent(f"""
                 <?xml version="1.0" encoding="UTF-8"?>
-                <!DOCTYPE {type} [
+                <!DOCTYPE import [
                 <!ENTITY json SYSTEM "{type}.json">
                 ]>
-                <{type}>&json;</{type}>""").strip())
+                <root>&json;</root>""").strip())
 
     def runner(self, network: Network, *_) -> None:
         runner(network)

@@ -71,10 +71,16 @@ def runner(network: Network):
             Any object - not used
     """
     # Generate XO Docs
-    vms, _,_ = asyncio.run(makeNodes(network))
+    vms, hostVMs, poolHosts = asyncio.run(makeNodes(network))
 
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
+
+    with open('plugins/xenorchestra/src/hostVMs.json', 'w') as stream:
+        stream.write(json.dumps(hostVMs))
+    with open('plugins/xenorchestra/src/poolHosts.json', 'w') as stream:
+        stream.write(json.dumps(poolHosts))
+    utils.xslt('plugins/xenorchestra/pub.xslt', 'plugins/xenorchestra/src/poolHosts.xml', 'out/xopub.psml')
 
 @authenticate
 async def makeNodes(network: Network):
@@ -142,7 +148,7 @@ async def makeNodes(network: Network):
             domains = None
         ))
 
-    return vms, hosts, pools
+    return vms, hostVMs, {poolNames[k]: v for k, v in poolHosts.items()}
 
 
 @utils.handle
@@ -178,4 +184,4 @@ async def template_map(vms):
 
     with open('plugins/xenorchestra/src/templates.json', 'w', encoding='utf-8') as stream:
         stream.write(json.dumps(vmSource, indent=2, ensure_ascii=False))
-    utils.xslt('plugins/xenorchestra/templates.xsl', 'plugins/xenorchestra/src/templates.xml', 'out/config/templates.psml')
+    utils.xslt('plugins/xenorchestra/templates.xslt', 'plugins/xenorchestra/src/templates.xml', 'out/config/templates.psml')

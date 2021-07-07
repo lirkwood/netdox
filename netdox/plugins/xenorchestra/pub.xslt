@@ -4,7 +4,7 @@
                 exclude-result-prefixes="#all">
 
 <xsl:template match="/">
-    <xsl:variable name="pools" select="json-to-xml(pools)"/>
+    <xsl:variable name="pools" select="json-to-xml(root)"/>
     <xsl:apply-templates select="$pools/xpf:map"/>
 </xsl:template>
 
@@ -12,7 +12,7 @@
     <document level="portable" type="references">
         <documentinfo>
             <uri title="Xen Orchestra Pools" />
-            <publication id="_nd_xo_pub" title="Xen Orchestra Pools" />
+            <publication id="_nd_xopub" title="Xen Orchestra Pools" />
         </documentinfo>
 
         <section id="title">
@@ -21,13 +21,15 @@
             </fragment>
         </section>
 
-        <section id="xrefs">
-            <xref-fragment id="pools">
-            <xsl:for-each select="xpf:map">
-                <blockxref docid="_nd_{@key}" frag="default" type="embed"><xsl:value-of select="xpf:string[@key='name_label']"/></blockxref>
+        <xsl:for-each select="xpf:array">
+        <section id="pool_{position()}" title="Pool: {@key}">
+            <xref-fragment id="pool_{position()}_hosts">
+            <xsl:for-each select="xpf:string">
+                <blockxref docid="_nd_node_xohost_{.}" frag="default" type="embed"></blockxref>
             </xsl:for-each>
             </xref-fragment>
         </section>
+        </xsl:for-each>
     </document>
 </xsl:template>
 

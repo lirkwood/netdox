@@ -7,7 +7,7 @@
 <xsl:output method="xml" indent="yes" />
 
 <xsl:template match="/">
-    <xsl:variable name="templates" select="json-to-xml(templates)"/>
+    <xsl:variable name="templates" select="json-to-xml(root)"/>
     <xsl:apply-templates select="$templates/xpf:map"/>
 </xsl:template>
 
