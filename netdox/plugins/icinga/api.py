@@ -108,7 +108,10 @@ def objectsByDomain(icingas: list[str]) -> Tuple[dict, dict]:
                 # remove top template; should be specific to host
                 del group[addr]['templates'][0]
             else:
-                print(f'[WARNING][icinga] Duplicate monitor for {name} in {icinga}')
+                if group is generated:
+                    print(f'[WARNING][icinga] Duplicate generated monitor for {name} in {icinga}')
+                else:
+                    print(f'[WARNING][icinga] Duplicate manual monitor for {name} in {icinga}')
     return manual, generated
 
 class MonitorManager:
@@ -242,7 +245,12 @@ class MonitorManager:
         """
         needsReload = set()
         for address, details in self.generated.items():
-            if address not in self.network.domains:
+
+            if (address not in self.network.domains 
+            or (self.network.domains[address].location is not None
+                and self.locationIcingas[self.network.domains[address].location] is not None
+                and self.locationIcingas[self.network.domains[address].location] != details['icinga'])):    
+
                 rm_host(address, icinga = details['icinga'])
                 needsReload.add(details['icinga'])
         
@@ -261,16 +269,13 @@ def runner(network: Network):
     :Args:
         forward_dns:
             A forward DNS set
-        _:
-            Any object - not used
     """
     mgr = MonitorManager(network)
     mgr.pruneGenerated()
     mgr.validateNetwork()
             
-    # with open('src/forward.json', 'w') as stream:
-    #     stream.write(forward_dns.to_json())
-    mkdir('out/tmp')
-    utils.xslt('plugins/icinga/services.xsl', 'out/domains', 'out/tmp')
-    rmtree('out/domains')
-    rename('out/tmp', 'out/domains')
+    network.writeSet('domains', 'src/domains.json')
+    # mkdir('out/tmp')
+    # utils.xslt('plugins/icinga/services.xsl', 'out/domains', 'out/tmp')
+    # rmtree('out/domains')
+    # rename('out/tmp', 'out/domains')
