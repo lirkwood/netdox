@@ -1,19 +1,25 @@
-import json
 import os
 from textwrap import dedent
 from typing import Iterable
 
 import boto3
 import utils
-from networkobjs import IPv4Address, Node, Network, JSONEncoder
+from networkobjs import IPv4Address, Node, Network
 from plugins import Plugin as BasePlugin
 
 class EC2Instance(Node):
+    id: str
+    mac: str
+    instance_type: str
+    monitoring: str
+    region: str
+    tags: dict[str, str]
+
     def __init__(self, 
             name: str,
             id: str,
             mac: str,
-            type: str,
+            instance_type: str,
             monitoring: str,
             region: str, 
             tags: Iterable[dict],
@@ -23,14 +29,16 @@ class EC2Instance(Node):
         ) -> None:
         super().__init__(name, private_ip, public_ips, domains, 'AWS EC2 Instance')
         self.id = id.strip().lower()
+        self.docid = f'_nd_node_ec2_{self.id}'
         self.mac = mac.strip().lower()
-        self.instance_type = type
+        self.instance_type = instance_type
         self.monitoring = monitoring
         self.region = region
 
         self.tags = {}
         for tag in tags:
-            self.tags[tag['Key']] = tag['Value']
+            if tag['Value']:
+                self.tags[tag['Key']] = tag['Value']
 
 
 class Plugin(BasePlugin):
@@ -67,8 +75,9 @@ class Plugin(BasePlugin):
 
                 network.add(EC2Instance(
                     name = instance['KeyName'],
-                    id = instance['InstanceID'],
+                    id = instance['InstanceId'],
                     mac = netInf['MacAddress'],
+                    instance_type = instance['InstanceType'],
                     monitoring = instance['Monitoring']['State'],
                     region = instance['Placement']['AvailabilityZone'],
                     tags = instance['Tags'],
