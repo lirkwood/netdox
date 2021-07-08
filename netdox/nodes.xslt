@@ -5,7 +5,7 @@
                 exclude-result-prefixes="#all">
 
 <xsl:template match="/">
-    <xsl:variable name="nodes" select="json-to-xml(nodes)"/>
+    <xsl:variable name="nodes" select="json-to-xml(root)"/>
     <xsl:apply-templates select="$nodes/xpf:map/xpf:array[@key = 'objects']/xpf:map"/>
 </xsl:template>
 

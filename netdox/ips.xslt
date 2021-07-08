@@ -6,7 +6,7 @@
 <xsl:output method="xml" indent="yes" />
 
 <xsl:template match="/">
-    <xsl:variable name="ips" select="json-to-xml(ips)"/>
+    <xsl:variable name="ips" select="json-to-xml(root)"/>
     <xsl:apply-templates select="$ips/xpf:map/xpf:array[@key = 'objects']/xpf:map"/>
 </xsl:template>
 

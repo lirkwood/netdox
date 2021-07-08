@@ -9,7 +9,7 @@
 <xsl:variable name="auth" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
 
 <xsl:template match="/">
-    <xsl:variable name="domains" select="json-to-xml(domains)"/>
+    <xsl:variable name="domains" select="json-to-xml(root)"/>
     <xsl:apply-templates select="$domains/xpf:map/xpf:array[@key = 'objects']/xpf:map"/>
 </xsl:template>
 
