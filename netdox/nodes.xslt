@@ -35,6 +35,7 @@
                 <properties-fragment id="summary">
                     <property name="nodename" title="Name" value="{xpf:string[@key = 'name']}" />
                     <property name="nodetype" title="Node Type" value="{xpf:string[@key = 'type']}" />
+                    <property name="location" title="Location" value="{xpf:string[@key='location']}" />
                 </properties-fragment>
 
                 <properties-fragment id="domains">
