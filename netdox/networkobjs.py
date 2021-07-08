@@ -461,6 +461,7 @@ class NetworkObjectContainer(ABC):
     """
     objectType: str
     objects: dict
+    network: Network
 
     def __init__(self, objectSet: list = [], network: Network = None) -> None:
         self.objects = {object.docid: object for object in objectSet}
@@ -643,11 +644,22 @@ class IPv4AddressSet(NetworkObjectContainer):
         """
         Iterates over each unique private subnet this set has IP addresses in, 
         and generates IPv4Addresses for each IP in the subnet not already in the set (with the unused attribute set).
+        If the set has a Network, any IPs referenced by a domain/node not already present will be generated as well.
         """
         for subnet in self.subnets:
             for ip in iptools.subn_iter(subnet):
                 if ip not in self:
                     self[ip] = IPv4Address(ip, True)
+        
+        if self.network:
+            for domain in self.network.domains:
+                for ip in domain.ips:
+                    if ip not in self:
+                        self.add(IPv4Address(ip))
+            for node in self.network.nodes:
+                for ip in node.ips:
+                    if ip not in self:
+                        self.add(IPv4Address(ip))
 
 class NodeSet(NetworkObjectContainer):
     """
