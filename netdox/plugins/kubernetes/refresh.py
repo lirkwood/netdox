@@ -10,10 +10,9 @@ which describes all apps running from deployments in the configured Kubernetes c
 
 from collections import defaultdict
 import json
-from bs4 import BeautifulSoup
 
 import utils
-from networkobjs import Domain, Network
+from networkobjs import Domain, Network, JSONEncoder
 from plugins import PluginManager
 from plugins.kubernetes import initContext, App
 
@@ -270,9 +269,10 @@ def runner(network: Network) -> None:
     global pluginmaster
     pluginmaster = PluginManager()
 
-    workerApps = defaultdict(set)
+    workerApps = {}
     for context in auth:
         apps = getApps(context)
+        workerApps[context] = defaultdict(set)
         location = auth[context]['location'] if 'location' in auth[context] else None
         
         for app in apps.values():
@@ -289,32 +289,12 @@ def runner(network: Network) -> None:
         
             for pod in appnode.pods.values():
                 if 'vm' in pod:
-                    workerApps[pod['vm']].add(appnode.docid)
+                    workerApps[context][f'_nd_node_xohost_{pod["vm"]}'].add(appnode.docid)
+                else:
+                    workerApps[context][f'_nd_node_{pod["nodeIP"].replace(".","_")}']
 
-    # if 'xenorchestra' in pluginmaster:
-    #     soup = BeautifulSoup("""<xsl:stylesheet version="3.0"
-    #             xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    #             xmlns:xpf="http://www.w3.org/2005/xpath-functions"
-    #             xmlns:err="http://www.w3.org/2005/xqt-errors"
-    #             exclude-result-prefixes="#all" />
-    #         """, features = 'xml')
-
-    #     for worker, applist in workerApps.items():
-    #         pattern = ("xpf:map[xpf:string[@key = 'type' and text() = 'XenOrchestra VM']"+ 
-    #                     f" and [xpf:string[@key = 'uuid'] and text() = '{worker}']]")
-    #         template = BeautifulSoup(f"""
-    #         <xsl:template match="{pattern}" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-    #             <section id="k8sapps" title="Kubernetes Apps"><properties-fragment id="k8sapps"/></section>
-    #         </xsl:template>
-    #         """, features='xml')
-    #         pfrag = template.find_all('properties-fragment')
-
-    #         for app in applist:
-    #             property = template.new_tag('property', title="Kubernetes App", datatype="xref")
-    #             property['name'] = 'k8sapp'
-    #             property.append(template.new_tag('xref', frag='default', docid=app))
-    #             pfrag.append(property)
-    #         soup.stylesheet.append(template)
-
-    #     with open('plugins/kubernetes/vmApps.xslt', 'w') as stream:
-    #         stream.write(str(soup))
+        workerApps[context] = {k: workerApps[context][k] for k in sorted(workerApps[context])}
+    
+    with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
+        stream.write(json.dumps(workerApps, indent = 2, cls = JSONEncoder))
+    utils.xslt('plugin/kubernetes/pub.xslt', 'plugins/kubernetes/src/workerApps.xml', 'out/k8spub.psml')
