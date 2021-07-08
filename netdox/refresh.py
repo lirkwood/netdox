@@ -46,18 +46,28 @@ def init():
     # Initialise plugins
     global pluginmaster
     pluginmaster = plugins.PluginManager()
+    
+    # Add import statements to imports.xslt
+    xsltImports = BeautifulSoup(utils.MIN_STYLESHEET, features = 'xml')
+    for plugin in pluginmaster.nodes:
+        if plugin.xslt:
+            importTag = xsltImports.new_tag('import', nsprefix = 'xsl', href = plugin.xslt)
+            xsltImports.stylesheet.append(importTag)
+    
+    with open('imports.xslt', 'w', encoding = 'utf-8') as stream:
+        stream.write(xsltImports.prettify())
 
     roles = {"exclusions": []}
     # load dns config from pageseeder
     psConfigInf = json.loads(pageseeder.get_uri('_nd_config'))
     if 'title' in psConfigInf and psConfigInf['title'] == 'DNS Config':
-        # load a role
+        # load roles fragment
         roleFrag = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
             roleConfig = pageseeder.pfrag2dict(pageseeder.get_fragment(xref['docid'], 'config'))
             roleName = roleConfig['name']
 
-            # # set role for configured domains
+            # set role for configured domains
             domains = set()
             revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['docid']), features='xml')
             for revXref in revXrefs("reversexref"):
@@ -112,6 +122,7 @@ def init():
     with open('src/roles.json', 'w') as stream:
         stream.write(json.dumps(roles, indent=2))
 
+
 def main():
     """
     The main flow of the refresh process.
@@ -124,8 +135,6 @@ def main():
     global pluginmaster
     pluginmaster.initStage('dns')
     pluginmaster.runStage('dns', network)
-    network.ips.fillSubnets()
-    network.discoverImpliedLinks()
 
     # generate generic nodes
     for ip in network.ips.used:
@@ -142,25 +151,14 @@ def main():
     pluginmaster.initStage('nodes')
     pluginmaster.runStage('nodes', network)
 
+    network.ips.fillSubnets()
     network.domains.applyRoles()
+    network.discoverImpliedLinks()
     
     pluginmaster.initStage('pre-write')
     pluginmaster.runStage('pre-write', network)
     
     network.dumpNetwork()
-    
-    # Maybe just write plugins to json and use xslt?
-    xsltImports = BeautifulSoup('', features = 'xml')
-    for plugin in pluginmaster.pluginmap['nodes'].values():
-        if hasattr(plugin, 'xslt') and plugin.xslt:
-            importTag = xsltImports.new_tag('import', nsprefix = 'xsl', href = plugin.xslt)
-            xsltImports.append(importTag)
-    
-    with open('nodes.xslt', 'r', encoding = 'utf-8') as stream:
-        xslt = BeautifulSoup(stream.read(), features = 'xml')
-    xslt.stylesheet.insert(0, xsltImports)
-    with open('nodes.xslt', 'w', encoding = 'utf-8') as stream:
-        stream.write(xslt.prettify())
     
     # Write Domain documents
     utils.xslt('domains.xslt', 'src/domains.xml')
