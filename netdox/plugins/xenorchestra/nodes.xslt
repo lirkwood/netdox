@@ -5,6 +5,9 @@
                 exclude-result-prefixes="#all">
 
 <xsl:template match="xpf:map[xpf:string[@key = 'type' and text() = 'XenOrchestra VM']]">
+    <xsl:param name="section" />
+    <xsl:if test="$section = 'plugininf'">
+
     <section id="plugininf">
 
         <properties-fragment id="core">
@@ -26,9 +29,14 @@
         </properties-fragment>
         
     </section>
+
+    </xsl:if>
 </xsl:template>
 
 <xsl:template match="xpf:map[xpf:string[@key = 'type' and text() = 'XenOrchestra Host']]">
+    <xsl:param name="section" />
+    <xsl:if test="$section = 'plugininf'">
+
     <section id="plugininf">
 
         <properties-fragment id="core">
@@ -38,11 +46,11 @@
         </properties-fragment>
 
         <properties-fragment id="cpus">
-            <property name="host-cpu-count"          title="CPU count"      value="{xpf:map[@key='CPUs']/xpf:string[@key='cpu_count']}" />
-            <property name="host-cpu-socket-count"   title="CPU sockets"    value="{xpf:map[@key='CPUs']/xpf:string[@key='socket_count']}" />
-            <property name="host-cpu-vendor"         title="CPU vendor"     value="{xpf:map[@key='CPUs']/xpf:string[@key='vendor']}" />
-            <property name="host-cpu-speed"          title="CPU speed"      value="{xpf:map[@key='CPUs']/xpf:string[@key='speed']}" />
-            <property name="host-cpu-modelname"      title="CPU model"      value="{xpf:map[@key='CPUs']/xpf:string[@key='modelname']}" />
+            <property name="host-cpu-count"          title="CPU count"      value="{xpf:map[@key='cpus']/xpf:string[@key='cpu_count']}" />
+            <property name="host-cpu-socket-count"   title="CPU sockets"    value="{xpf:map[@key='cpus']/xpf:string[@key='socket_count']}" />
+            <property name="host-cpu-vendor"         title="CPU vendor"     value="{xpf:map[@key='cpus']/xpf:string[@key='vendor']}" />
+            <property name="host-cpu-speed"          title="CPU speed"      value="{xpf:map[@key='cpus']/xpf:string[@key='speed']}" />
+            <property name="host-cpu-modelname"      title="CPU model"      value="{xpf:map[@key='cpus']/xpf:string[@key='modelname']}" />
         </properties-fragment>
 
         <xref-fragment id="xrefs">
@@ -52,6 +60,8 @@
             </xsl:for-each>
         </xref-fragment>
     </section>
+
+    </xsl:if>
 </xsl:template>
     
 </xsl:stylesheet>

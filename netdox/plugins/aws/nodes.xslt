@@ -4,6 +4,8 @@
                 exclude-result-prefixes="#all">
 
 <xsl:template match="xpf:map[xpf:string[@key='type' and text()='AWS EC2 Instance']]">
+    <xsl:param name="section" />
+    <xsl:if test="$section = 'plugininf'">
 
     <section id="plugininf">
 
@@ -23,7 +25,8 @@
         </properties-fragment>
     
     </section>
-
+    
+    </xsl:if>
 </xsl:template>
 
 </xsl:stylesheet>
