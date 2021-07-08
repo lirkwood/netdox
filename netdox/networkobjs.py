@@ -670,7 +670,7 @@ class NodeSet(NetworkObjectContainer):
         Add a single network object to the set, merge if an object with that name is already present.
         """
         if node.docid in self:
-            self[node.docid] = object.merge(self[node.docid])
+            self[node.docid] = node.merge(self[node.docid])
         else:
             if self.network:
                 node.network = self.network
