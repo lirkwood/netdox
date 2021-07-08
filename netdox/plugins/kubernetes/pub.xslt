@@ -21,15 +21,18 @@
             </fragment>
         </section>
 
-        <xsl:for-each select="xpf:map">
-            <section id="cluster_{position()}" title="Cluster: {@key}">
+        <section id="clusters">
+            <xsl:for-each select="xpf:map">
+                <fragment id="title_{position()}">
+                    <heading level="2"><xsl:value-of select="@key" /></heading>
+                </fragment>
                 <xref-fragment id="cluster_{position()}_workers">
-                    <xsl:for-each select="xpf:map">
+                    <xsl:for-each select="xpf:array">
                         <blockxref type="embed" frag="default" docid="{@key}" />
                     </xsl:for-each>
                 </xref-fragment>
-            </section>
-        </xsl:for-each>
+            </xsl:for-each>
+        </section>
     </document>
 </xsl:template>
 

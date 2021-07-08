@@ -21,15 +21,18 @@
             </fragment>
         </section>
 
+        <section id="pools">
         <xsl:for-each select="xpf:array">
-        <section id="pool_{position()}" title="Pool: {@key}">
+            <fragment id="title_{position()}">
+                <heading level="2"><xsl:value-of select="@key" /></heading>
+            </fragment>
             <xref-fragment id="pool_{position()}_hosts">
             <xsl:for-each select="xpf:string">
                 <blockxref docid="_nd_node_xohost_{.}" frag="default" type="embed"></blockxref>
             </xsl:for-each>
             </xref-fragment>
-        </section>
         </xsl:for-each>
+        </section>
     </document>
 </xsl:template>
 
