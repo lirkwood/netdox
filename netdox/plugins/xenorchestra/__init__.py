@@ -215,13 +215,7 @@ class Plugin(BasePlugin):
             os.mkdir('plugins/xenorchestra/src')
 
         for type in ('poolHosts', 'templates'):
-            with open(f'plugins/xenorchestra/src/{type}.xml','w') as stream:
-                stream.write(dedent(f"""
-                <?xml version="1.0" encoding="UTF-8"?>
-                <!DOCTYPE import [
-                <!ENTITY json SYSTEM "{type}.json">
-                ]>
-                <root>&json;</root>""").strip())
+            utils.jsonForXslt(f'plugins/xenorchestra/src/{type}.xml', f'{type}.json')
 
     def runner(self, network: Network, *_) -> None:
         runner(network)
