@@ -99,6 +99,8 @@ class Plugin(BasePlugin):
             if not os.path.exists(f'plugins/kubernetes/{dir}'):
                 os.mkdir(f'plugins/kubernetes/{dir}')
 
+        utils.jsonForXslt('plugins/kubernetes/src/workerApps.xml', 'workerApps.json')
+
         auth = utils.config()['plugins']['kubernetes']
         with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
             clusters = []
