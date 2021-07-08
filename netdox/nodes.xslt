@@ -59,9 +59,15 @@
 
             </section>
 
-            <xsl:apply-imports />
+            <xsl:apply-imports>
+                <xsl:with-param name="section" select="'plugininf'"/>
+            </xsl:apply-imports>
 
-            <section id="other" />
+            <section id="other" >
+                <xsl:apply-imports>
+                    <xsl:with-param name="section" select="'other'"/>
+                </xsl:apply-imports>
+            </section>
 
         </document>
     </xsl:result-document>
