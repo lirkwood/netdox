@@ -110,7 +110,8 @@ async def makeNodes(network: Network):
 
                     hostVMs[vm['$container']].append(vm['uuid'])
 
-                    network.add(VirtualMachine(
+                    existingNode = f'_nd_node_{vm["mainIpAddress"].replace(".","_")}'
+                    network.replace(existingNode, VirtualMachine(
                         name = vm['name_label'],
                         desc = vm['name_description'],
                         uuid = uuid,
@@ -119,7 +120,6 @@ async def makeNodes(network: Network):
                         host = vm['$container'],
                         pool = poolNames[vm['$pool']],
                         private_ip = vm['mainIpAddress'],
-                        domains = network.ips[vm['mainIpAddress']].domains
                     ))
 
                 else:
