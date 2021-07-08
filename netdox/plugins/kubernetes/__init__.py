@@ -9,7 +9,7 @@ import pageseeder
 import utils
 import yaml
 from flask import Response
-from networkobjs import Network, Node
+from networkobjs import Network, NetworkObjectContainer, Node
 from plugins import Plugin as BasePlugin
 
 from kubernetes import config
@@ -42,6 +42,7 @@ class App(Node):
     labels: dict
     template: dict
     pods: dict
+    _container: NetworkObjectContainer
 
     def __init__(self, 
             name: str, 
@@ -73,6 +74,9 @@ class App(Node):
     @network.setter
     def network(self, new_network: Network) -> None:
         self._network = new_network
+        for domain in self.domains:
+            if domain in self.network.domains:
+                self.network.domains[domain].node = self.docid
 
     def merge(self, *_) -> NotImplementedError:
         raise NotImplementedError
@@ -85,7 +89,7 @@ from plugins.kubernetes.webhooks import create_app
 
 class Plugin(BasePlugin):
     name = 'kubernetes'
-    stages = ['nodes']
+    stages = ['nodes', 'pre-write']
     xslt = 'plugins/kubernetes/nodes.xslt'
 
     def init(self) -> None:
@@ -134,8 +138,17 @@ class Plugin(BasePlugin):
             'contexts': contexts
             }))
 
-    def runner(self, network: Network, *_) -> None:
-        runner(network)
+    def runner(self, network: Network, stage: str) -> None:
+        if stage == 'nodes':
+            runner(network)
+        else:
+            for node in network.nodes:
+                if node.type == 'Kubernetes App':
+                    for domain in node.domains:
+                        if domain in network and network.domains[domain].node != node.docid:
+                            oldNode = network.domains[domain].node
+                            network.nodes[oldNode].domains.remove(domain)
+                            network.domains[domain].node = node.docid
 
     def approved_node(self, uri: str) -> Response:
         summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
