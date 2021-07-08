@@ -4,7 +4,7 @@
                 exclude-result-prefixes="#all">
 
 <xsl:template match="/">
-    <xsl:variable name="apps" select="json-to-xml(apps)"/>
+    <xsl:variable name="apps" select="json-to-xml(root)"/>
     <xsl:apply-templates select="$apps/xpf:map"/>
 </xsl:template>
 
@@ -12,7 +12,7 @@
     <document level="portable" type="references">
         <documentinfo>
             <uri title="Kubernetes Clusters" />
-            <publication id="_nd_k8s_pub" title="Kubernetes Clusters" />
+            <publication id="_nd_k8spub" title="Kubernetes Clusters" />
         </documentinfo>
 
         <section id="title">
@@ -21,13 +21,15 @@
             </fragment>
         </section>
 
-        <section id="xrefs">
-            <xref-fragment id="clusters">
-            <xsl:for-each select="xpf:map">
-                <blockxref docid="_nd_{translate(@key,'.','_')}" frag="default" type="embed" />
-            </xsl:for-each>
-            </xref-fragment>
-        </section>
+        <xsl:for-each select="xpf:map">
+            <section id="cluster_{position()}" title="Cluster: {@key}">
+                <xref-fragment id="cluster_{position()}_workers">
+                    <xsl:for-each select="xpf:map">
+                        <blockxref type="embed" frag="default" docid="{@key}" />
+                    </xsl:for-each>
+                </xref-fragment>
+            </section>
+        </xsl:for-each>
     </document>
 </xsl:template>
 
