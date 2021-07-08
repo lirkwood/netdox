@@ -77,7 +77,7 @@ def runner(network: Network):
     asyncio.run(template_map(vms))
 
     with open('plugins/xenorchestra/src/poolHosts.json', 'w') as stream:
-        stream.write(json.dumps(poolHosts))
+        stream.write(json.dumps({key: poolHosts[key] for key in sorted(poolHosts)}))
     utils.xslt('plugins/xenorchestra/pub.xslt', 'plugins/xenorchestra/src/poolHosts.xml', 'out/xopub.psml')
 
 @authenticate
