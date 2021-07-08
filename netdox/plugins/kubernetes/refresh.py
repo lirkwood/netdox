@@ -297,4 +297,4 @@ def runner(network: Network) -> None:
     
     with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
         stream.write(json.dumps(workerApps, indent = 2, cls = JSONEncoder))
-    utils.xslt('plugin/kubernetes/pub.xslt', 'plugins/kubernetes/src/workerApps.xml', 'out/k8spub.psml')
+    utils.xslt('plugins/kubernetes/pub.xslt', 'plugins/kubernetes/src/workerApps.xml', 'out/k8spub.psml')
