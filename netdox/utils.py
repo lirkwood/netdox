@@ -13,6 +13,7 @@ import subprocess
 from functools import wraps
 from os import DirEntry, scandir
 from sys import argv
+from textwrap import dedent
 from traceback import format_exc
 from typing import Union
 
@@ -102,6 +103,24 @@ def xslt(xsl: str, src: str, out: bool = None):
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src} -o:{out}', shell=True)
     else:
         subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
+
+
+def jsonForXslt(xmlpath: str, jsonpath: str) -> None:
+    """
+    Generates an XML document that has a single element with name root containing the content of the JSON file.
+
+    :param xmlpath: The path to output the import file to
+    :type xmlpath: str
+    :param jsonpath: The path, relative to the xmlpath, of the JSON file to import
+    :type jsonpath: str
+    """    
+    with open(xmlpath, 'w') as stream:
+        stream.write(dedent(f"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE import [
+            <!ENTITY json SYSTEM "{jsonpath}">
+            ]>
+            <root>&json;</root>""").strip())
 
 
 def fileFetchRecursive(dir: Union[str, DirEntry]) -> list[str]:
