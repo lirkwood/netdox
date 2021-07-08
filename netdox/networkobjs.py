@@ -98,6 +98,7 @@ class NetworkObject(ABC):
     name: str
     docid: str
     _network: Network
+    container: NetworkObjectContainer
     location: str
 
     @property
@@ -127,6 +128,7 @@ class Domain(NetworkObject):
     """
     root: str
     role: str
+    node: str
     _public_ips: set[str]
     _private_ips: set[str]
     _cnames: set[str]
@@ -148,26 +150,10 @@ class Domain(NetworkObject):
 
             self.implied_ips = set()
             self.subnets = set()
+
+            self.node = None
         else:
             raise ValueError('Must provide a valid name for dns record (some FQDN)')
-
-    @classmethod
-    def from_dict(cls, object: dict):
-        """
-        Instantiates a Domain from a dictionary.
-        """
-        record = cls(object['name'])
-        for k, v in object.items():
-            setattr(record, k, v)
-
-        for attr in ('_public_ips','_private_ips','_cnames'):
-            for destination, source in record.__dict__[attr]:
-                record.link(destination, source)
-
-        record.subnets = set(record.subnets)
-        record.update()
-        
-        return record
 
     def link(self, destination: Union[Domain, IPv4Address, str], source: str):
         """
@@ -247,15 +233,6 @@ class Domain(NetworkObject):
         """
         return list(set([cname for cname,_ in self._cnames]))
 
-    def update(self):
-        """
-        Updates subnet and location data for this record.
-        """
-        for ip in self.private_ips:
-            self.subnets.add(iptools.sort(ip))
-        if self.network:
-            self.location = self.network.locator.locate(self.ips)
-
     @property
     def network(self):
         return self._network
@@ -264,6 +241,15 @@ class Domain(NetworkObject):
     def network(self, new_network: Network):
         self._network = new_network
         self.location = new_network.locator.locate(self.ips)
+
+    def update(self):
+        """
+        Updates subnet and location data for this record.
+        """
+        for ip in self.private_ips:
+            self.subnets.add(iptools.sort(ip))
+        if self.network:
+            self.location = self.network.locator.locate(self.ips)
 
     def merge(self, domain: Domain) -> Domain:
         """
@@ -288,7 +274,8 @@ class IPv4Address(BaseIP, NetworkObject):
     A single IP address found in the network
     """
     addr: str
-    name: str
+    node: str
+    subnet: str
     _ptr: set[Tuple[str, str]]
     implied_ptr: set[str]
     nat: str
@@ -300,12 +287,14 @@ class IPv4Address(BaseIP, NetworkObject):
         self.addr = str(address)
         self.name = self.addr
         self.docid = f'_nd_ip_{self.addr.replace(".","_")}'
+        self.subnet = iptools.sort(self.addr)
         self.location = None
         self.unused = unused
         
         self._ptr = set()
         self.implied_ptr = set()
         self.nat = None
+        self.node = None
 
     @property
     def ptr(self):
@@ -413,6 +402,15 @@ class Node(NetworkObject):
         self._network = new_network
         self.location = new_network.locator.locate(self.ips)
 
+        for domain in self.domains:
+            if domain in self.network:
+                self.network.domains[domain].node = self.docid
+
+        for ip in self.ips:
+            if ip not in self.network:
+                self.network.add(IPv4Address(ip))
+            self.network.ips[ip].node = self
+
     def merge(self, node: Node) -> Node:
         """
         In place merge of two Node objects.
@@ -442,7 +440,11 @@ class JSONEncoder(json.JSONEncoder):
         :meta private:
         """
         if isinstance(obj, NetworkObject):
-            return obj.__dict__ | {'_network': None}
+            return obj.__dict__
+        elif isinstance(obj, NetworkObjectContainer):
+            return None
+        elif isinstance(obj, Network):
+            return None
         elif isinstance(obj, set):
             return sorted(obj)
         elif isinstance(obj, datetime):
@@ -495,6 +497,7 @@ class NetworkObjectContainer(ABC):
         if object.name in self:
             self[object.name] = object.merge(self[object.docid])
         else:
+            object.container = self
             if self.network:
                 object.network = self.network
             self[object.name] = object
@@ -522,6 +525,9 @@ class DomainSet(NetworkObjectContainer):
     def __init__(self, objectSet: list = [], network: Network = None, roles: dict = None) -> None:
         super().__init__(objectSet, network)
         self._roles = roles or utils.DEFAULT_ROLES
+
+    def __getitem__(self, key: str) -> Domain:
+        return self.objects[key]
 
     ## Re-implemented to type hint
     def __iter__(self) -> Iterator[Domain]:
@@ -592,6 +598,9 @@ class IPv4AddressSet(NetworkObjectContainer):
     def __init__(self, ips: list[IPv4Address] = [], network: Network = None) -> None:
         super().__init__(ips, network)
         self.subnets = set()
+
+    def __getitem__(self, key: str) -> IPv4Address:
+        return self.objects[key]
 
     def __iter__(self) -> Iterator[IPv4Address]:
         yield from super().__iter__()
@@ -669,6 +678,9 @@ class NodeSet(NetworkObjectContainer):
 
     def __iter__(self) -> Iterator[Node]:
         yield from super().__iter__()
+
+    def __getitem__(self, key: str) -> Node:
+        return self.objects[key]
 
     @property
     def nodes(self) -> dict:
@@ -794,11 +806,11 @@ class Network:
 
         for node in self.nodes:
             for ip in node.ips:
-                if ip in self.ips:
+                if ip in self.ips and not self.ips[ip].node:
                     self.ips[ip].node = node.docid
-                    node.domains |= self.ips[ip].domains
+                    
             for domain in node.domains:
-                if domain in self.domains:
+                if domain in self.domains and not self.domains[domain].node:
                     self.domains[domain].node = node.docid
 
 
