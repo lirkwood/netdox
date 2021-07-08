@@ -252,7 +252,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
                 except KeyError:
                     pass
                 if podName in podDomains:
-                    app['domains'] |= podDomains[podName]
+                    app['domains'] = podDomains[podName]
     
     return apps
     
@@ -297,4 +297,14 @@ def runner(network: Network) -> None:
     
     with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
         stream.write(json.dumps(workerApps, indent = 2, cls = JSONEncoder))
-    utils.xslt('plugins/kubernetes/pub.xslt', 'plugins/kubernetes/src/workerApps.xml', 'out/k8spub.psml')
+        
+    utils.xslt(
+        xsl = 'plugins/kubernetes/workerAppsMaker.xslt', 
+        src = 'plugins/kubernetes/src/workerApps.xml', 
+        out = 'plugins/kubernetes/workerApps.xslt'
+    )
+    utils.xslt(
+        xsl = 'plugins/kubernetes/pub.xslt', 
+        src = 'plugins/kubernetes/src/workerApps.xml', 
+        out = 'out/k8spub.psml'
+    )
