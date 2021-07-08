@@ -70,16 +70,12 @@ def workflow_updated(event):
         elif document_type == 'node':
             summary = pageseeder.pfrag2dict(pageseeder.get_fragment(document_uri, 'summary'))
             node_type = summary['type']
-            if document_type in doctypeMap:
-                plugin = pluginmaster.nodemap[node_type]
-                try:
-                    print(f'[INFO][webhooks] Delegating to {plugin.name} for node type {node_type}')
-                    return plugin.approved_node(document_uri)
-                except Exception:
-                    print_exc()
-                    return Response(status=500)
-            else:
-                print(f'[ERROR][webhooks] No function has been specified for the document type {document_type}')
+            plugin = pluginmaster.nodemap[node_type]
+            try:
+                print(f'[INFO][webhooks] Delegating to {plugin.name} for node type {node_type}')
+                return plugin.approved_node(document_uri)
+            except Exception:
+                print_exc()
                 return Response(status=500)
 
 
@@ -187,19 +183,6 @@ def approved_ip(uri):
 
 #     return Response(status=200)
 
-doctypeMap = {} 
-psproperties = {}
 if 'gunicorn' in sys.argv[0]:
     pluginmaster = plugins.PluginManager()
     pluginmaster.initPlugins() 
-    with open('src/pageseeder.properties', 'r') as stream:
-        for line in stream.read().splitlines():
-            property = re.match('(?P<key>.+?)=(?P<value>.+?)', line)
-            if property:
-                psproperties[property['key']] = property['value']
-
-    try:
-        with open('src/webhooks.json', 'r') as stream:
-            doctypeMap = json.load(stream)
-    except FileNotFoundError:
-        print('[WARNING][webhooks] Webhooks config file not found')
