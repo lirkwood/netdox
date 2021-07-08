@@ -71,7 +71,11 @@ class Plugin(BasePlugin):
         allEC2 = client.describe_instances()
         for reservation in allEC2['Reservations']:
             for instance in reservation['Instances']:
-                netInf = instance['NetworkInterfaces'][0]
+                if instance['NetworkInterfaces']:
+                    netInf = instance['NetworkInterfaces'][0]
+                else:
+                    print(f'[WARNING][aws] Instance {instance["InstanceId"]} has no network interfaces and has been ignored')
+                    continue
 
                 network.add(EC2Instance(
                     name = instance['KeyName'],
