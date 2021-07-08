@@ -3,9 +3,11 @@ This script is used to initialise the container for the rest of Netdox.
 """
 
 import os, utils
+from typing import Type
 from textwrap import dedent
 from bs4 import BeautifulSoup
 from pageseeder import urimap
+from plugins import Plugin, PluginManager
 
 ##################
 # Initialisation #
@@ -32,13 +34,7 @@ def init():
     
     # generate xslt json import files
     for type in ('domains', 'ips', 'nodes', 'review'):
-        with open(f'src/{type}.xml','w') as stream:
-            stream.write(dedent(f"""
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE {type} [
-            <!ENTITY json SYSTEM "{type}.json">
-            ]>
-            <{type}>&json;</{type}>""").strip())
+        utils.jsonForXslt(f'src/{type}.xml', f'{type}.json')
 
     # load pageseeder properties and auth info
     with open('src/pageseeder.properties','r') as f: 
@@ -60,6 +56,7 @@ def init():
     with open('build.xml','w') as stream:
         soup.find('ps:upload')['group'] = psauth['group']
         stream.write(soup.prettify().split('\n',1)[1]) # remove first line of string as xml declaration
+
 
 if __name__ == '__main__':
     init()
