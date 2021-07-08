@@ -139,3 +139,10 @@ def fileFetchRecursive(dir: Union[str, DirEntry]) -> list[str]:
         elif file.is_file():
             fileset.append(file.path)
     return fileset
+
+
+####################
+# Useful Constants #
+####################
+
+MIN_STYLESHEET = '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" exclude-result-prefixes="#all" />'
