@@ -12,7 +12,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from traceback import format_exc
-from typing import Iterator, KeysView
+from typing import Iterator, KeysView, ValuesView
 
 import yaml
 from networkobjs import Network
@@ -98,13 +98,28 @@ class PluginManager:
         """
         return self.pluginmap['all']
 
+    @property
+    def nodes(self) -> ValuesView[Plugin]:
+        return self.pluginmap['nodes'].values()
+
+    @property
+    def dns(self) -> ValuesView[Plugin]:
+        return self.pluginmap['dns'].values()
+
+    @property
+    def pre(self) -> ValuesView[Plugin]:
+        return self.pluginmap['pre-write'].values()
+
+    @property
+    def post(self) -> ValuesView[Plugin]:
+        return self.pluginmap['post-write'].values()
+
     def add(self, plugin: Plugin) -> None:
         """
-        Adds a plugin to the pluginmap.
+        Adds a plugin to the PluginManager
 
-        :Args:
-            plugin:
-                An instance of the Plugin abstract base class
+        :param plugin: An instantiated subclass of Plugin
+        :type plugin: Plugin
         """
         self.plugins[plugin.name] = plugin
         
@@ -122,6 +137,10 @@ class PluginManager:
     def loadPlugins(self, dir: str) -> None:
         """
         Scans a directory for valid python modules and imports them.
+
+        :param dir: The directory to scan for plugins
+        :type dir: str
+        :raises ImportError: If an Exception is raised during the call to ``importlib.import_module``
         """
         for plugindir in os.scandir(dir):
             if plugindir.is_dir() and plugindir.name != '__pycache__':
@@ -145,20 +164,20 @@ class PluginManager:
         for plugin in self:
             plugin.init()
 
-    def runPlugin(self, name: str = '', plugin: Plugin = None, network: Network = None, stage: str = None) -> None:
+    def runPlugin(self, name: str = None, plugin: Plugin = None, network: Network = None, stage: str = 'none') -> None:
         """
-        Runs the *runner* function from a given plugin with forward and reverse dns as arguments
+        Runs the runner method of a plugin with a Network object and the current stage as arguments.
 
-        :Args:
-            name: str
-                The name of a loaded plugin to call *runner* from
-            plugin: ModuleType
-                The module object of the plugin to call *runner* from
-            forward_dns:
-                A forward DNS set
-            reverse_dns:
-                A reverse DNS set
-        """
+        :param name: The name of a plugin already loaded by the PluginManager. Must be provided if ``plugin`` is not. Defaults to None
+        :type name: str, optional
+        :param plugin: An instance of Plugin or a class that inherits from it. Must be provided if ``name`` is not. Defaults to None
+        :type plugin: Plugin, optional
+        :param network: The Network object to pass to the runner method, a new one will be instantiated if not provided. Defaults to None
+        :type network: Network, optional
+        :param stage: The current stage to pass to the runner method, defaults to 'none'
+        :type stage: str, optional
+        :raises RuntimeError: If both name and plugin take Falsy values
+        """        
         if not name and not plugin:
             raise RuntimeError('Must provide one of: plugin name, plugin')
         elif not plugin:
@@ -173,15 +192,12 @@ class PluginManager:
 
     def runStage(self, stage: str, network: Network) -> None:
         """
-        Runs all the plugins in a stage
+        Runs all the plugins in a given stage
 
-        :Args:
-            stage: str
-                The stage of plugins to call *runner* on
-            forward_dns:
-                A forward DNS set
-            reverse_dns:
-                A reverse DNS set
+        :param stage: The stage to check for plugins
+        :type stage: str
+        :param network: The Network object to be passed to the plugin's *runner*
+        :type network: Network
         """
         print(f'[INFO][pluginmanager] Starting stage: {stage}')
         for pluginName, plugin in self.pluginmap[stage].items():
