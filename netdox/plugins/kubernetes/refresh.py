@@ -193,16 +193,14 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     :Returns:
         A dictionary describing the apps running in this context/namespace
     """
-    apps = {}
     global apiClient
     apiClient = initContext(context)
     podsByLabel = getPodsByLabel(namespace)
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServiceDomains(namespace)
-    workerAddrs = getWorkerAddresses()
     if 'xenorchestra' in pluginmaster:
         from asyncio import run
-        workerVMs = run(getWorkerVMs(workerAddrs))
+        workerVMs = run(getWorkerVMs(getWorkerAddresses()))
     else:
         workerVMs = {}
 
@@ -225,6 +223,7 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
             print(f'[WARNING][kubernetes] Domains {", ".join(domains)} are being routed to non-existent service {service}'
             +f' (cluster: {context}, namespace: {namespace})')
     
+    apps = {}
     # construct app by mapping deployment to pods
     deploymentDetails = getDeploymentDetails(namespace)
     for deployment, details in deploymentDetails.items():
@@ -247,12 +246,9 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
                 if pod['nodeName'] in workerVMs:
                     pod['vm'] = workerVMs[pod['nodeName']]
                 app['pods'][podName] = pod
-                try:
-                    app['pods'][podName]['hostip'] = workerAddrs[pod['nodeName']]['InternalIP']
-                except KeyError:
-                    pass
+                
                 if podName in podDomains:
-                    app['domains'] = podDomains[podName]
+                    app['domains'] |= podDomains[podName]
     
     return apps
     
