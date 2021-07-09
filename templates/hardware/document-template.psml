@@ -1,0 +1,39 @@
+<document type="hardware" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+    <section id="title">
+        <fragment id="title">
+            <heading level="1">
+                <t:value name="ps.title"/>
+            </heading>
+        </fragment>
+        <fragment id="description">
+            <heading level="6">
+                <t:value name="ps.description"/>
+            </heading>
+        </fragment>
+    </section>
+
+    <section id="image">
+        <title>Image</title>
+        <fragment id="image">
+            <block label="border-2"/>
+        </fragment>
+    </section>
+
+    <section id="Info">
+        <properties-fragment id="Info">
+            <property name="domain" title="Host Name" value="" />
+            <property name="ipv4" title="IPv4 Address" value="" />
+            <property name="type" title="Device Type" datatype="select" value="" />
+            <property name="serial" title="Serial Number" value="" />
+            <property name="capacity" title="RAM - CPU" value="" />
+            <property name="os" title="Operating System and Version" value="" />
+            <property name="manufacturer" title="Manufacturer" value="" />
+            <property name="mac" title="Physical Address" value="" />
+            <property name="location" title="Location" datatype="markdown" />
+        </properties-fragment>
+    </section>
+
+</document>
+  
+  
