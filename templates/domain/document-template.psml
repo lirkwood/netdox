@@ -28,14 +28,14 @@
     </t:fragment>
 
     <section id="title">
-      <fragment xmlns:t="http://pageseeder.com/psml/template" id="title">
+      <fragment id="title">
         <heading level="2">Domain name</heading>
          <heading level="1"/>
       </fragment>
    </section>
   
    <section id="details" title="Details">
-      <properties-fragment id="info" xmlns:t="http://pageseeder.com/psml/template">
+      <properties-fragment id="info">
          <property name="name" title="Name" value=""/>
          <property name="root" title="Root Domain" value=""/>
          <property name="role"   title="DNS Role"    datatype="xref">
@@ -47,15 +47,15 @@
   
    <section id="dest" title="Destinations">
      
-      <properties-fragment id="subnets" xmlns:t="http://pageseeder.com/psml/template">
+      <properties-fragment id="subnets">
          <property name="subnet" title="Subnet" value=""/>
       </properties-fragment>
      
-      <fragment id="screenshot" labels="text-align-center" xmlns:t="http://pageseeder.com/psml/template">
+      <fragment id="screenshot" labels="text-align-center">
          <block label="border-2"/>
       </fragment>
      
-      <properties-fragment id="for-search" labels="s-hide-content" xmlns:t="http://pageseeder.com/psml/template">
+      <properties-fragment id="for-search" labels="s-hide-content">
          <property name="octets" title="Octets for search" value=""/>
       </properties-fragment>
      
