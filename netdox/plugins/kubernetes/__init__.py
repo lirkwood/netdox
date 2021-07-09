@@ -145,10 +145,9 @@ class Plugin(BasePlugin):
             for node in network.nodes:
                 if node.type == 'Kubernetes App':
                     for domain in node.domains:
-                        if domain in network and network.domains[domain].node != node.docid:
-                            oldNode = network.domains[domain].node
-                            network.nodes[oldNode].domains.remove(domain)
-                            network.domains[domain].node = node.docid
+                        if domain in network and network.domains[domain].node is not node:
+                            network.domains[domain].node.domains.remove(domain)
+                            network.domains[domain].node = node
 
     def approved_node(self, uri: str) -> Response:
         summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
