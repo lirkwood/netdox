@@ -36,22 +36,24 @@ function _refresh {
             echo '[ERROR][netdox] Python exited with non-zero status. Cancelling upload...'
     fi
 
-    cp /opt/app/src/forward.json /etc/ext/forward.json &> /dev/null
-    cp /opt/app/src/reverse.json /etc/ext/reverse.json &> /dev/null
+    cp /opt/app/src/domains.json /etc/ext/domains.json &> /dev/null
+    cp /opt/app/src/ips.json /etc/ext/ips.json &> /dev/null
+    cp /opt/app/src/nodes.json /etc/ext/nodes.json &> /dev/null
 }
 
 ## Initialise container to allow other processes to run
 function init {
     [[ -d /etc/ext/log ]] || mkdir /etc/ext/log
 
-    cp /etc/ext/forward.json /opt/app/src/forward.json &> /dev/null
-    cp /etc/ext/reverse.json /opt/app/src/reverse.json &> /dev/null
+    cp /etc/ext/domains.json /opt/app/src/domains.json &> /dev/null
+    cp /etc/ext/ips.json /opt/app/src/ips.json &> /dev/null
+    cp /etc/ext/nodes.json /opt/app/src/nodes.json &> /dev/null
 
     # make all scripts executable
     chmod 777 /opt/app/*
     
     # decrypt authentication details
-    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/cfg/authentication.bin" "/opt/app/src/authentication.json"
+    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/cfg/config.bin" "/opt/app/src/config.json"
     
     # copy any unecrypted cfg files
     for file in /etc/ext/cfg/*.json; do
