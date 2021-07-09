@@ -5,8 +5,8 @@
                 exclude-result-prefixes="#all">
 
 <xsl:output method="xml" indent="yes" />
+<xsl:variable name="roles" select="json-to-xml(unparsed-text('src/roles.json'))/xpf:map"/>
 <xsl:variable name="config" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
-<xsl:variable name="auth" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
 
 <xsl:template match="/">
     <xsl:variable name="domains" select="json-to-xml(root)"/>
@@ -124,10 +124,10 @@
                 </xsl:for-each>
                 </properties-fragment>
 
-                <xsl:if test="$config/xpf:map[@key = $role]/*[@key = 'screenshot'] = '1'">
+                <xsl:if test="$roles/xpf:map[@key = $role]/*[@key = 'screenshot'] = '1'">
                 <fragment id="screenshot" labels="text-align-center">
                     <block label="border-2">
-                        <image src="/ps/{translate($auth/xpf:map[@key='pageseeder']/xpf:string[@key='group'],'-','/')}/website/screenshots/{translate($name,'.','_')}.jpg"/>
+                        <image src="/ps/{translate($config/xpf:map[@key='pageseeder']/xpf:string[@key='group'],'-','/')}/website/screenshots/{translate($name,'.','_')}.jpg"/>
                     </block>
                 </fragment>
                 </xsl:if>
@@ -142,7 +142,6 @@
                 </properties-fragment>
                 
             </section>
-            <section id="plugininf"/>
         
         </document>
     </xsl:result-document>
