@@ -76,7 +76,7 @@ class App(Node):
         self._network = new_network
         for domain in self.domains:
             if domain in self.network.domains:
-                self.network.domains[domain].node = self.docid
+                self.network.domains[domain].node = self
 
     def merge(self, *_) -> NotImplementedError:
         raise NotImplementedError
