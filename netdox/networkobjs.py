@@ -128,7 +128,7 @@ class Domain(NetworkObject):
     """
     root: str
     role: str
-    node: str
+    node: Node
     _public_ips: set[str]
     _private_ips: set[str]
     _cnames: set[str]
@@ -241,6 +241,9 @@ class Domain(NetworkObject):
     def network(self, new_network: Network):
         self._network = new_network
         self.location = new_network.locator.locate(self.ips)
+        for ip in self.ips:
+            if ip not in self.network:
+                self.network.add(IPv4Address(ip))
 
     def update(self):
         """
@@ -274,7 +277,7 @@ class IPv4Address(BaseIP, NetworkObject):
     A single IP address found in the network
     """
     addr: str
-    node: str
+    node: Node
     subnet: str
     _ptr: set[Tuple[str, str]]
     implied_ptr: set[str]
@@ -404,7 +407,7 @@ class Node(NetworkObject):
 
         for domain in self.domains:
             if domain in self.network:
-                self.network.domains[domain].node = self.docid
+                self.network.domains[domain].node = self
 
         for ip in self.ips:
             if ip not in self.network:
@@ -440,7 +443,7 @@ class JSONEncoder(json.JSONEncoder):
         :meta private:
         """
         if isinstance(obj, NetworkObject):
-            return obj.__dict__
+            return obj.__dict__ | {'node': obj.node.docid if hasattr(obj, 'node') and obj.node else None}
         elif isinstance(obj, NetworkObjectContainer):
             return None
         elif isinstance(obj, Network):
@@ -807,11 +810,11 @@ class Network:
         for node in self.nodes:
             for ip in node.ips:
                 if ip in self.ips and not self.ips[ip].node:
-                    self.ips[ip].node = node.docid
+                    self.ips[ip].node = node
                     
             for domain in node.domains:
                 if domain in self.domains and not self.domains[domain].node:
-                    self.domains[domain].node = node.docid
+                    self.domains[domain].node = node
 
 
     def writeSet(self, set: str, path: str) -> None:
