@@ -244,6 +244,7 @@ class Domain(NetworkObject):
         for ip in self.ips:
             if ip not in self.network:
                 self.network.add(IPv4Address(ip))
+            self.network.ips[ip].implied_ptr.add(self.name)
 
     def update(self):
         """
@@ -321,6 +322,9 @@ class IPv4Address(BaseIP, NetworkObject):
     def network(self, new_network: Network):
         self._network = new_network
         self.location = new_network.locator.locate(self.addr)
+        for domain in self.domains:
+            if domain in self.network:
+                self.network.domains[domain].implied_ips.add(self.addr)
 
     def merge(self, ip: IPv4Address) -> IPv4Address:
         """
