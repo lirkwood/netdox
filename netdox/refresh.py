@@ -72,7 +72,7 @@ def init():
             revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['docid']), features='xml')
             for revXref in revXrefs("reversexref"):
                 ## change to 'domain'
-                if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'dns':
+                if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'domain':
                     domains.add(revXref['urititle'])
             
             screenshot = strtobool(roleConfig['screenshot'])
