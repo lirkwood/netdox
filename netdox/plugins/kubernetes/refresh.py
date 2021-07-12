@@ -285,9 +285,9 @@ def runner(network: Network) -> None:
         
             for pod in appnode.pods.values():
                 if 'vm' in pod:
-                    workerApps[context][f'_nd_node_xohost_{pod["vm"]}'].add(appnode.docid)
+                    workerApps[context][f'_nd_node_xovm_{pod["vm"]}'].add(appnode.docid)
                 else:
-                    workerApps[context][f'_nd_node_{pod["nodeIP"].replace(".","_")}']
+                    workerApps[context][f'_nd_node_{pod["nodeIP"].replace(".","_")}'].add(appnode.docid)
 
         workerApps[context] = {k: workerApps[context][k] for k in sorted(workerApps[context])}
     
