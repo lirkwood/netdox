@@ -20,7 +20,6 @@
         </properties-fragment>
 
         <properties-fragment id="os_version">
-            <property name="template"           title="Template"       value="{xpf:map[@key='template']/xpf:string[@key='base_template_name']}" />
             <property name="os-name"            title="OS name"        value="{xpf:map[@key='os']/xpf:string[@key='name']}" />
             <property name="os-uname"           title="OS uname"       value="{xpf:map[@key='os']/xpf:string[@key='uname']}" />
             <property name="os-distro"          title="Distro"         value="{xpf:map[@key='os']/xpf:string[@key='distro']}" />
