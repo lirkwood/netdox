@@ -174,11 +174,11 @@ def get_fragment(uri, fragment_id, params={}, host='', group='', member='', head
 
 
 @auth
-def export(uri, params={}, host='', member='', header={}):
+def export(params={}, directory = False, host='', member='', header={}):
     """
     Begins export process for some URI and returns relevant thread ID
     """
-    service = f'/members/~{member}/uris/{uri}/export'
+    service = f'/members/~{member}/export' if directory else f'/members/~{member}/uris/{params["uri"]}/export'
     r = requests.get(host+service, headers=header, params=params)
     return r.text
 
