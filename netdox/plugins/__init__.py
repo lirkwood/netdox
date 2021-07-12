@@ -31,7 +31,7 @@ class Plugin(ABC):
     
     node_types: list[str]
     # The node types that this plugin adds to the network (if any)
-    xslt: str
+    xslt: str = None
     # Path to an xslt file to import during the nodes transformation
 
     @abstractmethod
