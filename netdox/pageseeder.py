@@ -18,13 +18,12 @@ from inspect import signature
 
 def refreshToken(credentials: dict) -> str:
     """
-    Requests a new PageSeeder API authentication token and saves it to disk.
+    Requests a new token from PageSeeder
 
-    :Args:
-        A dictionary containing some authentication/configuration details. Found in ``config.json``.
-
-    :Returns:
-        A string containing a valid PageSeeder API token.
+    :param credentials: A dictionary like that found in the pageseeder section of ``config.json``
+    :type credentials: dict
+    :return: An access token for use with the PageSeeder API
+    :rtype: str
     """
     with open('src/pstoken.json', 'w') as stream:
         print('[INFO][pageseeder] Requesting new access token...')
@@ -46,41 +45,50 @@ def refreshToken(credentials: dict) -> str:
 
     return token
 
+def token(credentials: dict) -> str:
+    """
+    Returns an access token for the PageSeeder configured in *credentials*.
+    If existing token has expired or does not exist, refreshToken is called.
+
+    :param credentials: A dictionary like that found in the pageseeder section of ``config.json``
+    :type credentials: dict
+    :return: An access token for use with the PageSeeder API
+    :rtype: str
+    """
+    try:
+        with open('src/pstoken.json', 'r') as stream:
+            details = json.load(stream)
+            token = details['token']
+            issued = details['issued']
+
+            if datetime.fromisoformat(issued) <= (datetime.now() - timedelta(hours=1)):
+                token = refreshToken(credentials)
+    except FileNotFoundError:
+        token = refreshToken(credentials)
+    except json.JSONDecodeError:
+        token = refreshToken(credentials)
+    return token
+
 def auth(func):
     """
-    Authenticates a PageSeeder API request function.
+    A decorator that wraps a PageSeeder API function and provides default values for the kwargs 'host', 'member', 'group', and 'header'.
 
-    Reads existing PageSeeder authentication token, refreshes it if expired,
-    and replaces the passed function's kwarg *header* with its own value.
-    Also passes some other global kwargs (e.g. group) if not otherwise specified.
-    Also applies the ``@utils.handle`` functionality (see :ref:`utils`).
-    
-    :Args:
-        Some function to be authenticated which makes a PageSeeder REST API request and takes the kwarg *header*.
+    :param func: A function to wrap
+    :type func: function
+    :return: A wrapped function
+    :rtype: function
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
 
         credentials = utils.config()['pageseeder']
-        try:
-            with open('src/pstoken.json', 'r') as stream:
-                details = json.load(stream)
-                token = details['token']
-                issued = details['issued']
-
-                if datetime.fromisoformat(issued) <= (datetime.now() - timedelta(hours=1)):
-                    token = refreshToken(credentials)
-        except FileNotFoundError:
-            token = refreshToken(credentials)
-        except json.JSONDecodeError:
-            token = refreshToken(credentials)
         
         defaults = {
             'host': f'https://{credentials["host"]}/ps/service',
             'member': credentials['username'],
             'group': credentials['group'],
             'header': {
-                    'authorization': f'Bearer {token}',
+                    'authorization': f'Bearer {token(credentials)}',
                     'Accept': 'application/json'
                 }
         }
