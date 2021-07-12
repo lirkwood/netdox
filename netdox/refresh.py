@@ -46,6 +46,7 @@ def init():
     # Initialise plugins
     global pluginmaster
     pluginmaster = plugins.PluginManager()
+    pluginmaster.initPlugins()
     
     # Add import statements to imports.xslt
     xsltImports = BeautifulSoup(utils.MIN_STYLESHEET, features = 'xml')
@@ -133,7 +134,6 @@ def main():
     network = Network(config = utils.config(), roles = utils.roles())
 
     global pluginmaster
-    pluginmaster.initStage('dns')
     pluginmaster.runStage('dns', network)
 
     # generate generic nodes
@@ -148,14 +148,12 @@ def main():
 
     ## Read hardware docs here
 
-    pluginmaster.initStage('nodes')
     pluginmaster.runStage('nodes', network)
 
     network.ips.fillSubnets()
     network.domains.applyRoles()
     network.discoverImpliedLinks()
     
-    pluginmaster.initStage('pre-write')
     pluginmaster.runStage('pre-write', network)
     
     network.dumpNetwork()
@@ -168,7 +166,6 @@ def main():
     utils.xslt('nodes.xslt', 'src/nodes.xml')
 
 
-    pluginmaster.initStage('post-write')
     pluginmaster.runStage('post-write', network)
 
     subprocess.run('node screenshotCompare.js', check=True, shell=True)
