@@ -79,8 +79,8 @@ class PluginManager:
                 'pre-write': [],
                 'post-write': []
             }
-        self.configuredPlugins = list(chain(self.config.values()))
-
+        self.configuredPlugins = list(chain(*self.config.values()))
+        
         self.loadPlugins('plugins')
 
     def __iter__(self) -> Iterator[Plugin]:
