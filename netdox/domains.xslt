@@ -77,18 +77,6 @@
                     <property name="node"       title="Node"        value="—" />
                         </xsl:otherwise>
                     </xsl:choose>
-                    <xsl:if test="$role = 'pageseeder'">
-                        <xsl:if test="string-length(xpf:string[@key = 'license']) != 0">
-                    <property name="license"     title="PageSeeder License"      datatype="xref" >
-                        <xref frag="default" uriid="{xpf:string[@key = 'license']}" reversetitle="Domain using this license"/>
-                    </property>
-                    <property name="organization"     title="Licensed Organization"      datatype="xref" >
-                        <xsl:if test="string-length(xpf:string[@key='org']) != 0">
-                        <xref frag="default" uriid="{xpf:string[@key = 'org']}" reversetitle="Domain using license issued to this organization."/>
-                        </xsl:if>
-                    </property>
-                        </xsl:if>
-                    </xsl:if>
                 </properties-fragment>
             </section>
             <section id="records" title="DNS Records">
