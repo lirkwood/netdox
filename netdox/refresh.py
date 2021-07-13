@@ -52,7 +52,7 @@ def init():
     xsltImports = BeautifulSoup(utils.MIN_STYLESHEET, features = 'xml')
     for plugin in pluginmaster.nodes:
         if plugin.xslt:
-            importTag = xsltImports.new_tag('import', nsprefix = 'xsl', href = plugin.xslt)
+            importTag = xsltImports.new_tag('include', nsprefix = 'xsl', href = plugin.xslt)
             xsltImports.stylesheet.append(importTag)
     
     with open('imports.xslt', 'w', encoding = 'utf-8') as stream:
@@ -103,11 +103,7 @@ def init():
 
 
     # load preconfigured roles
-    try:
-        with open('src/roles.json', 'r') as stream:
-            preconfigured = json.load(stream)
-    except FileNotFoundError:
-        preconfigured = {}
+    preconfigured = utils.roles()
 
     # merge preconfigured and ps configured role sets
     for role, roleConfig in preconfigured.items():
