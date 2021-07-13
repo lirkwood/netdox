@@ -502,7 +502,7 @@ class NetworkObjectContainer(ABC):
         Add a single network object to the set, merge if an object with that name is already present.
         """
         if object.name in self:
-            self[object.name] = object.merge(self[object.docid])
+            self[object.name] = object.merge(self[object.name])
         else:
             object.container = self
             if self.network:
