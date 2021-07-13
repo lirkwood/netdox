@@ -3,7 +3,7 @@
                 xmlns:xpf="http://www.w3.org/2005/xpath-functions"
                 exclude-result-prefixes="#all">
 
-<xsl:import href="imports.xslt"/>
+<xsl:include href="imports.xslt"/>
 
 <xsl:template match="/">
     <xsl:variable name="nodes" select="json-to-xml(root)"/>
@@ -61,20 +61,17 @@
 
             </section>
 
-            <xsl:apply-imports>
-                <xsl:with-param name="section" select="'plugininf'"/>
-            </xsl:apply-imports>
+            <xsl:apply-templates select="." mode="body" />
 
             <section id="other" >
-                <xsl:apply-imports>
-                    <xsl:with-param name="section" select="'other'"/>
-                </xsl:apply-imports>
+                <xsl:apply-templates select="." mode="footer" />
             </section>
 
         </document>
     </xsl:result-document>
 </xsl:template>
 
-<xsl:template match="*" />
+<xsl:template match="text()" mode="body" />
+<xsl:template match="text()" mode="footer" />
 
 </xsl:stylesheet>
