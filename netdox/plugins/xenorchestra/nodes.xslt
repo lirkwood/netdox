@@ -4,9 +4,7 @@
                 xmlns:err="http://www.w3.org/2005/xqt-errors"
                 exclude-result-prefixes="#all">
 
-<xsl:template match="xpf:map[xpf:string[@key = 'type' and text() = 'XenOrchestra VM']]">
-    <xsl:param name="section" />
-    <xsl:if test="$section = 'plugininf'">
+<xsl:template match="xpf:map[xpf:string[@key = 'type' and text() = 'XenOrchestra VM']]" mode="body">
 
     <section id="plugininf">
 
@@ -29,10 +27,9 @@
         
     </section>
 
-    </xsl:if>
 </xsl:template>
 
-<xsl:template match="xpf:map[xpf:string[@key = 'type' and text() = 'XenOrchestra Host']]">
+<xsl:template match="xpf:map[xpf:string[@key = 'type' and text() = 'XenOrchestra Host']]" mode="body">
     <xsl:param name="section" />
     <xsl:if test="$section = 'plugininf'">
 

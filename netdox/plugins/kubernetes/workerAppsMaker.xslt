@@ -14,21 +14,16 @@
             xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
             xmlns:xpf="http://www.w3.org/2005/xpath-functions"
             exclude-result-prefixes="#all" >
-    <xsl:copy select="." />
-    <xsl:copy-of select="@*"/>
     <xsl:for-each select="$workers/xpf:array">
 
-            <outxsl:template match="xpf:map[xpf:string[@key='docid' and text()='{@key}']]">
-                <outxsl:param name="section" />
-                <outxsl:if test="$section = 'other'">
+            <outxsl:template match="xpf:map[xpf:string[@key='docid' and text()='{@key}']]" mode="footer">
 
-                    <xref-fragment id="k8sapps">
-                        <xsl:for-each select="xpf:string">
-                            <blockxref type="embed" frag="default" docid="{.}" />
-                        </xsl:for-each>
-                    </xref-fragment>
+                <xref-fragment id="k8sapps">
+                    <xsl:for-each select="xpf:string">
+                        <blockxref type="embed" frag="default" docid="{.}" />
+                    </xsl:for-each>
+                </xref-fragment>
 
-                </outxsl:if>
             </outxsl:template>
 
     </xsl:for-each>

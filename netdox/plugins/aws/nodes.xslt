@@ -3,10 +3,7 @@
                 xmlns:xpf="http://www.w3.org/2005/xpath-functions"
                 exclude-result-prefixes="#all">
 
-<xsl:template match="xpf:map[xpf:string[@key='type' and text()='AWS EC2 Instance']]">
-    <xsl:param name="section" />
-    <xsl:if test="$section = 'plugininf'">
-
+<xsl:template match="xpf:map[xpf:string[@key='type' and text()='AWS EC2 Instance']]" mode="body">
     <section id="plugininf">
 
         <properties-fragment id="instanceinf">
@@ -25,8 +22,6 @@
         </properties-fragment>
     
     </section>
-    
-    </xsl:if>
 </xsl:template>
 
 </xsl:stylesheet>
