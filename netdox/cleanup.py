@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 import pageseeder, utils
 
 
-def parseReview():
+def parseReview() -> None:
     """
     Parses the ``review.json`` file returned by ``screenshotCompare.js``.
 
@@ -27,10 +27,7 @@ def parseReview():
         os.mkdir(f'out/screenshot_history/{today}')
     with open('src/review.json','r') as stream:
         review = json.load(stream)
-        # check if any domains occur in multiple categories
-        all_domains = list(review['no_ss'].keys()) + review['no_base'] + review['imgdiff'] + review['nodiff']
-        if len(all_domains) > len(list(dict.fromkeys(all_domains))):
-            print('[WARNING][cleanup] Duplication detected in review.json')
+        
         # save base images that will be overwritten
         for domain in (review['imgdiff'] + list(review['no_ss'].keys())):
             try:
@@ -48,12 +45,12 @@ def parseReview():
 
 
 # converts every file in a dir from png to 1024x576 jpg
-def png2jpg(path):
+def png2jpg(path: str):
     """
     Converts all PNG images in a directory to 1024x576 JPGs.
 
-    :Args:
-        A string path to a directory containing some image files.. 
+    :param path: A directory containing some pngs
+    :type path: str
     """
     try:
         for file in os.scandir(path):
@@ -71,7 +68,7 @@ def png2jpg(path):
 
 
 @utils.handle
-def placeholders():
+def placeholders() -> None:
     """
     Generates placeholder images for domains with no screenshot locally or on PageSeeder.
 
@@ -95,14 +92,14 @@ def placeholders():
 stale_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
 
 @utils.handle
-def sentenceStale():
+def sentenceStale() -> dict:
     """
     The purpose of this function is to mark documents which are present on PageSeeder but not in the local upload context as *stale* (out of date/nonexistent).
     Any documents which exist exclusively on PageSeeder have a document label applied matching a string like ``expires-on-<date + 30 days>``.
     Should a document exist that was sentenced to expire today or in the past, Netdox will archive it.
 
-    :Returns:
-        A dictionary of any URIs that were newly marked as stale, sorted by date they expire on.
+    :return: A dictionary of domains newly marked as stale
+    :rtype: dict
     """
     today = datetime.now().date()
     group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
@@ -160,9 +157,14 @@ def sentenceStale():
             
 
 # best guess at the transformation PageSeeder applies
-def alnum(string):
+def alnum(string: str) -> str:
     """
     Performs the same character substitutions PageSeeder applies to filenames.
+
+    :param string: The string to perform the transformation on
+    :type string: str
+    :return: The input string with characters in [/\\?%*:|<>^] or [^\x00-\x7F] substituted for underscores.
+    :rtype: str
     """
     string = re.sub(r'[/\\?%*:|<>^]', '_', string)
     return re.sub(r'[^\x00-\x7F]', '_', string)
@@ -211,14 +213,6 @@ def pre_upload():
         with open('src/review.json', 'w') as stream:
             review['stale'] = stale
             stream.write(json.dumps(review, indent=2))
-
-    # remove generated import statements
-    with open('nodes.xslt', 'r') as stream:
-        soup = BeautifulSoup(stream.read(), features = 'xml')
-    for importTag in soup('import'):
-        importTag.decompose()
-    with open('nodes.xslt', 'w') as stream:
-        stream.write(soup.prettify())
 
 
 def post_upload():
