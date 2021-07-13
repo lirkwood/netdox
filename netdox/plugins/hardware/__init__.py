@@ -21,6 +21,8 @@ class HardwareNode(Node):
 
     def __init__(self, name: str, private_ip: str, psml: str, origin_doc: str, public_ips: Iterable[str] = None, domains: Iterable[str] = None) -> None:
         super().__init__(name, private_ip, public_ips=public_ips, domains=domains, type='Hardware Node')
+        self.docid = f'_nd_node_hardware_{self.private_ip.replace(".","_")}'
+
         self.psml = psml
         self.origin_doc = origin_doc
 
