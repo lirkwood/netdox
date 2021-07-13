@@ -5,7 +5,6 @@
 
 .vscode
 .dockerignore
-config.json
 docker-compose.yml
 *.code-workspace
 netdox-backend*.yml
@@ -13,6 +12,8 @@ netdox-src
 netdox/out
 netdox/node_modules
 netdox/logs
+
+!cfg/
 
 **/src/*
 !netdox/src/defconf/
