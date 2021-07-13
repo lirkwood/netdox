@@ -60,11 +60,6 @@ function init {
         cp $file /opt/app/src/$(basename $file) &> /dev/null
     done
 
-    for initscript in plugins/*/init.sh; do
-        chmod 777 $initscript
-        $initscript
-    done
-
     if python3 init.py
         then
             echo '[INFO][netdox] Python initialisation successful.'
