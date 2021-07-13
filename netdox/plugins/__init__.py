@@ -8,13 +8,14 @@ This was quickly expanded to allow custom code to be executed at multiple points
 """
 
 import importlib
+import json
 import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from traceback import format_exc
 from typing import Iterator, KeysView, ValuesView
+from itertools import chain
 
-import yaml
 from networkobjs import Network
 
 
@@ -69,10 +70,16 @@ class PluginManager:
         self.stages = self.pluginmap.keys()
 
         try:
-            with open('src/pluginconf.yml', 'r') as stream:
-                self.config = yaml.safe_load(stream)['plugins']
+            with open('src/pluginconf.json', 'r') as stream:
+                self.config = json.load(stream)
         except Exception:
-            self.config = {}
+            self.config = {
+                'dns': [],
+                'nodes': [],
+                'pre-write': [],
+                'post-write': []
+            }
+        self.configuredPlugins = list(chain(self.config.values()))
 
         self.loadPlugins('plugins')
 
@@ -122,10 +129,6 @@ class PluginManager:
         :type plugin: Plugin
         """
         self.plugins[plugin.name] = plugin
-        
-        if plugin.name in self.config:
-            for attr, value in self.config[plugin.name].items():
-                setattr(plugin, attr, value)
 
         if hasattr(plugin, 'node_types'):
             for node_type in plugin.node_types:
@@ -134,6 +137,13 @@ class PluginManager:
         for stage in plugin.stages:
             self.pluginmap[stage][plugin.name] = plugin
     
+    def applyConfig(self) -> None:
+        """
+        Forces the plugin order specified in ``pluginconf.json``
+        """
+        for stage in self.config:
+            self.pluginmap[stage] = {name: self.plugins[name] for name in self.config[stage] if name in self.plugins}
+
     def loadPlugins(self, dir: str) -> None:
         """
         Scans a directory for valid python modules and imports them.
@@ -145,13 +155,15 @@ class PluginManager:
         for plugindir in os.scandir(dir):
             if plugindir.is_dir() and plugindir.name != '__pycache__':
                 pluginName = plugindir.name
-                try:
-                    plugin = importlib.import_module(f'plugins.{pluginName}')
-                except Exception:
-                    raise ImportError(f'[ERROR][plugins] Failed to import {pluginName}: \n{format_exc()}')
-                else:
-                    if hasattr(plugin, 'Plugin'):
-                        self.add(plugin.Plugin())
+                if pluginName in self.configuredPlugins:
+                    try:
+                        plugin = importlib.import_module(f'plugins.{pluginName}')
+                    except Exception:
+                        raise ImportError(f'[ERROR][plugins] Failed to import {pluginName}: \n{format_exc()}')
+                    else:
+                        if hasattr(plugin, 'Plugin'):
+                            self.add(plugin.Plugin())
+        self.applyConfig()
 
     def initPlugin(self, plugin_name: str) -> None:
         self.plugins[plugin_name].init()
