@@ -27,6 +27,7 @@ class HardwareNode(Node):
 class Plugin(BasePlugin):
     name = 'hardware'
     stages = ['nodes']
+    xslt = 'plugins/hardware/hardware.xslt'
     zipfile: str
 
     def init(self) -> None:
