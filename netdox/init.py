@@ -2,12 +2,12 @@
 This script is used to initialise the container for the rest of Netdox.
 """
 
-import os, utils
-from typing import Type
-from textwrap import dedent
+import os
+
 from bs4 import BeautifulSoup
+
+import utils
 from pageseeder import urimap
-from plugins import Plugin, PluginManager
 
 ##################
 # Initialisation #
