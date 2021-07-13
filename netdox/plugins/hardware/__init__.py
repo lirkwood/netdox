@@ -75,7 +75,7 @@ class Plugin(BasePlugin):
                                 elif hasattr(property, 'datatype'):
                                     ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip']
                             elif property['name'] == 'name':
-                                name = property['value']
+                                name = property['value'].replace(' ','_')
                         
                         if name and ip:
                             if ip not in network.ips:
