@@ -337,7 +337,7 @@ class Domain(NetworkObject):
         :type new_network: Network
         """
         self._container = new_container
-        for role, domains in self.container.roles:
+        for role, domains in self.container.roles.items():
             if self.name in domains:
                 self.role = role
 
@@ -760,7 +760,7 @@ class DomainSet(NetworkObjectContainer):
         :return: A list of FQDNs
         :rtype: list[str]
         """
-        return self.roles['exclusions']
+        return self._roles['exclusions']
 
     def add(self, domain: Domain) -> None:
         """
