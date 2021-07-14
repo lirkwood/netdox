@@ -158,20 +158,31 @@ class NetworkObject(ABC):
         return self
 
     @classmethod
+    def from_dict(cls: Type[NetworkObject], constructor: dict) -> NetworkObject:
+        """
+        Instantiates this class from its __dict__ attribute.
+
+        :param constructor: The dictionary to use.
+        :type constructor: dict
+        :return: A instance of this class.
+        :rtype: NetworkObject
+        """
+        instance = cls(constructor['name'])
+        instance.__dict__.update(constructor)
+        return instance
+
+    @classmethod
     def from_json(cls: Type[NetworkObject], string: str) -> NetworkObject:
         """
-        Instantiates this class from the JSON returned by JSONEncoder.
+        Instantiates this class from its __dict__ attribute as a JSON string.
+        Calls the from_dict method.
 
         :param string: The JSON string to use.
         :type string: str
         :return: A instance of this class.
         :rtype: NetworkObject
         """
-        constructor = json.loads(string)
-        instance = cls(constructor['name'])
-        for attribute, value in constructor.items():
-            setattr(instance, attribute, value)
-        return instance
+        return cls.from_dict(json.loads(string))
 
 
 class Domain(NetworkObject):
@@ -415,22 +426,20 @@ class Domain(NetworkObject):
             raise ValueError('Cannot merge two Domains with different names')
 
     @classmethod
-    def from_json(cls: Type[Domain], string: str) -> Domain:
+    def from_dict(cls: Type[Domain], string: str) -> Domain:
         """
-        Instantiates a Domain from the JSON returned by JSONEncoder.
+        Instantiates a Domain from its __dict__ attribute.
 
-        :param string: The JSON string to use.
-        :type string: str
+        :param constructor: The dictionary to use.
+        :type constructor: dict
         :return: A instance of this class.
         :rtype: Domain
         """
-        instance = super(Domain, cls).from_json(string)
+        instance = super(Domain, cls).from_dict(string)
         instance.implied_ips = set(instance.implied_ips)
         for attribute in ('_public_ips', '_private_ips', '_cnames'):
             listAttr = getattr(instance, attribute)
-            setattr(instance, attribute, set(listAttr))
-            for name, plugin in listAttr:
-                getattr(instance, attribute).add((name, plugin))
+            setattr(instance, attribute, {(value, plugin) for value, plugin in listAttr})
         return instance
 
 
@@ -560,21 +569,18 @@ class IPv4Address(BaseIP, NetworkObject):
             raise ValueError('Cannot merge two IPv4Addresses with different addresses')
 
     @classmethod
-    def from_json(cls: Type[IPv4Address], string: str) -> IPv4Address:
+    def from_dict(cls: Type[IPv4Address], string: str) -> IPv4Address:
         """
-        Instantiates an IPv4Address from the JSON returned by JSONEncoder.
+        Instantiates an IPv4Address from its __dict__ attribute.
 
-        :param string: The JSON string to use.
-        :type string: str
+        :param constructor: The dictionary to use.
+        :type constructor: dict
         :return: A instance of this class.
         :rtype: IPv4Address
         """
-        instance = super(IPv4Address, cls).from_json(string)
+        instance = super(IPv4Address, cls).from_dict(string)
         instance.implied_ptr = set(instance.implied_ptr)
-        ptr = instance._ptr
-        instance._ptr = set()
-        for list in ptr:
-            instance._ptr.add(set(list))
+        instance._ptr = {(domain, plugin) for domain, plugin in instance._ptr}
         return instance
 
 
@@ -674,16 +680,16 @@ class Node(NetworkObject):
             raise TypeError('Cannot merge two Nodes of different types or different private ips')
 
     @classmethod
-    def from_json(cls: Type[Node], string: str) -> Node:
+    def from_dict(cls: Type[Node], string: str) -> Node:
         """
-        Instantiates a Node from the JSON returned by JSONEncoder.
+        Instantiates a Node from its __dict__ attribute.
 
-        :param string: The JSON string to use.
-        :type string: str
+        :param constructor: The dictionary to use.
+        :type constructor: dict
         :return: A instance of this class.
         :rtype: Node
         """
-        instance = super(Node, cls).from_json(string)
+        instance = super(Node, cls).from_dict(string)
         instance.public_ips = set(instance.public_ips)
         instance.domains = set(instance.domains)
         return instance
@@ -697,6 +703,7 @@ class NetworkObjectContainer(ABC):
     Container for a set of network objects
     """
     objectType: str
+    objectClass: Type[NetworkObject]
     objects: dict
     network: Network
 
@@ -730,6 +737,25 @@ class NetworkObjectContainer(ABC):
             'objectType': self.objectType,
             'objects': [object for object in self]
         }, indent = 2, cls = JSONEncoder)
+
+    @classmethod
+    def from_dict(cls, constructor: dict) -> NetworkObjectContainer:
+        """
+        Instantiates a NetworkObjectContainer from a dictionary of attributes.
+
+        :param constructor: A dictionary of the instances attributes.
+        :type constructor: dict
+        :return: An instance of this class.
+        :rtype: NetworkObjectContainer
+        """
+        if constructor['objectType'] == cls.objectType:
+            return cls([cls.objectClass.from_dict(object) for object in constructor['objects']])
+        else:
+            raise ValueError(f'Cannot instantiate {type(cls)._name__} from dictionary of {constructor["objectType"]}')
+
+    @classmethod
+    def from_json(cls, string: str) -> NetworkObjectContainer:
+        return cls.from_dict(json.loads(string))
 
     def add(self, object: NetworkObject) -> None:
         """
@@ -769,6 +795,7 @@ class DomainSet(NetworkObjectContainer):
     Container for a set of Domains
     """
     objectType: str = 'domains'
+    objectClass: Type[Domain] = Domain
     _roles: dict
 
     def __init__(self, objectSet: list[Domain] = [], network: Network = None, roles: dict = None) -> None:
@@ -863,6 +890,7 @@ class IPv4AddressSet(NetworkObjectContainer):
     Container for a set of IPv4Address
     """
     objectType: str = 'ips'
+    objectClass: Type[IPv4Address] = IPv4Address
     private_ips: list
     public_ips: list
     subnets: set
@@ -965,6 +993,7 @@ class NodeSet(NetworkObjectContainer):
     Container for a set of Nodes
     """
     objectType: str = 'nodes'
+    objectClass: Type[Node] = Node
 
     def __init__(self, objectSet: list[Node] = [], network: Network = None) -> None:
         self.objects = {object.docid: object for object in objectSet}
@@ -1131,11 +1160,27 @@ class Network:
             for domain in node.domains:
                 if domain in self.domains and not self.domains[domain].node:
                     self.domains[domain].node = node
+    
+    def readSet(self, path: str) -> None:
+        """
+        Loads a NetworkObjectContainer from a JSON file.
 
+        :param path: Path to the JSON file.
+        :type path: str
+        """
+        with open(path, 'r') as stream:
+            setDict = json.load(stream)
+
+        if setDict['objectType'] == 'domains':
+            self.addSet(DomainSet.from_dict(setDict))
+        elif setDict['objectType'] == 'ips':
+            self.addSet(IPv4AddressSet.from_dict(setDict))
+        elif setDict['objectType'] == 'nodes':
+            self.addSet(NodeSet.from_dict(setDict))
 
     def writeSet(self, set: str, path: str) -> None:
         """
-        Serialises a set of NetworkObjects to json writes the json to a file.
+        Serialises a NetworkObjectContainer to json writes the json to a file.
 
         :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
         :type set: str
