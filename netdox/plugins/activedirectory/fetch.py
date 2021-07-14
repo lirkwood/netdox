@@ -8,7 +8,6 @@ Reads directory of JSON files, each corresponding to a DNS zone, and generates D
 """
 
 import json
-import os
 
 import iptools
 import utils
@@ -17,20 +16,17 @@ from networkobjs import Domain, IPv4Address, Network
 
 def fetchDNS(network: Network) -> None:
     """
-	Iterates over each source JSON file and adds any DNSRecords found to the forward/reverse sets.
+    Iterates over each source JSON file and adds any DNSRecords found to the forward/reverse sets.
 
-    :Args:
-        forward: DNSSet
-            A forward DNSSet
-        reverse: DNSSet
-            A reverse DNSSet 
+    :param network: The network
+    :type network: Network
     """
-    for file in fetchJson():
+    for file in utils.fileFetchRecursive('plugins/activedirectory/records', extension = '.json'):
         with open(file, 'r') as stream:
             try:
                 jsondata = json.load(stream)
             except json.decoder.JSONDecodeError:
-                print(f'[ERROR][ad_domains.py] Failed to parse file as json: {file.name}')
+                print(f'[ERROR][ad_domains.py] Failed to parse file as json: {file.split("/")[-1]}')
             else:
                 for record in jsondata:
                     if record['RecordType'] == 'A':
@@ -43,28 +39,15 @@ def fetchDNS(network: Network) -> None:
                         add_PTR(network, record)
 
 
-def fetchJson() -> os.DirEntry:
-    """
-    Generator which yields a json file containing some DNS records
-
-    :Yields:
-        A DirEntry pointing to a json file containing DNS records
-    """
-    for file in os.scandir("plugins/activedirectory/records/"):
-        if file.name.endswith('.json'):
-            yield file
-
-
 @utils.handle
 def add_A(network: Network, record: dict):
     """
-	Adds one A record to a Network from JSON returned by ActiveDirectory
+    Adds one A record to a Network from JSON returned by ActiveDirectory.
 
-    :Args:
-        network: Network
-            The network object to add the record to
-        record: dict
-            A JSON object describing a DNS A record
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about an A record.
+    :type record: dict
     """
     # Get name
     distinguished_name = record['DistinguishedName'].split(',')    #get hostname
@@ -87,13 +70,12 @@ def add_A(network: Network, record: dict):
 @utils.handle
 def add_CNAME(network: Network, record: dict):
     """
-	Adds one CNAME record to a Network from JSON returned by ActiveDirectory
+    Adds one CNAME record to a Network from JSON returned by ActiveDirectory.
 
-    :Args:
-        network: Network
-            The network object to add the record to
-        record: dict
-            A JSON object describing a DNS CNAME record
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about a CNAME record.
+    :type record: dict
     """
     distinguished_name = record['DistinguishedName'].split(',')
     subdomain = distinguished_name[0].strip('DC=')
@@ -117,13 +99,12 @@ def add_CNAME(network: Network, record: dict):
 @utils.handle
 def add_PTR(network: Network, record: dict):
     """
-	Adds one PTR record to a Network from JSON returned by ActiveDirectory
+    Adds one PTR record to a Network from JSON returned by ActiveDirectory.
 
-    :Args:
-        network: Network
-            The network object to add the record to
-        record: dict
-            A JSON object describing a DNS PTR record
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about a PTR record.
+    :type record: dict
     """
     zone = record['DistinguishedName'].split(',')[1].strip('DC=')
     subnet = '.'.join(zone.replace('.in-addr.arpa','').split('.')[::-1])    #strip '.in-addr.arpa' and reverse octet order
@@ -140,6 +121,16 @@ def add_PTR(network: Network, record: dict):
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
+    """
+    Combines the subdomain and root as they are found in the AD JSON, to give a FQDN.
+
+    :param subdomain: The subdomain of the FQDN.
+    :type subdomain: str
+    :param root: The root domain / DNS zone of the FQDN.
+    :type root: str
+    :return: A fully qualified domain name composed of the subdomain and root.
+    :rtype: str
+    """
     if subdomain == '@':
         fqdn = root
     elif subdomain == '*':
