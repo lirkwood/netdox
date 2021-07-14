@@ -72,15 +72,16 @@ def add_A(network: Network, record: dict):
     root = distinguished_name[1].replace('DC=', '')    #extract root domain
     fqdn = assemble_fqdn(subdomain, root)
 
-    # Get value
-    for item in record['RecordData']['CimInstanceProperties']:
-        if item['Name'] == "IPv4Address":
-            dest = item['Value'].strip('.')
+    if fqdn not in network.domains.exclusions:
+        # Get value
+        for item in record['RecordData']['CimInstanceProperties']:
+            if item['Name'] == "IPv4Address":
+                dest = item['Value'].strip('.')
 
-    # Integrate
-    if fqdn not in network.domains:
-        network.add(Domain(fqdn, root))
-    network.domains[fqdn].link(dest, 'ActiveDirectory')
+        # Integrate
+        if fqdn not in network.domains:
+            network.add(Domain(fqdn, root))
+        network.domains[fqdn].link(dest, 'ActiveDirectory')
 
 
 @utils.handle
@@ -99,17 +100,18 @@ def add_CNAME(network: Network, record: dict):
     root = distinguished_name[1].strip('DC=')
     fqdn = assemble_fqdn(subdomain, root)
     
-    for item in record['RecordData']['CimInstanceProperties']:
-        if item['Name'] == "HostNameAlias":
-            dest = item['Value']
-            if not dest.endswith('.'):
-                dest += '.'+ root
-            else:
-                dest = dest.strip('.')
+    if fqdn not in network.domains.exclusions:
+        for item in record['RecordData']['CimInstanceProperties']:
+            if item['Name'] == "HostNameAlias":
+                dest = item['Value']
+                if not dest.endswith('.'):
+                    dest += '.'+ root
+                else:
+                    dest = dest.strip('.')
 
-    if fqdn not in network.domains:
-        network.add(Domain(fqdn, root))
-    network.domains[fqdn].link(dest, 'ActiveDirectory')
+        if fqdn not in network.domains:
+            network.add(Domain(fqdn, root))
+        network.domains[fqdn].link(dest, 'ActiveDirectory')
 
 
 @utils.handle

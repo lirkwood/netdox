@@ -80,9 +80,10 @@ def add_A(network: Network, record: dict) -> None:
     root = record['zone_name']
     ip = record['content']
 
-    if fqdn not in network.domains:
-        network.add(Domain(fqdn, root))
-    network.domains[fqdn].link(ip, 'Cloudflare')	
+    if fqdn not in network.domains.exclusions:
+        if fqdn not in network.domains:
+            network.add(Domain(fqdn, root))
+        network.domains[fqdn].link(ip, 'Cloudflare')	
 
 @utils.handle
 def add_CNAME(network: Network, record: dict) -> None:
@@ -101,9 +102,10 @@ def add_CNAME(network: Network, record: dict) -> None:
     root = record['zone_name']
     dest = record['content']
 
-    if fqdn not in network.domains:
-        network.add(Domain(fqdn, root))
-    network.domains[fqdn].link(dest, 'Cloudflare')
+    if fqdn not in network.domains.exclusions:
+        if fqdn not in network.domains:
+            network.add(Domain(fqdn, root))
+        network.domains[fqdn].link(dest, 'Cloudflare')
 
 @utils.handle
 def add_PTR(network: Network, record: dict) -> None:
