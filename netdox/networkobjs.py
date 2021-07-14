@@ -18,7 +18,7 @@ import re
 from abc import ABC, abstractmethod
 from datetime import datetime
 from ipaddress import IPv4Address as BaseIP
-from typing import Iterable, Iterator, Tuple, Union
+from typing import Iterable, Iterator, Tuple, Type, Union
 
 import iptools
 import utils
@@ -157,6 +157,22 @@ class NetworkObject(ABC):
         """
         return self
 
+    @classmethod
+    def from_json(cls: Type[NetworkObject], string: str) -> NetworkObject:
+        """
+        Instantiates this class from the JSON returned by JSONEncoder.
+
+        :param string: The JSON string to use.
+        :type string: str
+        :return: A instance of this class.
+        :rtype: NetworkObject
+        """
+        constructor = json.loads(string)
+        instance = cls(constructor['name'])
+        for attribute, value in constructor.items():
+            setattr(instance, attribute, value)
+        return instance
+
 
 class Domain(NetworkObject):
     """
@@ -246,6 +262,15 @@ class Domain(NetworkObject):
             self._cnames.add((destination, source))
         
         self.update()
+
+    def update(self) -> None:
+        """
+        Updates subnet and location data for this record.
+        """
+        for ip in self.private_ips:
+            self.subnets.add(iptools.sort(ip))
+        if self.network:
+            self.location = self.network.locator.locate(self.ips)
 
     @property
     def destinations(self) -> list[str]:
@@ -367,15 +392,6 @@ class Domain(NetworkObject):
                 self.network.add(IPv4Address(ip))
             self.network.ips[ip].implied_ptr.add(self.name)
 
-    def update(self) -> None:
-        """
-        Updates subnet and location data for this record.
-        """
-        for ip in self.private_ips:
-            self.subnets.add(iptools.sort(ip))
-        if self.network:
-            self.location = self.network.locator.locate(self.ips)
-
     def merge(self, domain: Domain) -> Domain:
         """
         In place merge of two Domain instances.
@@ -397,6 +413,25 @@ class Domain(NetworkObject):
             return self
         else:
             raise ValueError('Cannot merge two Domains with different names')
+
+    @classmethod
+    def from_json(cls: Type[Domain], string: str) -> Domain:
+        """
+        Instantiates a Domain from the JSON returned by JSONEncoder.
+
+        :param string: The JSON string to use.
+        :type string: str
+        :return: A instance of this class.
+        :rtype: Domain
+        """
+        instance = super(Domain, cls).from_json(string)
+        instance.implied_ips = set(instance.implied_ips)
+        for attribute in ('_public_ips', '_private_ips', '_cnames'):
+            listAttr = getattr(instance, attribute)
+            setattr(instance, attribute, set(listAttr))
+            for name, plugin in listAttr:
+                getattr(instance, attribute).add((name, plugin))
+        return instance
 
 
 class IPv4Address(BaseIP, NetworkObject):
@@ -425,6 +460,38 @@ class IPv4Address(BaseIP, NetworkObject):
         self.implied_ptr = set()
         self.nat = None
         self.node = None
+
+    def link(self, domain: Union[Domain, str], source: str):
+        """
+        Adds a PTR record from this IP to the provided domain.
+
+        Adds a 2-tuple containing the domain and source to self._ptr
+
+        :param domain: The domain for the PTR record.
+        :type domain: Union[Domain, str]
+        :param source: The plugin that provided this link.
+        :type source: str
+        :raises ValueError: If the domain cannot be recognised as a valid FQDN.
+        """
+        if isinstance(domain, Domain):
+            self._ptr.add((domain.name, source))
+        elif re.fullmatch(dns_name_pattern, domain):
+            self._ptr.add((domain, source))
+        else:
+            raise ValueError(f'Invalid domain \'{domain.name if isinstance(domain, Domain) else domain}\'')
+
+    def subnetFromMask(self, mask: Union[str, int] = '24') -> str:
+        """
+        Return the subnet of a given size containing this IP
+
+        :param mask: The subnet mask to use in bits, defaults to '24'
+        :type mask: Union[str, int], optional
+        :return: A IPv4 subnet in CIDR format
+        :rtype: str
+        """
+        mask = str(mask) if isinstance(mask, int) else mask
+        subnet = f'{self.addr}/{mask}'
+        return f'{iptools.subn_floor(subnet)}/{mask}'
 
     @property
     def ptr(self) -> list[str]:
@@ -492,37 +559,23 @@ class IPv4Address(BaseIP, NetworkObject):
         else:
             raise ValueError('Cannot merge two IPv4Addresses with different addresses')
 
-    def link(self, domain: Union[Domain, str], source: str):
+    @classmethod
+    def from_json(cls: Type[IPv4Address], string: str) -> IPv4Address:
         """
-        Adds a PTR record from this IP to the provided domain.
+        Instantiates an IPv4Address from the JSON returned by JSONEncoder.
 
-        Adds a 2-tuple containing the domain and source to self._ptr
-
-        :param domain: The domain for the PTR record.
-        :type domain: Union[Domain, str]
-        :param source: The plugin that provided this link.
-        :type source: str
-        :raises ValueError: If the domain cannot be recognised as a valid FQDN.
+        :param string: The JSON string to use.
+        :type string: str
+        :return: A instance of this class.
+        :rtype: IPv4Address
         """
-        if isinstance(domain, Domain):
-            self._ptr.add((domain.name, source))
-        elif re.fullmatch(dns_name_pattern, domain):
-            self._ptr.add((domain, source))
-        else:
-            raise ValueError(f'Invalid domain \'{domain.name if isinstance(domain, Domain) else domain}\'')
-
-    def subnetFromMask(self, mask: Union[str, int] = '24') -> str:
-        """
-        Return the subnet of a given size containing this IP
-
-        :param mask: The subnet mask to use in bits, defaults to '24'
-        :type mask: Union[str, int], optional
-        :return: A IPv4 subnet in CIDR format
-        :rtype: str
-        """
-        mask = str(mask) if isinstance(mask, int) else mask
-        subnet = f'{self.addr}/{mask}'
-        return f'{iptools.subn_floor(subnet)}/{mask}'
+        instance = super(IPv4Address, cls).from_json(string)
+        instance.implied_ptr = set(instance.implied_ptr)
+        ptr = instance._ptr
+        instance._ptr = set()
+        for list in ptr:
+            instance._ptr.add(set(list))
+        return instance
 
 
 class Node(NetworkObject):
@@ -620,6 +673,20 @@ class Node(NetworkObject):
         else:
             raise TypeError('Cannot merge two Nodes of different types or different private ips')
 
+    @classmethod
+    def from_json(cls: Type[Node], string: str) -> Node:
+        """
+        Instantiates a Node from the JSON returned by JSONEncoder.
+
+        :param string: The JSON string to use.
+        :type string: str
+        :return: A instance of this class.
+        :rtype: Node
+        """
+        instance = super(Node, cls).from_json(string)
+        instance.public_ips = set(instance.public_ips)
+        instance.domains = set(instance.domains)
+        return instance
 
 #############################
 # Network Object Containers #
