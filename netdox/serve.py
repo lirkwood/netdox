@@ -25,7 +25,7 @@ def refresh():
     Calls refresh
     """
     try:
-        subprocess.run(executable = '/opt/app/netdox', args = ['refresh'], shell = True)
+        subprocess.run(executable = 'netdox', args = ['refresh'], shell = True)
     except subprocess.CalledProcessError:
         return Response(status=500)
     return Response(status=200)

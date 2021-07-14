@@ -1,17 +1,28 @@
 #!/usr/bin/env bash
 
+APPDIR=$(dirname $(realpath $0))
+
+## Print usage help
+function help {
+    echo 'Usage: netdox init|serve|refresh|start|help'; echo
+    echo '       init:       Initialises the environment so that Netdox can run.'
+    echo '       serve:      Starts the serve and begins listening for webhooks.'
+    echo '       refresh:    Generates a new data set and uploads it to PageSeeder.'
+    echo "       start:      Runs 'init' and then 'serve'."
+    echo '       help:       Prints this message.'
+}
+
 ## Serve webhook listener
 function serve {
     gunicorn --reload -b '0.0.0.0:8080' -t 900 serve:app
 }
 
-## Refresh DNS data and upload to PageSeeder
+## Refresh dataset and upload to PageSeeder
 function refresh {
-    if [[ -z /etc/ext/log ]]; then mkdir /etc/ext/log; fi
-    _refresh 2>&1 | tee "/etc/ext/log/refresh-$(date +%F-T%T).log"
+    _refresh 2>&1 | tee "/etc/netdox/log/refresh-$(date +%F-T%T).log"
 }
 function _refresh {
-    for dir in /opt/app/out/*; do
+    for dir in $APPDIR/out/*; do
         rm -rf ${dir}/*
     done
 
@@ -20,9 +31,9 @@ function _refresh {
     if python3 refresh.py
         then
             echo '[INFO][netdox] Python exited successfully. Beginning PageSeeder upload...'
-            cd /opt/app/out
+            cd $APPDIR/out
             zip -r -q netdox-src.zip *
-            cd /opt/app
+            cd $APPDIR
             if ant -lib /opt/ant/lib
                 then
                     echo '[INFO][netdox] Upload successful. Running post-upload cleanup...'
@@ -30,34 +41,38 @@ function _refresh {
                     echo '[INFO][netdox] Refresh complete.'
                 else
                     echo '[ERROR][netdox] Upload exited with non-zero status. Storing psml for debugging...'
-                    cp /opt/app/out/netdox-src.zip /etc/ext/psml.zip
+                    cp $APPDIR/out/netdox-src.zip /etc/netdox/psml.zip
             fi
         else
             echo '[ERROR][netdox] Python exited with non-zero status. Cancelling upload...'
     fi
 
-    cp /opt/app/src/domains.json /etc/ext/domains.json &> /dev/null
-    cp /opt/app/src/ips.json /etc/ext/ips.json &> /dev/null
-    cp /opt/app/src/nodes.json /etc/ext/nodes.json &> /dev/null
+    cp $APPDIR/src/domains.json /etc/netdox/domains.json &> /dev/null
+    cp $APPDIR/src/ips.json /etc/netdox/ips.json &> /dev/null
+    cp $APPDIR/src/nodes.json /etc/netdox/nodes.json &> /dev/null
 }
 
 ## Initialise container to allow other processes to run
 function init {
-    [[ -d /etc/ext/log ]] || mkdir /etc/ext/log
+    [[ -d /etc/netdox ]] || (mkdir /etc/netdox \
+        && echo 'Please place the required configuration files in /etc/netdox and run this again.'; exit 1)
 
-    cp /etc/ext/domains.json /opt/app/src/domains.json &> /dev/null
-    cp /etc/ext/ips.json /opt/app/src/ips.json &> /dev/null
-    cp /etc/ext/nodes.json /opt/app/src/nodes.json &> /dev/null
+    [[ -d /etc/netdox/log ]] || mkdir /etc/netdox/log
+
+    jsonfiles=("domains" "ips" "nodes")
+    for file in ${jsonfiles[@]}; do
+        [[ -f /etc/netdox/$file.json ]] && cp /etc/netdox/$file.json $APPDIR/src/$file.json
+    done
 
     # make all scripts executable
-    chmod 777 /opt/app/*
+    chmod 777 $APPDIR/*
     
     # decrypt authentication details
-    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/ext/cfg/config.bin" "/opt/app/src/config.json"
+    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/netdox/cfg/config.bin" "$APPDIR/src/config.json"
     
     # copy any unecrypted cfg files
-    for file in /etc/ext/cfg/*.json; do
-        cp $file /opt/app/src/$(basename $file) &> /dev/null
+    for file in /etc/netdox/cfg/*.json; do
+        [[ -f $file ]] && cp $file $APPDIR/src/$(basename $file)
     done
 
     if python3 init.py
@@ -70,7 +85,7 @@ function init {
 }
 
 
-methods=("init" "refresh" "serve")
+methods=("init" "refresh" "serve" "help")
 for arg in "$@"; do
     if [[ ${methods[@]} =~ $arg ]]
         then case $arg in

@@ -36,7 +36,7 @@ def parseReview() -> None:
         for domain in (review['imgdiff'] + list(review['no_ss'].keys())):
             try:
                 pngName = f"{domain.replace('.','_')}.png"
-                shutil.copyfile(f'/etc/ext/base/{pngName}', f'out/screenshot_history/{today}/{pngName}')
+                shutil.copyfile(f'/etc/netdox/base/{pngName}', f'out/screenshot_history/{today}/{pngName}')
             except FileNotFoundError:
                 pass
         # delete unnecessary imgdiff overlay images (e.g. <10% pixel diff)
@@ -190,11 +190,11 @@ def pre_upload():
 
     # overwrite base images
     try:
-        shutil.rmtree('/etc/ext/base')
+        shutil.rmtree('/etc/netdox/base')
     except FileNotFoundError:
         pass
     
-    shutil.copytree('out/screenshots', '/etc/ext/base')
+    shutil.copytree('out/screenshots', '/etc/netdox/base')
 
     # scale down all exported img files
     png2jpg('out/screenshots')

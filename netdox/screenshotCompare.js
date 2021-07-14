@@ -19,11 +19,11 @@ async function diffScreens(array) {
 		const domain = array[index]
 		const filename = pngName(domain)
 		// if has a base image
-		if (fs.existsSync("/etc/ext/base/".concat(filename))) {
+		if (fs.existsSync("/etc/netdox/base/".concat(filename))) {
 			// diff images
 			let { diffCount } = await imgDiff({
 				actualFilename: "out/screenshots/".concat(filename),
-				expectedFilename: "/etc/ext/base/".concat(filename),
+				expectedFilename: "/etc/netdox/base/".concat(filename),
 				diffFilename: "out/review/".concat(filename),
 				generateOnlyDiffFile: true
 			});

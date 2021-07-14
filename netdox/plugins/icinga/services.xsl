@@ -5,7 +5,7 @@
                 exclude-result-prefixes="#all">
 
 <xsl:output method="xml" indent="yes" />
-<xsl:variable name="domains" select="json-to-xml(unparsed-text('/opt/app/src/domains.json'))"/>
+<xsl:variable name="domains" select="json-to-xml(unparsed-text('../../src/domains.json'))"/>
 <xsl:variable name="slugname" select="substring-before(tokenize(base-uri(), '/')[last()], '.psml')"/>
 
 <xsl:template match="/">
