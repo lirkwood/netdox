@@ -16,8 +16,8 @@ def genheader() -> dict[str, str]:
 	"""
 	Generates authentication header for DNSME api
 
-	:Returns:
-		A dictionary to be used as the HTTP header for any DNSMadeEasy request
+	:return: A dictionary of headers that can be passed to a requests request function.
+	:rtype: dict[str, str]
 	"""
 	creds = utils.config()['plugins']['dnsmadeeasy']
 	api = creds['api']

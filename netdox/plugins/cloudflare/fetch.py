@@ -7,6 +7,7 @@ Used to read DNS records from CloudFlare.
 Requests all managed DNS zones and then all records in each zone.
 """
 import json
+from typing import Generator
 
 import requests
 import utils
@@ -15,11 +16,10 @@ from networkobjs import Domain, Network
 
 def main(network: Network) -> None:
     """
-    Reads all DNS records from CloudFlare and adds them to forward/reverse
+    Reads all DNS records from CloudFlare and adds them to the network.
 
-	:Args:
-		network:
-			A Network object
+    :param network: The network.
+    :type network: Network
     """
     init()
     for id in fetch_zones():
@@ -49,12 +49,12 @@ def init() -> None:
     }
 
 
-def fetch_zones() -> str:
+def fetch_zones() -> Generator[str, None, None]:
     """
-    Generator which returns one zone ID
+    Generator which yields one DNS zone ID
 
-    :Yields:
-        The ID of a DNS zone in CloudFlare
+    :yield: The ID of one managed DNS zone in CloudFlare
+    :rtype: Generator[str, None, None]
     """
     service = "zones"
     response = requests.get(base+service, headers=header).text
@@ -66,15 +66,12 @@ def fetch_zones() -> str:
 @utils.handle
 def add_A(network: Network, record: dict) -> None:
     """
-    Integrates one A record into a Network from json returned by DNSME api
+    Integrates one A record into a Network from a dictionary.
 
-    :Args:
-		network:
-			A Network object
-        record: dict
-            Some JSON describing a DNS record
-        root: str
-            The root domain the record comes from
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing information about an A record.
+    :type record: dict
     """
     fqdn = record['name'].lower()
     root = record['zone_name']
@@ -88,15 +85,12 @@ def add_A(network: Network, record: dict) -> None:
 @utils.handle
 def add_CNAME(network: Network, record: dict) -> None:
     """
-    Integrates one CNAME record into a Network from json returned by CloudFlare api
+    Integrates one CNAME record into a Network from a dictionary.
 
-    :Args:
-        dns_set: DNSSet
-            A forward DNS set
-        record: dict
-            Some JSON describing a DNS record
-        root: str
-            The root domain the record comes from
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing information about an CNAME record.
+    :type record: dict
     """
     fqdn = record['name'].lower()
     root = record['zone_name']

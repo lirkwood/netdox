@@ -17,13 +17,14 @@ import iptools, utils
 # Convenience functions #
 #########################
 
-async def fetchType(type: str):
+async def fetchType(type: str) -> dict:
     """
     Fetches all objects of a given type
 
-    :Args:
-        type:
-            The type of object to filter for
+    :param type: The type of object to search for
+    :type type: str
+    :return: The response sent by the server
+    :rtype: dict
     """
     return (await call('xo.getAllObjects', {
     'filter': {
@@ -31,13 +32,14 @@ async def fetchType(type: str):
     }}))['result']
     
     
-async def fetchObj(uuid: str):
+async def fetchObj(uuid: str) -> dict:
     """
     Fetches an object by UUID
 
-    :Args:
-        uuid:
-            The UUID of the object to return
+    :param uuid: The UUID to search for
+    :type uuid: str
+    :return: The response sent by the server
+    :rtype: dict
     """
     return (await call('xo.getAllObjects', {
     'filter': {
@@ -45,13 +47,14 @@ async def fetchObj(uuid: str):
     }}))['result']
 
 
-async def fetchObjByFields(fieldmap: dict[str, str]):
+async def fetchObjByFields(fieldmap: dict[str, str]) -> dict:
     """
     Returns an object which matches the fieldmap dictionary
 
-    :Args:
-        fieldmap:
-            A dictionary of fields and the values to filter for
+    :param fieldmap: A dictionary of key/value pairs to pass to the request
+    :type fieldmap: dict[str, str]
+    :return: The response sent by the server
+    :rtype: dict
     """
     return (await call('xo.getAllObjects', {
     'filter': fieldmap}))['result']
@@ -62,13 +65,10 @@ async def fetchObjByFields(fieldmap: dict[str, str]):
 
 def runner(network: Network):
     """
-    Links DNSRecords to the Kubernetes apps they resolve to, and generates the xo_* documents.
+    Generates VirtualMachine and Host instances and adds them to the network.
 
-    :Args:
-        forward_dns:
-            A forward DNS set
-        _:
-            Any object - not used
+    :param network: The network.
+    :type network: Network
     """
     # Generate XO Docs
     vms, _, poolHosts = asyncio.run(makeNodes(network))
@@ -81,9 +81,12 @@ def runner(network: Network):
     utils.xslt('plugins/xenorchestra/pub.xslt', 'plugins/xenorchestra/src/poolHosts.xml', 'out/xopub.psml')
 
 @authenticate
-async def makeNodes(network: Network):
+async def makeNodes(network: Network) -> None:
     """
     Fetches info about pools, hosts, and VMs
+
+    :param network: The network
+    :type network: Network
     """
     pools = await fetchType('pool')
     hosts = await fetchType('host')
@@ -151,13 +154,12 @@ async def makeNodes(network: Network):
 
 @utils.handle
 @authenticate
-async def template_map(vms):
+async def template_map(vms: dict):
     """
     Generates a PSML file of all objects that can be used to create a VM with ``createVM``
 
-    :Args:
-        vms:
-            A dictionary of VMs
+    :param vms: A dictionary of all the VMs, as returned by fetchType
+    :type vms: dict
     """
     vmSource = {
         'vms': {},

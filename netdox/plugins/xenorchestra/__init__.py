@@ -23,16 +23,14 @@ async def call(method: str, params: dict = {}, notification: bool = False) -> di
     """
     Makes a call with some given method and params, returns a JSON object
 
-    :Args:
-        method:
-            The RPC method to call
-        params:
-            A dictionary of parameters to call the method with
-        notification:
-            If true no response is expected and no ID is sent
-
-    :Returns:
-        The JSON returned by the server
+    :param method: The method to use with the call
+    :type method: str
+    :param params: Some params to pass to the method, defaults to {}
+    :type params: dict, optional
+    :param notification: Whether or not to expect a response, True if no response expected, defaults to False
+    :type notification: bool, optional
+    :return: A dictionary containing the response sent by the websocket server.
+    :rtype: dict
     """
     if notification:
         await websocket.send(json.dumps({
@@ -72,12 +70,10 @@ async def reciever(id: int) -> dict:
     """
     Consumes responses sent by websocket server, returns the one with the specified ID.
 
-    :Args:
-        id:
-            The ID generated alongside the outgoing message which identifies the response message
-    
-    :Returns:
-        The JSON returned by the server
+    :param id: The ID of the message to return
+    :type id: int
+    :return: A dictionary containing a response from the websocket server.
+    :rtype: dict
     """
     if id in frames:
         return frames[id]
@@ -124,7 +120,6 @@ class VirtualMachine(Node):
     uuid: str
     pool: str
     host: str
-    
 
     def __init__(self, 
             name: str,

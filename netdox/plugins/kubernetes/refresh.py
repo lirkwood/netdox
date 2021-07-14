@@ -19,16 +19,14 @@ from plugins.kubernetes import initContext, App
 from kubernetes import client
 
 
-def getDeploymentDetails(namespace: str='default') -> dict[str, dict[str, str]]:
+def getDeploymentDetails(namespace: str='default') -> dict[str, dict]:
     """
-    Maps deployments in a given namespace to their labels and pod template
+    Maps deployments in a given namespace to their labels and pod template.
 
-    :Args:
-        namespace:
-            (Optional) The namespace in which to search for deployments
-
-    :Returns:
-        A dictionary of all deployments in the namespace/context, their labels and the pod templates they define.
+    :param namespace: The namespace to search in, defaults to 'default'.
+    :type namespace: str, optional
+    :return: A dictionary mapping deployment name to a dictionary of details about it.
+    :rtype: dict[str, dict]
     """
     depDetails = {}
     api = client.AppsV1Api(apiClient)
@@ -66,14 +64,12 @@ def getDeploymentDetails(namespace: str='default') -> dict[str, dict[str, str]]:
 
 def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
     """
-    Maps the digest of a pod's labels to the name of the pod and its host node
+    Maps the digest of a pod's labels to the name of the pod and its host node.
 
-    :Args:
-        namespace:
-            (Optional) The namespace in which to search for pods
-
-    :Returns:
-        A dictionary mapping pod names to the sha1 digest of their metadata labels
+    :param namespace: The namespace to search in, defaults to 'default'
+    :type namespace: str, optional
+    :return: A dictionary mapping the sha1 digest of the pod's labels, to a list of dictionaries describing pods with those labels.
+    :rtype: dict[str, list[dict[str, str]]]
     """
     podsByLabel = {}
     api = client.CoreV1Api(apiClient)
@@ -95,14 +91,12 @@ def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
 
 def getServiceMatchLabels(namespace: str='default') -> dict[str, dict[str, str]]:
     """
-    Maps a service in a given namespace to its match labels
+    Maps a service in a given namespace to its match labels.
 
-    :Args:
-        namespace:
-            (Optional) The namespace in which to search for services
-
-    :Returns:
-        A dictionary mapping service names to a dictionary of their selector labels
+    :param namespace: The namespace to search in, defaults to 'default'.
+    :type namespace: str, optional
+    :return: A dictionary mapping the service name to a dictionary of its selectors.
+    :rtype: dict[str, dict[str, str]]
     """
     serviceMatchLabels = {}
     api = client.CoreV1Api(apiClient)
@@ -116,12 +110,10 @@ def getServiceDomains(namespace: str='default') -> dict[str, set]:
     """
     Maps a service in a given namespace to any domains that resolve to it
 
-    :Args:
-        namespace:
-            (Optional) The namespace in which to search for services
-
-    :Returns:
-        A dictionary mapping service names to a list of domains that resolve to that service
+    :param namespace: The namespace to search in, defaults to 'default'
+    :type namespace: str, optional
+    :return: A dictionary mapping service names to the domains that resolve to them.
+    :rtype: dict[str, set]
     """
     serviceDomains = {}
     api = client.ExtensionsV1beta1Api(apiClient)
@@ -137,10 +129,10 @@ def getServiceDomains(namespace: str='default') -> dict[str, set]:
 
 def getWorkerAddresses() -> dict[str, dict[str, str]]:
     """
-    Maps workers to a specified address type
+    Maps workers to their addresses.
 
-    :Returns:
-        A dictionary mapping worker node names to their addresses (domain name, ipv4, etc.)
+    :return: A dictionary mapping worker names to a dictionary of their addresses.
+    :rtype: dict[str, dict[str, str]]
     """
     workers = {}
     api = client.CoreV1Api(apiClient)
@@ -157,12 +149,10 @@ async def getWorkerVMs(workerAddrs: dict) -> dict[str, str]:
     """
     Talks to the *xenorchestra* plugin in order to map worker names to the VMs they're running in.
 
-    :Args:
-        workerAddrs:
-            A dictionary like that which is returned by ``getWorkerAddresses``
-
-    :Returns:
-        A dictionary mapping worker names to their VM UUID
+    :param workerAddrs: A dictionary returned by getWorkerAddresses, mapping worker names to their addresses.
+    :type workerAddrs: dict
+    :return: A dictionary mapping worker names to their XenOrchestra UUID.
+    :rtype: dict[str, str]
     """
     from plugins.xenorchestra import fetch as xo
     VMs = await xo.authenticate(xo.fetchType)('VM')
@@ -182,16 +172,14 @@ async def getWorkerVMs(workerAddrs: dict) -> dict[str, str]:
 
 def getApps(context: str, namespace: str='default') -> dict[str]:
     """
-    Returns a JSON object of apps in the format expected by apps.xsl
+    Returns a dictionary of apps running from deployments in the specified context/namespace.
 
-    :Args:
-        context:
-            The context defined in ``config.json`` to perform all actions in.
-        namespace:
-            (Optional) The namespace to look for resources in (inherited by called functions)
-
-    :Returns:
-        A dictionary describing the apps running in this context/namespace
+    :param context: The kubernetes API context to use.
+    :type context: str
+    :param namespace: The namespace to search in, defaults to 'default'.
+    :type namespace: str, optional
+    :return: A dictionary mapping deployment names to some information about the pods that deployment manages.
+    :rtype: dict[str]
     """
     global apiClient
     apiClient = initContext(context)
@@ -255,11 +243,10 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
 
 def runner(network: Network) -> None:
     """
-    Links DNSRecords to the Kubernetes apps they resolve to, and generates the k8s_* documents.
+    Adds a set of Nodes (called Apps) to the network.
 
-    :Args:
-        network:
-            A Network object
+    :param network: The network.
+    :type network: Network
     """
     auth = utils.config()['plugins']['kubernetes']
     global pluginmaster

@@ -5,6 +5,8 @@ Webhook Actions
 Provides some functions which parse and act upon the impulse sent by a PageSeeder webhook.
 
 Can be used to create or scale a Kubernetes application.
+
+**This module is out of date and not currently functional.**
 """
 
 from plugins.kubernetes import initContext

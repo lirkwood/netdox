@@ -18,16 +18,15 @@ from networkobjs import Domain, DomainSet, Network, Node
 
 def fetchType(type: str, icinga_host: str) -> dict:
     """
-    Returns all instances of a given object type
+    Returns all instances of a given object type.
 
-    :Args:
-        type:
-            The object type to return
-        icinga_host:
-            The fqdn of the Icinga instance to query
-
-    :Returns:
-        The JSON returned by the server
+    :param type: The type of object to search for.
+    :type type: str
+    :param icinga_host: The domain name of the Icinga instance to query.
+    :type icinga_host: str
+    :raises ValueError: If *icinga_host* is not one of the configured values.
+    :return: A dictionary returned by the Icinga API.
+    :rtype: dict
     """
     try:
         auth = utils.config()['plugins']['icinga'][icinga_host]
@@ -37,41 +36,22 @@ def fetchType(type: str, icinga_host: str) -> dict:
     jsondata = json.loads(r.text)
     return jsondata
 
-def fetchTemplates(type: str, icinga_host: str) -> dict:
-    """
-    Returns all templates for a given object type
-
-    :Args:
-        type:
-            The object type to return templates for
-        icinga_host:
-            The fqdn of the Icinga instance to query
-
-    :Returns:
-        The JSON returned by the server
-    """ 
-    try:
-        auth = utils.config()['plugins']['icinga'][icinga_host]
-    except KeyError:
-        raise ValueError(f'Unrecognised Icinga host: {icinga_host}')
-    r = requests.get(f'https://{icinga_host}:5665/v1/templates/{type}', auth=(auth['username'], auth['password']), verify=False)
-    jsondata = json.loads(r.text)
-    return jsondata
-
 #########################
 # Main plugin functions #
 #########################
 
 def objectsByDomain(icingas: list[str]) -> Tuple[dict, dict]:
     """
-    Returns a map of Icinga host objects to their services
+    Returns a tuple of dictionaries containing all host objects known to each Icinga instance in *icingas*.
 
-    :Args:
-        icingas:
-            A list of Icinga instance endpoints to query
+    The manual dictionary maps the address of each host object not in the ``generated`` host group, to some information about it.
+    The generated dictionary maps each instance of icinga to another dictionary, similar to the manual dict, 
+    containing the host objects that **do** belong to the ``generated`` host group.  
 
-    :Returns:
-        A dictionary of the services monitoring each address, sorted by Icinga instance
+    :param icingas: A list of domain names of Icinga instances to query.
+    :type icingas: list[str]
+    :return: A 2-tuple of dictionaries, the manual and generated host objects.
+    :rtype: Tuple[dict, dict]
     """
     manual, generated = {}, {}
     for icinga in icingas:
@@ -144,12 +124,11 @@ class MonitorManager:
         """
         Tests if a domain or any of its IPs are manually monitored
 
-        :Args:
-            dns:
-                A DNS record
-        
-        :Returns:
-            True if monitored, False otherwise
+        :param domain: A Domain object to test.
+        :type domain: Domain
+        :return: True if the Domain's name or any members of its *ips* attribute appear as the *address* attribute of a host object,
+         in any of the configured Icinga instances. False otherwise.
+        :rtype: bool
         """
         for selector in [domain.name] + list(domain.ips):
             for icinga_host in self.icingas:
@@ -162,12 +141,10 @@ class MonitorManager:
         """
         Validates the current monitor on a DNS record. Modifies if necessary.
 
-        :Args:
-            record:
-                A DNS record to validate the monitoring status of
-
-        :Returns:
-            True if the monitor on the record was already valid. False otherwise.
+        :param domain: The Domain object to validate.
+        :type domain: Domain
+        :return: True if the Domain's monitor was already valid. False if it needed to be modified.
+        :rtype: bool
         """
         if (self.manualMonitor(domain) or
             'template' not in utils.roles()[domain.role] or
@@ -189,16 +166,14 @@ class MonitorManager:
 
         return True
 
-    def validateDomains(self, domain_set: Iterable[Domain]) -> list[Domain]:
+    def validateDomainSet(self, domain_set: Iterable[Domain]) -> list[Domain]:
         """
         Calls validateRecord on each record in a given set, and reloads the relevant Icinga if invalid.
 
-        :Args:
-            record_set:
-                An iterable of DNSRecords to validate
-            
-        :Returns:
-            A list of DNSRecords which had invalid monitors.
+        :param domain_set: An iterable object containing Domains.
+        :type domain_set: Iterable[Domain]
+        :return: A list of Domains that returned **False** when passed to validateDomain
+        :rtype: list[Domain]
         """
         invalid = []
         needsReload = set()
@@ -222,11 +197,7 @@ class MonitorManager:
 
     def validateNetwork(self) -> None:
         """
-        Validates the Icinga monitors of every record in the set, and modifies them to be valid if necessary.
-
-        :Args:
-            dns_set:
-                A forward DNSSet
+        Validates the Icinga monitors of every Domain in the network, and modifies them to be valid if necessary.
         """
         tries = 0
         invalid = list(self.network.domains)
@@ -234,7 +205,7 @@ class MonitorManager:
             if tries:
                 self.refreshMonitorInfo()
             tries += 1
-            invalid = self.validateDomains(invalid)
+            invalid = self.validateDomainSet(invalid)
         
         if invalid:
             print(f'[WARNING][icinga] Unable to resolve invalid monitors for: {", ".join([r.name for r in invalid])}')
@@ -266,9 +237,8 @@ def runner(network: Network):
     If the monitor continues to appear invalid after 3 attempts it will be abandoned.
     This function will also remove any Netdox-generated monitors on domains which are not in the passed DNS set.
 
-    :Args:
-        forward_dns:
-            A forward DNS set
+    :param network: The network.
+    :type network: Network
     """
     mgr = MonitorManager(network)
     mgr.pruneGenerated()

@@ -1,25 +1,23 @@
+import json
+import re
 from typing import Tuple
-from paramiko import client, AutoAddPolicy
-import json, re
 
-## Main functions
-
-def exec(cmd: str) -> Tuple[str, str]:
-    """
-    Executes a command on the ansible machine
-    """
-    sshclient = client.SSHClient()
-    sshclient.set_missing_host_key_policy(AutoAddPolicy())
-    sshclient.connect('ansiblesy4.allette.com.au', username='root', key_filename='src/ssh/ssh-ed25519')
-    stdin, stdout, stderr = sshclient.exec_command(cmd)
-    stdin.close()
-    stdout = str(stdout.read(), encoding='utf-8')
-    stderr = str(stderr.read(), encoding='utf-8')
-    return (stdout, stderr)
+import ssh
+import utils
 
 def playbook(path: str, tags: list[str]=[], vars: dict[str, str]={}) -> str:
     """
     Runs a playbook with optional tags and extra vars
+
+    :param path: The path to the playbook to run
+    :type path: str
+    :param tags: A list of tags to pass to this ansible command, defaults to []
+    :type tags: list[str], optional
+    :param vars: A dictionary of key/value pairs to pass to this ansible command, defaults to {}
+    :type vars: dict[str, str], optional
+    :raises RuntimeError: If the cmd printed anything to stderr or one of the playbook tasks failed.
+    :return: The text printed to stdout by *cmd*.
+    :rtype: str
     """
     # encode dict as extra vars
     varstring = ''
@@ -41,7 +39,7 @@ def playbook(path: str, tags: list[str]=[], vars: dict[str, str]={}) -> str:
         tagstring += tag
     if tagstring: tagstring += '"'
 
-    stdout, stderr = exec(f'ansible-playbook {path} {tagstring} {varstring}')
+    stdout, stderr = ssh.exec(f'ansible-playbook {path} {tagstring} {varstring}', utils.config()['ansible']['host'])
     errors = validateStdout(stdout)
     if stderr:
         raise RuntimeError(f'[ERROR][ansible.py] Running playbook {path} with {tagstring} {varstring} failed:\n{stderr}')
@@ -51,9 +49,17 @@ def playbook(path: str, tags: list[str]=[], vars: dict[str, str]={}) -> str:
         return stdout
 
 failed_task_pattern = re.compile(r'FAILED! => (?P<json>{.+?})\s*\n')
-def validateStdout(stdout: str) -> list[dict]:
+def validateStdout(string: str) -> list[dict]:
+    """
+    Returns a list of strings matching the ansible *failed task* pattern.
+
+    :param string: The string to search.
+    :type string: str
+    :return: A list of strings matching the pattern.
+    :rtype: list[dict]
+    """
     stderrs = []
-    failed = re.finditer(failed_task_pattern, stdout)
+    failed = re.finditer(failed_task_pattern, string)
     for task in failed:
         jsondata = json.loads(task['json'])
         stderrs.append(jsondata['stderr'])

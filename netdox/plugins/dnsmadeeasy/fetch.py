@@ -16,15 +16,12 @@ from networkobjs import Domain, IPv4Address, Network
 from plugins.dnsmadeeasy import genheader
 
 
-def fetchDomains() -> Generator[Tuple[str, str], Any, Any]:
+def fetchDomains() -> Generator[Tuple[str, str], None, None]:
     """
-    Generator which returns a tuple containing one managed domain's ID and name
+    Generator which returns a tuple containing one managed domain's ID and name.
 
-    :Yields:
-        Tuple[0]: str
-            The ID of some managed domain
-        Tuple[1]: str
-            The name of the same domain
+    :yield: A 2-tuple containing the domain's ID and name as strings.
+    :rtype: Generator[Tuple[str, str], None, None]
     """
     response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=genheader()).text
     jsondata = json.loads(response)['data']
@@ -37,13 +34,11 @@ def fetchDomains() -> Generator[Tuple[str, str], Any, Any]:
 
 def fetchDNS(network: Network):
     """
-    Reads all DNS records from DNSMadeEasy and adds them to a Network object
+    Reads all DNS records from DNSMadeEasy and adds them to a Network object.
 
-    :Args:
-        network:
-            A Network object
+    :param network: The network.
+    :type network: Network
     """
-
     for id, domain in fetchDomains():
         response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=genheader()).text
         records = json.loads(response)['data']
@@ -62,15 +57,14 @@ def fetchDNS(network: Network):
 @utils.handle
 def add_A(network: Network, record: dict, root: str):
     """
-    Integrates one A record into a Network from json returned by DNSME api
+    Integrates one A record into a Network from a dictionary.
 
-    :Args:
-        network:
-            A Network object
-        record: dict
-            Some JSON describing a DNS record
-        root: str
-            The root domain the record comes from
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about the record.
+    :type record: dict
+    :param root: The root domain this record belongs to.
+    :type root: str
     """
     subdomain = record['name']
     ip = record['value']
@@ -84,15 +78,14 @@ def add_A(network: Network, record: dict, root: str):
 @utils.handle
 def add_CNAME(network: Network, record: dict, root: str):
     """
-    Integrates one CNAME record into a Network from json returned by DNSME api
+    Integrates one CNAME record into a Network from a dictionary.
 
-    :Args:
-        network:
-            A Network object
-        record: dict
-            Some JSON describing a DNS record
-        root: str
-            The root domain the record comes from
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about the record.
+    :type record: dict
+    :param root: The root domain this record belongs to.
+    :type root: str
     """
     subdomain = record['name']
     value = record['value']
@@ -107,15 +100,14 @@ def add_CNAME(network: Network, record: dict, root: str):
 @utils.handle
 def add_PTR(network: Network, record: dict, root: str):
     """
-    Integrates one PTR record into a Network from json returned by DNSME api
+    Integrates one PTR record into a Network from a dictionary.
 
-    :Args:
-        network:
-            A Network object
-        record: dict
-            Some JSON describing a DNS record
-        root: str
-            The root domain the record comes from
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about the record.
+    :type record: dict
+    :param root: The root domain this record belongs to.
+    :type root: str
     """
     subnet = '.'.join(root.replace('.in-addr.arpa','').split('.')[::-1])
     addr = record['name']
@@ -130,6 +122,16 @@ def add_PTR(network: Network, record: dict, root: str):
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
+    """
+    Combines the subdomain and root as they are found in the DNSME JSON, to give a FQDN.
+
+    :param subdomain: The subdomain of the FQDN.
+    :type subdomain: str
+    :param root: The root domain / DNS zone of the FQDN.
+    :type root: str
+    :return: A fully qualified domain name composed of the subdomain and root.
+    :rtype: str
+    """
     if not subdomain:
         fqdn = root
     elif root in subdomain:

@@ -44,25 +44,21 @@ def setloc(func):
 # Command Builders #
 ####################
 
-@setloc
+# @setloc
 def set_host(address: str, icinga: str = '', location: str = '', template: str = 'generic-host', display_name: str = '') -> str:
     """
     Creates a file on an Icinga host containing a host object definition with the given template and the given address.
 
-    :Args:
-        address:
-            The address to use for the monitor
-        icinga:
-            The fqdn of an Icinga instance to create this monitor in (if not present *location* is required)
-        location:
-            The location of the Icinga instance to use, if there is one configured (if not present *icinga* is required)
-        template:
-            The template to use for the monitor
-        display_name:
-            The display name to give the monitor
-
-    :Returns:
-        The string(s) printed to stdout by this operation
+    :param address: The address to use for the host object in Icinga.
+    :type address: str
+    :param icinga: The domain name of the Icinga instance to create the object in. Required if *location* is not set.
+    :type icinga: str
+    :param location: The location of the Icinga instance to use, as it appears in ``locations.json``. Required if *icinga* is not set.
+    :type location: str
+    :param template: The template name to use for the host object
+    :type template: str
+    :param display_name: The display name to use for the object. Defaults to *address*.
+    :type display_name: str
     """
     if not display_name: display_name = address
 
@@ -83,16 +79,12 @@ def rm_host(address: str, icinga: str = '', location: str = '') -> str:
     """
     Deletes the file on an Icinga host containing the host object definition with the given address.
 
-    :Args:
-        address:
-            The address to look for
-        icinga:
-            The fqdn of an Icinga instance to create this monitor in (if not present *location* is required)
-        location:
-            The location of the Icinga instance to use, if there is one configured (if not present *icinga* is required)
-
-    :Returns:
-        The string(s) printed to stdout by this operation
+    :param address: The address of the host object to delete.
+    :type address: str
+    :param icinga: The domain name of the Icinga instance to look for the object in. Required if *location* is not set.
+    :type icinga: str
+    :param location: The location of the Icinga instance to use, as it appears in ``locations.json``. Required if *icinga* is not set.
+    :type location: str
     """
     cmd = f'rm -f /etc/icinga2/conf.d/hosts/generated/{address.replace(".","_")}.conf'
 
@@ -104,11 +96,10 @@ def reload(icinga: str = '', location: str = '') -> str:
     """
     Validates config files and reloads the Icinga2 systemd service.
 
-    :Args:
-        icinga:
-            The fqdn of an Icinga instance to create this monitor in (if not present *location* is required)
-        location:
-            The location of the Icinga instance to use, if there is one configured (if not present *icinga* is required)
+    :param icinga: The domain name of the Icinga instance to look for the object in. Required if *location* is not set.
+    :type icinga: str
+    :param location: The location of the Icinga instance to use, as it appears in ``locations.json``. Required if *icinga* is not set.
+    :type location: str
     """
     cmd = f'icinga2 daemon -C && systemctl reload icinga2'
 
