@@ -509,7 +509,7 @@ class IPv4Address(BaseIP, NetworkObject):
         elif re.fullmatch(dns_name_pattern, domain):
             self._ptr.add((domain, source))
         else:
-            raise ValueError('Invalid domain')
+            raise ValueError(f'Invalid domain \'{domain.name if isinstance(domain, Domain) else domain}\'')
 
     def subnetFromMask(self, mask: Union[str, int] = '24') -> str:
         """
