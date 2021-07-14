@@ -116,6 +116,9 @@ class JSONEncoder(json.JSONEncoder):
 ###################
 
 class NetworkObject(ABC):
+    """
+    Base class for an object in the network.
+    """
     name: str
     docid: str
     _network: Network
@@ -896,7 +899,7 @@ class NodeSet(NetworkObjectContainer):
     """
     objectType: str = 'nodes'
 
-    def __init__(self, objectSet: list, network: Network) -> None:
+    def __init__(self, objectSet: list[Node] = [], network: Network = None) -> None:
         self.objects = {object.docid: object for object in objectSet}
         self.network = network
 
