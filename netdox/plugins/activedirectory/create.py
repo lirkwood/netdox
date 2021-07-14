@@ -2,30 +2,32 @@
 Creating Records
 ****************
 
-Provides some functions for creating DNS records in ActiveDirectory
+Provides some functions for creating DNS records in ActiveDirectory.
 """
 import re, json, subprocess
+import networkobjs
 import utils, iptools
 
 
-def create_forward(name: str, ip: str, zone: str, type: str):
+def create_forward(name: str, value: str, zone: str, type: str) -> None:
     """
-    Schedules a forward DNS record for creation in ActiveDirectory
+    Schedules a forward DNS record for creation in ActiveDirectory.
 
-    :Args:
-        name: str
-            Name for the DNS record
-        ip: str
-            IPv4 address / domain for the record to resolve to
-        zone: str
-            DNS zone to create the record in
-        type: str
-            DNS Record type (A/CNAME)
+    :param name: The name for the record.
+    :type name: str
+    :param ip: The value for the record.
+    :type ip: str
+    :param zone: The DNS zone to create the record in.
+    :type zone: str
+    :param type: The type of record to create.
+    :type type: str
     """
-    if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-        with open('src/forward.json') as stream:
-            dns = utils.DNSSet.from_json(stream.read())
-        if (ip, 'ActiveDirectory') in dns[name]._ips:
+    if  re.fullmatch(networkobjs.dns_name_pattern, name) and (
+        iptools.valid_ip(value) or re.fullmatch(networkobjs.dns_name_pattern, value)):
+
+        with open('src/domains.json') as stream:
+            domains = networkobjs.DomainSet.from_json(stream.read())
+        if (value, 'ActiveDirectory') in (domains[name]._ips + domains[name]._cnames):
             return None
 
         try:
@@ -37,7 +39,7 @@ def create_forward(name: str, ip: str, zone: str, type: str):
         finally:
             new = {
                 "name": name,
-                "value": ip,
+                "value": value,
                 "zone": zone,
                 "type": type
             }
@@ -46,21 +48,21 @@ def create_forward(name: str, ip: str, zone: str, type: str):
                 stream.write(json.dumps(existing))
             # subprocess.run('./crypto.sh encrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/src/scheduled.json plugins/activedirectory/nfs/scheduled.bin', shell=True)
 
-def create_reverse(ip: str, value: str):
+def create_reverse(ip: str, value: str) -> None:
     """
     Schedules a reverse DNS record for creation in ActiveDirectory
 
-    :Args:
-        ip: str
-            IPv4 address to use as the name for the record
-        value: str
-            Domain for this record to resolve to
+    :param ip: The ip to use as the name of the record.
+    :type ip: str
+    :param value: The value for the record.
+    :type value: str
     """
-    if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
-        with open('src/reverse.json', 'r') as dnsstream:
-            dns = utils.DNSSet.from_json(dnsstream.read())
-            if (value, 'ActiveDirectory') in dns[ip]._ptr:
-                return None
+    if iptools.valid_ip(ip) and re.fullmatch(networkobjs.dns_name_pattern, value):
+        
+        with open('src/ips.json') as stream:
+            ips = networkobjs.DomainSet.from_json(stream.read())
+        if (value, 'ActiveDirectory') in ips[ip]._ptr:
+            return None
     
         addr = ip.split('.')[-1]
         zone = f'{".".join(ip.split(".")[-2::-1])}.in-addr.arpa'

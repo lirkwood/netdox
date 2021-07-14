@@ -4,26 +4,29 @@ Creating Records
 
 Provides some functions for creating DNS records in DNSMadeEasy
 """
+import networkobjs
 import utils, iptools
 import re, json
 
 @utils.handle
-def create_A(name: str, ip: str, zone: str):
+def create_A(name: str, ip: str, zone: str) -> None:
 	"""
 	Creates an A record in DNSMadeEasy
 
-	:Args:
-		name: str
-			The name for the DNS record
-		ip: str
-			The IPv4 address for the record to resolve to
-		zone: str
-			The DNS zone to create the record in
+	:param name: The name for the record.
+	:type name: str
+	:param ip: The ip for the record.
+	:type ip: str
+	:param zone: The DNS zone to create the record in.
+	:type zone: str
+	:raises ValueError: If the DNS zone is not one of the configured values
+	:raises ValueError: If *name* is not a valid FQDN or *ip* is not a valid IPv4 address.
 	"""
-	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
-		with open('src/forward.json') as stream:
-			dns = utils.DNSSet.from_json(stream.read())
-		if (ip, 'DNSMadeEasy') in dns[name]._ips:
+	if re.fullmatch(networkobjs.dns_name_pattern, name) and iptools.valid_ip(ip):
+			
+		with open('src/domains.json') as stream:
+			domains = networkobjs.DomainSet.from_json(stream.read())
+		if (ip, 'DNSMadeEasy') in domains[name]._ips:
 			return None
 
 		with open('plugin/dnsmadeeasy/src/zones.json', 'r') as zonestream:
@@ -42,27 +45,29 @@ def create_A(name: str, ip: str, zone: str):
 				print(endpoint)
 				return None
 			else:
-				raise ValueError(f'[ERROR][dnsme_api.py] Unknown zone for DNSMadeEasy: {zone}')
+				raise ValueError(f'[ERROR][dnsmadeeasy] Unknown zone for DNSMadeEasy: {zone}')
 	else:
-		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or IPv4 ({ip})')
+		raise ValueError(f'[ERROR][dnsmadeeasy] Invalid hostname ({name}) or IPv4 ({ip})')
 
 @utils.handle
-def create_CNAME(name: str, value: str, zone: str):
+def create_CNAME(name: str, value: str, zone: str) -> None:
 	"""
 	Creates an CNAME record in DNSMadeEasy
 
-	:Args:
-		name: str
-			The name for the DNS record
-		value: str
-			The domain for the record to resolve to
-		zone: str
-			The DNS zone to create the record in
+	:param name: The name for the record.
+	:type name: str
+	:param value: The value for the record.
+	:type value: str
+	:param zone: The DNS zone to create the record in.
+	:type zone: str
+	:raises ValueError: If the DNS zone is not one of the configured values
+	:raises ValueError: If *name* or *value* is not a valid FQDN
 	"""
-	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
-		with open('src/forward.json') as stream:
-			dns = utils.DNSSet.from_json(stream.read())
-		if (value, 'DNSMadeEasy') in dns[name]._cnames:
+	if re.fullmatch(networkobjs.dns_name_pattern, name) and re.fullmatch(networkobjs.dns_name_pattern, value):
+
+		with open('src/domains.json') as stream:
+			domains = networkobjs.DomainSet.from_json(stream.read())
+		if (value, 'DNSMadeEasy') in domains[name]._cnames:
 			return None
 
 		with open('src/zones.json', 'r') as stream:
@@ -82,26 +87,28 @@ def create_CNAME(name: str, value: str, zone: str):
 				return None
 
 			else:
-				raise ValueError(f'[ERROR][dnsme_api.py] Unknown zone for DNSMadeEasy: {zone}')
+				raise ValueError(f'[ERROR][dnsmadeeasy] Unknown zone for DNSMadeEasy: {zone}')
 	else:
-		raise ValueError(f'[ERROR][dnsme_api.py] Invalid hostname ({name}) or ({value})')
+		raise ValueError(f'[ERROR][dnsmadeeasy] Invalid hostname ({name}) or ({value})')
 
 @utils.handle
-def create_PTR(ip: str, value: str):
+def create_PTR(ip: str, value: str) -> None:
 	"""
-	Creates an PTR record in DNSMadeEasy
+	Creates an PTR record in DNSMadeEasy.
 
-	:Args:
-		ip: str
-			The IPv4 address to use as the name for the record
-		value: str
-			The domain for the record to resolve to
+	:param ip: The ip to use for the name of the record.
+	:type ip: str
+	:param value: The value for the recod.
+	:type value: str
+	:raises ValueError: If the DNS zone is not one of the configured values
+	:raises ValueError: If *ip* is not a valid IPv4 address or *value* is not a valid FQDN.
 	"""
-	if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
-		with open('src/reverse.json', 'r') as dnsstream:
-			dns = utils.DNSSet(dnsstream.read())
-			if (value, 'DNSMadeEasy') in dns[ip]._ptr:
-				return None
+	if iptools.valid_ip(ip) and re.fullmatch(networkobjs.dns_name_pattern, value):
+
+		with open('src/ips.json', 'r') as stream:
+			ips = networkobjs.IPv4AddressSet.from_json(stream.read())
+		if (value, 'DNSMadeEasy') in ips[ip]._ptr:
+			return None
 
 		addr = ip.split('.')[-1]
 		zone = f'{".".join(ip.split(".")[-2::-1])}.in-addr.arpa'
@@ -122,6 +129,6 @@ def create_PTR(ip: str, value: str):
 				return None
 
 			else:
-				raise ValueError(f'[ERROR][dnsme_api.py] Unknown zone for DNSMadeEasy: {zone}')
+				raise ValueError(f'[ERROR][dnsmadeeasy] Unknown zone for DNSMadeEasy: {zone}')
 	else:
-		raise ValueError(f'[ERROR][dnsme_api.py] Invalid IPv4 ({ip}) or hostname ({value})')
+		raise ValueError(f'[ERROR][dnsmadeeasy] Invalid IPv4 ({ip}) or hostname ({value})')
