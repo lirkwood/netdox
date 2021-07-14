@@ -1,3 +1,16 @@
+"""
+This module contains the NetworkObject classes used to store the DNS and Node information, their containers, and two helper classes.
+
+The NetworkObject class is an abstract base class subclassed by Domain, IPv4Address, and Node. 
+NetworkObjects represent one type of object in the network. 
+It could be a unique FQDN found in a managed DNS zone, an IP address one of those domains resolves to, or a Node.
+A Node is representative of a single machine / virtualised machine.
+When writing plugins for the node stage developers are encouraged to write their own subclass of Node, 
+specific to the target of their plugin.
+This allows you to define how the Node will behave when it is added to a NodeSet or Network, 
+and it's strategy for merging with other Nodes.
+"""
+
 from __future__ import annotations
 
 import json
@@ -12,13 +25,14 @@ import utils
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
-#################
-# Location Data #
-#################
+##################
+# Helper Classes #
+##################
 
 class Locator:
     """
-    Holds the location data for network objects
+    A helper class for Network.
+    Holds the location data for NetworkObjects.
     """
     location_map: dict
     location_pivot: dict
@@ -38,31 +52,16 @@ class Locator:
     def __iter__(self) -> Iterator[str]:
         yield from self.location_map.keys()
 
-    def locate(self, ip_set: Union[iptools.ipv4, str, Iterable]) -> str:
+    def locate(self, ip_set: Iterable) -> str:
         """
         Returns a location for an ip or set of ips, or None if there is no determinable location.
         Locations are decided based on the content of the ``locations.json`` config file (for more see :ref:`config`)
 
-        :Returns:
-            String|None; A string containing the location as it appears in ``locations.json``, or None if no valid location could be decided on.
+        :param ip_set: An Iterable object containing IPv4 addresses in CIDR format as strings
+        :type ip_set: Iterable
+        :return: The location, as it appears in ``locations.json``, or None if one location exactly could not be assigned.
+        :rtype: str
         """
-        if isinstance(ip_set, iptools.ipv4):
-            if ip_set.valid:
-                ip_set = [ip_set.ipv4]
-            else:
-                raise ValueError(f'Invalid IP in set: {ip_set.raw}')
-        elif isinstance(ip_set, str):
-            if iptools.valid_ip(ip_set):
-                ip_set = [ip_set]
-            else:
-                raise ValueError(f'Invalid IP in set: {ip_set}')
-        elif isinstance(ip_set, Iterable):
-            for ip in ip_set:
-                if not iptools.valid_ip(ip):
-                    raise ValueError(f'Invalid IP in set: {ip}')
-        else:
-            raise TypeError(f'IP set must be one of: str, Iterable[str]; Not {type(ip_set)}')
-
         # sort every declared subnet that matches one of ips by mask size
         matches = {}
         for subnet in ip_set:
@@ -90,6 +89,28 @@ class Locator:
             return None
 
 
+class JSONEncoder(json.JSONEncoder):
+    """
+    JSON Encoder compatible with NetworkObjects, sets, and datetime objects
+    """
+    def default(self, obj):
+        """
+        :meta private:
+        """
+        if isinstance(obj, NetworkObject):
+            return obj.__dict__ | {'node': obj.node.docid if hasattr(obj, 'node') and obj.node else None}
+        elif isinstance(obj, NetworkObjectContainer):
+            return None
+        elif isinstance(obj, Network):
+            return None
+        elif isinstance(obj, set):
+            return sorted(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        else:
+            return super().default(obj)
+
+
 ###################
 # Network Objects #
 ###################
@@ -102,12 +123,25 @@ class NetworkObject(ABC):
     location: str
 
     @property
-    def network(self):
+    def network(self) -> Network:
+        """
+        Return the current _network attribute
+
+        :return: The current Network
+        :rtype: Network
+        """
         return self._network
 
     @network.setter
     @abstractmethod
     def network(self, new_network: Network):
+        """
+        Set the _network attribute to new_network.
+        Should also trigger any link resolution etc. that must be done upon entering a network.
+
+        :param new_network: The network this NetworkObject has been added to.
+        :type new_network: Network
+        """
         self._network = new_network
         self.location = new_network.locator.locate(self)
     
@@ -125,22 +159,36 @@ class Domain(NetworkObject):
     """
     A domain defined in a managed DNS server.
     Contains all A/CNAME DNS records from managed servers using this domain as the record name.
+
+    Subclasses NetworkObject
     """
     root: str
     role: str
     node: Node
+    _container: DomainSet
     _public_ips: set[str]
     _private_ips: set[str]
     _cnames: set[str]
     implied_ips: set[str]
     subnets: set[str]
 
-    def __init__(self, name: str, root: str = None, role: str = None):
+    def __init__(self, name: str, root: str = None, role: str = 'default') -> None:
+        """
+        Initialises a Domain
+
+        :param name: The domain name to use
+        :type name: str
+        :param root: The root DNS zone, defaults to None
+        :type root: str, optional
+        :param role: The DNS role to apply to this domain, defaults to 'default'
+        :type role: str, optional
+        :raises ValueError: If *name* is not a valid FQDN
+        """
         if re.fullmatch(dns_name_pattern, name):
             self.name = name.lower()
             self.docid = f'_nd_domain_{self.name.replace(".","_")}'
             self.root = root.lower() if root else None
-            self.role = role.lower() if role else None
+            self.role = role.lower()
             self.location = None
 
             # destinations
@@ -155,9 +203,18 @@ class Domain(NetworkObject):
         else:
             raise ValueError('Must provide a valid name for dns record (some FQDN)')
 
-    def link(self, destination: Union[Domain, IPv4Address, str], source: str):
+    def link(self, destination: Union[Domain, IPv4Address, str], source: str) -> None:
         """
         Adds a DNS record from this domain to the provided destination.
+
+        Adds a 2-tuple containing the destination and source to the relevant record set; self._cnames when destination is a FQDN, etc.
+
+        :param destination: The value for the DNS record.
+        :type destination: Union[Domain, IPv4Address, str]
+        :param source: The plugin that provided this link.
+        :type source: str
+        :raises ValueError: If the destination is a string but cannot be recognised as a FQDN or IPv4 address.
+        :raises TypeError: If the destination is not one of: Domain, IPv4Address, str
         """
         if isinstance(destination, IPv4Address):
             recordtype = 'A'
@@ -188,57 +245,118 @@ class Domain(NetworkObject):
         self.update()
 
     @property
-    def destinations(self) -> dict:
+    def destinations(self) -> list[str]:
         """
-        Property: returns a dictionary of all outgoing links from this record.
+        Returns a list of all the domains and IPv4 addresses this Domain resolves to, as strings.
+
+        :return: A list of FQDNs and IPv4 addresses, as strings.
+        :rtype: list
         """
         return self.public_ips + self.private_ips + self.cnames
 
     @property
     def _ips(self) -> set[Tuple[str, str]]:
+        """
+        Returns a set of the 2-tuples representing DNS records from self._public_ips and self._private_ips combined.
+
+        :return: A set of 2-tuples containing an IPv4 address and the plugin the link came from.
+        :rtype: set[Tuple[str, str]]
+        """
         return self._public_ips.union(self._private_ips)
 
     @property
     def public_ips(self) -> list[str]:
         """
-        Property: returns all IPs from this record that are outside of protected ranges.
+        Returns all IPs from this domain's links that are outside of protected ranges.
+
+        :return: A list of IPv4 addresses as strings.
+        :rtype: list[str]
         """
         return list(set([ip for ip,_ in self._public_ips]))
 
     @property
     def private_ips(self) -> list[str]:
         """
-        Property: returns all IPs from this record that are inside a protected range.
+        Returns all IPs from this domain's links that are inside a protected range.
+
+        :return: A list of IPv4 addresses as strings.
+        :rtype: list[str]
         """
         return list(set([ip for ip,_ in self._private_ips]))
 
     @property
     def ips(self) -> list[str]:
         """
-        Property: returns all IPs from this record.
+        Returns all IPs from this domain's links.
+
+        :return: A list of IPv4 addresses as strings.
+        :rtype: list[str]
         """
         return [ip for ip, _ in self._ips]
 
     @property
     def iplinks(self) -> list[str]:
         """
-        Property: returns all ips that this domain points to, or that point back
+        Returns all ips that this domain points to, or that point back
+
+        :return: A list of IPv4 addresses as strings.
+        :rtype: list[str]
         """
         return list(set(self.ips) + self.implied_ips)
 
     @property
     def cnames(self) -> list[str]:
         """
-        Property: returns all CNAMEs from this record.
+        Returns all ips that this domain points to, or that point back
+
+        :return: A list of FQDNs.
+        :rtype: list[str]
         """
         return list(set([cname for cname,_ in self._cnames]))
 
     @property
-    def network(self):
+    def container(self) -> DomainSet:
+        """
+        Returns the current _container attribute
+
+        :return: The current DomainSet this Domain is in.
+        :rtype: Domain
+        """
+        return self._container
+
+    @container.setter
+    def container(self, new_container: Domain) -> None:
+        """
+        Set the _container attribute to new_container.
+        Also updates the role attribute.
+
+        :param new_network: The network this Domain has been added to.
+        :type new_network: Network
+        """
+        self._container = new_container
+        for role, domains in self.container.roles:
+            if self.name in domains:
+                self.role = role
+
+    @property
+    def network(self) -> Network:
+        """
+        Return the current _network attribute
+
+        :return: The current Network
+        :rtype: Network
+        """
         return self._network
 
     @network.setter
-    def network(self, new_network: Network):
+    def network(self, new_network: Network) -> None:
+        """
+        Set the _network attribute to new_network.
+        Also updates the location and creates implied links from any IPv4Addresses this Domain resolves to, back to itself.
+
+        :param new_network: The network this Domain has been added to.
+        :type new_network: Network
+        """
         self._network = new_network
         self.location = new_network.locator.locate(self.ips)
         for ip in self.ips:
@@ -246,7 +364,7 @@ class Domain(NetworkObject):
                 self.network.add(IPv4Address(ip))
             self.network.ips[ip].implied_ptr.add(self.name)
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates subnet and location data for this record.
         """
@@ -257,9 +375,14 @@ class Domain(NetworkObject):
 
     def merge(self, domain: Domain) -> Domain:
         """
-        In place merge of two Domain objects
-        Must return self.
+        In place merge of two Domain instances.
         This method should always be called on the object entering the set.
+
+        :param domain: The Domain to merge with.
+        :type domain: Domain
+        :raises ValueError: If the Domain objects cannot be merged (if their name attributes are not equal).
+        :return: This Domain object, which is now a superset of the two.
+        :rtype: Domain
         """
         if self.name == domain.name:
             self._private_ips |= domain._private_ips
@@ -301,36 +424,60 @@ class IPv4Address(BaseIP, NetworkObject):
         self.node = None
 
     @property
-    def ptr(self):
+    def ptr(self) -> list[str]:
         """
-        A list of domains this IP address points to
+        Returns all domains from this IPs links
+
+        :return: A list of FQDNs
+        :rtype: list[str]
         """
         return [domain for domain, _ in self._ptr]
 
     @property
-    def domains(self):
+    def domains(self) -> set[str]:
         """
-        The superset of domains this IP points to, and domains which point back.
+        Returns the superset of domains this IP points to, and domains which point back.
+
+        :return: A set of FQDNs
+        :rtype: set[str]
         """
         return set(self.ptr).union(self.implied_ptr)
 
     @property
-    def network(self):
+    def network(self) -> Network:
+        """
+        Return the current _network attribute
+
+        :return: The current Network
+        :rtype: Network
+        """
         return self._network
 
     @network.setter
-    def network(self, new_network: Network):
+    def network(self, new_network: Network) -> None:
+        """
+        Set the _network attribute to new_network.
+        Also updates the location and creates implied links from any Domains this IPv4Address resolves to, back to itself.
+
+        :param new_network: The network this IPv4Address has been added to.
+        :type new_network: Network
+        """
         self._network = new_network
-        self.location = new_network.locator.locate(self.addr)
+        self.location = new_network.locator.locate([self.addr])
         for domain in self.domains:
             if domain in self.network:
                 self.network.domains[domain].implied_ips.add(self.addr)
 
     def merge(self, ip: IPv4Address) -> IPv4Address:
         """
-        In place merge of two IPv4Address objects.
-        Must return self.
+        In place merge of two IPv4Address instances.
         This method should always be called on the object entering the set.
+
+        :param ip: The IPv4Address to merge with.
+        :type ip: IPv4Address
+        :raises ValueError: If the IPv4Address objects cannot be merged (if their addr attributes are not equal).
+        :return: This IPv4Address object, which is now a superset of the two.
+        :rtype: IPv4Address
         """
         if self.addr == ip.addr:
             self._ptr |= ip._ptr
@@ -340,11 +487,19 @@ class IPv4Address(BaseIP, NetworkObject):
                 self.network = ip.network
             return self
         else:
-            raise ValueError('Cannot merge two IPv4Addresses with different names')
+            raise ValueError('Cannot merge two IPv4Addresses with different addresses')
 
     def link(self, domain: Union[Domain, str], source: str):
         """
-        Adds a PTR record from this IP address to some domain
+        Adds a PTR record from this IP to the provided domain.
+
+        Adds a 2-tuple containing the domain and source to self._ptr
+
+        :param domain: The domain for the PTR record.
+        :type domain: Union[Domain, str]
+        :param source: The plugin that provided this link.
+        :type source: str
+        :raises ValueError: If the domain cannot be recognised as a valid FQDN.
         """
         if isinstance(domain, Domain):
             self._ptr.add((domain.name, source))
@@ -356,6 +511,11 @@ class IPv4Address(BaseIP, NetworkObject):
     def subnetFromMask(self, mask: Union[str, int] = '24') -> str:
         """
         Return the subnet of a given size containing this IP
+
+        :param mask: The subnet mask to use in bits, defaults to '24'
+        :type mask: Union[str, int], optional
+        :return: A IPv4 subnet in CIDR format
+        :rtype: str
         """
         mask = str(mask) if isinstance(mask, int) else mask
         subnet = f'{self.addr}/{mask}'
@@ -397,15 +557,34 @@ class Node(NetworkObject):
         self.domains = set(domains) if domains else set()
 
     @property
-    def ips(self):
+    def ips(self) -> list[str]:
+        """
+        Return all the IPs that resolve to this node.
+
+        :return: A list of IPv4 addresses as strings.
+        :rtype: [type]
+        """
         return list(self.public_ips) + [self.private_ip]
 
     @property
-    def network(self):
+    def network(self) -> Network:
+        """
+        Return the current _network attribute
+
+        :return: The current Network
+        :rtype: Network
+        """
         return self._network
 
     @network.setter
-    def network(self, new_network: Network):
+    def network(self, new_network: Network) -> None:
+        """
+        Set the _network attribute to new_network.
+        Also updates the location and sets the *node* attribute of any Domains or IPv4Addresses that resolve to this node.
+
+        :param new_network: The network this IPv4Address has been added to.
+        :type new_network: Network
+        """
         self._network = new_network
         self.location = new_network.locator.locate(self.ips)
 
@@ -420,9 +599,14 @@ class Node(NetworkObject):
 
     def merge(self, node: Node) -> Node:
         """
-        In place merge of two Node objects.
-        Must return self.
+        In place merge of two Node instances.
         This method should always be called on the object entering the set.
+
+        :param node: The Node to merge with.
+        :type node: Node
+        :raises TypeError: If the node to merge with is not of 'default' type or has a different private_ip attribute.
+        :return: This Node object, which is now a superset of the two.
+        :rtype: Node
         """
         if self.type == node.type and self.private_ip == node.private_ip:
             self.public_ips |= node.public_ips
@@ -431,33 +615,7 @@ class Node(NetworkObject):
                 self.network = node.network
             return self
         else:
-            raise TypeError('Cannot merge two Nodes of different types')
-
-
-###############################
-# Network Object JSON Encoder #
-###############################
-
-class JSONEncoder(json.JSONEncoder):
-    """
-    JSON Encoder compatible with NetworkObjects, sets, and datetime objects
-    """
-    def default(self, obj):
-        """
-        :meta private:
-        """
-        if isinstance(obj, NetworkObject):
-            return obj.__dict__ | {'node': obj.node.docid if hasattr(obj, 'node') and obj.node else None}
-        elif isinstance(obj, NetworkObjectContainer):
-            return None
-        elif isinstance(obj, Network):
-            return None
-        elif isinstance(obj, set):
-            return sorted(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
-        else:
-            return super().default(obj)
+            raise TypeError('Cannot merge two Nodes of different types or different private ips')
 
 
 #############################
@@ -472,8 +630,8 @@ class NetworkObjectContainer(ABC):
     objects: dict
     network: Network
 
-    def __init__(self, objectSet: list = [], network: Network = None) -> None:
-        self.objects = {object.docid: object for object in objectSet}
+    def __init__(self, objectSet: list[NetworkObject] = [], network: Network = None) -> None:
+        self.objects = {object.name: object for object in objectSet}
         self.network = network
 
     def __getitem__(self, key: str) -> NetworkObject:
@@ -492,6 +650,12 @@ class NetworkObjectContainer(ABC):
         return self.objects.__contains__(key)
 
     def to_json(self) -> str:
+        """
+        Serialises the set of NetworkObjects to a JSON string using the JSONEncoder defined in this file.
+
+        :return: A string of JSON
+        :rtype: str
+        """
         return json.dumps({
             'objectType': self.objectType,
             'objects': [object for object in self]
@@ -499,7 +663,10 @@ class NetworkObjectContainer(ABC):
 
     def add(self, object: NetworkObject) -> None:
         """
-        Add a single network object to the set, merge if an object with that name is already present.
+        Add a single NetworkObject to the set, merge if an object with that name is already present.
+
+        :param object: The NetworkObject to add to the set.
+        :type object: NetworkObject
         """
         if object.name in self:
             self[object.name] = object.merge(self[object.name])
@@ -514,6 +681,11 @@ class NetworkObjectContainer(ABC):
         Replace the object with the specified identifier with a new object.
         Calls merge on the new object with the object to be replaced passed as the argument.
         If target object is not in the set, the new object is simply added as-is.
+
+        :param identifier: The string to use to identify the existing object to replace.
+        :type identifier: str
+        :param object: The object to replace the existing object with.
+        :type object: NetworkObject
         """
         if identifier in self:
             self.add(object.merge(self[identifier]))
@@ -529,7 +701,7 @@ class DomainSet(NetworkObjectContainer):
     objectType: str = 'domains'
     _roles: dict
 
-    def __init__(self, objectSet: list = [], network: Network = None, roles: dict = None) -> None:
+    def __init__(self, objectSet: list[Domain] = [], network: Network = None, roles: dict = None) -> None:
         super().__init__(objectSet, network)
         self._roles = roles or utils.DEFAULT_ROLES
 
@@ -541,39 +713,62 @@ class DomainSet(NetworkObjectContainer):
         yield from super().__iter__()
 
     @property
-    def domains(self) -> dict:
+    def domains(self) -> dict[str, Domain]:
         """
-        Returns the underlying objects dict
+        Returns the underlying objects dict.
+
+        :return: A dictionary of the Domains in this set, with names as keys.
+        :rtype: dict
         """
         return self.objects
     
     @property
-    def roles(self) -> dict:
+    def roles(self) -> dict[str, list[str]]:
         """
-        Returns dictionary of roles that aren't exclusions
+        Returns dictionary of roles and their domains (except the *exclusions* role)
+
+        :return: A dictionary of lists of FQDNs
+        :rtype: dict
         """
         return {k: v['domains'] for k, v in self._roles.items() if k != 'exclusions'}
 
     @roles.setter
     def roles(self, value: dict) -> None:
+        """
+        Sets the _roles attribute
+
+        :param value: The new value for the _role attribute
+        :type value: dict
+        """
         self._roles = value
 
     @roles.deleter
     def roles(self) -> None:
+        """
+        Deletes the _roles attribute
+        """
         del self._roles
 
     @property
     def exclusions(self) -> list[str]:
         """
         Returns a list of excluded domains
+
+        :return: A list of FQDNs
+        :rtype: list[str]
         """
         return self.roles['exclusions']
 
     def add(self, domain: Domain) -> None:
-        super().add(domain)
-        for role, domains in self.roles.items():
-            if domain.name in domains:
-                domain.role = role
+        """
+        Add a single domain to the set if it is not in the exclusions list.
+        Merge if an object with that name is already present.
+
+        :param domain: The Domain to add to the set.
+        :type domain: Domain
+        """
+        if domain.name not in self.exclusions:
+            super().add(domain)
 
     def applyRoles(self) -> None:
         """
@@ -616,15 +811,21 @@ class IPv4AddressSet(NetworkObjectContainer):
         """
         Add a single IPv4Address to the set, merge if that IP is already in the set. 
         Add the /24 bit subnet to the set of subnets.
+
+        :param ip: The IPv4Address to add to the set
+        :type ip: IPv4Address
         """
         super().add(ip)
         if ip.is_private:
             self.subnets.add(ip.subnetFromMask())
 
     @property
-    def ips(self) -> dict:
+    def ips(self) -> dict[str, IPv4Address]:
         """
-        Returns the underlying objects dict
+        Returns the underlying objects dict.
+
+        :return: A dictionary of the IPv4Addresses in this set, with addresses as keys.
+        :rtype: dict
         """
         return self.objects
 
@@ -632,27 +833,39 @@ class IPv4AddressSet(NetworkObjectContainer):
     def private_ips(self) -> list[IPv4Address]:
         """
         Returns all IPs in the set that are part of the private namespace
+
+        :return: A list of IPv4Address objects
+        :rtype: list[IPv4Address]
         """
         return [ip for ip in self if ip.is_private]
 
     @property
     def public_ips(self) -> list[IPv4Address]:
         """
-        Returns the complement to private_ips
+        Returns all IPs in the set that are not part of the private namespace
+
+        :return: A list of IPv4Address objects
+        :rtype: list[IPv4Address]
         """
         return [ip for ip in self if not ip.is_private]
 
     @property
     def unused(self) -> list[IPv4Address]:
         """
-        Returns all IPs in the set that have the *unused* flag set.
+        Returns all IPs in the set that are not referenced by a DNS record.
+
+        :return: A list of IPv4Address objects
+        :rtype: list[IPv4Address]
         """
         return [ip for ip in self if ip.unused]
 
     @property
     def used(self) -> list[IPv4Address]:
         """
-        Returns the complement to unused
+        Returns all IPs in the set that are referenced by a DNS record.
+
+        :return: A list of IPv4Address objects
+        :rtype: list[IPv4Address]
         """
         return [ip for ip in self if not ip.unused]
 
@@ -683,6 +896,10 @@ class NodeSet(NetworkObjectContainer):
     """
     objectType: str = 'nodes'
 
+    def __init__(self, objectSet: list, network: Network) -> None:
+        self.objects = {object.docid: object for object in objectSet}
+        self.network = network
+
     def __iter__(self) -> Iterator[Node]:
         yield from super().__iter__()
 
@@ -690,15 +907,21 @@ class NodeSet(NetworkObjectContainer):
         return self.objects[key]
 
     @property
-    def nodes(self) -> dict:
+    def nodes(self) -> dict[str, Node]:
         """
         Returns the underlying objects dict
+
+        :return: A dictionary of the Nodes in the set, with docids as keys
+        :rtype: dict[str, Node]
         """
         return self.objects
 
     def add(self, node: Node) -> None:
         """
-        Add a single network object to the set, merge if an object with that name is already present.
+        Add a single Node to the set, merge if a Node with that docid is already present.
+
+        :param object: The Node to add to the set.
+        :type object: Node
         """
         if node.docid in self:
             self[node.docid] = node.merge(self[node.docid])
@@ -747,7 +970,10 @@ class Network:
 
     def add(self, object: NetworkObject) -> None:
         """
-        Add a NetworkObject to the network
+        Calls the *add* method on one of the three NetworkObjectContainers in this network. based on the class inheritance of *object*.
+
+        :param object: An object to add to one of the three NetworkObjectContainers.
+        :type object: NetworkObject
         """
         if isinstance(object, Domain):
             self.domains.add(object)
@@ -772,6 +998,9 @@ class Network:
         Add a set of network objects to the network
 
         2do: Implement merge in NetworkObjectContainer ABC
+
+        :param object_set: An NetworkObjectContainer to add to the network
+        :type object_set: NetworkObjectContainer
         """
         if isinstance(object_set, DomainSet):
             object_set.network = self
@@ -786,7 +1015,10 @@ class Network:
     @property
     def records(self) -> dict:
         """
-        A dictionary of the defined links between domains and IPs
+        Returns a dictionary of the defined links between domains and IPs
+
+        :return: A dictionary with 'forward' and 'reverse' keys mapped to a dictionary of forward/reverse DNS records.
+        :rtype: dict
         """
         return {
             'forward': {domain.name: domain.destinations for domain in self.domains},
@@ -795,12 +1027,22 @@ class Network:
 
     @property
     def implied_records(self) -> dict:
+        """
+        Returns a dictionary of the implied links between domains and IPs
+
+        :return: A dictionary with 'forward' and 'reverse' keys mapped to a dictionary of forward/reverse implied DNS records.
+        :rtype: dict
+        """
         return {
             'forward': {ip.addr: ip.domains for ip in self.ips},
             'reverse': {domain.name: domain.iplinks for domain in self.domains}
         }
 
     def discoverImpliedLinks(self) -> None:
+        """
+        Populates the implied link attributes for the Domain and IPv4Address objects in the Network.
+        Also sets their Node attributes where possible.
+        """
         for domain, ips in self.records['forward'].items():
             for ip in ips:
                 if ip in self.ips and domain not in self.ips[ip].ptr:
@@ -824,6 +1066,12 @@ class Network:
     def writeSet(self, set: str, path: str) -> None:
         """
         Serialises a set of NetworkObjects to json writes the json to a file.
+
+        :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
+        :type set: str
+        :param path: The path to write the JSON to.
+        :type path: str
+        :raises ValueError: If the *set* parameter cannot be evaluated as an attribute of this Network.
         """
         if hasattr(self, set) and isinstance(getattr(self, set), NetworkObjectContainer):
             with open(path, 'w') as stream:
