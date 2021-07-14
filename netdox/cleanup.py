@@ -7,12 +7,16 @@ saving screenshots which are to be overwritten in the *screenshot_history* folde
 and generating placeholder images for websites which Netdox failed to screenshot.
 """
 
-from datetime import timedelta, datetime, date
-from PIL import Image, UnidentifiedImageError
-import re, os, json, shutil
+import json
+import os
+import re
+import shutil
+from datetime import date, datetime, timedelta
 
-from bs4 import BeautifulSoup
-import pageseeder, utils
+from PIL import Image, UnidentifiedImageError
+
+import pageseeder
+import utils
 
 
 def parseReview() -> None:
@@ -217,9 +221,9 @@ def pre_upload():
 
 def post_upload():
     """
-    Main post-upload cleanup flow, currently just starts a resolve xrefs process for upload group.
+    Main post-upload cleanup flow, currently does nothing.
     """
-    pageseeder.resolve_group_refs()
+    pass
 
 
 

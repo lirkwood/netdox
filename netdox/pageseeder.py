@@ -5,12 +5,15 @@ Provides many various convenience functions for PageSeeder API actions, returnin
 The decorator ``@auth`` injects default values and authentication details to the most of the functions in this script.
 """
 
-import requests, utils, json
-from bs4 import BeautifulSoup
+import json
 from datetime import datetime, timedelta
 from functools import wraps
 from inspect import signature
 
+import requests
+from bs4 import BeautifulSoup
+
+import utils
 
 #####################
 # Utility functions #

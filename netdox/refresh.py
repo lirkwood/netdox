@@ -15,7 +15,6 @@ from distutils.util import strtobool
 from bs4 import BeautifulSoup
 
 import cleanup
-import license_inf
 import pageseeder
 import plugins
 import utils

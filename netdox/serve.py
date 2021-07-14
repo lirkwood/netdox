@@ -1,11 +1,16 @@
-from flask import Flask, request
-from flask import Response
-
+import json
+import re
+import subprocess
+import sys
 from traceback import format_exc, print_exc
-from bs4 import BeautifulSoup
-import subprocess, json, sys, re
 
-import pageseeder, utils, iptools, plugins
+from bs4 import BeautifulSoup
+from flask import Flask, Response, request
+
+import iptools
+import pageseeder
+import plugins
+import utils
 from networkobjs import dns_name_pattern
 
 app = Flask(__name__)
@@ -157,31 +162,6 @@ def approved_ip(uri):
         print('[ERROR][webhooks] Missing mandatory fields: ipv4')
                 
     return Response(status=201)
-
-
-# def approved_vm(uri):
-#     """
-#     Handles documents with 'xo_vm' type and workflow 'Approved'.
-#     """
-#     core_inf = pageseeder.psfrag2dict(pageseeder.get_fragment(uri, 'core'))
-#     os_inf = pageseeder.psfrag2dict(pageseeder.get_fragment(uri, 'os_version'))
-#     addr_soup = BeautifulSoup(pageseeder.get_fragment(uri, 'addresses'), features='xml')
-
-#     addrs = set()
-#     for property in addr_soup("property"):
-#         if iptools.valid_ip(property.xref.string):
-#             addrs.add(property.xref.string)
-
-#     location = utils.locate(addrs)
-#     if location:
-#         ansible.icinga_set_host(addrs[0], location)
-
-#     if os_inf['template']:
-#         xo_api.createVM(os_inf['template'], core_inf['name'])
-#     else:
-#         raise ValueError('[ERROR][server.py] Must provide a valid template/VM/snapshot UUID.')
-
-#     return Response(status=200)
 
 if 'gunicorn' in sys.argv[0]:
     pluginmaster = plugins.PluginManager()

@@ -1,9 +1,5 @@
 """
 This module contains any multi-purpose or generic code for use by both internal processes and plugins.
-
-This script is mostly to improve the development process and encourage code reuse. 
-It contains the two main classes used within Netdox, *DNSRecord* and *PTRRecord*, which represent all the DNS records which share a name.
-It also defines two decorators which are used throughout Netdox, and some other functions which became useful across multiple scripts.
 """
 
 from __future__ import annotations
@@ -17,11 +13,11 @@ from textwrap import dedent
 from traceback import format_exc
 from typing import Union
 
-#########################
-# Global datastructures #
-#########################
+####################
+# Global constants #
+####################
 
-global DEFAULT_CONFIG, _cofig
+global DEFAULT_CONFIG, _config
 DEFAULT_CONFIG = {
     'pageseeder': {
         'id': '',
@@ -64,6 +60,10 @@ def roles():
         print('[WARNING][utils] Failed to load DNS roles configuration file')
     return _roles
 
+
+MIN_STYLESHEET = '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" exclude-result-prefixes="#all" />'
+
+
 ##############
 # Decorators #
 ##############
@@ -97,6 +97,13 @@ def handle(func):
 def xslt(xsl: str, src: str, out: bool = None):
     """
     Runs some xslt using Saxon
+
+    :param xsl: The path to the stylesheet.
+    :type xsl: str
+    :param src: The path to the source file or directory.
+    :type src: str
+    :param out: The path to the output file or directory, defaults to None
+    :type out: bool, optional
     """
     xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
     if out:
@@ -123,26 +130,21 @@ def jsonForXslt(xmlpath: str, jsonpath: str) -> None:
             <root>&json;</root>""").strip())
 
 
-def fileFetchRecursive(dir: Union[str, DirEntry]) -> list[str]:
+def fileFetchRecursive(dir: str, extension: str = None) -> list[str]:
     """
     Returns a list of paths of all files descended from some directory.
+
+    :param dir: The path to the directory to search for files in.
+    :type dir: str
+    :param extension: The file extension to restrict your search to, defaults to None
+    :type extension: str, optional
+    :return: A list of paths to the files descended from *dir*.
+    :rtype: list[str]
     """
-    if isinstance(dir, DirEntry):
-        dir = dir.path
-    elif not isinstance(dir, str):
-        raise ValueError(f'Directory must be one of: str, os.DirEntry; Not {type(dir)}')
-    
     fileset = []
     for file in scandir(dir):
         if file.is_dir():
-            fileset += fileFetchRecursive(file)
-        elif file.is_file():
+            fileset += fileFetchRecursive(file.path)
+        elif file.is_file() and not (extension and not file.name.endswith(extension)):
             fileset.append(file.path)
     return fileset
-
-
-####################
-# Useful Constants #
-####################
-
-MIN_STYLESHEET = '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" exclude-result-prefixes="#all" />'

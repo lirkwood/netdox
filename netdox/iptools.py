@@ -2,7 +2,8 @@
 Module of useful classes and functions for manipulating IPv4 addresses and subnets.
 """
 
-import math, re
+import math
+import re
 from collections import deque
 from typing import Any, Generator, Iterable, Union
 
