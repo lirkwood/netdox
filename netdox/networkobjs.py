@@ -772,7 +772,7 @@ class NetworkObjectContainer(ABC):
                 object.network = self.network
             self[object.name] = object
 
-    def replace(self, identifier: str, object: NetworkObject) -> None:
+    def replace(self, identifier: str, replacement: NetworkObject) -> None:
         """
         Replace the object with the specified identifier with a new object.
         Calls merge on the new object with the object to be replaced passed as the argument.
@@ -784,10 +784,13 @@ class NetworkObjectContainer(ABC):
         :type object: NetworkObject
         """
         if identifier in self:
-            self.add(object.merge(self[identifier]))
-            del self[identifier]
+            original = self[identifier]
+            superset = replacement.merge(original)
+            original.__class__ = superset.__class__
+            for key, val in superset.__dict__.items():
+                self[identifier].__dict__[key] = val
         else:
-            self.add(object)
+            self.add(replacement)
 
 
 class DomainSet(NetworkObjectContainer):
