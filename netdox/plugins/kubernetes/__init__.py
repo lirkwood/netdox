@@ -3,13 +3,15 @@ Used to read and modify the deployments running on the configured clusters.
 """
 from __future__ import annotations
 
+import json
 import os
+from collections import defaultdict
 
 import pageseeder
 import utils
 import yaml
 from flask import Response
-from networkobjs import Network, NetworkObjectContainer, Node
+from networkobjs import JSONEncoder, Network, NetworkObjectContainer, Node
 from plugins import Plugin as BasePlugin
 
 from kubernetes import config
@@ -91,6 +93,11 @@ class Plugin(BasePlugin):
     name = 'kubernetes'
     stages = ['nodes', 'pre-write']
     xslt = 'plugins/kubernetes/nodes.xslt'
+    workerApps: dict
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.workerApps = defaultdict(lambda: defaultdict(list))
 
     def init(self) -> None:
         """
@@ -144,10 +151,33 @@ class Plugin(BasePlugin):
         else:
             for node in network.nodes:
                 if node.type == 'Kubernetes App':
+                    node: App
                     for domain in node.domains:
                         if domain in network and network.domains[domain].node is not node:
                             network.domains[domain].node.domains.remove(domain)
                             network.domains[domain].node = node
+                    for pod in node.pods.values():
+                        if 'workerNode' in pod:
+                            self.workerApps[node.cluster][pod['workerNode'].docid].append(node.docid)
+
+            for cluster in self.workerApps:
+                self.workerApps[cluster] = {k: self.workerApps[cluster][k] for k in sorted(self.workerApps[cluster])}
+    
+            with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
+                stream.write(json.dumps(self.workerApps, indent = 2, cls = JSONEncoder))
+                
+            utils.xslt(
+                xsl = 'plugins/kubernetes/workerAppsMaker.xslt', 
+                src = 'plugins/kubernetes/src/workerApps.xml', 
+                out = 'plugins/kubernetes/workerApps.xslt'
+            )
+            utils.xslt(
+                xsl = 'plugins/kubernetes/pub.xslt', 
+                src = 'plugins/kubernetes/src/workerApps.xml', 
+                out = 'out/k8spub.psml'
+            )
+            
+                        
 
     def approved_node(self, uri: str) -> Response:
         summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))

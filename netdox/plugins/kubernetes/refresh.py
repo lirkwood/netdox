@@ -13,7 +13,6 @@ import json
 
 import utils
 from networkobjs import Domain, Network, JSONEncoder
-from plugins import PluginManager
 from plugins.kubernetes import initContext, App
 
 from kubernetes import client
@@ -78,8 +77,8 @@ def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
         if 'pod-template-hash' in pod.metadata.labels:
             podinfo = {
                 'name': pod.metadata.name,
-                'nodeName': pod.spec.node_name,
-                'nodeIP': pod.status.host_ip
+                'workerName': pod.spec.node_name,
+                'workerIp': pod.status.host_ip
             }
             del pod.metadata.labels['pod-template-hash']
             labelHash = hash(json.dumps(pod.metadata.labels, sort_keys=True))
@@ -127,48 +126,6 @@ def getServiceDomains(namespace: str='default') -> dict[str, set]:
 
     return serviceDomains
 
-def getWorkerAddresses() -> dict[str, dict[str, str]]:
-    """
-    Maps workers to their addresses.
-
-    :return: A dictionary mapping worker names to a dictionary of their addresses.
-    :rtype: dict[str, dict[str, str]]
-    """
-    workers = {}
-    api = client.CoreV1Api(apiClient)
-    allWorkers = api.list_node()
-    for worker in allWorkers.items:
-        workerName = worker.metadata.name
-        workers[workerName] = {}
-        for address in worker.status.addresses:
-            workers[workerName][address.type] = address.address
-
-    return workers
-
-async def getWorkerVMs(workerAddrs: dict) -> dict[str, str]:
-    """
-    Talks to the *xenorchestra* plugin in order to map worker names to the VMs they're running in.
-
-    :param workerAddrs: A dictionary returned by getWorkerAddresses, mapping worker names to their addresses.
-    :type workerAddrs: dict
-    :return: A dictionary mapping worker names to their XenOrchestra UUID.
-    :rtype: dict[str, str]
-    """
-    from plugins.xenorchestra import fetch as xo
-    VMs = await xo.authenticate(xo.fetchType)('VM')
-    vmsByIP = {}
-    for uuid, vm in VMs.items():
-        if '0/ipv4/0' in vm['addresses']:
-            ip = vm['addresses']['0/ipv4/0']
-            vmsByIP[ip] = uuid
-
-    workerVMs = {}
-    for worker, addrTypes in workerAddrs.items():
-        if 'InternalIP' in addrTypes:
-            addr = addrTypes['InternalIP']
-            workerVMs[worker] = vmsByIP[addr]
-    return workerVMs
-
 
 def getApps(context: str, namespace: str='default') -> dict[str]:
     """
@@ -186,14 +143,9 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
     podsByLabel = getPodsByLabel(namespace)
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServiceDomains(namespace)
-    if 'xenorchestra' in pluginmaster:
-        from asyncio import run
-        workerVMs = run(getWorkerVMs(getWorkerAddresses()))
-    else:
-        workerVMs = {}
 
     contextDetails = utils.config()["plugins"]["kubernetes"][context]
-    podLinkBase = f'{contextDetails["server"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
+    podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
     # map domains to their destination pods
     podDomains = {}
@@ -231,8 +183,6 @@ def getApps(context: str, namespace: str='default') -> dict[str]:
             for pod in podsByLabel[labelHash]:
                 podName = pod['name']
                 pod['rancher'] = podLinkBase + podName
-                if pod['nodeName'] in workerVMs:
-                    pod['vm'] = workerVMs[pod['nodeName']]
                 app['pods'][podName] = pod
                 
                 if podName in podDomains:
@@ -249,8 +199,6 @@ def runner(network: Network) -> None:
     :type network: Network
     """
     auth = utils.config()['plugins']['kubernetes']
-    global pluginmaster
-    pluginmaster = PluginManager()
 
     workerApps = {}
     for context in auth:
@@ -271,23 +219,5 @@ def runner(network: Network) -> None:
                     network.domains[domain].location = location
         
             for pod in appnode.pods.values():
-                if 'vm' in pod:
-                    workerApps[context][f'_nd_node_xovm_{pod["vm"]}'].add(appnode.docid)
-                else:
-                    workerApps[context][f'_nd_node_{pod["nodeIP"].replace(".","_")}'].add(appnode.docid)
-
-        workerApps[context] = {k: workerApps[context][k] for k in sorted(workerApps[context])}
-    
-    with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
-        stream.write(json.dumps(workerApps, indent = 2, cls = JSONEncoder))
-        
-    utils.xslt(
-        xsl = 'plugins/kubernetes/workerAppsMaker.xslt', 
-        src = 'plugins/kubernetes/src/workerApps.xml', 
-        out = 'plugins/kubernetes/workerApps.xslt'
-    )
-    utils.xslt(
-        xsl = 'plugins/kubernetes/pub.xslt', 
-        src = 'plugins/kubernetes/src/workerApps.xml', 
-        out = 'out/k8spub.psml'
-    )
+                if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node is not None:
+                    pod['workerNode'] = network.ips[pod['workerIp']].node
