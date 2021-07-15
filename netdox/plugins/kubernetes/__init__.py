@@ -152,13 +152,16 @@ class Plugin(BasePlugin):
             for node in network.nodes:
                 if node.type == 'Kubernetes App':
                     node: App
+                    # set node attr on all domains
                     for domain in node.domains:
                         if domain in network and network.domains[domain].node is not node:
                             network.domains[domain].node.domains.remove(domain)
                             network.domains[domain].node = node
+                    # gather all workers final docids
                     for pod in node.pods.values():
-                        if 'workerNode' in pod:
-                            self.workerApps[node.cluster][pod['workerNode'].docid].append(node.docid)
+                        if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node is not None:
+                            pod['workerNode'] = network.ips[pod['workerIp']].node.docid
+                            self.workerApps[node.cluster][pod['workerNode']].append(node.docid)
 
             for cluster in self.workerApps:
                 self.workerApps[cluster] = {k: self.workerApps[cluster][k] for k in sorted(self.workerApps[cluster])}
@@ -175,9 +178,7 @@ class Plugin(BasePlugin):
                 xsl = 'plugins/kubernetes/pub.xslt', 
                 src = 'plugins/kubernetes/src/workerApps.xml', 
                 out = 'out/k8spub.psml'
-            )
-            
-                        
+            )           
 
     def approved_node(self, uri: str) -> Response:
         summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))

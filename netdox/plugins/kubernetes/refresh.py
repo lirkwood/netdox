@@ -12,7 +12,7 @@ from collections import defaultdict
 import json
 
 import utils
-from networkobjs import Domain, Network, JSONEncoder
+from networkobjs import Domain, Network
 from plugins.kubernetes import initContext, App
 
 from kubernetes import client
@@ -217,7 +217,3 @@ def runner(network: Network) -> None:
 
                 if not network.domains[domain].location:
                     network.domains[domain].location = location
-        
-            for pod in appnode.pods.values():
-                if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node is not None:
-                    pod['workerNode'] = network.ips[pod['workerIp']].node
