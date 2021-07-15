@@ -266,9 +266,9 @@ class Domain(NetworkObject):
                 
         if recordtype == 'A':
             if iptools.public_ip(destination):
-                self._private_ips.add((destination, source))
-            else:
                 self._public_ips.add((destination, source))
+            else:
+                self._private_ips.add((destination, source))
         else:
             self._cnames.add((destination, source))
         
