@@ -44,7 +44,7 @@ def setloc(func):
 # Command Builders #
 ####################
 
-# @setloc
+@setloc
 def set_host(address: str, icinga: str = '', location: str = '', template: str = 'generic-host', display_name: str = '') -> str:
     """
     Creates a file on an Icinga host containing a host object definition with the given template and the given address.
