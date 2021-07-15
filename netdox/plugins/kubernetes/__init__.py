@@ -112,7 +112,7 @@ class Plugin(BasePlugin):
             contexts = []
             for contextName, details in auth.items():
                 clusters.append({
-                    'cluster': {'server': f"{details['server']}/k8s/clusters/{details['clusterId']}"},
+                    'cluster': {'server': f"https://{details['host']}/k8s/clusters/{details['clusterId']}"},
                     'name': contextName
                 })
 
