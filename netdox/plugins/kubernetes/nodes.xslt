@@ -27,20 +27,18 @@
 
     <xsl:for-each select="xpf:map[@key = 'pods']/xpf:map">
         <properties-fragment id="pod_{position()}">
-            <property name="pod"  title="Pod"  value="{@key}" />
-            <property name="ipv4"  title="Worker IP"  datatype="xref" >
-                <xref frag="default" docid="_nd_ip_{translate(xpf:string[@key = 'hostip'],'.','_')}" 
-                    reversetitle="App running on this IP" />
-            </property>
-            <xsl:if test="xpf:string[@key = 'vm']">
-            <property name="worker_vm" title="Worker VM" datatype="xref" >
-                <xref frag="default" docid="_nd_node_xovm_{translate(xpf:string[@key = 'vm'],'.','_')}"
-                reversetitle="App running on this VM"/>
-            </property>
-            </xsl:if>
+            <property name="pod"  title="Pod Name"  value="{@key}" />
             <property name="rancher" title="Pod on Rancher" datatype="link">
                 <link href="{xpf:string[@key = 'rancher']}"><xsl:value-of select="@key"/> on rancher.</link>
             </property>
+            <property name="worker_ipv4" title="Worker IP" datatype="xref">
+                <xref frag="default" docid="{xpf:string[@key = 'workerIp']}" />
+            </property>
+            <xsl:if test="xpf:string[@key = 'workerNode']">
+                <property name="worker_node" title="Worker Node" datatype="xref">
+                    <xref frag="default" docid="{xpf:string[@key = 'workerNode']}" />
+                </property>
+            </xsl:if>
         </properties-fragment>
     </xsl:for-each>
     
