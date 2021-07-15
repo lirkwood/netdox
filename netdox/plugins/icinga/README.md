@@ -15,5 +15,3 @@ The key should be the fully qualified domain name of your instance, and the map 
 ```
 
 The locations array should be populated by your defined network locations as they appear in `locations.json`.
-
-As a post-write plugin, it should be listed in the *post-write* array in `pluginconf.json`.

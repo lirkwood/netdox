@@ -54,7 +54,7 @@ class PluginManager:
     """
     Used to find, import, and run plugins.
     """
-    pluginmap: defaultdict[dict[str, Plugin]]
+    pluginmap: dict[str, dict[str, Plugin]]
     nodemap: dict[str, Plugin]
     stages: KeysView[str]
 
@@ -70,16 +70,11 @@ class PluginManager:
         self.stages = self.pluginmap.keys()
 
         try:
-            with open('src/pluginconf.json', 'r') as stream:
-                self.config = json.load(stream)
+            with open('src/plugins.json', 'r') as stream:
+                self.enabled = json.load(stream)
         except Exception:
-            self.config = {
-                'dns': [],
-                'nodes': [],
-                'pre-write': [],
-                'post-write': []
-            }
-        self.configuredPlugins = list(chain(*self.config.values()))
+            print('[WARNING][plugins] Unable to load plugin configuration file. No plugins will run.')
+            self.enabled = []
         
         self.loadPlugins('plugins')
 
@@ -99,7 +94,7 @@ class PluginManager:
         return self.plugins.__contains__(key)
 
     @property
-    def plugins(self) -> dict:
+    def plugins(self) -> dict[str, Plugin]:
         """
         A dictionary of all plugins in the pluginmap
         """
@@ -136,13 +131,6 @@ class PluginManager:
 
         for stage in plugin.stages:
             self.pluginmap[stage][plugin.name] = plugin
-    
-    def applyConfig(self) -> None:
-        """
-        Forces the plugin order specified in ``pluginconf.json``
-        """
-        for stage in self.config:
-            self.pluginmap[stage] = {name: self.plugins[name] for name in self.config[stage] if name in self.plugins}
 
     def loadPlugins(self, dir: str) -> None:
         """
@@ -155,7 +143,7 @@ class PluginManager:
         for plugindir in os.scandir(dir):
             if plugindir.is_dir() and plugindir.name != '__pycache__':
                 pluginName = plugindir.name
-                if pluginName in self.configuredPlugins:
+                if pluginName in self.enabled:
                     try:
                         plugin = importlib.import_module(f'plugins.{pluginName}')
                     except Exception:
@@ -163,7 +151,6 @@ class PluginManager:
                     else:
                         if hasattr(plugin, 'Plugin'):
                             self.add(plugin.Plugin())
-        self.applyConfig()
 
     def initPlugin(self, plugin_name: str) -> None:
         self.plugins[plugin_name].init()
@@ -200,7 +187,7 @@ class PluginManager:
         try:
             plugin.runner(network, stage)
         except Exception:
-            print(f'[ERROR][pluginmanager] {plugin.name} threw an exception: \n{format_exc()}')
+            print(f'[ERROR][plugins] {plugin.name} threw an exception: \n{format_exc()}')
 
     def runStage(self, stage: str, network: Network) -> None:
         """
@@ -211,6 +198,6 @@ class PluginManager:
         :param network: The Network object to be passed to the plugin's *runner*
         :type network: Network
         """
-        print(f'[INFO][pluginmanager] Starting stage: {stage}')
+        print(f'[INFO][plugins] Starting stage: {stage}')
         for pluginName, plugin in self.pluginmap[stage].items():
             self.runPlugin(pluginName, plugin, network, stage)

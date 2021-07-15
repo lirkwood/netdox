@@ -15,5 +15,3 @@ The key should be the name of the cluster (must be valid against [a-zA-Z0-9_-]).
     "token": "Your kubernetes api access token"
 }
 ```
-
-As a node plugin, it should be listed in the *nodes* array of `pluginconf.json`.
