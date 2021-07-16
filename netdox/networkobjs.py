@@ -1046,7 +1046,6 @@ class Network:
     nodes: NodeSet
     records: dict
     config: dict
-    roles: dict
 
     def __init__(self, 
             domains: DomainSet = None, 
