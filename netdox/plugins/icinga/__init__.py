@@ -12,6 +12,7 @@ from networkobjs import Network
 class Plugin(BasePlugin):
     name = 'icinga'
     stages = ['post-write']
+    xslt = 'plugins/icinga/services.xslt'
 
     def init(self) -> None:
         pass
