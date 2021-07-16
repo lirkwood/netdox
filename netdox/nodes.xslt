@@ -61,17 +61,17 @@
 
             </section>
 
-            <xsl:apply-templates select="." mode="body" />
+            <xsl:apply-templates select="." mode="nodebody" />
 
             <section id="other" >
-                <xsl:apply-templates select="." mode="footer" />
+                <xsl:apply-templates select="." mode="nodefooter" />
             </section>
 
         </document>
     </xsl:result-document>
 </xsl:template>
 
-<xsl:template match="text()" mode="body" />
-<xsl:template match="text()" mode="footer" />
+<xsl:template match="text()" mode="nodebody" />
+<xsl:template match="text()" mode="nodefooter" />
 
 </xsl:stylesheet>

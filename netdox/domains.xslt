@@ -4,7 +4,10 @@
                 xmlns:err="http://www.w3.org/2005/xqt-errors"
                 exclude-result-prefixes="#all">
 
+<xsl:include href="imports.xslt"/>
+
 <xsl:output method="xml" indent="yes" />
+<xsl:variable name="iterator" select="1 to 99"/>
 <xsl:variable name="roles" select="json-to-xml(unparsed-text('src/roles.json'))/xpf:map"/>
 <xsl:variable name="config" select="json-to-xml(unparsed-text('src/config.json'))/xpf:map"/>
 
@@ -112,6 +115,11 @@
                 </xsl:for-each>
                 </properties-fragment>
 
+                </section>
+                <section id="other">
+
+                <xsl:apply-templates select="." mode="domainfooter" />
+
                 <xsl:if test="$roles/xpf:map[@key = $role]/*[@key = 'screenshot'] = '1'">
                 <fragment id="screenshot" labels="text-align-center">
                     <block label="border-2">
@@ -134,5 +142,7 @@
         </document>
     </xsl:result-document>
 </xsl:template>
+
+<xsl:template match="text()" mode="domainfooter" />
 
 </xsl:stylesheet>

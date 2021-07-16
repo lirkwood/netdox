@@ -5,6 +5,8 @@
 
 <xsl:output method="xml" indent="yes" />
 
+<xsl:include href="imports.xslt"/>
+
 <xsl:template match="/">
     <xsl:variable name="ips" select="json-to-xml(root)"/>
     <xsl:apply-templates select="$ips/xpf:map/xpf:array[@key = 'objects']/xpf:map"/>
@@ -54,7 +56,7 @@
             </properties-fragment>
 
         </section>
-        <section id="reversedns" title="Reverse DNS Records">
+        <section id="records" title="Reverse DNS Records">
             <xsl:for-each select="xpf:array[@key = '_ptr']/xpf:array">
             <properties-fragment id="ptr_{position()}">
                 <property name="ptr" title="PTR Record" datatype="xref">
@@ -72,6 +74,11 @@
             </xsl:for-each>
             </properties-fragment>
 
+            </section>
+            <section id="other">
+
+            <xsl:apply-templates select="." mode="ipfooter" />
+
             <properties-fragment id="for-search" labels="s-hide-content">
                 <xsl:variable name="octets">
                     <xsl:value-of select="concat(tokenize($ip,'\.')[3], ', ', concat(tokenize($ip,'\.')[3],'.',tokenize($ip,'\.')[4]), ', ')"/>
@@ -84,5 +91,7 @@
     </document>
     </xsl:result-document>
 </xsl:template>
+
+<xsl:template match="text()" mode="ipfooter" />
 
 </xsl:stylesheet>
