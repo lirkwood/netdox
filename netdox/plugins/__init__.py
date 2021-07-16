@@ -14,7 +14,6 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from traceback import format_exc
 from typing import Iterator, KeysView, ValuesView
-from itertools import chain
 
 from networkobjs import Network
 
@@ -27,15 +26,11 @@ class Plugin(ABC):
     # The name to be used for logs, in documents, etc.
     stages: list[str]
     # The stages to call runner at
-    stage_priority: int
-    # An integer used to formalise plugin order within stages
-    
     node_types: list[str]
     # The node types that this plugin adds to the network (if any)
     xslt: str = None
     # Path to an xslt file to import during the nodes transformation
 
-    @abstractmethod
     def init(self) -> None:
         """
         Any initialisation that should be done before the runner is called.
