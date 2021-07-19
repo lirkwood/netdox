@@ -20,8 +20,11 @@ from datetime import datetime
 from ipaddress import IPv4Address as BaseIP
 from typing import Iterable, Iterator, Tuple, Type, Union
 
+from bs4 import BeautifulSoup, Tag
+
 import iptools
 import utils
+from psml import *
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
@@ -89,6 +92,134 @@ class Locator:
             return None
 
 
+class PSMLWriter:
+    doc: BeautifulSoup
+    body: BeautifulSoup
+
+    def serialiseSet(self, nwobjc: NetworkObjectContainer, dir: str) -> None:
+        """
+        Serialises a set of NetworkObjects using some default settings.
+
+        :param nwobjc: An iterable object containing NetworkObjects.
+        :type nwobjc: NetworkObjectContainer
+        :param dir: The directory to output the PSML files to.
+        :type dir: str
+        """
+        if nwobjc.objectType == 'ips':
+            for ip in nwobjc:
+                self.serialise(ip, f'{dir}/{ip.subnet.replace("/","_")}/{ip.docid}.psml')
+        else:
+            for nwobj in nwobjc:
+                self.serialise(nwobj, f'{dir}/{nwobj.docid}.psml')
+
+    def serialise(self, nwobj: NetworkObject, path: str) -> None:
+        """
+        Serialises a NetworkObject to PSML and writes to a given path.
+
+        :param nwobj: The object to serialise to PSML.
+        :type nwobj: NetworkObject
+        :param path: The path to save the output document to.
+        :type path: str
+        """
+        if isinstance(nwobj, Domain):
+            self.domainBody(nwobj)
+        elif isinstance(nwobj, IPv4Address):
+            self.ipBody(nwobj)
+        elif isinstance(nwobj, Node):
+            self.nodeBody(nwobj)
+        else:
+            raise NotImplementedError
+
+        if nwobj.psmlFooter:
+            self.doc.find(id = 'footer').replace_with(nwobj.psmlFooter)
+
+        with open(path, 'w') as stream:
+            stream.write(self.doc.prettify())
+    
+    def domainBody(self, domain: Domain) -> None:
+        """
+        Populates the *body* section of a Domain's output PSML
+
+        :param domain: The Domain object to parse into PSML
+        :type domain: Domain
+        """
+        self.doc = populate(DOMAIN_TEMPLATE, domain)
+        self.body = self.doc.find(id = 'records')
+
+        recordset2pfrags(
+            doc = self.doc,
+            recordset = domain._private_ips,
+            id_prefix = 'private_ip_',
+            docid_prefix = '_nd_ip_',
+            p_name = 'ipv4',
+            p_title = 'Private IP'
+        )
+        recordset2pfrags(
+            doc = self.doc,
+            recordset = domain._public_ips,
+            id_prefix = 'public_ip_',
+            docid_prefix = '_nd_ip_',
+            p_name = 'ipv4',
+            p_title = 'Public IP'
+        )
+        recordset2pfrags(
+            doc = self.doc,
+            recordset = domain._cnames,
+            id_prefix = 'cname_',
+            docid_prefix = '_nd_domain_',
+            p_name = 'ipv4',
+            p_title = 'CNAME'
+        )
+    
+    def ipBody(self, ip: IPv4Address) -> None:
+        """
+        Populates the *body* section of a IPv4Address' output PSML
+
+        :param ip: The IPv4Address object to parse into PSML
+        :type ip: IPv4Address
+        """
+        self.doc = self.populate(IPV4ADDRESS_TEMPLATE, ip)
+        self.body = self.doc.find(id = 'records')
+
+        recordset2pfrags(
+            doc = self.doc,
+            recordset = ip._ptr,
+            id_prefix = 'ptr_',
+            docid_prefix = '_nd_domain_',
+            p_name = 'ptr',
+            p_title = 'PTR Record'
+        )
+        impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
+        for domain in ip.implied_ptr:
+            impliedfrag.append(propertyXref(
+                p_name = 'impliedptr',
+                p_title = 'Implied PTR Record',
+                docid = f'_nd_domain_{domain.replace(".","_")}'
+            ))
+        self.body.append(impliedfrag)
+
+    def nodeBody(self, node: Node) -> None:
+        """
+        Populates the *body* section of a Node's output PSML
+
+        :param node: The Node object to parse into PSML
+        :type node: Node
+        """
+        self.doc = populate(NODE_TEMPLATE, node)
+        self.body = self.doc.find(id = 'body')
+
+        self.body.append(node.psmlBody)
+        details = self.doc.find(id = 'details')
+        domains = self.doc.new_tag('properties-fragment', id = 'domains')
+        for domain in node.domains:
+            domains.append(propertyXref(
+                p_name = 'domain',
+                p_title = 'Domain',
+                docid = f'_nd_domain_{domain.replace(".","_")}'
+            ))
+        details.append(domains)
+
+
 class JSONEncoder(json.JSONEncoder):
     """
     JSON Encoder compatible with NetworkObjects, sets, and datetime objects
@@ -121,9 +252,10 @@ class NetworkObject(ABC):
     """
     name: str
     docid: str
-    _network: Network
-    container: NetworkObjectContainer
-    location: str
+    _network: Network = None
+    container: NetworkObjectContainer = None
+    location: str = None
+    psmlFooter: Tag = None
 
     @property
     def network(self) -> Network:
@@ -659,6 +791,16 @@ class Node(NetworkObject):
                 self.network.add(IPv4Address(ip))
             self.network.ips[ip].node = self
 
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        """
+        Returns an Iterable containing section tags to add to the body of this Node's output PSML.
+
+        :return: A set of ``<section />`` BeautifulSoup tags.
+        :rtype: Iterable[Tag]
+        """
+        return []
+
     def merge(self, node: Node) -> Node:
         """
         In place merge of two Node instances.
@@ -1061,6 +1203,7 @@ class Network:
         
         self.config = config or utils.DEFAULT_CONFIG
         self.locator = Locator()
+        self.writer = PSMLWriter()
 
     def __contains__(self, object: str) -> bool:
         return (
@@ -1163,7 +1306,7 @@ class Network:
                 if domain in self.domains and not self.domains[domain].node:
                     self.domains[domain].node = node
     
-    def readSet(self, path: str) -> None:
+    def setFromJSON(self, path: str) -> None:
         """
         Loads a NetworkObjectContainer from a JSON file.
 
@@ -1180,26 +1323,41 @@ class Network:
         elif setDict['objectType'] == 'nodes':
             self.addSet(NodeSet.from_dict(setDict))
 
-    def writeSet(self, set: str, path: str) -> None:
+    def setToJSON(self, set: str, path: str) -> None:
         """
-        Serialises a NetworkObjectContainer to json writes the json to a file.
+        Serialises a NetworkObjectContainer to JSON and writes the JSON to a file at *path*.
 
         :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
         :type set: str
         :param path: The path to write the JSON to.
         :type path: str
-        :raises ValueError: If the *set* parameter cannot be evaluated as an attribute of this Network.
         """
-        if hasattr(self, set) and isinstance(getattr(self, set), NetworkObjectContainer):
-            with open(path, 'w') as stream:
-                stream.write(getattr(self, set).to_json())
-        else:
-            raise ValueError(f'Unknown set to serialise: {set}')
+        with open(path, 'w') as stream:
+            stream.write(getattr(self, set).to_json())
+
+    def setToPSML(self, set: str, dir: str) -> None:
+        """
+        Serialises a NetworkObjectContainer to PSML and writes the PSML files to *dir*.
+
+        :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
+        :type set: str
+        :param dir: The directory to output the PSML files to.
+        :type dir: str
+        """
+        self.writer.serialiseSet(getattr(self, set), dir)
 
     def dumpNetwork(self) -> None:
         """
         Writes the domains, ips, and nodes of a network to their default locations.
         """
-        self.writeSet('domains', 'src/domains.json')
-        self.writeSet('ips', 'src/ips.json')
-        self.writeSet('nodes', 'src/nodes.json')
+        self.setToJSON('domains', 'src/domains.json')
+        self.setToJSON('ips', 'src/ips.json')
+        self.setToJSON('nodes', 'src/nodes.json')
+
+    def writePSML(self) -> None:
+        """
+        Writes the domains, ips, and nodes of a network to PSML using ``self.writer``.
+        """
+        self.setToPSML('domains', 'out/domains')
+        self.setToPSML('ips', 'out/ips')
+        self.setToPSML('node', 'out/nodes')
