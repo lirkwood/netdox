@@ -4,51 +4,11 @@ FROM python:3.9.1-slim-buster AS py
 ENV PYTHONWARNINGS="${PYTHONWARNINGS},ignore:Unverified HTTPS request"
 ENV PYTHONUNBUFFERED="true"
 
-# set env vars for ant
-ENV ANT_HOME=/opt/ant/apache-ant-1.10.9
-ENV PATH=${PATH}:/opt/app:${ANT_HOME}/bin
-
 # set flask app
 ENV FLASK_APP=/opt/app/serve.py
 
-# make dir for man page to stop jre postinstall script failing
-RUN mkdir -p /usr/share/man/man1
-RUN apt-get update &&  apt-get install -y --no-install-recommends curl unzip openjdk-11-jre-headless
-
-WORKDIR /opt/ant
-# download and decompress ant 1.10.9
-RUN curl https://apache.mirror.digitalpacific.com.au//ant/binaries/apache-ant-1.10.11-bin.tar.gz \
--o /opt/ant/apache-ant-1.10.11-bin.tar.gz && gzip -d /opt/ant/apache-ant-1.10.11-bin.tar.gz && \ 
-tar -xf /opt/ant/apache-ant-1.10.11-bin.tar && rm -f /opt/ant/apache-ant-1.10.11-bin.tar
-
-WORKDIR /opt/ant/lib
-# download pageseeder jar files
-RUN curl http://download.pageseeder.com/pub/win/5.9811/pageseeder-publish-api-5.9811.jar \
--o /opt/ant/lib/pageseeder-publish-api-5.9811.jar && \
-curl -L https://maven-central.storage.googleapis.com/maven2/org/pageseeder/pso-psml/0.6.24/pso-psml-0.6.24.jar \
--o /opt/ant/lib/pso-psml-0.6.24.jar && \
-curl -L https://maven-central.storage.googleapis.com/maven2/org/pageseeder/xmlwriter/pso-xmlwriter/1.0.4/pso-xmlwriter-1.0.4.jar \
--o /opt/ant/lib/pso-xmlwriter-1.0.4.jar && \
-curl -L https://maven-central.storage.googleapis.com/maven2/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar \
--o /opt/ant/lib/slf4j-api-1.7.5.jar && \
-curl -L https://maven-central.storage.googleapis.com/maven2/org/slf4j/slf4j-simple/1.7.12/slf4j-simple-1.7.12.jar \
--o /opt/ant/lib/slf4j-simple-1.7.12.jar
-
-WORKDIR /usr/local/bin
-
-# download saxon
-RUN curl -L https://sourceforge.net/projects/saxon/files/Saxon-HE/10/Java/SaxonHE10-3J.zip/download \
--o /usr/local/bin/saxon.zip && unzip /usr/local/bin/saxon.zip
-
-# set tz
-ENV TZ="Australia/Sydney"
-
-# import tz
-COPY /usr/share/zoneinfo/${TZ} /etc/localtime
-RUN echo "$TZ" > /etc/timezone
-
 #install puppeteer deps and a few others
-RUN apt-get install --no-install-recommends -y gconf-service libasound2 libatk1.0-0 libc6 \
+RUN apt-get update && apt-get install --no-install-recommends -y gconf-service libasound2 libatk1.0-0 libc6 \
     libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 \
     libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 \
     libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 \
