@@ -24,8 +24,12 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
     :rtype: BeautifulSoup
     """
     for attribute, value in nwobj.__dict__.items():
-        re.sub(f'#!{attribute}', value, template)
-    return BeautifulSoup(template, features = 'xml')
+        if isinstance(value, str):
+            template = re.sub(f'#!{attribute}', value, template)
+    soup = BeautifulSoup(template, features = 'xml')
+    for xref in soup('xref'):
+        if xref['docid'].startswith('#!'):
+            soup.decompose(xref)
 
 def propertyXref(
         doc: BeautifulSoup, 
@@ -130,9 +134,13 @@ DOMAIN_TEMPLATE = '''
             <properties-fragment id="info">
                 <property name="name"       title="Name"        value="#!name" />
                 <property name="root"       title="Root Domain" value="#!root" />
-                <property name="role"       title="DNS Role"    datatype="xref" />
+                <property name="role"       title="DNS Role"    datatype="xref" >
+                    <xref frag="default" docid="#!role" />
+                </property>
                 <property name="location"   title="Location"    value="#!location" />
-                <property name="node"       title="Node"        datatype="xref" />
+                <property name="node"       title="Node"        datatype="xref" >
+                    <xref frag="deault" docid="#!node" />
+                </property>
             </properties-fragment>
 
         </section>
@@ -169,8 +177,8 @@ IPV4ADDRESS_TEMPLATE = '''
         <section id="details" title="details">
         
             <properties-fragment id="addresses">
-                <property name="ipv4"               title="IP"                  value="" /> 
-                <property name="subnet"             title="Subnet"              value="" />
+                <property name="ipv4"               title="IP"                  value="#!name" /> 
+                <property name="subnet"             title="Subnet"              value="#!subnet" />
                 <property name="location"           title="Location"            value="" />
                 <property name="nat"                title="NAT Destination"     datatype="xref" />
             </properties-fragment>
