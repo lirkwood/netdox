@@ -192,6 +192,7 @@ class PSMLWriter:
         impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
         for domain in ip.implied_ptr:
             impliedfrag.append(propertyXref(
+                doc = self.doc,
                 p_name = 'impliedptr',
                 p_title = 'Implied PTR Record',
                 docid = f'_nd_domain_{domain.replace(".","_")}'
@@ -213,6 +214,7 @@ class PSMLWriter:
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
             domains.append(propertyXref(
+                doc = self.doc,
                 p_name = 'domain',
                 p_title = 'Domain',
                 docid = f'_nd_domain_{domain.replace(".","_")}'
