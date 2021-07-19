@@ -35,6 +35,8 @@ class ScreenshotManager:
         self.outdir = outdir
         self.placeholder = placeholder
 
+        self.existingScreens = pageseeder.get_files(pageseeder.urimap()['screenshots'])
+
         self.roles = [role \
             for role, config in utils.roles().items() if (
                 'screenshot' in config and config['screenshot']
@@ -52,7 +54,6 @@ class ScreenshotManager:
         If the screenshot is different to the existing screenshot, 
         the existing file is copied to a dated archive directory and the new one will be uploaded.
         """
-        existingScreens = pageseeder.get_files(pageseeder.urimap()['screenshots'])
         if os.path.exists(self.workdir+'/ss'):
             shutil.rmtree(self.workdir+'/ss')
         os.mkdir(self.workdir+'/ss')
@@ -62,7 +63,7 @@ class ScreenshotManager:
             if not success:
                 self.failed.append(domain.docid)
                 # copy placeholder
-                if f'{domain.docid}.jpg' not in existingScreens:
+                if f'{domain.docid}.jpg' not in self.existingScreens:
                     shutil.copyfile(
                         self.placeholder, 
                         f'{self.outdir}/{domain.docid}.jpg'
