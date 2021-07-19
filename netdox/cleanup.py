@@ -18,81 +18,6 @@ from PIL import Image, UnidentifiedImageError
 import pageseeder
 import utils
 
-
-def parseReview() -> None:
-    """
-    Parses the ``review.json`` file returned by ``screenshotCompare.js``.
-
-    Every screenshot which will be overwritten by the PNG to JPG conversion is saved in the ``screenshot_history`` directory under a dated folder.
-    This function also deletes any 'diff overlay' images that have <10% different pixels, as specified in ``review.json``.
-    """
-    global today
-    if not os.path.exists(f'out/screenshot_history/{today}'):
-        os.mkdir(f'out/screenshot_history/{today}')
-    with open('src/review.json','r') as stream:
-        review = json.load(stream)
-        
-        # save base images that will be overwritten
-        for domain in (review['imgdiff'] + list(review['no_ss'].keys())):
-            try:
-                pngName = f"{domain.replace('.','_')}.png"
-                shutil.copyfile(f'/etc/netdox/base/{pngName}', f'out/screenshot_history/{today}/{pngName}')
-            except FileNotFoundError:
-                pass
-        # delete unnecessary imgdiff overlay images (e.g. <10% pixel diff)
-        for domain in review['nodiff']:
-            try:
-                pngName = f"{domain.replace('.','_')}.png"
-                os.remove(f'out/review/{pngName}')
-            except FileNotFoundError:
-                pass
-
-
-# converts every file in a dir from png to 1024x576 jpg
-def png2jpg(path: str):
-    """
-    Converts all PNG images in a directory to 1024x576 JPGs.
-
-    :param path: A directory containing some pngs
-    :type path: str
-    """
-    try:
-        for file in os.scandir(path):
-            try:
-                img = Image.open(path +'/'+ file.name)
-                img_small = img.resize((1024, 576)).convert('RGB')
-                os.remove(file)
-                outfile = file.name.replace('.png','.jpg')
-                img_small.save(path +'/'+ outfile)
-
-            except UnidentifiedImageError:
-                print(f'[WARNING][cleanup] Cannot open {file.name} as image file.')
-    except FileNotFoundError:
-        print(f'[WARNING][cleanup] Path {path} does not exist.')
-
-
-@utils.handle
-def placeholders() -> None:
-    """
-    Generates placeholder images for domains with no screenshot locally or on PageSeeder.
-
-    For any website which Netdox was unable to screenshot, this function checks the set of screenshots on PageSeeder.
-    If an image of that website already exists (be it placeholder or screenshot), no placeholder will be generated.
-    """
-    # if puppeteer failed to screenshot and no existing screen on pageseeder, copy placeholder
-    try:
-        pageseeder_screens = pageseeder.get_files(pageseeder.urimap()['screenshots'])  # get list of screenshots on pageseeder
-    except KeyError:
-        pageseeder_screens = []
-
-    with open('src/review.json','r') as stream:
-        no_ss = json.load(stream)['no_ss']
-        for domain in no_ss:
-            jpgName = f"{domain.replace('.','_')}.jpg"
-            if jpgName not in pageseeder_screens:
-                shutil.copyfile('src/placeholder.jpg', f'out/screenshots/{jpgName}')
-
-
 stale_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
 
 @utils.handle
@@ -177,16 +102,12 @@ def alnum(string: str) -> str:
 def pre_upload():
     """
     The main pre-upload cleanup flow, used to prepare for upload and detect old files on PageSeeder.
-
-    Runs ``png2jpg`` on the *screenshots*, *review*, and *screenshot_history* directories.
-    Also attempts to archive the *review* directory on PageSeeder from the last refresh, if it exists.
-    Finally, adds the *stale* domains to ``review.json`` in order for them to be shown in the status update (see :ref:`file_status`).
+    
+    Adds the *stale* domains to ``review.json`` in order for them to be shown in the status update (see :ref:`file_status`).
     """
     global today
     today = str(datetime.now().date())
 
-    # act on values in review.json
-    parseReview()
 
     # overwrite base images
     try:
@@ -196,14 +117,6 @@ def pre_upload():
     
     shutil.copytree('out/screenshots', '/etc/netdox/base')
 
-    # scale down all exported img files
-    png2jpg('out/screenshots')
-    png2jpg('out/review')
-    png2jpg(f'out/screenshot_history/{today}')
-
-    # generate placeholders where there is no ss locally or on ps
-    placeholders()
-
     # archive last review if exist
     try:
         pageseeder.archive(pageseeder.urimap()['review'])
@@ -212,11 +125,10 @@ def pre_upload():
 
     stale = sentenceStale()
     if stale:
-        with open('src/review.json', 'r') as stream:
-            review = json.load(stream)
-        with open('src/review.json', 'w') as stream:
-            review['stale'] = stale
-            stream.write(json.dumps(review, indent=2))
+        # with open('src/review.json', 'r') as stream:
+        #     review = json.load(stream)
+        with open('src/stale.json', 'w') as stream:
+            stream.write(json.dumps(stale, indent=2))
 
 
 def post_upload():
