@@ -163,7 +163,6 @@ def main():
 
     pluginmaster.runStage('post-write', network)
 
-    subprocess.run('node screenshotCompare.js', check=True, shell=True)
     utils.xslt('status.xslt', 'src/review.xml', 'out/status_update.psml')
 
     cleanup.pre_upload()
