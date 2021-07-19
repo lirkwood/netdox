@@ -1,16 +1,3 @@
-FROM node:15.8.0-buster-slim AS node
-
-WORKDIR /opt/app
-# install required node packages
-RUN npm install bufferutil@4.0.3
-RUN npm install img-diff-js@0.5.2
-RUN npm install puppeteer@5.5.0
-RUN npm install utf-8-validate@5.0.4
-
-# Timezone info
-RUN apt-get install -y tzdata
-
-###################################
 FROM python:3.9.1-slim-buster AS py
 
 # suppress a warning from python
@@ -21,9 +8,6 @@ ENV PYTHONUNBUFFERED="true"
 ENV ANT_HOME=/opt/ant/apache-ant-1.10.9
 ENV PATH=${PATH}:/opt/app:${ANT_HOME}/bin
 
-# set tz
-ENV TZ="Australia/Sydney"
-
 # set flask app
 ENV FLASK_APP=/opt/app/serve.py
 
@@ -33,9 +17,9 @@ RUN apt-get update &&  apt-get install -y --no-install-recommends curl unzip ope
 
 WORKDIR /opt/ant
 # download and decompress ant 1.10.9
-RUN curl https://apache.mirror.digitalpacific.com.au//ant/binaries/apache-ant-1.10.9-bin.tar.gz \
--o /opt/ant/apache-ant-1.10.9-bin.tar.gz && gzip -d /opt/ant/apache-ant-1.10.9-bin.tar.gz && \ 
-tar -xf /opt/ant/apache-ant-1.10.9-bin.tar && rm -f /opt/ant/apache-ant-1.10.9-bin.tar
+RUN curl https://apache.mirror.digitalpacific.com.au//ant/binaries/apache-ant-1.10.11-bin.tar.gz \
+-o /opt/ant/apache-ant-1.10.11-bin.tar.gz && gzip -d /opt/ant/apache-ant-1.10.11-bin.tar.gz && \ 
+tar -xf /opt/ant/apache-ant-1.10.11-bin.tar && rm -f /opt/ant/apache-ant-1.10.11-bin.tar
 
 WORKDIR /opt/ant/lib
 # download pageseeder jar files
@@ -56,14 +40,26 @@ WORKDIR /usr/local/bin
 RUN curl -L https://sourceforge.net/projects/saxon/files/Saxon-HE/10/Java/SaxonHE10-3J.zip/download \
 -o /usr/local/bin/saxon.zip && unzip /usr/local/bin/saxon.zip
 
-# import node and global node modules
-COPY --from=node /usr/local/bin /usr/local/bin
-COPY --from=node /usr/local/lib /usr/local/lib
+# set tz
+ENV TZ="Australia/Sydney"
+
 # import tz
-COPY --from=node /usr/share/zoneinfo/${TZ} /etc/localtime
+COPY /usr/share/zoneinfo/${TZ} /etc/localtime
 RUN echo "$TZ" > /etc/timezone
 
-# install any packages available through pip
+#install puppeteer deps and a few others
+RUN apt-get install --no-install-recommends -y gconf-service libasound2 libatk1.0-0 libc6 \
+    libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 \
+    libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 \
+    libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 \
+    libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 \
+    lsb-release xdg-utils wget xxd
+
+#purge package cache
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get purge   --auto-remove && \
+    apt-get clean
+
 RUN pip install beautifulsoup4
 RUN pip install lxml
 RUN pip install requests
@@ -74,23 +70,13 @@ RUN pip install paramiko
 RUN pip install websockets
 RUN pip install boto3
 RUN pip install kubernetes
+RUN pip install pyppeteer
+RUN pip install diffimg
+
+RUN python3 -c 'import pyppeteer; pyppeteer.chromium_downloader.download_chromium()'
 
 WORKDIR /opt/app
 
-#install puppeteer deps and a few others
-RUN apt-get install --no-install-recommends -y gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3\
-    libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4\
-    libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1\
-    libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation\
-    libappindicator1 libnss3 lsb-release xdg-utils wget libgbm-dev zip jq iputils-ping openssl xxd libxshmfence1
-
-#purge package cache
-RUN rm -rf /var/lib/apt/lists/* && \
-    apt-get purge   --auto-remove && \
-    apt-get clean
-
-#copy main files and node deps
-COPY --from=node /opt/app/node_modules /opt/app/node_modules
 COPY netdox /opt/app
 
 CMD [ "/bin/bash", "netdox", "start" ]
