@@ -7,11 +7,12 @@ import json
 import os
 import random
 from functools import wraps
-from textwrap import dedent
 from typing import Iterable
 
+import psml
 import utils
 import websockets
+from bs4 import Tag
 from networkobjs import Network, NetworkObject, Node
 from plugins import Plugin as BasePlugin
 
@@ -94,32 +95,20 @@ async def reciever(id: int) -> dict:
 
 class VirtualMachine(Node):
     """
-    A VM running in XenOrchestra
-
-    :param name: The name of the VM
-    :type name: str
-    :param desc: A brief description of the VMs purpose
-    :type desc: str
-    :param uuid: A unique alphanumeric identifier
-    :type uuid: str
-    :param template: The template the VM was created from
-    :type template: str
-    :param os: A dictionary of information about the VMs operating system, returned by the xo-server API under the key 'os_version'
-    :type os: dict
-    :param host: The uuid of the XenOrchestra Host this VM is running on
-    :type host: str
-    :param pool: The name of the pool this VMs host is in
-    :type pool: str
-    :param private_ip: The private IP address this VM has been assigned via VIF
-    :type private_ip: str
-    :param public_ips: Some public ips to associate with this VM, defaults to None
-    :type public_ips: Iterable[str], optional
-    :param domains: Some domains to associate with this VM, defaults to None
-    :type domains: Iterable[str], optional
+    A VM running in XenOrchestra.
     """
+    desc: str
+    """Brief description of this VM's purpose."""
     uuid: str
+    """Unique identifier assigned by XenOrchestra."""
+    template: str
+    """The template the VM was cloned from."""
+    os: dict
+    """Dictionary of info about the VM's operating system."""
     pool: str
+    """The name of the pool the VM's Host belongs to."""
     host: str
+    """The UUID of the Host the VM is running on."""
 
     def __init__(self, 
             name: str,
@@ -149,12 +138,77 @@ class VirtualMachine(Node):
         self.domains = self.domains.union(set(object.domains))
         self.network = object.network
         return self
+    
+    @property
+    def psmlCore(self) -> Tag:
+        """
+        Core fragment of the VirtualMachine Node document
+
+        :return: A *properties-fragment* bs4 tag
+        :rtype: Tag
+        """
+        frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'core'})
+        frag.append(psml.property(
+            name='description', title='Description', value=self.desc
+        ))
+        frag.append(psml.property(
+            name='uuid', title='UUID', value=self.uuid
+        ))
+        frag.append(psml.propertyXref(
+            name='host', title='Host Machine', docid=f'_nd_node_xohost_{self.host}'
+        ))
+        return frag
+    
+    @property
+    def psmlOS(self) -> Tag:
+        """
+        OS fragment of the VirtualMachine Node document
+
+        :return: A *properties-fragment* bs4 tag
+        :rtype: Tag
+        """
+        frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'os_version'})
+        frag.append(psml.property(
+            name='os-name', title='OS name', value=self.os['name']
+        ))
+        frag.append(psml.property(
+            name='os-uname', title='OS uname', value=self.os['uname']
+        ))
+        frag.append(psml.property(
+            name='os-distro', title='Distro', value=self.os['distro']
+        ))
+        frag.append(psml.property(
+            name='os-major', title='Major version', value=self.os['major']
+        ))
+        frag.append(psml.property(
+            name='os-minor', title='Minor version', value=self.os['minor']
+        ))
+        return frag
+
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        section = Tag(is_xml=True, name='section', attrs={'id':'body'})
+        section.append(self.psmlCore)
+        section.append(self.psmlOS)
+        return [section]
 
 
 class Host(Node):
     """
     A host running XenOrchestra VMs
     """
+    desc: str
+    """Brief description of this Host's purpose."""
+    uuid: str
+    """Unique identifier assigned by XenOrchestra."""
+    cpus: dict
+    """Dictionary containing some info about this Host's CPUs."""
+    bios: dict
+    """Dictionary containing some info about this Host's BIOS."""
+    vms: set
+    """Set of UUIDs of VMs running on this Host."""
+    pool: str
+    """The name of the pool this Host belongs to."""
     
     def __init__(self, 
             name: str, 
@@ -184,6 +238,57 @@ class Host(Node):
         self.domains = self.domains.union(set(object.domains))
         self.network = object.network
         return self
+
+    @property
+    def psmlCore(self) -> Tag:
+        """
+        Core fragment of the Host Node document.
+
+        :return: A *properties-fragment* bs4 tag.
+        :rtype: Tag
+        """
+        frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'core'})
+        frag.append(psml.property(
+            name='description', title='Description', value=self.desc
+        ))
+        frag.append(psml.property(
+            name='uuid', title='UUID', value=self.uuid
+        ))
+        frag.append(psml.propertyXref(
+            name='pool', title='Pool', value=self.pool
+        ))
+
+    @property
+    def psmlCPUs(self) -> Tag:
+        """
+        Core fragment of the Host Node document.
+
+        :return: A *properties-fragment* bs4 tag.
+        :rtype: Tag
+        """
+        frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'cpus'})
+        frag.append(psml.property(
+            name='cpu-count', title='CPU count', value=self.cpus['cpu_count']
+        ))
+        frag.append(psml.property(
+            name='cpu-socket-count', title='CPU sockets', value=self.cpus['socket_count']
+        ))
+        frag.append(psml.property(
+            name='cpu-vendor', title='CPU vendor', value=self.cpus['vendor']
+        ))
+        frag.append(psml.property(
+            name='cpu-speed', title='CPU speed', value=self.cpus['speed']
+        ))
+        frag.append(psml.property(
+            name='cpu-model', title='CPU model', value=self.cpus['modelname']
+        ))
+
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        section = Tag(is_xml=True, name='section', attrs={'id':'body'})
+        section.append(self.psmlCore)
+        section.append(self.psmlCPUs)
+        return [section]
 
 
 ## Plugin

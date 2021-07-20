@@ -6,6 +6,10 @@ from __future__ import annotations
 import json
 import os
 from collections import defaultdict
+from typing import Iterable
+from bs4 import BeautifulSoup
+
+from bs4.element import Tag
 
 import pageseeder
 import utils
@@ -13,6 +17,7 @@ import yaml
 from flask import Response
 from networkobjs import JSONEncoder, Network, NetworkObjectContainer, Node
 from plugins import Plugin as BasePlugin
+import psml
 
 from kubernetes import config
 from kubernetes.client import ApiClient
@@ -64,10 +69,63 @@ class App(Node):
         self.template = template or {}
 
         self.type = 'Kubernetes App'
+        self.psmlFooter = []
 
     @property
     def ips(self) -> list:
         return []
+
+    @property
+    def psmlPodTemplate(self) -> Tag:
+        section = BeautifulSoup('<section id="template" title="Pod Template" />', features = 'xml')
+        count = 0
+        for container, template in self.template.items():
+            frag = section.new_tag('properties-fragment', id=f'container_{str(count)}')
+            frag.append(psml.property(
+                name = 'container', title = 'Container Name', value = container
+            ))
+            frag.append(psml.property(
+                name = 'image', title = 'Image ID', value = template['image']
+            ))
+            for volume, paths in self.template[container]['volumes'].items():
+                frag.append(psml.property(
+                    name = 'pvc', title = 'Persistent Volume Claim', value = volume
+                ))
+                frag.append(psml.property(
+                    name = 'mount_path', title = 'Path in Container', value = paths['mount_path']
+                ))
+                frag.append(psml.property(
+                    name = 'sub_path', title = 'Path in PVC', value = paths['sub_path']
+                ))
+
+            section.append(frag)
+            count += 1
+        return section
+                
+    @property
+    def psmlRunningPods(self) -> Tag:
+        section = BeautifulSoup('<section id="pods" title="Running Pods" />', features = 'xml')
+        count = 0
+        for pod in self.pods.values():
+            frag = section.new_tag('properties-fragment', id=f'pod_{str(count)}')
+            frag.append(psml.property(
+                name = 'pod', title = 'Pod', value = pod['name']
+            ))
+            frag.append(psml.propertyXref(
+                name = 'ipv4', title = 'Worker IP', docid = f'_nd_ip_{pod["workerIp"].replace(".","_")}'
+            ))
+            frag.append(psml.propertyXref(
+                name = 'worker_node', title = 'Worker Node', docid = pod["workerNode"]
+            ))
+            frag.append(psml.propertyXref(
+                name = 'rancher', title="Pod on Rancher", docid = pod['rancher']
+            ))
+            count += 1
+        return section
+    
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        return [self.psmlPodTemplate, self.psmlRunningPods]
 
     @property
     def network(self) -> Network:

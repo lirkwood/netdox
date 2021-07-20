@@ -34,38 +34,38 @@ class Plugin(BasePlugin):
     name = 'hardware'
     stages = ['nodes']
     xslt = 'plugins/hardware/hardware.xslt'
-    zipfile: str
+    thred: str
 
     def init(self) -> None:
-        psconf = utils.config()["pageseeder"]
-
         if os.path.exists('plugins/hardware/src'):
             rmtree('plugins/hardware/src')
         os.mkdir('plugins/hardware/src')
 
-        thread = BeautifulSoup(
-            pageseeder.export({'path': f'/{psconf["group"].replace("-","/")}/website/hardware'}, True)
+        self.thread = BeautifulSoup(
+            pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True)
         , features = 'xml')
 
         while thread.thread['status'] != 'completed':
             time.sleep(2)
             thread = BeautifulSoup(pageseeder.get_thread(thread.thread['id']), features='xml')
-        
-        with requests.get(
-            f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{thread.zip.string}',
-            headers = {'authorization': f'Bearer {pageseeder.token(psconf)}'},
-            stream = True
-        ) as zipResponse:
-            zipResponse.raise_for_status()
-            with open('plugins/hardware/src/hardware.zip', 'wb') as stream:
-                for chunk in zipResponse.iter_content(8192):
-                    stream.write(chunk)
-                    
-        zip = zipfile.ZipFile('plugins/hardware/src/hardware.zip')
-        zip.extractall('plugins/hardware/src')
 
     def runner(self, network: Network, stage: str) -> None:
         if stage == 'nodes':
+            psconf = utils.config()["pageseeder"]
+        
+            with requests.get(
+                f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{self.thread.zip.string}',
+                headers = {'authorization': f'Bearer {pageseeder.token(psconf)}'},
+                stream = True
+            ) as zipResponse:
+                zipResponse.raise_for_status()
+                with open('plugins/hardware/src/hardware.zip', 'wb') as stream:
+                    for chunk in zipResponse.iter_content(8192):
+                        stream.write(chunk)
+                    
+            zip = zipfile.ZipFile('plugins/hardware/src/hardware.zip')
+            zip.extractall('plugins/hardware/src')
+
             for file in utils.fileFetchRecursive('plugins/hardware/src'):
                 if file.endswith('.psml'):
                     with open(file, 'r') as stream:

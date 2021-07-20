@@ -3,17 +3,27 @@ from textwrap import dedent
 from typing import Iterable
 
 import boto3
+import psml
 import utils
-from networkobjs import IPv4Address, Node, Network
+from bs4.element import Tag
+from networkobjs import IPv4Address, Network, Node
 from plugins import Plugin as BasePlugin
 
+
 class EC2Instance(Node):
+    """A single instance running on AWS EC2."""
     id: str
+    """Instance ID."""
     mac: str
+    """MAC address of this instance."""
     instance_type: str
+    """Type of EC2 instance."""
     monitoring: str
+    """The status of this instance's monitoring."""
     region: str
+    """The region this instance belongs to."""
     tags: dict[str, str]
+    """Dictionary of tags applied to this instance."""
 
     def __init__(self, 
             name: str,
@@ -40,6 +50,53 @@ class EC2Instance(Node):
             if tag['Value']:
                 self.tags[tag['Key']] = tag['Value']
 
+    @property
+    def psmlInstanceinf(self) -> Tag:
+        """
+        Instanceinf fragment of EC2Instance Node document.
+
+        :return: A *properties-fragment* bs4 tag.
+        :rtype: Tag
+        """
+        frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id':'instanceinf'})
+        frag.append(psml.property(
+            name='instanceId', title='Instance ID', value=self.id
+        ))
+        frag.append(psml.property(
+            name='mac', title='MAC Address', value=self.mac
+        ))
+        frag.append(psml.property(
+            name='instanceType', title='Instance Type', value=self.instance_type
+        ))
+        frag.append(psml.property(
+            name='Monitoring', title='Monitoring', value=self.monitoring
+        ))
+        frag.append(psml.property(
+            name='availabilityZone', title='Availability Zone', value=self.region
+        ))
+        return frag
+
+    @property
+    def psmlTags(self) -> Tag:
+        """
+        Tags fragment of EC2Instance Node document.
+
+        :return: A *properties-fragment* bs4 tag.
+        :rtype: Tag
+        """
+        frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id':'tags'})
+        for tag, value in self.tags.items():
+            frag.append(psml.property(
+                name='tag', title=tag, value=value
+            ))
+        return frag
+
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        section = Tag(is_xml=True, name='section', attrs={'id':'body'})
+        section.append(self.psmlInstanceinf)
+        section.append(self.psmlTags)
+        return [section]
 
 class Plugin(BasePlugin):
     name = 'aws'
