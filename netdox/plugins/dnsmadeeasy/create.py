@@ -22,7 +22,7 @@ def create_A(name: str, ip: str, zone: str) -> None:
 	:raises ValueError: If the DNS zone is not one of the configured values
 	:raises ValueError: If *name* is not a valid FQDN or *ip* is not a valid IPv4 address.
 	"""
-	if re.fullmatch(networkobjs.dns_name_pattern, name) and iptools.valid_ip(ip):
+	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
 			
 		with open('src/domains.json') as stream:
 			domains = networkobjs.DomainSet.from_json(stream.read())
@@ -63,7 +63,7 @@ def create_CNAME(name: str, value: str, zone: str) -> None:
 	:raises ValueError: If the DNS zone is not one of the configured values
 	:raises ValueError: If *name* or *value* is not a valid FQDN
 	"""
-	if re.fullmatch(networkobjs.dns_name_pattern, name) and re.fullmatch(networkobjs.dns_name_pattern, value):
+	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
 
 		with open('src/domains.json') as stream:
 			domains = networkobjs.DomainSet.from_json(stream.read())
@@ -103,7 +103,7 @@ def create_PTR(ip: str, value: str) -> None:
 	:raises ValueError: If the DNS zone is not one of the configured values
 	:raises ValueError: If *ip* is not a valid IPv4 address or *value* is not a valid FQDN.
 	"""
-	if iptools.valid_ip(ip) and re.fullmatch(networkobjs.dns_name_pattern, value):
+	if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
 
 		with open('src/ips.json', 'r') as stream:
 			ips = networkobjs.IPv4AddressSet.from_json(stream.read())

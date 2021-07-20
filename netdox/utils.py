@@ -5,13 +5,13 @@ This module contains any multi-purpose or generic code for use by both internal 
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from functools import wraps
-from os import DirEntry, scandir
+from os import scandir
 from sys import argv
 from textwrap import dedent
 from traceback import format_exc
-from typing import Union
 
 ####################
 # Global constants #
@@ -63,6 +63,7 @@ def roles():
 
 MIN_STYLESHEET = '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" exclude-result-prefixes="#all" />'
 
+dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
 ##############
 # Decorators #

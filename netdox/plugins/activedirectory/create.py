@@ -22,8 +22,8 @@ def create_forward(name: str, value: str, zone: str, type: str) -> None:
     :param type: The type of record to create.
     :type type: str
     """
-    if  re.fullmatch(networkobjs.dns_name_pattern, name) and (
-        iptools.valid_ip(value) or re.fullmatch(networkobjs.dns_name_pattern, value)):
+    if  re.fullmatch(utils.dns_name_pattern, name) and (
+        iptools.valid_ip(value) or re.fullmatch(utils.dns_name_pattern, value)):
 
         with open('src/domains.json') as stream:
             domains = networkobjs.DomainSet.from_json(stream.read())
@@ -57,7 +57,7 @@ def create_reverse(ip: str, value: str) -> None:
     :param value: The value for the record.
     :type value: str
     """
-    if iptools.valid_ip(ip) and re.fullmatch(networkobjs.dns_name_pattern, value):
+    if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
         
         with open('src/ips.json') as stream:
             ips = networkobjs.DomainSet.from_json(stream.read())
