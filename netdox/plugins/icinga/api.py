@@ -4,6 +4,7 @@ API Functions
 
 Provides functions for interacting with the Icinga API and a class for managing Netdox-generated monitors.
 """
+from bs4 import BeautifulSoup
 from plugins.icinga.ssh import set_host, rm_host, reload
 from os import rename, mkdir
 from shutil import rmtree
@@ -228,6 +229,25 @@ class MonitorManager:
         for icinga in needsReload:
             reload(icinga = icinga)
 
+    def addPSMLFooters(self) -> None:
+        """
+        Appends a properties-fragment to the psmlFooter of each domain with a monitor.
+        """
+        for domain in self.network.domains:
+            if domain.icinga:
+                frag = BeautifulSoup(f'''
+                <properties-fragment id="icinga">
+                    <property name="icinga" title="Icinga Instance" value="{domain.icinga['icinga']}" />
+                    <property name="template" title="Monitor Template" value="{domain.icinga['templates'][0]}" />
+                </properties-fragment>
+                ''', features = 'xml')
+                for service in domain.icinga['services']:
+                    frag.append(frag.new_tag('property', attrs = {
+                        'name': 'service',
+                        'title': 'Monitor Service',
+                        'value': service
+                    }))
+                domain.psmlFooter.append(frag)
 
 ## Plugin runner
 def runner(network: Network):
@@ -243,9 +263,4 @@ def runner(network: Network):
     mgr = MonitorManager(network)
     mgr.pruneGenerated()
     mgr.validateNetwork()
-            
-    network.writeSet('domains', 'src/domains.json')
-    # mkdir('out/tmp')
-    # utils.xslt('plugins/icinga/services.xsl', 'out/domains', 'out/tmp')
-    # rmtree('out/domains')
-    # rename('out/tmp', 'out/domains')
+    mgr.addPSMLFooters()
