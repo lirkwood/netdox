@@ -10,7 +10,7 @@ from networkobjs import Domain, DomainSet, Network
 from plugins import Plugin as BasePlugin
 from pyppeteer import launch
 from pyppeteer.page import Page
-from datetime import date
+from datetime import date, datetime
 import pageseeder
 
 
@@ -66,7 +66,7 @@ class ScreenshotManager:
                 if f'{domain.docid}.jpg' not in self.existingScreens:
                     shutil.copyfile(
                         self.placeholder, 
-                        f'{self.outdir}/{domain.docid}.jpg'
+                        f'{self.outdir}/screenshots/{domain.docid}.jpg'
                     )
 
             else:
@@ -80,7 +80,7 @@ class ScreenshotManager:
                     self.nobase.append(domain.docid)
                     shutil.copyfile(
                         f'{self.workdir}/ss/{domain.docid}.jpg',
-                        f'{self.outdir}/screenshots/{domain.docid}'
+                        f'{self.outdir}/screenshots/{domain.docid}.jpg'
                     )
                 else:
                     # if diff > 5%
@@ -94,7 +94,7 @@ class ScreenshotManager:
                         # copy new screen
                         shutil.copyfile(
                             f'{self.workdir}/ss/{domain.docid}.jpg',
-                            f'{self.outdir}/screenshots/{domain.docid}'
+                            f'{self.outdir}/screenshots/{domain.docid}.jpg'
                         )
                     else:
                         # delete empty diff file
@@ -186,6 +186,9 @@ class Plugin(BasePlugin):
         os.mkdir('plugins/screenshots/src')
         if not os.path.exists('/etc/netdox/base'):
             os.mkdir('/etc/netdox/base')
+        if os.path.exists(f'out/screenshot_history/{datetime.today().isoformat()}'):
+            shutil.rmtree(f'out/screenshot_history/{datetime.today().isoformat()}')
+        os.mkdir(f'out/screenshot_history/{datetime.today().isoformat()}')
 
     def runner(self, network: Network, stage: str) -> None:
         mngr = ScreenshotManager(
