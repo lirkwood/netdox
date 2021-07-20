@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING, Iterator, Type
 
-from bs4 import Tag
+from bs4 import BeautifulSoup, Tag
 
 if TYPE_CHECKING:
     from . import Network
@@ -60,12 +61,12 @@ class NetworkObject(ABC):
 
     def to_dict(self) -> dict:
         """
-        Returns a dictionary this class can be instatiated from, without the circular JSON.
+        Returns a JSON-safe dictionary, that can be passed to ``from_dict``.
 
         :return: A dictionary describing this class.
         :rtype: dict
         """
-        return self.__dict__ | {'_network': None, 'container': None}
+        return self.__dict__ | {'_network': None, 'container': None, 'psmlFooter': [str(tag) for tag in self.psmlFooter]}
 
     @classmethod
     def from_dict(cls: Type[NetworkObject], constructor: dict) -> NetworkObject:
@@ -79,6 +80,7 @@ class NetworkObject(ABC):
         """
         instance = cls(constructor['name'])
         instance.__dict__.update(constructor)
+        instance.psmlFooter = [BeautifulSoup(tag, features = 'xml') for tag in instance.psmlFooter]
         return instance
 
     @classmethod
@@ -137,7 +139,7 @@ class NetworkObjectContainer(ABC):
         return json.dumps({
             'objectType': self.objectType,
             'objects': [object.to_dict() for object in self]
-        }, indent = 2)
+        }, indent = 2, cls = JSONEncoder)
 
     @classmethod
     def from_dict(cls, constructor: dict) -> NetworkObjectContainer:
@@ -201,3 +203,23 @@ class NetworkObjectContainer(ABC):
                 self[identifier].__dict__[key] = val
         else:
             self.add(replacement)
+
+
+######################
+# Helper JSONEncoder #
+######################
+
+class JSONEncoder(json.JSONEncoder):
+    """
+    JSON Encoder compatible with sets and datetime objects
+    """
+    def default(self, obj):
+        """
+        :meta private:
+        """
+        if isinstance(obj, set):
+            return sorted(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        else:
+            return super().default(obj)
