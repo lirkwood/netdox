@@ -92,7 +92,7 @@ def alnum(string: str) -> str:
 
     :param string: The string to perform the transformation on
     :type string: str
-    :return: The input string with characters in [/\\?%*:|<>^] or [^\x00-\x7F] substituted for underscores.
+    :return: The input string with characters in ``[/\\?%*:|<>^]`` or ``[^\x00-\x7F]`` substituted for underscores.
     :rtype: str
     """
     string = re.sub(r'[/\\?%*:|<>^]', '_', string)
