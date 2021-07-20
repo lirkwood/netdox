@@ -8,14 +8,13 @@ from shutil import rmtree
 import pageseeder
 import requests
 import utils
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from networkobjs import IPv4Address, Network, Node
 from plugins import Plugin as BasePlugin
 from xml.sax.saxutils import escape
 
 
 class HardwareNode(Node):
-    psml: str
     origin_doc: str
     xslt = 'plugins/hardware/hardware.xslt'
 
@@ -25,6 +24,11 @@ class HardwareNode(Node):
 
         self.psml = psml
         self.origin_doc = origin_doc
+
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        return [self.psml]
+
 
 class Plugin(BasePlugin):
     name = 'hardware'
@@ -88,7 +92,7 @@ class Plugin(BasePlugin):
                             newNode = HardwareNode(
                                 name = name,
                                 private_ip = ip,
-                                psml = escape(''.join([str(f) for f in section('properties-fragment')])),
+                                psml = ''.join([str(f) for f in section('properties-fragment')]),
                                 origin_doc = soup.document['id']
                             )
 
