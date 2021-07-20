@@ -27,9 +27,10 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
         if isinstance(value, str):
             template = re.sub(f'#!{attribute}', value, template)
     soup = BeautifulSoup(template, features = 'xml')
-    for xref in soup('xref'):
+    for xref in soup.find_all('xref'):
         if xref['docid'].startswith('#!'):
-            soup.decompose(xref)
+            xref.decompose()
+    return soup
 
 def propertyXref(
         doc: BeautifulSoup, 
@@ -91,6 +92,7 @@ def recordset2pfrags(
     for value, plugin in recordset:
         frag = doc.new_tag('properties-fragment', id = f'{id_prefix}{str(count)}')
         frag.append(propertyXref(
+            doc = doc,
             p_name = p_name,
             p_title = p_title,
             docid = f'{docid_prefix}{value.replace(".","_")}'
@@ -138,9 +140,6 @@ DOMAIN_TEMPLATE = '''
                     <xref frag="default" docid="#!role" />
                 </property>
                 <property name="location"   title="Location"    value="#!location" />
-                <property name="node"       title="Node"        datatype="xref" >
-                    <xref frag="deault" docid="#!node" />
-                </property>
             </properties-fragment>
 
         </section>
@@ -176,11 +175,10 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <section id="details" title="details">
         
-            <properties-fragment id="addresses">
+            <properties-fragment id="info">
                 <property name="ipv4"               title="IP"                  value="#!name" /> 
                 <property name="subnet"             title="Subnet"              value="#!subnet" />
-                <property name="location"           title="Location"            value="" />
-                <property name="nat"                title="NAT Destination"     datatype="xref" />
+                <property name="location"           title="Location"            value="#!location" />
             </properties-fragment>
 
         </section>
