@@ -349,9 +349,8 @@ class PSMLWriter:
 
         if domain.node:
             self.doc.find(id = 'info').append(propertyXref(
-                doc = self.doc,
-                p_name = 'node',
-                p_title = 'Node',
+                name = 'node',
+                title = 'Node',
                 docid = domain.node.docid
             ))
 
@@ -394,17 +393,15 @@ class PSMLWriter:
 
         if ip.nat:
             self.doc.find(id = 'info').append(propertyXref(
-                doc = self.doc,
-                p_name = 'nat',
-                p_title = 'NAT Destination',
+                name = 'nat',
+                title = 'NAT Destination',
                 docid = f'_nd_ip_{ip.nat.replace(".","_")}'
             ))
 
         if ip.node:
             self.doc.find(id = 'info').append(propertyXref(
-                doc = self.doc,
-                p_name = 'node',
-                p_title = 'Node',
+                name = 'node',
+                title = 'Node',
                 docid = ip.node.docid
             ))
 
@@ -419,9 +416,8 @@ class PSMLWriter:
         impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
         for domain in ip.implied_ptr:
             impliedfrag.append(propertyXref(
-                doc = self.doc,
-                p_name = 'impliedptr',
-                p_title = 'Implied PTR Record',
+                name = 'impliedptr',
+                title = 'Implied PTR Record',
                 docid = f'_nd_domain_{domain.replace(".","_")}'
             ))
         self.body.append(impliedfrag)
@@ -443,9 +439,8 @@ class PSMLWriter:
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
             domains.append(propertyXref(
-                doc = self.doc,
-                p_name = 'domain',
-                p_title = 'Domain',
+                name = 'domain',
+                title = 'Domain',
                 docid = f'_nd_domain_{domain.replace(".","_")}'
             ))
         details.append(domains)

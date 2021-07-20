@@ -32,34 +32,34 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
             xref.decompose()
     return soup
 
+def property(**kwattrs) -> Tag:
+    return Tag(is_xml = True, name = 'property', attrs = kwattrs)
+
 def propertyXref(
-        doc: BeautifulSoup, 
-        p_name: str, 
-        p_title: str, 
+        name: str, 
+        title: str, 
         docid: str, 
-        frag: str = 'default'
+        frag: str = 'default',
+        **kwattrs
     ) -> Tag:
     """
-    Return a property with a child xref
+    Return a property with a child xref.
 
-    :param p_name: The name attribute for the property
-    :type p_name: str
-    :param p_title: The title attribute for the property
-    :type p_title: str
-    :param docid: The docid for the xref
+    :param name: The name attribute for the property.
+    :type name: str
+    :param title: The title attribute for the property.
+    :type title: str
+    :param docid: The docid for the xref.
     :type docid: str
-    :param frag: The fragment for the xref, defaults to 'default'
+    :param frag: The fragment for the xref, defaults to 'default'.
     :type frag: str, optional
+    :param kwattrs: Some keyword attributes to pass to the property constructor.
     :return: A bs4 Tag containing a property and its child xref.
     :rtype: Tag
     """
-    property = doc.new_tag('property', attrs = {
-        'name': p_name,
-        'title': p_title,
-        'datatype': 'xref'
-    })
-    property.append(doc.new_tag('xref', frag = frag, docid = docid))
-    return property
+    prop = property(name = name, title = title, **(kwattrs | {'datatype':'xref'}))
+    prop.append(Tag('xref', attrs = {'frag': frag, 'docid': docid}))
+    return prop
 
 def recordset2pfrags(
         doc: BeautifulSoup, 
@@ -93,8 +93,8 @@ def recordset2pfrags(
         frag = doc.new_tag('properties-fragment', id = f'{id_prefix}{str(count)}')
         frag.append(propertyXref(
             doc = doc,
-            p_name = p_name,
-            p_title = p_title,
+            name = p_name,
+            title = p_title,
             docid = f'{docid_prefix}{value.replace(".","_")}'
         ))
         frag.append(doc.new_tag('property', attrs = {'name': 'source', 'title': 'Source Plugin', 'value': plugin}))
