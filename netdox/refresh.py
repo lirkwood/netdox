@@ -9,7 +9,6 @@ then calls the final plugin stage and writes PSML. The upload is managed by the 
 import json
 import os
 import shutil
-import subprocess
 from distutils.util import strtobool
 
 from bs4 import BeautifulSoup
@@ -152,18 +151,9 @@ def main():
     pluginmaster.runStage('pre-write', network)
     
     network.dumpNetwork()
-    
-    # Write Domain documents
-    utils.xslt('domains.xslt', 'src/domains.xml')
-    # Write IPv4Address documents
-    utils.xslt('ips.xslt', 'src/ips.xml')
-    # Write Node documents
-    utils.xslt('nodes.xslt', 'src/nodes.xml')
-
+    network.writePSML()
 
     pluginmaster.runStage('post-write', network)
-
-    utils.xslt('status.xslt', 'src/review.xml', 'out/status_update.psml')
 
     cleanup.pre_upload()
 
