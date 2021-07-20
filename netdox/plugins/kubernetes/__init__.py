@@ -168,8 +168,6 @@ class Plugin(BasePlugin):
             if not os.path.exists(f'plugins/kubernetes/{dir}'):
                 os.mkdir(f'plugins/kubernetes/{dir}')
 
-        utils.jsonForXslt('plugins/kubernetes/src/workerApps.xml', 'workerApps.json')
-
         auth = utils.config()['plugins']['kubernetes']
         with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
             clusters = []
@@ -224,8 +222,8 @@ class Plugin(BasePlugin):
             for cluster in self.workerApps:
                 self.workerApps[cluster] = {k: self.workerApps[cluster][k] for k in sorted(self.workerApps[cluster])}
     
-            with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
-                stream.write(json.dumps(self.workerApps, indent = 2, cls = JSONEncoder))
+            # with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
+            #     stream.write(json.dumps(self.workerApps, indent = 2, cls = JSONEncoder))
                 
             utils.xslt(
                 xsl = 'plugins/kubernetes/workerAppsMaker.xslt', 

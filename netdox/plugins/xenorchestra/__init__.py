@@ -299,7 +299,6 @@ from plugins.xenorchestra.fetch import runner
 class Plugin(BasePlugin):
     name = 'xenorchestra'
     stages = ['nodes']
-    xslt = 'plugins/xenorchestra/nodes.xslt'
 
     def init(self) -> None:
         """

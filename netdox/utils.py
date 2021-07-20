@@ -95,22 +95,8 @@ def handle(func):
 # Miscellaneous convenience functions #
 #######################################
 
-def xslt(xsl: str, src: str, out: bool = None):
-    """
-    Runs some xslt using Saxon
-
-    :param xsl: The path to the stylesheet.
-    :type xsl: str
-    :param src: The path to the source file or directory.
-    :type src: str
-    :param out: The path to the output file or directory, defaults to None
-    :type out: bool, optional
-    """
-    xsltpath = 'java -jar /usr/local/bin/saxon-he-10.3.jar'
-    if out:
-        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src} -o:{out}', shell=True)
-    else:
-        subprocess.run(f'{xsltpath} -xsl:{xsl} -s:{src}', shell=True)
+def xslt(*_):
+    print('[WARNING][utils] XSLT was called')
 
 
 def jsonForXslt(xmlpath: str, jsonpath: str) -> None:

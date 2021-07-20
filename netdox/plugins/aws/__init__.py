@@ -101,7 +101,6 @@ class EC2Instance(Node):
 class Plugin(BasePlugin):
     name = 'aws'
     stages = ['nodes']
-    xslt = 'plugins/aws/nodes.xslt'
 
     def init(self) -> None:
         if not os.path.exists('plugins/aws/src'):
