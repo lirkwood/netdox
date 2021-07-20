@@ -25,7 +25,7 @@ class Plugin(BasePlugin):
         for file in os.scandir('plugins/activedirectory/nfs'):
             if file.name.endswith('.bin'):
                 subprocess.run(args = [
-                    'crypto.sh',                                                            # executable
+                    './crypto.sh',                                                          # executable
                     'decrypt',                                                              # method
                     'plugins/activedirectory/nfs/vector.txt',                               # IV path
                     file.path,                                                              # input path
