@@ -11,7 +11,7 @@ import iptools
 import pageseeder
 import plugins
 import utils
-from networkobjs import dns_name_pattern
+from utils import dns_name_pattern
 
 app = Flask(__name__)
 
