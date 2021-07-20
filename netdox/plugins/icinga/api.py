@@ -234,7 +234,7 @@ class MonitorManager:
         Appends a properties-fragment to the psmlFooter of each domain with a monitor.
         """
         for domain in self.network.domains:
-            if domain.icinga:
+            if hasattr(domain, 'icinga'):
                 frag = BeautifulSoup(f'''
                 <properties-fragment id="icinga">
                     <property name="icinga" title="Icinga Instance" value="{domain.icinga['icinga']}" />
