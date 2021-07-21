@@ -46,6 +46,20 @@ class Network:
             config: dict = None,
             roles: dict = None
         ) -> None:
+        """
+        Instantiate a Network object.
+
+        :param domains: A DomainSet to include in the network, defaults to None
+        :type domains: DomainSet, optional
+        :param ips: A IPv4AddressSet to include in the network, defaults to None
+        :type ips: IPv4AddressSet, optional
+        :param nodes: A NodeSet to include in the network, defaults to None
+        :type nodes: NodeSet, optional
+        :param config: A dictionary of config values like that returned by ``utils.config()``, defaults to None
+        :type config: dict, optional
+        :param roles: A dictionary of role configuration values to pass to the DomainSet of the network, defaults to None
+        :type roles: dict, optional
+        """
 
         self.domains = domains or DomainSet(network = self, roles = roles)
         self.ips = ips or IPv4AddressSet(network = self)
