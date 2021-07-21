@@ -9,6 +9,7 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 from inspect import signature
+from time import sleep
 
 import requests
 from bs4 import BeautifulSoup
@@ -330,3 +331,50 @@ def resolve_group_refs(params={}, host='', group='', member='', header={}):
     service = f'/members/{member}/groups/{group}/resolverefs'
     r = requests.post(host+service, headers=header, params=params)
     return r.text
+
+
+@auth
+def loading_zone_upload(path, params={}, host='', group='', header={}):
+    with open(path, 'rb') as stream:
+        payload = stream.read()
+
+    if 'group' not in params:
+        params['group'] = group
+    if 'filename' not in params and 'X-File-Name' not in header:
+        params['filename'] = 'netdox-psml.zip'
+
+    service = f'/ps/servlet/upload'
+    r = requests.put(host+service, headers=header, params=params, data=payload)
+    return r.text
+
+
+@auth
+def get_loading_zone(params={}, host='', group='', member='', header={}):
+    service = f'/members/{member}/groups/{group}/loadingzone'
+    r = requests.get(host+service, headers=header, params=params)
+    return r.text
+
+
+@auth
+def unzip_loading_zone(path, params={}, host='', group='', member='', header={}):
+    params['path'] = path
+    service = f'/members/{member}/groups/{group}/loadingzone/unzip'
+    r = requests.post(host+service, headers=header, params=params)
+    return r.text
+
+
+@auth
+def load_loading_zone(params={}, host='', group='', member='', header={}):
+    service = f'/members/{member}/groups/{group}/loadingzone/start'
+    r = requests.post(host+service, headers=header, params=params)
+    return r.text
+
+
+@auth
+def zip_upload(path, uploadpath, host='', group='', header={}):
+    loading_zone_upload(path, params={'file':'netdox-psml.zip'}, host='https://ps-netdox.allette.com.au', group=group, header=header)
+    thread = BeautifulSoup(unzip_loading_zone('netdox-psml.zip', params={'deleteoriginal':'true'}), features = 'xml').thread
+    while thread['status'] != 'completed':
+        sleep(2)
+        thread = BeautifulSoup(get_thread(thread['id']), features = 'xml').thread
+    return load_loading_zone(params={'folder': uploadpath})
