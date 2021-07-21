@@ -6,6 +6,7 @@ import zipfile
 from shutil import rmtree
 
 import pageseeder
+import psml
 import requests
 import utils
 from bs4 import BeautifulSoup, Tag
@@ -34,7 +35,8 @@ class Plugin(BasePlugin):
     name = 'hardware'
     stages = ['nodes']
     xslt = 'plugins/hardware/hardware.xslt'
-    thred: str
+    thread: str
+    """The thread tag returned by PageSeeder when starting the download."""
 
     def init(self) -> None:
         if os.path.exists('plugins/hardware/src'):
@@ -45,13 +47,16 @@ class Plugin(BasePlugin):
             pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True)
         , features = 'xml')
 
-        while thread.thread['status'] != 'completed':
-            time.sleep(2)
-            thread = BeautifulSoup(pageseeder.get_thread(thread.thread['id']), features='xml')
-
     def runner(self, network: Network, stage: str) -> None:
         if stage == 'nodes':
             psconf = utils.config()["pageseeder"]
+
+            try:
+                while self.thread.thread['status'] != 'completed':
+                    time.sleep(2)
+                    self.thread = BeautifulSoup(pageseeder.get_thread(self.thread.thread['id']), features='xml')
+            except AttributeError:
+                pass
         
             with requests.get(
                 f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{self.thread.zip.string}',
@@ -98,11 +103,14 @@ class Plugin(BasePlugin):
 
                             if oldNode and oldNode.type == 'default':
                                 network.replace(oldNode.docid, newNode)
-                            elif not oldNode:
-                                network.add(newNode)
+                            elif oldNode:
+                                oldNode.psmlFooter.append(psml.propertyXref(
+                                    'hardware', 'Hardware Info', soup.document['id']
+                                ))
                             else:
-                                print(f'[WARNING][hardware] Cannot overwrite non-default node with ip {ip}')
+                                network.add(newNode)
                         else:
-                            print('[DEBUG][hardware] Doc has no name or ip')
+                            print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\'',
+                            ' is missing property with name \'name\' or \'ipv4\' in section \'info\'.')
                     else:
-                        print('[DEBUG][hardware] Doc has no section info')
+                        print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\' has no section \'info\'.')
