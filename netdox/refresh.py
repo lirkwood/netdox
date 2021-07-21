@@ -17,6 +17,7 @@ import cleanup
 import pageseeder
 import plugins
 import utils
+import psml
 from networkobjs import Network, Node
 
 ##################
@@ -63,7 +64,7 @@ def init():
         # load roles fragment
         roleFrag = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
-            roleConfig = pageseeder.pfrag2dict(pageseeder.get_fragment(xref['docid'], 'config'))
+            roleConfig = psml.pfrag2dict(pageseeder.get_fragment(xref['docid'], 'config'))
             roleName = roleConfig['name']
 
             # set role for configured domains
@@ -94,7 +95,7 @@ def init():
             if file.name != 'config.psml':
                 with open(file, 'r') as stream:
                     soup = BeautifulSoup(stream.read(), features='xml')
-                    roleConfig = pageseeder.pfrag2dict(soup.find(id="config")) | {'domains':[]}
+                    roleConfig = psml.pfrag2dict(soup.find(id="config")) | {'domains':[]}
                     roles[roleConfig['name']] = roleConfig
 
             shutil.copyfile(file.path, f'out/config/{file.name}')

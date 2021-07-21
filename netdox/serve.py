@@ -11,7 +11,7 @@ import iptools
 import pageseeder
 import plugins
 import utils
-from utils import dns_name_pattern
+import psml
 
 app = Flask(__name__)
 
@@ -73,7 +73,7 @@ def workflow_updated(event):
                     return approved_ip(document_uri)
 
         elif document_type == 'node':
-            summary = pageseeder.pfrag2dict(pageseeder.get_fragment(document_uri, 'summary'))
+            summary = psml.pfrag2dict(pageseeder.get_fragment(document_uri, 'summary'))
             node_type = summary['type']
             plugin = pluginmaster.nodemap[node_type]
             try:
@@ -88,7 +88,7 @@ def approved_domain(uri):
     """
     Handles ratifying changes specified in a DNS document.
     """
-    info = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'info'))
+    info = psml.pfrag2dict(pageseeder.get_fragment(uri, 'info'))
     links = BeautifulSoup(pageseeder.get_xref_tree(uri), features='xml')
         
     if 'name' in info and 'root' in info and info['name'] and info['root']:
@@ -100,7 +100,7 @@ def approved_domain(uri):
                         value = link['urititle']
                         zone = info['root']
 
-                        dest = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
+                        dest = psml.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
                         sourcePlugin = dest['source'].lower()
                         if sourcePlugin in pluginmaster:
                             plugin = pluginmaster[sourcePlugin]
@@ -111,7 +111,7 @@ def approved_domain(uri):
                                     except AttributeError:
                                         print(f'[ERROR][webhooks] Plugin {sourcePlugin} has no method for creating an A record.')
                             else:
-                                if re.fullmatch(dns_name_pattern, value):
+                                if re.fullmatch(utils.dns_name_pattern, value):
                                     if not value.endswith('.'):
                                         value += '.'
                                     try:
@@ -132,7 +132,7 @@ def approved_ip(uri):
     """
     Handles ratifying changes specified in an IP document.
     """
-    info = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'info'))
+    info = psml.pfrag2dict(pageseeder.get_fragment(uri, 'info'))
     links = BeautifulSoup(pageseeder.get_xref_tree(uri), features='xml')
     if 'ipv4' in info and info['ipv4']:
         for link in links("xref"):
@@ -143,7 +143,7 @@ def approved_ip(uri):
                     if re.fullmatch(utils.dns_name_pattern, value):
                         if not value.endswith('.'):
                             value += '.'
-                        dest = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
+                        dest = psml.pfrag2dict(pageseeder.get_fragment(uri, link.parent['id']))
                         sourcePlugin = dest['source'].lower()
                         if sourcePlugin in pluginmaster.pluginmap['all']:
                             plugin = pluginmaster.pluginmap['all'][sourcePlugin]

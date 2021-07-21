@@ -237,7 +237,7 @@ class Plugin(BasePlugin):
             )           
 
     def approved_node(self, uri: str) -> Response:
-        summary = pageseeder.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
+        summary = psml.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
         if summary['type'] == 'Kubernetes App':
             # create_app(some args go here)
             pass
