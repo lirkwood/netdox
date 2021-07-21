@@ -365,11 +365,10 @@ class PSMLWriter:
             self.doc.find(id = 'info').append(propertyXref(
                 name = 'node',
                 title = 'Node',
-                docid = domain.node.docid
+                ref = domain.node.docid
             ))
 
         for frag in recordset2pfrags(
-            doc = self.doc,
             recordset = domain._private_ips,
             id_prefix = 'private_ip_',
             docid_prefix = '_nd_ip_',
@@ -378,7 +377,6 @@ class PSMLWriter:
         ):  self.body.append(frag)
 
         for frag in recordset2pfrags(
-            doc = self.doc,
             recordset = domain._public_ips,
             id_prefix = 'public_ip_',
             docid_prefix = '_nd_ip_',
@@ -387,7 +385,6 @@ class PSMLWriter:
         ):  self.body.append(frag)
 
         for frag in recordset2pfrags(
-            doc = self.doc,
             recordset = domain._cnames,
             id_prefix = 'cname_',
             docid_prefix = '_nd_domain_',
@@ -409,18 +406,17 @@ class PSMLWriter:
             self.doc.find(id = 'info').append(propertyXref(
                 name = 'nat',
                 title = 'NAT Destination',
-                docid = f'_nd_ip_{ip.nat.replace(".","_")}'
+                ref = f'_nd_ip_{ip.nat.replace(".","_")}'
             ))
 
         if ip.node:
             self.doc.find(id = 'info').append(propertyXref(
                 name = 'node',
                 title = 'Node',
-                docid = ip.node.docid
+                ref = ip.node.docid
             ))
 
         for frag in recordset2pfrags(
-            doc = self.doc,
             recordset = ip._ptr,
             id_prefix = 'ptr_',
             docid_prefix = '_nd_domain_',
@@ -432,7 +428,7 @@ class PSMLWriter:
             impliedfrag.append(propertyXref(
                 name = 'impliedptr',
                 title = 'Implied PTR Record',
-                docid = f'_nd_domain_{domain.replace(".","_")}'
+                ref = f'_nd_domain_{domain.replace(".","_")}'
             ))
         self.body.append(impliedfrag)
 
@@ -455,6 +451,6 @@ class PSMLWriter:
             domains.append(propertyXref(
                 name = 'domain',
                 title = 'Domain',
-                docid = f'_nd_domain_{domain.replace(".","_")}'
+                ref = f'_nd_domain_{domain.replace(".","_")}'
             ))
         details.append(domains)

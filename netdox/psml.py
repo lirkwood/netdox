@@ -45,7 +45,8 @@ def property(**kwattrs) -> Tag:
 def propertyXref(
         name: str, 
         title: str, 
-        docid: str, 
+        ref: str,
+        reftype: str = 'docid' ,
         frag: str = 'default',
         **kwattrs
     ) -> Tag:
@@ -65,12 +66,11 @@ def propertyXref(
     :rtype: Tag
     """
     prop = property(name = name, title = title, **(kwattrs | {'datatype':'xref'}))
-    prop.append(Tag('xref', attrs = {'frag': frag, 'docid': docid}))
+    prop.append(Tag(is_xml=True, name = 'xref', attrs = {'frag': frag, reftype: ref}))
     return prop
 
 
 def recordset2pfrags(
-        doc: BeautifulSoup, 
         recordset: Iterable[Tuple[str, str]], 
         id_prefix: str, 
         docid_prefix: str, 
@@ -98,14 +98,13 @@ def recordset2pfrags(
     frags = []
     count = 0
     for value, plugin in recordset:
-        frag = doc.new_tag('properties-fragment', id = f'{id_prefix}{str(count)}')
+        frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id': id_prefix + str(count)})
         frag.append(propertyXref(
-            doc = doc,
-            name = p_name,
-            title = p_title,
-            docid = f'{docid_prefix}{value.replace(".","_")}'
+            name = p_name, title = p_title, ref = docid_prefix + value.replace(".","_")
         ))
-        frag.append(doc.new_tag('property', attrs = {'name': 'source', 'title': 'Source Plugin', 'value': plugin}))
+        frag.append(property(
+            name = 'source', title = 'Source Plugin', value = plugin
+        ))
         frags.append(frag)
         count += 1
     return frags

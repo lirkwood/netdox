@@ -112,13 +112,13 @@ class App(Node):
                 name = 'pod', title = 'Pod', value = pod['name']
             ))
             frag.append(psml.propertyXref(
-                name = 'ipv4', title = 'Worker IP', docid = f'_nd_ip_{pod["workerIp"].replace(".","_")}'
+                name = 'ipv4', title = 'Worker IP', ref = f'_nd_ip_{pod["workerIp"].replace(".","_")}'
             ))
             frag.append(psml.propertyXref(
-                name = 'worker_node', title = 'Worker Node', docid = pod["workerNode"]
+                name = 'worker_node', title = 'Worker Node', ref = pod["workerNode"]
             ))
             frag.append(psml.propertyXref(
-                name = 'rancher', title="Pod on Rancher", docid = pod['rancher']
+                name = 'rancher', title="Pod on Rancher", ref = pod['rancher']
             ))
             count += 1
         return section

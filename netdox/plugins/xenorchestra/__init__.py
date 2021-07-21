@@ -155,7 +155,7 @@ class VirtualMachine(Node):
             name='uuid', title='UUID', value=self.uuid
         ))
         frag.append(psml.propertyXref(
-            name='host', title='Host Machine', docid=f'_nd_node_xohost_{self.host}'
+            name='host', title='Host Machine', ref=f'_nd_node_xohost_{self.host}'
         ))
         return frag
     
