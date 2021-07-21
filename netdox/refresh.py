@@ -16,8 +16,8 @@ from bs4 import BeautifulSoup
 import cleanup
 import pageseeder
 import plugins
-import utils
 import psml
+import utils
 from networkobjs import Network, Node
 
 ##################
@@ -125,11 +125,24 @@ def main():
 
     Calls most other functions in this script in the required order.
     """
+
+    #-------------------------------------------------------------------#
+    # Initialisation                                                    #
+    #-------------------------------------------------------------------#
+
     init()
+    global pluginmaster
     network = Network(config = utils.config(), roles = utils.roles())
 
-    global pluginmaster
+    #-------------------------------------------------------------------#
+    # Adding DNS NetworkObjects                                         #
+    #-------------------------------------------------------------------#
+    
     pluginmaster.runStage('dns', network)
+
+    #-------------------------------------------------------------------#
+    # Adding Nodes                                                      #
+    #-------------------------------------------------------------------#
 
     # generate generic nodes
     for ip in network.ips.used:
@@ -141,22 +154,38 @@ def main():
                 domains = ip.domains
             ))
 
-    ## Read hardware docs here
-
     pluginmaster.runStage('nodes', network)
 
+    #-------------------------------------------------------------------#
+    # Generate objects for unused private IPs in used subnets,          #
+    # resolve internal links, any pre-write plugins                     #
+    #-------------------------------------------------------------------#
+
     network.ips.fillSubnets()
-    network.domains.applyRoles()
     network.discoverImpliedLinks()
     
     pluginmaster.runStage('pre-write', network)
+
+    #-------------------------------------------------------------------#
+    # Write domains, ips, and nodes to json and psml,                   #
+    # and run any post-write plugins                                    #
+    #-------------------------------------------------------------------#
     
     network.dumpNetwork()
     network.writePSML()
 
     pluginmaster.runStage('post-write', network)
 
+    #-------------------------------------------------------------------#
+    # Clean up, upload, and clean again                                 #
+    #-------------------------------------------------------------------#
+
     cleanup.pre_upload()
+
+    zip = shutil.make_archive('netdox-psml', 'zip', 'out')
+    pageseeder.zip_upload(zip, 'website')
+
+    cleanup.post_upload()
 
 
 if __name__ == '__main__':
