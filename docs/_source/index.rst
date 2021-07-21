@@ -49,6 +49,7 @@ For more details on how these classes can be used / extended, see :ref:`networko
    :maxdepth: 1
 
    config.rst
+   networkobjs.rst
    utils.rst
    plugins.rst
    refresh.rst

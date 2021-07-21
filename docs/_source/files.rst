@@ -53,16 +53,6 @@ IPs
 Takes json dictionary of serialised PTR records as input, and writes out PSML documents.
 
 
-.. _file_licenses:
-
-PageSeeder Licenses
--------------------
-`license_inf.py <https://gitlab.allette.com.au/allette/devops/network-documentation/-/tree/master/netdox/license_inf.py>`_
-
-.. automodule:: license_inf
-    :members:
-
-
 .. _file_netdox:
 
 Netdox
