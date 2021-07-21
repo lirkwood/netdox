@@ -89,24 +89,6 @@ class DomainSet(NetworkObjectContainer):
         if domain.name not in self.exclusions:
             super().add(domain)
 
-    def applyRoles(self) -> None:
-        """
-        Sets the role attribute on domains in set where it is configured, 'default' otherwise.
-        """
-        for role, roleConfig in self._roles.items():
-            if role == 'exclusions':
-                for domain in roleConfig:
-                    if domain in self:
-                        del self[domain]
-            else:
-                for domain in roleConfig['domains']:
-                    if domain in self:
-                        self[domain].role = role
-    
-        for domain in self:
-            if domain.role is None:
-                domain.role = 'default'
-
 
 class IPv4AddressSet(NetworkObjectContainer):
     """
