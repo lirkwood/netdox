@@ -330,30 +330,3 @@ def resolve_group_refs(params={}, host='', group='', member='', header={}):
     service = f'/members/{member}/groups/{group}/resolverefs'
     r = requests.post(host+service, headers=header, params=params)
     return r.text
-
-
-def pfrag2dict(fragment):
-    if isinstance(fragment, str):
-        fragment = BeautifulSoup(fragment, features='xml')
-    else:
-        try:
-            fragment = BeautifulSoup(str(fragment), features='xml')
-        except Exception:
-            raise TypeError(f'Fragment must be valid PSML')
-    
-    d = {}
-    for property in fragment("property"):
-        if 'value' in property.attrs:
-            d[property['name']] = property['value']
-        elif 'datatype' in property.attrs:
-            if property['datatype'] == 'xref':
-                d[property['name']] = property.xref.string
-            elif property['datatype'] == 'link':
-                d[property['name']] = property.link['href']
-            else:
-                raise NotImplementedError('Unimplemented property type')
-    
-    if d:
-        return d
-    else:
-        raise RuntimeError('No properties found to add to dictionary')

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import defaultdict
 
 import re
 from typing import TYPE_CHECKING, Iterable, Tuple
@@ -33,6 +34,12 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
     return soup
 
 def property(**kwattrs) -> Tag:
+    """
+    Returns a bs4 Tag containing a PSML property with the specified attributes.
+
+    :return: A bs4 tag of an empty *property* element.
+    :rtype: Tag
+    """
     return Tag(is_xml = True, name = 'property', attrs = kwattrs)
 
 def propertyXref(
@@ -60,6 +67,7 @@ def propertyXref(
     prop = property(name = name, title = title, **(kwattrs | {'datatype':'xref'}))
     prop.append(Tag('xref', attrs = {'frag': frag, 'docid': docid}))
     return prop
+
 
 def recordset2pfrags(
         doc: BeautifulSoup, 
@@ -101,6 +109,46 @@ def recordset2pfrags(
         frags.append(frag)
         count += 1
     return frags
+
+
+def pfrag2dict(fragment: str) -> dict:
+    """
+    Converts a PSML *properties-fragment* to a dictionary mapping property names to values / xref uriid / link hrefs.
+    
+    Multiple properties with the same name will produce an array of values in the output dictionary.
+
+    :param fragment: A valid properties-fragment
+    :type fragment: str
+    :raises TypeError: If the fragment cannot be parsed as xml.
+    :raises NotImplementedError: If the property datatype attribute is present and is not one of; xref, link.
+    :raises RuntimeError: If the fragment contains no properties.
+    :return: A dictionary mapping property names to their values.
+    :rtype: dict
+    """
+    if isinstance(fragment, str):
+        fragment = BeautifulSoup(fragment, features='xml')
+    else:
+        try:
+            fragment = BeautifulSoup(str(fragment), features='xml')
+        except Exception:
+            raise TypeError(f'Fragment must be valid PSML')
+    
+    d = defaultdict(list)
+    for property in fragment("property"):
+        if 'value' in property.attrs:
+            d[property['name']].append(property['value'])
+        elif 'datatype' in property.attrs:
+            if property['datatype'] == 'xref':
+                d[property['name']].append(property.xref['uriid'])
+            elif property['datatype'] == 'link':
+                d[property['name']].append(property.link['href'])
+            else:
+                raise NotImplementedError('Unimplemented property type')
+    
+    if d:
+        return {k: (v if len(v) > 1 else v[0]) for k, v in d.items()}
+    else:
+        raise RuntimeError('No properties found to add to dictionary')
 
 
 #############
