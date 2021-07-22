@@ -32,6 +32,32 @@ class HardwareNode(Node):
     def psmlBody(self) -> Iterable[Tag]:
         return [self.psml]
 
+    def merge(self, node: Node) -> Node:
+        """
+        Only merges if *node* has type 'default'.
+        Otherwise adds an xref to ``self.origin_doc`` in the footer of *node* and returns it.
+
+        :param node: The Node to merge with.
+        :type node: Node
+        :raises TypeError: If the node to merge with is not of 'default' type or has a different private_ip attribute.
+        :return: This Node object, which is now a superset of the two.
+        :rtype: Node
+        """
+        if node.private_ip == self.private_ip and node.type == 'default':
+            self.psmlFooter += node.psmlFooter
+            self.public_ips |= node.public_ips
+            self.domains |= node.domains
+            if node.network:
+                self.network = node.network
+            return self
+        elif node.private_ip == self.private_ip:
+            node.psmlFooter += psml.newxrefprop(
+                'hardware', 'Hardware Info', self.origin_doc, reftype = 'uriid'
+            )
+            return node
+        else:
+            raise TypeError('Cannot merge two Nodes of different private ips')
+
 
 class Plugin(BasePlugin):
     name = 'hardware'
@@ -50,6 +76,7 @@ class Plugin(BasePlugin):
 
     def runner(self, network: Network, stage: str) -> None:
         if stage == 'nodes':
+            ## Downloading and unzipping the archive exported in init
             psconf = utils.config()["pageseeder"]
 
             try:
@@ -79,7 +106,8 @@ class Plugin(BasePlugin):
                         
                     section = soup.find('section', id='info')
                     if section:
-
+                        ## For every file matching the structure (is psml, has section with id 'info')
+                        ## Must be one 'name' and one 'ipv4' property at least.
                         name, ip = '', ''
                         for property in section.find_all('property'):
                             if property['name'] == 'ipv4':
@@ -90,26 +118,20 @@ class Plugin(BasePlugin):
                             elif property['name'] == 'name':
                                 name = property['value'].replace(' ','_')
                         
+                        ## if minimum requirements met
                         if name and ip:
                             if ip not in network.ips:
                                 network.add(IPv4Address(ip))
 
-                            oldNode = network.ips[ip].node
-                            newNode = HardwareNode(
+                            oldNode = network.ips[ip].node.docid if network.ips[ip].node is not None else ''
+                            network.replace(oldNode, HardwareNode(
                                 name = name,
                                 private_ip = ip,
                                 psml = ''.join([str(f) for f in section('properties-fragment')]),
                                 origin_doc = soup.document['id']
-                            )
-
-                            if oldNode and oldNode.type == 'default':
-                                network.replace(oldNode.docid, newNode)
-                            elif oldNode:
-                                oldNode.psmlFooter.append(psml.newxrefprop(
-                                    'hardware', 'Hardware Info', soup.document['id']
-                                ))
-                            else:
-                                network.add(newNode)
+                            ))
+                            ## revisit
+                            
                         else:
                             print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\'',
                             ' is missing property with name \'name\' or \'ipv4\' in section \'info\'.')
