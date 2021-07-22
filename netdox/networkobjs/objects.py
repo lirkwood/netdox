@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from ipaddress import IPv4Address as BaseIP
 from typing import TYPE_CHECKING, Iterable, Tuple, Type, Union
@@ -228,6 +229,10 @@ class Domain(NetworkObject):
                 self.network.add(IPv4Address(ip))
             self.network.ips[ip].implied_ptr.add(self.name)
 
+    @property
+    def outpath(self) -> str:
+        return os.path.abspath(f'out/domains/{self.docid}.psml')
+
     def merge(self, domain: Domain) -> Domain:
         """
         In place merge of two Domain instances.
@@ -379,6 +384,10 @@ class IPv4Address(BaseIP, NetworkObject):
             if domain in self.network:
                 self.network.domains[domain].implied_ips.add(self.addr)
 
+    @property
+    def outpath(self) -> str:
+        return os.path.abspath(f'out/ips/{self.docid}.psml')
+
     def merge(self, ip: IPv4Address) -> IPv4Address:
         """
         In place merge of two IPv4Address instances.
@@ -496,6 +505,10 @@ class Node(NetworkObject):
             if ip not in self.network:
                 self.network.add(IPv4Address(ip))
             self.network.ips[ip].node = self
+
+    @property
+    def outpath(self) -> str:
+        return os.path.abspath(f'out/nodes/{self.docid}.psml')
 
     @property
     def psmlBody(self) -> Iterable[Tag]:

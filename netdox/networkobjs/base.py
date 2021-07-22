@@ -49,6 +49,17 @@ class NetworkObject(ABC):
         """
         self._network = new_network
         self.location = new_network.locator.locate(self)
+
+    @property
+    @abstractmethod
+    def outpath(self) -> str:
+        """
+        The absolute filepath to write this NetworkObject document to.
+
+        :return: An absolute filepath.
+        :rtype: str
+        """ 
+        pass
     
     @abstractmethod
     def merge(self, object: NetworkObject) -> NetworkObject:
