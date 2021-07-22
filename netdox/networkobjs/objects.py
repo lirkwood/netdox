@@ -245,6 +245,7 @@ class Domain(NetworkObject):
         :rtype: Domain
         """
         if self.name == domain.name:
+            self.psmlFooter += domain.psmlFooter
             self._private_ips |= domain._private_ips
             self._public_ips |= domain._public_ips
             self._cnames |= domain._cnames
@@ -400,6 +401,7 @@ class IPv4Address(BaseIP, NetworkObject):
         :rtype: IPv4Address
         """
         if self.addr == ip.addr:
+            self.psmlFooter += ip.psmlFooter
             self._ptr |= ip._ptr
             self.implied_ptr |= ip.implied_ptr
             self.nat = ip.nat or self.nat
@@ -532,6 +534,7 @@ class Node(NetworkObject):
         :rtype: Node
         """
         if self.type == node.type and self.private_ip == node.private_ip:
+            self.psmlFooter += node.psmlFooter
             self.public_ips |= node.public_ips
             self.domains |= node.domains
             if node.network:
