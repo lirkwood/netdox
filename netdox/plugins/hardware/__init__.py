@@ -27,6 +27,10 @@ class HardwareNode(Node):
         self.origin_doc = origin_doc
 
     @property
+    def outpath(self) -> str:
+        return os.path.abspath(f'out/hardware/{self.docid}.psml')
+
+    @property
     def psmlBody(self) -> Iterable[Tag]:
         return [self.psml]
 
