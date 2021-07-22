@@ -24,8 +24,7 @@ def create_A(name: str, ip: str, zone: str) -> None:
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
 			
-		with open('src/domains.json') as stream:
-			domains = networkobjs.DomainSet.from_json(stream.read())
+		domains = networkobjs.DomainSet.from_json('src/domains.json')
 		if (ip, 'DNSMadeEasy') in domains[name]._ips:
 			return None
 
@@ -65,8 +64,7 @@ def create_CNAME(name: str, value: str, zone: str) -> None:
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
 
-		with open('src/domains.json') as stream:
-			domains = networkobjs.DomainSet.from_json(stream.read())
+		domains = networkobjs.DomainSet.from_json('src/domains.json')
 		if (value, 'DNSMadeEasy') in domains[name]._cnames:
 			return None
 
@@ -105,8 +103,7 @@ def create_PTR(ip: str, value: str) -> None:
 	"""
 	if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
 
-		with open('src/ips.json', 'r') as stream:
-			ips = networkobjs.IPv4AddressSet.from_json(stream.read())
+		ips = networkobjs.IPv4AddressSet.from_json('src/ips.json')
 		if (value, 'DNSMadeEasy') in ips[ip]._ptr:
 			return None
 
