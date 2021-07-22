@@ -135,19 +135,19 @@ async def makeNodes(network: Network) -> None:
         if uuid not in controllers:
             poolHosts[host['$pool']].append(uuid)
 
-        existingNode = f'_nd_node_{host["address"].replace(".","_")}'
-        network.replace(existingNode, Host(
-            name = host['name_label'],
-            desc = host['name_description'],
-            uuid = uuid,
-            cpus = host['CPUs'],
-            bios = host['bios_strings'],
-            vms = hostVMs[uuid],
-            pool = poolNames[host['$pool']],
-            private_ip = host['address'],
-            public_ips = None,
-            domains = None
-        ))
+        # existingNode = f'_nd_node_{host["address"].replace(".","_")}'
+        # network.replace(existingNode, Host(
+        #     name = host['name_label'],
+        #     desc = host['name_description'],
+        #     uuid = uuid,
+        #     cpus = host['CPUs'],
+        #     bios = host['bios_strings'],
+        #     vms = hostVMs[uuid],
+        #     pool = poolNames[host['$pool']],
+        #     private_ip = host['address'],
+        #     public_ips = None,
+        #     domains = None
+        # ))
 
     return vms, hostVMs, {poolNames[k]: v for k, v in poolHosts.items()}
 
