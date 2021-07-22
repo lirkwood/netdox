@@ -198,16 +198,14 @@ class Network:
         """
         getattr(self, set).to_json(path)
 
-    def setToPSML(self, set: str, dir: str) -> None:
+    def setToPSML(self, set: str) -> None:
         """
         Serialises a NetworkObjectContainer to PSML and writes the PSML files to *dir*.
 
         :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
         :type set: str
-        :param dir: The directory to output the PSML files to.
-        :type dir: str
         """
-        self.writer.serialiseSet(getattr(self, set), dir)
+        self.writer.serialiseSet(getattr(self, set))
 
     def dumpNetwork(self) -> None:
         """
