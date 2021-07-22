@@ -221,9 +221,9 @@ class Network:
         """
         Writes the domains, ips, and nodes of a network to PSML using ``self.writer``.
         """
-        self.setToPSML('domains', 'out/domains')
-        self.setToPSML('ips', 'out/ips')
-        self.setToPSML('nodes', 'out/nodes')
+        self.setToPSML('domains')
+        self.setToPSML('ips')
+        self.setToPSML('nodes')
 
 
 ###################
@@ -301,30 +301,22 @@ class PSMLWriter:
     doc: BeautifulSoup
     body: BeautifulSoup
 
-    def serialiseSet(self, nwobjc: NetworkObjectContainer, dir: str) -> None:
+    def serialiseSet(self, nwobjc: NetworkObjectContainer) -> None:
         """
-        Serialises a set of NetworkObjects using some default settings.
+        Serialises a set of NetworkObjects.
 
         :param nwobjc: An iterable object containing NetworkObjects.
         :type nwobjc: NetworkObjectContainer
-        :param dir: The directory to output the PSML files to.
-        :type dir: str
         """
-        if nwobjc.objectType == 'ips':
-            for ip in nwobjc:
-                self.serialise(ip, f'{dir}/{ip.subnet.replace("/","_")}/{ip.docid}.psml')
-        else:
-            for nwobj in nwobjc:
-                self.serialise(nwobj, f'{dir}/{nwobj.docid}.psml')
+        for nwobj in nwobjc:
+            self.serialise(nwobj)
 
-    def serialise(self, nwobj: NetworkObject, path: str) -> None:
+    def serialise(self, nwobj: NetworkObject) -> None:
         """
-        Serialises a NetworkObject to PSML and writes to a given path.
+        Serialises a NetworkObject to PSML and writes to disk.
 
         :param nwobj: The object to serialise to PSML.
         :type nwobj: NetworkObject
-        :param path: The path to save the output document to.
-        :type path: str
         """
         if isinstance(nwobj, Domain):
             self.doc = populate(DOMAIN_TEMPLATE, nwobj)
@@ -343,11 +335,11 @@ class PSMLWriter:
         if nwobj.psmlFooter:
             map(self.footer.append, nwobj.psmlFooter)
 
-        dir = os.path.dirname(path)
+        dir = os.path.dirname(nwobj.outpath)
         if not os.path.exists(dir):
             os.makedirs(dir)
 
-        with open(path, 'w') as stream:
+        with open(nwobj.outpath, 'w') as stream:
             stream.write(self.doc.prettify())
     
     def domainBody(self, domain: Domain) -> None:
