@@ -120,7 +120,7 @@ class Network:
             object_set.network = self
             self.nodes = object_set
 
-    @newprop
+    @property
     def records(self) -> dict:
         """
         Returns a dictionary of the defined links between domains and IPs
@@ -133,7 +133,7 @@ class Network:
             'reverse': {ip.addr: ip.ptr for ip in self.ips}
         }
 
-    @newprop
+    @property
     def implied_records(self) -> dict:
         """
         Returns a dictionary of the implied links between domains and IPs
