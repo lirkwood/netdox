@@ -83,19 +83,6 @@ class NetworkObject(ABC):
         instance.psmlFooter = [BeautifulSoup(tag, features = 'xml') for tag in instance.psmlFooter]
         return instance
 
-    @classmethod
-    def from_json(cls: Type[NetworkObject], string: str) -> NetworkObject:
-        """
-        Instantiates this class from its __dict__ attribute as a JSON string.
-        Calls the from_dict method.
-
-        :param string: The JSON string to use.
-        :type string: str
-        :return: A instance of this class.
-        :rtype: NetworkObject
-        """
-        return cls.from_dict(json.loads(string))
-
 
 class NetworkObjectContainer(ABC):
     """
@@ -129,18 +116,6 @@ class NetworkObjectContainer(ABC):
     def __contains__(self, key: str) -> bool:
         return self.objects.__contains__(key)
 
-    def to_json(self) -> str:
-        """
-        Serialises the set of NetworkObjects to a JSON string using the JSONEncoder defined in this file.
-
-        :return: A string of JSON
-        :rtype: str
-        """
-        return json.dumps({
-            'objectType': self.objectType,
-            'objects': [object.to_dict() for object in self]
-        }, indent = 2, cls = JSONEncoder)
-
     @classmethod
     def from_dict(cls, constructor: dict) -> NetworkObjectContainer:
         """
@@ -157,17 +132,28 @@ class NetworkObjectContainer(ABC):
             raise ValueError(f'Cannot instantiate {type(cls)._name__} from dictionary of {constructor["objectType"]}')
 
     @classmethod
-    def from_json(cls, string: str) -> NetworkObjectContainer:
+    def from_json(cls, path: str) -> NetworkObjectContainer:
         """
-        Instantiates this class from a JSON string.
+        Instantiates this class from a JSON file.
         Expects a string the same as that returned by *to_json*.
 
-        :param string: The JSON string to use.
-        :type string: str
+        :param path: The JSON file to read.
+        :type path: str
         :return: A instance of this class.
         :rtype: NetworkObjectContainer
         """
-        return cls.from_dict(json.loads(string))
+        with open(path, 'r') as stream:
+            return cls.from_dict(json.loads(stream.read()))
+
+    def to_json(self, path: str) -> None:
+        """
+        Serialises the set of NetworkObjects to a JSON file using the JSONEncoder defined in this file.
+        """
+        with open(path, 'w') as stream:
+            stream.write(json.dumps({
+                'objectType': self.objectType,
+                'objects': [object.to_dict() for object in self]
+            }, indent = 2, cls = JSONEncoder))
 
     def add(self, object: NetworkObject) -> None:
         """

@@ -196,8 +196,7 @@ class Network:
         :param path: The path to write the JSON to.
         :type path: str
         """
-        with open(path, 'w') as stream:
-            stream.write(getattr(self, set).to_json())
+        getattr(self, set).to_json(path)
 
     def setToPSML(self, set: str, dir: str) -> None:
         """
