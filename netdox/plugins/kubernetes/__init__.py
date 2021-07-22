@@ -150,7 +150,6 @@ from plugins.kubernetes.webhooks import create_app
 class Plugin(BasePlugin):
     name = 'kubernetes'
     stages = ['nodes', 'pre-write']
-    xslt = 'plugins/kubernetes/nodes.xslt'
     workerApps: dict
 
     def __init__(self) -> None:

@@ -12,12 +12,10 @@ import utils
 from bs4 import BeautifulSoup, Tag
 from networkobjs import IPv4Address, Network, Node
 from plugins import Plugin as BasePlugin
-from xml.sax.saxutils import escape
 
 
 class HardwareNode(Node):
     origin_doc: str
-    xslt = 'plugins/hardware/hardware.xslt'
 
     def __init__(self, name: str, private_ip: str, psml: str, origin_doc: str, public_ips: Iterable[str] = None, domains: Iterable[str] = None) -> None:
         super().__init__(name, private_ip, public_ips=public_ips, domains=domains, type='Hardware Node')
@@ -38,7 +36,6 @@ class HardwareNode(Node):
 class Plugin(BasePlugin):
     name = 'hardware'
     stages = ['nodes']
-    xslt = 'plugins/hardware/hardware.xslt'
     thread: str
     """The thread tag returned by PageSeeder when starting the download."""
 

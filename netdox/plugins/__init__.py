@@ -23,13 +23,11 @@ class Plugin(ABC):
     Base class for plugins
     """
     name: str
-    # The name to be used for logs, in documents, etc.
+    """The name to be used for logs, in documents, etc."""
     stages: list[str]
-    # The stages to call runner at
-    node_types: list[str]
-    # The node types that this plugin adds to the network (if any)
-    xslt: str = None
-    # Path to an xslt file to import during the nodes transformation
+    """The stages to call runner at"""
+    node_types: tuple[str] = ()
+    """The node types that this plugin adds to the network (if any)"""
 
     def init(self) -> None:
         """
