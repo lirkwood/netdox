@@ -111,9 +111,9 @@ class Plugin(BasePlugin):
                         name, ip = '', ''
                         for property in section.find_all('property'):
                             if property['name'] == 'ipv4':
-                                if hasattr(property, 'value'):
+                                if 'value' in property.attrs:
                                     ip = property['value']
-                                elif hasattr(property, 'datatype'):
+                                elif 'datatype' in property.attrs:
                                     ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip']
                             elif property['name'] == 'name':
                                 name = property['value'].replace(' ','_')
