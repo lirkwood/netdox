@@ -81,20 +81,20 @@ class App(Node):
         count = 0
         for container, template in self.template.items():
             frag = section.new_tag('properties-fragment', id=f'container_{str(count)}')
-            frag.append(psml.property(
+            frag.append(psml.newprop(
                 name = 'container', title = 'Container Name', value = container
             ))
-            frag.append(psml.property(
+            frag.append(psml.newprop(
                 name = 'image', title = 'Image ID', value = template['image']
             ))
             for volume, paths in self.template[container]['volumes'].items():
-                frag.append(psml.property(
+                frag.append(psml.newprop(
                     name = 'pvc', title = 'Persistent Volume Claim', value = volume
                 ))
-                frag.append(psml.property(
+                frag.append(psml.newprop(
                     name = 'mount_path', title = 'Path in Container', value = paths['mount_path']
                 ))
-                frag.append(psml.property(
+                frag.append(psml.newprop(
                     name = 'sub_path', title = 'Path in PVC', value = paths['sub_path']
                 ))
 
@@ -108,16 +108,16 @@ class App(Node):
         count = 0
         for pod in self.pods.values():
             frag = section.new_tag('properties-fragment', id=f'pod_{str(count)}')
-            frag.append(psml.property(
+            frag.append(psml.newprop(
                 name = 'pod', title = 'Pod', value = pod['name']
             ))
-            frag.append(psml.propertyXref(
+            frag.append(psml.newxrefprop(
                 name = 'ipv4', title = 'Worker IP', ref = f'_nd_ip_{pod["workerIp"].replace(".","_")}'
             ))
-            frag.append(psml.propertyXref(
+            frag.append(psml.newxrefprop(
                 name = 'worker_node', title = 'Worker Node', ref = pod["workerNode"]
             ))
-            frag.append(psml.propertyXref(
+            frag.append(psml.newxrefprop(
                 name = 'rancher', title="Pod on Rancher", ref = pod['rancher']
             ))
             count += 1

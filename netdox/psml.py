@@ -33,7 +33,7 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
             xref.decompose()
     return soup
 
-def property(**kwattrs) -> Tag:
+def newprop(**kwattrs) -> Tag:
     """
     Returns a bs4 Tag containing a PSML property with the specified attributes.
 
@@ -42,7 +42,7 @@ def property(**kwattrs) -> Tag:
     """
     return Tag(is_xml = True, name = 'property', attrs = kwattrs)
 
-def propertyXref(
+def newxrefprop(
         name: str, 
         title: str, 
         ref: str,
@@ -65,7 +65,7 @@ def propertyXref(
     :return: A bs4 Tag containing a property and its child xref.
     :rtype: Tag
     """
-    prop = property(name = name, title = title, **(kwattrs | {'datatype':'xref'}))
+    prop = newprop(name = name, title = title, **(kwattrs | {'datatype':'xref'}))
     prop.append(Tag(is_xml=True, name = 'xref', attrs = {'frag': frag, reftype: ref}))
     return prop
 
@@ -99,10 +99,10 @@ def recordset2pfrags(
     count = 0
     for value, plugin in recordset:
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id': id_prefix + str(count)})
-        frag.append(propertyXref(
+        frag.append(newxrefprop(
             name = p_name, title = p_title, ref = docid_prefix + value.replace(".","_")
         ))
-        frag.append(property(
+        frag.append(newprop(
             name = 'source', title = 'Source Plugin', value = plugin
         ))
         frags.append(frag)

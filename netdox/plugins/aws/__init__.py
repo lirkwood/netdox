@@ -59,19 +59,19 @@ class EC2Instance(Node):
         :rtype: Tag
         """
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id':'instanceinf'})
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='instanceId', title='Instance ID', value=self.id
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='mac', title='MAC Address', value=self.mac
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='instanceType', title='Instance Type', value=self.instance_type
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='Monitoring', title='Monitoring', value=self.monitoring
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='availabilityZone', title='Availability Zone', value=self.region
         ))
         return frag
@@ -86,7 +86,7 @@ class EC2Instance(Node):
         """
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id':'tags'})
         for tag, value in self.tags.items():
-            frag.append(psml.property(
+            frag.append(psml.newprop(
                 name='tag', title=tag, value=value
             ))
         return frag

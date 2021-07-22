@@ -120,7 +120,7 @@ class Network:
             object_set.network = self
             self.nodes = object_set
 
-    @property
+    @newprop
     def records(self) -> dict:
         """
         Returns a dictionary of the defined links between domains and IPs
@@ -133,7 +133,7 @@ class Network:
             'reverse': {ip.addr: ip.ptr for ip in self.ips}
         }
 
-    @property
+    @newprop
     def implied_records(self) -> dict:
         """
         Returns a dictionary of the implied links between domains and IPs
@@ -353,7 +353,7 @@ class PSMLWriter:
         self.body = self.doc.find(id = 'records')
 
         if domain.node:
-            self.doc.find(id = 'info').append(propertyXref(
+            self.doc.find(id = 'info').append(newxrefprop(
                 name = 'node',
                 title = 'Node',
                 ref = domain.node.docid
@@ -394,14 +394,14 @@ class PSMLWriter:
         self.body = self.doc.find(id = 'records')
 
         if ip.nat:
-            self.doc.find(id = 'info').append(propertyXref(
+            self.doc.find(id = 'info').append(newxrefprop(
                 name = 'nat',
                 title = 'NAT Destination',
                 ref = f'_nd_ip_{ip.nat.replace(".","_")}'
             ))
 
         if ip.node:
-            self.doc.find(id = 'info').append(propertyXref(
+            self.doc.find(id = 'info').append(newxrefprop(
                 name = 'node',
                 title = 'Node',
                 ref = ip.node.docid
@@ -416,7 +416,7 @@ class PSMLWriter:
         ):  self.body.append(frag)
         impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
         for domain in ip.implied_ptr:
-            impliedfrag.append(propertyXref(
+            impliedfrag.append(newxrefprop(
                 name = 'impliedptr',
                 title = 'Implied PTR Record',
                 ref = f'_nd_domain_{domain.replace(".","_")}'
@@ -439,7 +439,7 @@ class PSMLWriter:
         details = self.doc.find(id = 'details')
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
-            domains.append(propertyXref(
+            domains.append(newxrefprop(
                 name = 'domain',
                 title = 'Domain',
                 ref = f'_nd_domain_{domain.replace(".","_")}'

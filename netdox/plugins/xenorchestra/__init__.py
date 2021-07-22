@@ -148,13 +148,13 @@ class VirtualMachine(Node):
         :rtype: Tag
         """
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'core'})
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='description', title='Description', value=self.desc
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='uuid', title='UUID', value=self.uuid
         ))
-        frag.append(psml.propertyXref(
+        frag.append(psml.newxrefprop(
             name='host', title='Host Machine', ref=f'_nd_node_xohost_{self.host}'
         ))
         return frag
@@ -168,19 +168,19 @@ class VirtualMachine(Node):
         :rtype: Tag
         """
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'os_version'})
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='os-name', title='OS name', value=self.os['name']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='os-uname', title='OS uname', value=self.os['uname']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='os-distro', title='Distro', value=self.os['distro']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='os-major', title='Major version', value=self.os['major']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='os-minor', title='Minor version', value=self.os['minor']
         ))
         return frag
@@ -248,13 +248,13 @@ class Host(Node):
         :rtype: Tag
         """
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'core'})
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='description', title='Description', value=self.desc
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='uuid', title='UUID', value=self.uuid
         ))
-        frag.append(psml.propertyXref(
+        frag.append(psml.newxrefprop(
             name='pool', title='Pool', value=self.pool
         ))
 
@@ -267,19 +267,19 @@ class Host(Node):
         :rtype: Tag
         """
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'cpus'})
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='cpu-count', title='CPU count', value=self.cpus['cpu_count']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='cpu-socket-count', title='CPU sockets', value=self.cpus['socket_count']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='cpu-vendor', title='CPU vendor', value=self.cpus['vendor']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='cpu-speed', title='CPU speed', value=self.cpus['speed']
         ))
-        frag.append(psml.property(
+        frag.append(psml.newprop(
             name='cpu-model', title='CPU model', value=self.cpus['modelname']
         ))
 

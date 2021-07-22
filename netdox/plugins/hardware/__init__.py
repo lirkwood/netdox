@@ -105,7 +105,7 @@ class Plugin(BasePlugin):
                             if oldNode and oldNode.type == 'default':
                                 network.replace(oldNode.docid, newNode)
                             elif oldNode:
-                                oldNode.psmlFooter.append(psml.propertyXref(
+                                oldNode.psmlFooter.append(psml.newxrefprop(
                                     'hardware', 'Hardware Info', soup.document['id']
                                 ))
                             else:
