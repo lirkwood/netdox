@@ -386,7 +386,7 @@ class IPv4Address(BaseIP, NetworkObject):
 
     @property
     def outpath(self) -> str:
-        return os.path.abspath(f'out/ips/{self.docid}.psml')
+        return os.path.abspath(f'out/ips/{self.subnet.replace("/","_")}/{self.docid}.psml')
 
     def merge(self, ip: IPv4Address) -> IPv4Address:
         """
