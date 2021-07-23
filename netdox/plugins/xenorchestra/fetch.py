@@ -6,12 +6,15 @@ Provides a function which links records to their relevant XenOrchestra VMs and g
 
 This script is used during the refresh process to link DNS records to the VMs they resolve to, and to trigger the generation of a publication which describes all VMs, their hosts, and their host's pool.
 """
+import asyncio
+import json
 from collections import defaultdict
-from networkobjs import IPv4Address, Network
-from plugins.xenorchestra import Host, call, authenticate, VirtualMachine
-import asyncio, json
-import iptools, utils
 
+import iptools
+import utils
+from networkobjs import IPv4Address, Network
+from plugins.xenorchestra import VirtualMachine, authenticate, call
+from plugins.xenorchestra.pub import genpub
 
 #########################
 # Convenience functions #
@@ -71,14 +74,23 @@ def runner(network: Network):
     :type network: Network
     """
     # Generate XO Docs
-    vms, _, poolHosts = asyncio.run(makeNodes(network))
+    vms, hostVMs, poolHosts = asyncio.run(makeNodes(network))
 
+    pubdict = {
+        pool: {
+            f'_nd_node_{hostip.replace(".","_")}': [
+                f'_nd_node_xovm_{vmuuid}'
+                for vmuuid in hostVMs[hostip]
+            ]
+            for hostip in hostlist 
+        } 
+        for pool, hostlist in poolHosts.items()
+    }
+    
     # Generate template map for webhooks
     asyncio.run(template_map(vms))
-
-    # with open('plugins/xenorchestra/src/poolHosts.json', 'w') as stream:
-    #     stream.write(json.dumps({key: poolHosts[key] for key in sorted(poolHosts)}))
-    utils.xslt('plugins/xenorchestra/pub.xslt', 'plugins/xenorchestra/src/poolHosts.xml', 'out/xopub.psml')
+    
+    return pubdict
 
 @authenticate
 async def makeNodes(network: Network) -> None:
@@ -92,17 +104,21 @@ async def makeNodes(network: Network) -> None:
     hosts = await fetchType('host')
     vms = await fetchType('VM')
     
+    # Pools
     poolNames = {}
     poolHosts = {}
-    controllers = set()
-    # Pool controller / devices
     for uuid, pool in pools.items():
         poolNames[uuid] = pool['name_label']
-        poolHosts[uuid] = []
-        controllers.add(pool['master'])
+        poolHosts[pool['name_label']] = []
+
+
+    # Hosts
+    hostVMs = {}
+    for host in hosts.values():
+        hostVMs[host['uuid']] = []
+        poolHosts[poolNames[host['$pool']]].append(host['address'])
 
     # VMs
-    hostVMs = defaultdict(list)
     for uuid, vm in vms.items():
         if vm['power_state'] == 'Running':
             if 'mainIpAddress' in vm:
@@ -113,16 +129,17 @@ async def makeNodes(network: Network) -> None:
 
                     hostVMs[vm['$container']].append(vm['uuid'])
 
-                    existingNode = f'_nd_node_{vm["mainIpAddress"].replace(".","_")}'
-                    network.replace(existingNode, VirtualMachine(
-                        name = vm['name_label'],
-                        desc = vm['name_description'],
-                        uuid = uuid,
-                        template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else '—',
-                        os = vm['os_version'],
-                        host = vm['$container'],
-                        pool = poolNames[vm['$pool']],
-                        private_ip = vm['mainIpAddress'],
+                    existingNode = network.ips[vm['mainIpAddress']].node
+                    network.replace(existingNode.docid if existingNode is not None else '', 
+                        VirtualMachine(
+                            name = vm['name_label'],
+                            desc = vm['name_description'],
+                            uuid = uuid,
+                            template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else '—',
+                            os = vm['os_version'],
+                            host = vm['$container'],
+                            pool = poolNames[vm['$pool']],
+                            private_ip = vm['mainIpAddress'],
                     ))
 
                 else:
@@ -130,26 +147,9 @@ async def makeNodes(network: Network) -> None:
             else:
                 print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has no IP address')
 
-    # Hosts
-    for uuid, host in hosts.items():
-        if uuid not in controllers:
-            poolHosts[host['$pool']].append(uuid)
-
-        # existingNode = f'_nd_node_{host["address"].replace(".","_")}'
-        # network.replace(existingNode, Host(
-        #     name = host['name_label'],
-        #     desc = host['name_description'],
-        #     uuid = uuid,
-        #     cpus = host['CPUs'],
-        #     bios = host['bios_strings'],
-        #     vms = hostVMs[uuid],
-        #     pool = poolNames[host['$pool']],
-        #     private_ip = host['address'],
-        #     public_ips = None,
-        #     domains = None
-        # ))
-
-    return vms, hostVMs, {poolNames[k]: v for k, v in poolHosts.items()}
+    return vms, \
+        {hosts[hostid]['address']: vmlist for hostid, vmlist in hostVMs.items()}, \
+        poolHosts
 
 
 @utils.handle
