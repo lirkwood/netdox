@@ -10,6 +10,7 @@ from .objects import Domain, IPv4Address, Node
 
 if TYPE_CHECKING:
     from . import Network
+    from .base import NetworkObject
 
 
 class DomainSet(NetworkObjectContainer):
@@ -233,3 +234,30 @@ class NodeSet(NetworkObjectContainer):
             if self.network:
                 node.network = self.network
             self[node.docid] = node
+
+    def replace(self, identifier: str, replacement: Node) -> None:
+        """
+        Replace the Node with the specified identifier with a new Node.
+
+        Calls merge on the replacement with the target Node passed as the argument,
+        then mutates the original Node into the superset, preserving its identity.
+        Also adds a ref under the replacement's docid in ``self.objects``.
+
+        If target Node is not in the set, the new Node is simply added as-is, 
+        and *identifier* will point to it.
+
+        :param identifier: The string to use to identify the existing object to replace.
+        :type identifier: str
+        :param object: The Node to replace the existing Node with.
+        :type object: Node
+        """
+        if identifier in self:
+            original = self[identifier]
+            superset = replacement.merge(original)
+            original.__class__ = superset.__class__
+            for key, val in superset.__dict__.items():
+                original.__dict__[key] = val
+            self[replacement.docid] = original
+        else:
+            self.add(replacement)
+            self[identifier] = replacement
