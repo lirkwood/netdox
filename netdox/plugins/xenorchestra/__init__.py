@@ -169,19 +169,19 @@ class VirtualMachine(Node):
         """
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'os_version'})
         frag.append(psml.newprop(
-            name='os-name', title='OS name', value=self.os['name']
+            name='os-name', title='OS name', value=self.os['name'] if 'name' in self.os else ''
         ))
         frag.append(psml.newprop(
-            name='os-uname', title='OS uname', value=self.os['uname']
+            name='os-uname', title='OS uname', value=self.os['uname'] if 'uname' in self.os else ''
         ))
         frag.append(psml.newprop(
-            name='os-distro', title='Distro', value=self.os['distro']
+            name='os-distro', title='Distro', value=self.os['distro'] if 'distro' in self.os else ''
         ))
         frag.append(psml.newprop(
-            name='os-major', title='Major version', value=self.os['major']
+            name='os-major', title='Major version', value=self.os['major'] if 'major' in self.os else ''
         ))
         frag.append(psml.newprop(
-            name='os-minor', title='Minor version', value=self.os['minor']
+            name='os-minor', title='Minor version', value=self.os['minor'] if 'minor' in self.os else ''
         ))
         return frag
 
@@ -294,11 +294,15 @@ class Host(Node):
 ## Plugin
 
 from plugins.xenorchestra.fetch import runner
+from plugins.xenorchestra.pub import genpub
 
 
 class Plugin(BasePlugin):
     name = 'xenorchestra'
-    stages = ['nodes']
+    stages = ['nodes', 'pre-write']
+
+    pubdict: dict
+    """A dictionary describing the hierarchy from pools -> hosts -> vms"""
 
     def init(self) -> None:
         """
@@ -316,5 +320,14 @@ class Plugin(BasePlugin):
         for type in ('poolHosts', 'templates'):
             utils.jsonForXslt(f'plugins/xenorchestra/src/{type}.xml', f'{type}.json')
 
-    def runner(self, network: Network, *_) -> None:
-        runner(network)
+    def runner(self, network: Network, stage: str) -> None:
+        if stage == 'nodes':
+            self.pubdict = runner(network)
+        else:
+            try:
+                genpub(self.pubdict)
+            except AttributeError:
+                print(
+                    '[WARNING][xenorchestra] Failed to finish adding VirtualMachines to the network.',
+                    'As a result no publication can be generated.'
+                )
