@@ -84,7 +84,7 @@ def init():
     else:
         print('[WARNING][refresh] No DNS config found on PageSeeder')
         # load default config and copy to upload context
-        for file in os.scandir('src/defconf'):
+        for file in os.scandir('src/defaults/psconf'):
             if file.name != 'config.psml':
                 with open(file, 'r') as stream:
                     soup = BeautifulSoup(stream.read(), features='xml')
