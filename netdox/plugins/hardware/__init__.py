@@ -1,9 +1,10 @@
 import os
 import re
 import time
-from typing import Iterable
 import zipfile
 from shutil import rmtree
+from traceback import print_exc
+from typing import Iterable
 
 import pageseeder
 import psml
@@ -100,40 +101,45 @@ class Plugin(BasePlugin):
             zip.extractall('plugins/hardware/src')
 
             for file in utils.fileFetchRecursive('plugins/hardware/src'):
-                if file.endswith('.psml'):
-                    with open(file, 'r') as stream:
-                        soup = BeautifulSoup(stream.read(), features = 'xml')
-                        
-                    section = soup.find('section', id='info')
-                    if section:
-                        ## For every file matching the structure (is psml, has section with id 'info')
-                        ## Must be one 'name' and one 'ipv4' property at least.
-                        name, ip = '', ''
-                        for property in section.find_all('property'):
-                            if property['name'] == 'ipv4':
-                                if 'value' in property.attrs:
-                                    ip = property['value']
-                                elif 'datatype' in property.attrs:
-                                    ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip']
-                            elif property['name'] == 'name':
-                                name = property['value'].replace(' ','_')
-                        
-                        ## if minimum requirements met
-                        if name and ip:
-                            if ip not in network.ips:
-                                network.add(IPv4Address(ip))
-
-                            oldNode = network.ips[ip].node.docid if network.ips[ip].node is not None else ''
-                            network.replace(oldNode, HardwareNode(
-                                name = name,
-                                private_ip = ip,
-                                psml = ''.join([str(f) for f in section('properties-fragment')]),
-                                origin_doc = soup.document['id']
-                            ))
-                            ## revisit
+                try:
+                    if file.endswith('.psml'):
+                        with open(file, 'r') as stream:
+                            soup = BeautifulSoup(stream.read(), features = 'xml')
                             
+                        section = soup.find('section', id='info')
+                        if section:
+                            ## For every file matching the structure (is psml, has section with id 'info')
+                            ## Must be one 'name' and one 'ipv4' property at least.
+                            name, ip = '', ''
+                            for property in section.find_all('property'):
+                                if property['name'] == 'ipv4':
+                                    if 'value' in property.attrs:
+                                        ip = property['value']
+                                    elif 'datatype' in property.attrs:
+                                        ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip'].replace('_','.')
+                                elif property['name'] == 'name':
+                                    name = property['value'].replace(' ','_')
+                            
+                            ## if minimum requirements met
+                            if name and ip:
+                                if ip not in network.ips:
+                                    network.add(IPv4Address(ip))
+
+                                oldNode = network.ips[ip].node.docid if network.ips[ip].node is not None else ''
+                                network.replace(oldNode, HardwareNode(
+                                    name = name,
+                                    private_ip = ip,
+                                    psml = ''.join([str(f) for f in section('properties-fragment')]),
+                                    origin_doc = soup.document['id']
+                                ))
+                                ## revisit
+                                
+                            else:
+                                print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\'',
+                                ' is missing property with name \'name\' or \'ipv4\' in section \'info\'.')
                         else:
-                            print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\'',
-                            ' is missing property with name \'name\' or \'ipv4\' in section \'info\'.')
-                    else:
-                        print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\' has no section \'info\'.')
+                            print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\' has no section \'info\'.')
+                            
+                except Exception:
+                    print(f'[ERROR][hardware] Failed while processing document with filename \'{os.path.basename(file)}\'')
+                    print_exc()
