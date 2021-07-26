@@ -203,7 +203,7 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <documentinfo>
             <uri docid="#!docid" title="#!name">
-                <labels>show-reversexrefs<xsl:value-of select="$labels"/></labels>
+                <labels>show-reversexrefs</labels>
             </uri>
         </documentinfo>
 
