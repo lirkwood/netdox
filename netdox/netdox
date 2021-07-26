@@ -22,30 +22,7 @@ function refresh {
     _refresh 2>&1 | tee "/etc/netdox/log/refresh-$(date +%F-T%T).log"
 }
 function _refresh {
-    for dir in $APPDIR/out/*; do
-        rm -rf ${dir}/*
-    done
-
-    echo '[INFO][netdox] Refreshing DNS...'
-
-    if python3 refresh.py
-        then
-            echo '[INFO][netdox] Python exited successfully. Beginning PageSeeder upload...'
-            cd $APPDIR/out
-            zip -r -q netdox-src.zip *
-            cd $APPDIR
-            if ant -lib /opt/ant/lib
-                then
-                    echo '[INFO][netdox] Upload successful. Running post-upload cleanup...'
-                    python3 cleanup.py
-                    echo '[INFO][netdox] Refresh complete.'
-                else
-                    echo '[ERROR][netdox] Upload exited with non-zero status. Storing psml for debugging...'
-                    cp $APPDIR/out/netdox-src.zip /etc/netdox/psml.zip
-            fi
-        else
-            echo '[ERROR][netdox] Python exited with non-zero status. Cancelling upload...'
-    fi
+    python3 refresh.py
 
     cp $APPDIR/src/domains.json /etc/netdox/domains.json &> /dev/null
     cp $APPDIR/src/ips.json /etc/netdox/ips.json &> /dev/null
