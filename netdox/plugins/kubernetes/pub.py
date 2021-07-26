@@ -13,10 +13,10 @@ def genpub(pubdict: dict) -> None:
 
         xfrag = pub.new_tag('xref-fragment', id = f'cluster_{count}')
         for worker, apps in workers.items():
-            xfrag.append(pub.new_tag('blockxref', docid = worker))
+            xfrag.append(pub.new_tag('blockxref', frag = 'default', docid = worker))
 
             for app in apps:
-                xfrag.append(pub.new_tag('blockxref', docid = app, level = 1))
+                xfrag.append(pub.new_tag('blockxref', frag = 'default', docid = app, level = 1))
         section.append(xfrag)
         count += 1
     
@@ -38,5 +38,4 @@ TEMPLATE = '''
 
     <section id="clusters" />
 </document>
-
 '''

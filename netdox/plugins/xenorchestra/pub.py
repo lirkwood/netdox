@@ -25,10 +25,10 @@ def genpub(pubdict: dict[str, dict[str, list[Node]]]) -> None:
 
         xfrag = pub.new_tag(name = 'xref-fragment', id = f'pool_{count}')
         for host, vms in hosts.items():
-            xfrag.append(pub.new_tag('blockxref', docid = host))
+            xfrag.append(pub.new_tag('blockxref', frag = 'default', docid = host))
 
             for vm in vms:
-                xfrag.append(pub.new_tag('blockxref', docid = vm, level = 1))
+                xfrag.append(pub.new_tag('blockxref', frag = 'default', docid = vm, level = 1))
                 
         section.append(xfrag)
         count += 1
