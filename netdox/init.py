@@ -22,7 +22,7 @@ def init():
     urimap()
 
     # setting up dirs
-    for path in ('out', '/etc/netdox/base'):
+    for path in ('out', '/etc/netdox/'):
         if not os.path.exists(path):
             os.mkdir(path)
             
