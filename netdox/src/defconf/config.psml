@@ -25,7 +25,7 @@ Here you may define additional DNS roles. Simply create a valid role document an
         <fragment id="exclude">
             <heading level="2">Exclusions</heading>
             <preformat>
-These domains will be excluded from the DNS entirely. No monitors, no documents, etc.
+These domains will be excluded from the DNS entirely. No screenshot, no document, etc.
             </preformat>
             <para>example.com</para>
         </fragment>
