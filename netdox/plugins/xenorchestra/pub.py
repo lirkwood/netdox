@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
-from networkobjs import Network
+from networkobjs import Node
 
-def genpub(network: Network, vms: dict, hostVMs: dict, poolHosts: dict) -> None:
+def genpub(pubdict: dict[str, dict[str, list[Node]]]) -> None:
     """
     Generates a publication linking pools to hosts to vms
 
@@ -17,21 +17,19 @@ def genpub(network: Network, vms: dict, hostVMs: dict, poolHosts: dict) -> None:
     pub = BeautifulSoup(TEMPLATE, features='xml')
     section = pub.find('section', id = 'pools')
     count = 0
-    for pool, hostiplist in poolHosts.items():
+    for pool, hosts in pubdict.items():
         heading = pub.new_tag('heading', level = 2)
         heading.string = pool
         section.append(heading)
         heading.wrap(pub.new_tag('fragment', id = f'heading_{count}'))
 
         xfrag = pub.new_tag(name = 'xref-fragment', id = f'pool_{count}')
+        for host, vms in hosts.items():
+            xfrag.append(pub.new_tag('blockxref', docid = host))
 
-        for hostip in hostiplist:
-            xfrag.append(pub.new_tag('blockxref', docid = network.ips[hostip].node.docid))
-
-            for vmid in hostVMs[hostip]:
-                if 'mainIpAddress' in vms[vmid]:
-                    vmip = vms[vmid]['mainIpAddress']
-                    xfrag.append(pub.new_tag('blockxref', docid = network.ips[vmip].node.docid, level = 1))
+            for vm in vms:
+                xfrag.append(pub.new_tag('blockxref', docid = vm, level = 1))
+                
         count += 1
 
     with open('out/xopub.psml', 'w') as stream:
