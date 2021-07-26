@@ -180,6 +180,8 @@ def main():
 
     cleanup.post_upload()
 
+    print('[INFO][refresh] Done.')
+
 
 if __name__ == '__main__':
     main()
