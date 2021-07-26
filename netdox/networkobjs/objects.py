@@ -5,6 +5,8 @@ import re
 from ipaddress import IPv4Address as BaseIP
 from typing import TYPE_CHECKING, Iterable, Tuple, Type, Union
 
+from PIL.Image import new
+
 import iptools
 import utils
 from bs4 import Tag
@@ -27,7 +29,7 @@ class Domain(NetworkObject):
     """The root DNS zone this domain was found in."""
     role: str
     """The configured DNS role this domain has been assigned."""
-    node: Node
+    _node: Node
     """The Node this domain is hosted on."""
     _container: DomainSet
     _public_ips: set[str]
@@ -65,7 +67,7 @@ class Domain(NetworkObject):
             self.implied_ips = set()
             self.subnets = set()
 
-            self.node = None
+            self._node = None
             self.psmlFooter = []
         else:
             raise ValueError('Must provide a valid name for dns record (some FQDN)')
@@ -180,6 +182,22 @@ class Domain(NetworkObject):
         return list(set([cname for cname,_ in self._cnames]))
 
     @property
+    def node(self) -> Node:
+        """
+        Returns the Node this Domain resolves to.
+
+        :return: The Node this Domain resolves to, or None.
+        :rtype: Node
+        """
+        return self._node
+
+    @node.setter
+    def node(self, new_node: Node) -> None:
+        self._node = new_node
+        if new_node.location:
+            self.location = new_node.location
+
+    @property
     def container(self) -> DomainSet:
         """
         Returns the current _container attribute
@@ -257,7 +275,7 @@ class Domain(NetworkObject):
             raise ValueError('Cannot merge two Domains with different names')
 
     def to_dict(self) -> dict:
-        return super().to_dict() | {'node': None, '_container': None}
+        return super().to_dict() | {'_node': None, '_container': None}
 
     @classmethod
     def from_dict(cls: Type[Domain], string: str) -> Domain:
