@@ -144,6 +144,7 @@ class App(Node):
 ## Public plugin class
 
 from plugins.kubernetes.refresh import runner
+from plugins.kubernetes.pub import genpub
 from plugins.kubernetes.webhooks import create_app
 
 
@@ -221,19 +222,7 @@ class Plugin(BasePlugin):
             for cluster in self.workerApps:
                 self.workerApps[cluster] = {k: self.workerApps[cluster][k] for k in sorted(self.workerApps[cluster])}
     
-            # with open('plugins/kubernetes/src/workerApps.json', 'w') as stream:
-            #     stream.write(json.dumps(self.workerApps, indent = 2, cls = JSONEncoder))
-                
-            utils.xslt(
-                xsl = 'plugins/kubernetes/workerAppsMaker.xslt', 
-                src = 'plugins/kubernetes/src/workerApps.xml', 
-                out = 'plugins/kubernetes/workerApps.xslt'
-            )
-            utils.xslt(
-                xsl = 'plugins/kubernetes/pub.xslt', 
-                src = 'plugins/kubernetes/src/workerApps.xml', 
-                out = 'out/k8spub.psml'
-            )           
+            genpub(self.workerApps)  
 
     def approved_node(self, uri: str) -> Response:
         summary = psml.pfrag2dict(pageseeder.get_fragment(uri, 'summary'))
