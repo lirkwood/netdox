@@ -2,14 +2,14 @@
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="1.0" />
+            <property name="template_version"     title="Template version"   value="1.1" />
         </properties>
     </metadata>
 
     <section id="title">
       <fragment id="title">
         <heading level="2">Hardware Node</heading>
-         <heading level="1"/>
+        <heading level="1"><t:value name="ps.title"/></heading>
       </fragment>
    </section>
 
@@ -17,20 +17,19 @@
 
         <properties-fragment id="info">
             <property name="name" title="Name" value="" />
-            <property name="ipv4" title="Private IP" value="" />
+            <property name="desc" title="Description" value="" />
+            <property name="model" title="Model Number" value="" />
             <property name="serial" title="Serial Number" value="" />
+            <property name="ipv4" title="Private IP" value="" />
+            <property name="ipmi" title="IPMI" value="" />
             <property name="mac" title="MAC Address" value="" />
             <property name="os" title="Operating System and Version" value="" />
             <property name="manufacturer" title="Manufacturer" value="" />
             <property name="location" title="Location" value="" />
         </properties-fragment>
 
-        <fragment id="image">
-            <block label="border-2"/>
-        </fragment>
+        <fragment id="images" />
     
     </section>
 
 </document>
-  
-  
