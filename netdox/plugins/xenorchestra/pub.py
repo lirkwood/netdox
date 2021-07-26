@@ -30,6 +30,7 @@ def genpub(pubdict: dict[str, dict[str, list[Node]]]) -> None:
             for vm in vms:
                 xfrag.append(pub.new_tag('blockxref', docid = vm, level = 1))
                 
+        section.append(xfrag)
         count += 1
 
     with open('out/xopub.psml', 'w') as stream:
