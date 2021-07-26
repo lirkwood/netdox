@@ -46,16 +46,6 @@ def init():
     global pluginmaster
     pluginmaster = plugins.PluginManager()
     pluginmaster.initPlugins()
-    
-    # Add import statements to imports.xslt
-    xsltImports = BeautifulSoup(utils.MIN_STYLESHEET, features = 'xml')
-    for plugin in pluginmaster.nodes:
-        if plugin.xslt:
-            importTag = xsltImports.new_tag('include', nsprefix = 'xsl', href = plugin.xslt)
-            xsltImports.stylesheet.append(importTag)
-    
-    with open('imports.xslt', 'w', encoding = 'utf-8') as stream:
-        stream.write(xsltImports.prettify())
 
     roles = {"exclusions": []}
     # load dns config from pageseeder
@@ -64,24 +54,27 @@ def init():
         # load roles fragment
         roleFrag = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
-            roleConfig = psml.pfrag2dict(pageseeder.get_fragment(xref['docid'], 'config'))
-            roleName = roleConfig['name']
+            try:
+                roleConfig = psml.pfrag2dict(pageseeder.get_fragment(xref['uriid'], 'config'))
+                roleName = roleConfig['name']
 
-            # set role for configured domains
-            domains = set()
-            revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['docid']), features='xml')
-            for revXref in revXrefs("reversexref"):
-                ## change to 'domain'
-                if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'domain':
-                    domains.add(revXref['urititle'])
-            
-            screenshot = strtobool(roleConfig['screenshot'])
-            del roleConfig['name'], roleConfig['screenshot']
-            
-            roles[roleName] = (roleConfig | {
-                "screenshot": screenshot,
-                "domains": list(domains)
-            })
+                # set role for configured domains
+                domains = set()
+                revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['uriid']), features='xml')
+                for revXref in revXrefs("reversexref"):
+                    ## change to 'domain'
+                    if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'domain':
+                        domains.add(revXref['urititle'])
+                
+                screenshot = strtobool(roleConfig['screenshot'])
+                del roleConfig['name'], roleConfig['screenshot']
+                
+                roles[roleName] = (roleConfig | {
+                    "screenshot": screenshot,
+                    "domains": list(domains)
+                })
+            except Exception:
+                print(f'[ERROR][refresh] Failed to load DNS role {xref["urititle"]}')
 
         # load exclusions
         exclusionSoup = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'exclude'), features='xml')
