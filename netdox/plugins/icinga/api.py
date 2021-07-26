@@ -6,12 +6,10 @@ Provides functions for interacting with the Icinga API and a class for managing 
 """
 from bs4 import BeautifulSoup
 from plugins.icinga.ssh import set_host, rm_host, reload
-from os import rename, mkdir
-from shutil import rmtree
 from typing import Iterable, Tuple
 import requests, json
 import utils
-from networkobjs import Domain, DomainSet, Network, Node
+from networkobjs import Domain, Network
 
 ####################################
 # Generic resource fetch functions #
@@ -189,7 +187,8 @@ class MonitorManager:
                             setattr(domain, 'icinga', self.manual[icinga][domain.name])
             else:
                 invalid.append(domain)
-                needsReload.add(self.locationIcingas[domain.location])
+                if domain.location:
+                    needsReload.add(self.locationIcingas[domain.location])
 
         for icinga in needsReload:
             reload(icinga = icinga)
