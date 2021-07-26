@@ -184,8 +184,13 @@ class NetworkObjectContainer(ABC):
     def replace(self, identifier: str, replacement: NetworkObject) -> None:
         """
         Replace the object with the specified identifier with a new object.
-        Calls merge on the new object with the object to be replaced passed as the argument.
-        If target object is not in the set, the new object is simply added as-is.
+
+        Calls merge on the replacement with the target object passed as the argument,
+        then mutates the original object into the superset, preserving its identity.
+        Also adds a ref under the replacement's name in ``self.objects``.
+
+        If target object is not in the set, the new object is simply added as-is, 
+        and *identifier* will point to it.
 
         :param identifier: The string to use to identify the existing object to replace.
         :type identifier: str
@@ -197,7 +202,8 @@ class NetworkObjectContainer(ABC):
             superset = replacement.merge(original)
             original.__class__ = superset.__class__
             for key, val in superset.__dict__.items():
-                self[identifier].__dict__[key] = val
+                original.__dict__[key] = val
+            self[replacement.name] = original
         else:
             self.add(replacement)
 
