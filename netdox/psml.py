@@ -28,9 +28,6 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
         if isinstance(value, str):
             template = re.sub(f'#!{attribute}', value, template)
     soup = BeautifulSoup(template, features = 'xml')
-    for xref in soup.find_all('xref'):
-        if xref['docid'].startswith('#!'):
-            xref.decompose()
     return soup
 
 def newprop(**kwattrs) -> Tag:
@@ -184,7 +181,7 @@ DOMAIN_TEMPLATE = '''
                 <property name="name"       title="Name"        value="#!name" />
                 <property name="root"       title="Root Domain" value="#!root" />
                 <property name="role"       title="DNS Role"    datatype="xref" >
-                    <xref frag="default" docid="#!role" />
+                    <xref frag="default" uriid="" />
                 </property>
                 <property name="location"   title="Location"    value="#!location" />
             </properties-fragment>
