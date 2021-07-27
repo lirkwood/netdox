@@ -17,17 +17,29 @@ from plugins import Plugin as BasePlugin
 
 class HardwareNode(Node):
     origin_doc: str
+    filename: str
 
-    def __init__(self, name: str, private_ip: str, psml: str, origin_doc: str, public_ips: Iterable[str] = None, domains: Iterable[str] = None) -> None:
+    def __init__(self, 
+            name: str, 
+            private_ip: str, 
+            psml: str, 
+            origin_doc: str, 
+            filename: str,
+            title: str = '',
+            public_ips: Iterable[str] = None, 
+            domains: Iterable[str] = None
+        ) -> None:
         super().__init__(name, private_ip, public_ips=public_ips, domains=domains, type='Hardware Node')
         self.docid = f'_nd_node_hardware_{self.private_ip.replace(".","_")}'
 
         self.psml = psml
         self.origin_doc = origin_doc
+        self.filename = filename
+        self.title = title or self.name
 
     @property
     def outpath(self) -> str:
-        return os.path.abspath(f'out/hardware/{self.docid}.psml')
+        return os.path.abspath(f'out/hardware/{self.filename}')
 
     @property
     def psmlBody(self) -> Iterable[Tag]:
@@ -72,20 +84,19 @@ class Plugin(BasePlugin):
         os.mkdir('plugins/hardware/src')
 
         self.thread = BeautifulSoup(
-            pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True)
-        , features = 'xml')
+            pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True), 
+        features = 'xml').thread
+
+        while self.thread['status'] != 'completed':
+            time.sleep(0.5)
+            self.thread = BeautifulSoup(pageseeder.get_thread_progress(self.thread['id']), features='xml').thread
+            if self.thread is None:
+                raise RuntimeError('Thread for hardware download never had status \'completed\'')
 
     def runner(self, network: Network, stage: str) -> None:
         if stage == 'nodes':
             ## Downloading and unzipping the archive exported in init
             psconf = utils.config()["pageseeder"]
-
-            try:
-                while self.thread.thread['status'] != 'completed':
-                    time.sleep(2)
-                    self.thread = BeautifulSoup(pageseeder.get_thread(self.thread.thread['id']), features='xml')
-            except AttributeError:
-                pass
         
             with requests.get(
                 f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{self.thread.zip.string}',
@@ -130,7 +141,9 @@ class Plugin(BasePlugin):
                                     name = name,
                                     private_ip = ip,
                                     psml = ''.join([str(f) for f in section('properties-fragment')]),
-                                    origin_doc = soup.document['id']
+                                    origin_doc = soup.document['id'],
+                                    filename = os.path.basename(file),
+                                    title = soup.find('heading', level = '1').string
                                 ))
                                 ## revisit
                                 
@@ -139,7 +152,7 @@ class Plugin(BasePlugin):
                                 ' is missing property with name \'name\' or \'ipv4\' in section \'info\'.')
                         else:
                             print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\' has no section \'info\'.')
-                            
+
                 except Exception:
                     print(f'[ERROR][hardware] Failed while processing document with filename \'{os.path.basename(file)}\'')
                     print_exc()
