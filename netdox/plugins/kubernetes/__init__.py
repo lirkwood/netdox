@@ -120,6 +120,8 @@ class App(Node):
             frag.append(psml.newxrefprop(
                 name = 'rancher', title="Pod on Rancher", ref = pod['rancher']
             ))
+
+            section.append(frag)
             count += 1
         return section
     
