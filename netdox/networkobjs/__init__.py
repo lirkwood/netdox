@@ -298,6 +298,7 @@ class PSMLWriter:
     """
     doc: BeautifulSoup
     body: BeautifulSoup
+    footer: list[Tag]
 
     def serialiseSet(self, nwobjc: NetworkObjectContainer) -> None:
         """
@@ -317,13 +318,10 @@ class PSMLWriter:
         :type nwobj: NetworkObject
         """
         if isinstance(nwobj, Domain):
-            self.doc = populate(DOMAIN_TEMPLATE, nwobj)
             self.domainBody(nwobj)
         elif isinstance(nwobj, IPv4Address):
-            self.doc = populate(IPV4ADDRESS_TEMPLATE, nwobj)
             self.ipBody(nwobj)
         elif isinstance(nwobj, Node):
-            self.doc = populate(NODE_TEMPLATE, nwobj)
             self.nodeBody(nwobj)
         else:
             self.doc = None
@@ -356,6 +354,14 @@ class PSMLWriter:
                 title = 'Node',
                 ref = domain.node.docid
             ))
+
+        if 'uri' in utils.roles()[domain.role]:
+            self.doc.find(title='DNS Role').xref['uriid'] = utils.roles()[domain.role]['uri']
+        else:
+            roleprop = self.doc.find(title='DNS Role')
+            roleprop.xref.decompose()
+            roleprop['datatype'] = 'string'
+            roleprop['value'] = '—'
 
         for frag in recordset2pfrags(
             recordset = domain._private_ips,
@@ -412,6 +418,7 @@ class PSMLWriter:
             p_name = 'ptr',
             p_title = 'PTR Record'
         ):  self.body.append(frag)
+
         impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
         for domain in ip.implied_ptr:
             impliedfrag.append(newxrefprop(
@@ -431,7 +438,8 @@ class PSMLWriter:
         self.doc = populate(NODE_TEMPLATE, node)
         self.body = self.doc.find(id = 'body')
 
-        map(self.body.append, node.psmlBody)
+        for tag in node.psmlBody:
+            self.body.append(tag)
         self.body.unwrap()
         
         details = self.doc.find(id = 'details')
