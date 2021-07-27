@@ -196,11 +196,21 @@ def export(params={}, directory = False, host='', member='', header={}):
 
 
 @auth
-def get_thread(id, host='', header={}):
+def get_thread_progress(id, host='', group='', header={}):
     """
     Returns information about some PageSeeder process thread
     """
-    service = f'/threads/{id}/progress'
+    service = f'/groups/{group}/threads/{id}/progress'
+    r = requests.get(host+service, headers=header)
+    return r.text
+
+
+@auth
+def get_thread_logs(id, host='', group='', header={}):
+    """
+    Returns information about some PageSeeder process thread
+    """
+    service = f'/groups/{group}/threads/{id}/logs'
     r = requests.get(host+service, headers=header)
     return r.text
 
@@ -385,7 +395,7 @@ def zip_upload(path, uploadpath, host='', group='', header={}):
     while thread['status'] != 'completed':
         sleep(2)
         try:
-            thread = BeautifulSoup(get_thread(thread['id']), features = 'xml').thread
+            thread = BeautifulSoup(get_thread_progress(thread['id']), features = 'xml').thread
         except TypeError:
             print('[ERROR][upload] Upload failed. Clearing loading zone...')
             clear_loading_zone()
