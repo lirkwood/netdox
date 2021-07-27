@@ -23,5 +23,6 @@ netdox/logs
 !netdox/src/nat.txt
 
 !netdox/plugins/kubernetes/src/templates/
+netdox/plugins/activedirectory/records/
 
 docs/_build/
