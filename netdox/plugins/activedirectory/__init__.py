@@ -22,12 +22,12 @@ class Plugin(BasePlugin):
             rmtree('plugins/activedirectory/records')
         os.mkdir('plugins/activedirectory/records')
 
-        for file in os.scandir('plugins/activedirectory/nfs'):
+        for file in os.scandir('plugins/activedirectory/src'):
             if file.name.endswith('.bin'):
                 subprocess.run(args = [
                     './crypto.sh',                                                          # executable
                     'decrypt',                                                              # method
-                    'plugins/activedirectory/nfs/vector.txt',                               # IV path
+                    'plugins/activedirectory/src/vector.txt',                               # IV path
                     file.path,                                                              # input path
                     f'plugins/activedirectory/records/{file.name.replace(".bin", ".json")}' # output path
                 ])
