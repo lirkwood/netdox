@@ -125,10 +125,10 @@ def pre_upload():
 
     stale = sentenceStale()
     if stale:
-        # with open('src/review.json', 'r') as stream:
-        #     review = json.load(stream)
         with open('src/stale.json', 'w') as stream:
             stream.write(json.dumps(stale, indent=2))
+
+    pageseeder.clear_loading_zone()
 
 
 def post_upload():
