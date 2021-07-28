@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import os
 import re
 import time
 import zipfile
 from shutil import rmtree
 from traceback import print_exc
-from typing import Iterable
+from typing import Iterable, Type
 
 import pageseeder
 import psml
@@ -22,10 +24,9 @@ class HardwareNode(Node):
     def __init__(self, 
             name: str, 
             private_ip: str, 
-            psml: str, 
+            psml: Tag, 
             origin_doc: str, 
             filename: str,
-            title: str = '',
             public_ips: Iterable[str] = None, 
             domains: Iterable[str] = None
         ) -> None:
@@ -35,7 +36,6 @@ class HardwareNode(Node):
         self.psml = psml
         self.origin_doc = origin_doc
         self.filename = filename
-        self.title = title or self.name
 
     @property
     def outpath(self) -> str:
@@ -70,6 +70,14 @@ class HardwareNode(Node):
             return node
         else:
             raise TypeError('Cannot merge two Nodes of different private ips')
+    
+    def to_dict(self) -> dict:
+        return super().to_dict() | {'psml': str(self.psml)}
+    
+    @classmethod
+    def from_dict(cls: Type[HardwareNode], string: str) -> HardwareNode:
+        node = super().from_dict(string)
+        node.psml = BeautifulSoup(node.psml, features='xml').find('section', id='info').extract()
 
 
 class Plugin(BasePlugin):
@@ -140,10 +148,9 @@ class Plugin(BasePlugin):
                                 network.replace(oldNode, HardwareNode(
                                     name = name,
                                     private_ip = ip,
-                                    psml = ''.join([str(f) for f in section('properties-fragment')]),
+                                    psml = section.extract(),
                                     origin_doc = soup.document['id'],
-                                    filename = os.path.basename(file),
-                                    title = soup.find('heading', level = '1').string
+                                    filename = os.path.basename(file)
                                 ))
                                 ## revisit
                                 
