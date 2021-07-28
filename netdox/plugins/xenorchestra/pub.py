@@ -1,18 +1,14 @@
 from bs4 import BeautifulSoup
-from networkobjs import Node
+from networkobjs import Node, Network
 
-def genpub(pubdict: dict[str, dict[str, list[Node]]]) -> None:
+def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
     """
     Generates a publication linking pools to hosts to vms
 
     :param network: The network
     :type network: Network
-    :param vms: A dictionary mapping VM UUIDs to a dict of details
-    :type vms: dict
-    :param hostVMs: A dictionary mapping Host IP addresses to VM UUIDs
-    :type hostVMs: dict
-    :param poolHosts: A dictionary mapping pool names to host IP addresses.
-    :type poolHosts: dict
+    :param pubdict: A dictionary of node docids
+    :type pubdict: dict[str, dict[str, list[Node]]]
     """
     pub = BeautifulSoup(TEMPLATE, features='xml')
     section = pub.find('section', id = 'pools')
@@ -25,10 +21,12 @@ def genpub(pubdict: dict[str, dict[str, list[Node]]]) -> None:
 
         xfrag = pub.new_tag(name = 'xref-fragment', id = f'pool_{count}')
         for host, vms in hosts.items():
-            xfrag.append(pub.new_tag('blockxref', frag = 'default', docid = host))
+            finalref = network.nodes[host].docid
+            xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = finalref))
 
             for vm in vms:
-                xfrag.append(pub.new_tag('blockxref', frag = 'default', docid = vm, level = 1))
+                finalref = network.nodes[vm].docid
+                xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = finalref, level = 1))
                 
         section.append(xfrag)
         count += 1
