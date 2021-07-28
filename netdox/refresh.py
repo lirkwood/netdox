@@ -55,12 +55,13 @@ def init():
         roleFrag = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'roles'), features='xml')
         for xref in roleFrag("xref"):
             try:
-                roleConfig = psml.pfrag2dict(pageseeder.get_fragment(xref['uriid'], 'config'))
+                roleUri = xref['uriid']
+                roleConfig = psml.pfrag2dict(pageseeder.get_fragment(roleUri, 'config'))
                 roleName = roleConfig['name']
 
                 # set role for configured domains
                 domains = set()
-                revXrefs = BeautifulSoup(pageseeder.get_xrefs(xref['uriid']), features='xml')
+                revXrefs = BeautifulSoup(pageseeder.get_xrefs(roleUri), features='xml')
                 for revXref in revXrefs("reversexref"):
                     ## change to 'domain'
                     if 'documenttype' in revXref.attrs and revXref['documenttype'] == 'domain':
@@ -71,7 +72,8 @@ def init():
                 
                 roles[roleName] = (roleConfig | {
                     "screenshot": screenshot,
-                    "domains": list(domains)
+                    "domains": list(domains),
+                    "uri": roleUri
                 })
             except Exception:
                 print(f'[ERROR][refresh] Failed to load DNS role {xref["urititle"]}')
