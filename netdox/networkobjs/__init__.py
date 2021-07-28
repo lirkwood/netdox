@@ -329,14 +329,15 @@ class PSMLWriter:
 
         self.footer = self.doc.find(id = 'footer')
         if nwobj.psmlFooter:
-            map(self.footer.append, nwobj.psmlFooter)
+            for tag in nwobj.psmlFooter:
+                self.footer.append(tag)
 
         dir = os.path.dirname(nwobj.outpath)
         if not os.path.exists(dir):
             os.makedirs(dir)
 
-        with open(nwobj.outpath, 'w') as stream:
-            stream.write(self.doc.prettify())
+        with open(nwobj.outpath, 'w', encoding = 'utf-8') as stream:
+            stream.write(str(self.doc))
     
     def domainBody(self, domain: Domain) -> None:
         """
@@ -349,7 +350,7 @@ class PSMLWriter:
         self.body = self.doc.find(id = 'records')
 
         if domain.node:
-            self.doc.find(id = 'info').append(newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(newxrefprop(
                 name = 'node',
                 title = 'Node',
                 ref = domain.node.docid
@@ -398,14 +399,14 @@ class PSMLWriter:
         self.body = self.doc.find(id = 'records')
 
         if ip.nat:
-            self.doc.find(id = 'info').append(newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(newxrefprop(
                 name = 'nat',
                 title = 'NAT Destination',
                 ref = f'_nd_ip_{ip.nat.replace(".","_")}'
             ))
 
         if ip.node:
-            self.doc.find(id = 'info').append(newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(newxrefprop(
                 name = 'node',
                 title = 'Node',
                 ref = ip.node.docid
@@ -442,12 +443,13 @@ class PSMLWriter:
             self.body.append(tag)
         self.body.unwrap()
         
-        details = self.doc.find(id = 'details')
+        header = self.doc.find('section', id = 'header')
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
-            domains.append(newxrefprop(
-                name = 'domain',
-                title = 'Domain',
-                ref = f'_nd_domain_{domain.replace(".","_")}'
-            ))
-        details.append(domains)
+            if domain in node.network.domains:
+                domains.append(newxrefprop(
+                    name = 'domain',
+                    title = 'Domain',
+                    ref = f'_nd_domain_{domain.replace(".","_")}'
+                ))
+        header.append(domains)
