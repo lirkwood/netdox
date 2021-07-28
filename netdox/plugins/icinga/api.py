@@ -5,6 +5,7 @@ API Functions
 Provides functions for interacting with the Icinga API and a class for managing Netdox-generated monitors.
 """
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from plugins.icinga.ssh import set_host, rm_host, reload
 from typing import Iterable, Tuple
 import requests, json
@@ -241,7 +242,7 @@ class MonitorManager:
                 </properties-fragment>
                 ''', features = 'xml')
                 for service in domain.icinga['services']:
-                    frag.append(frag.new_tag('property', attrs = {
+                    frag.find(id='icinga').append(frag.new_tag('property', attrs = {
                         'name': 'service',
                         'title': 'Monitor Service',
                         'value': service
