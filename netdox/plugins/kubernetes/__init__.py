@@ -77,10 +77,10 @@ class App(Node):
 
     @property
     def psmlPodTemplate(self) -> Tag:
-        section = BeautifulSoup('<section id="template" title="Pod Template" />', features = 'xml')
+        section = Tag(is_xml=True, name='section', attrs={'id':'template', 'title':'Pod Template'})
         count = 0
         for container, template in self.template.items():
-            frag = section.new_tag('properties-fragment', id=f'container_{str(count)}')
+            frag = Tag(is_xml=True, name='properties-fragment', attrs={'id': f'container_{str(count)}'})
             frag.append(psml.newprop(
                 name = 'container', title = 'Container Name', value = container
             ))
@@ -104,10 +104,10 @@ class App(Node):
                 
     @property
     def psmlRunningPods(self) -> Tag:
-        section = BeautifulSoup('<section id="pods" title="Running Pods" />', features = 'xml')
+        section = Tag(is_xml=True, name='section', attrs={'id':'pods', 'title':'Running Pods'})
         count = 0
         for pod in self.pods.values():
-            frag = section.new_tag('properties-fragment', id=f'pod_{str(count)}')
+            frag = Tag(is_xml=True, name='properties-fragment', attrs={'id': f'pod_{str(count)}'})
             frag.append(psml.newprop(
                 name = 'pod', title = 'Pod', value = pod['name']
             ))
@@ -117,9 +117,9 @@ class App(Node):
             frag.append(psml.newxrefprop(
                 name = 'worker_node', title = 'Worker Node', ref = pod["workerNode"]
             ))
-            frag.append(psml.newxrefprop(
-                name = 'rancher', title="Pod on Rancher", ref = pod['rancher']
-            ))
+            link = psml.newprop(name = 'rancher', title="Pod on Rancher")
+            link.append(Tag(name='link', attrs={'href': pod['rancher']}))
+            frag.append(link)
 
             section.append(frag)
             count += 1
