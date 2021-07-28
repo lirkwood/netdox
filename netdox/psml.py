@@ -175,9 +175,9 @@ DOMAIN_TEMPLATE = '''
             </fragment>
         </section>
         
-        <section id="details">
+        <section id="header">
 
-            <properties-fragment id="info">
+            <properties-fragment id="header">
                 <property name="name"       title="Name"        value="#!name" />
                 <property name="root"       title="Root Domain" value="#!root" />
                 <property name="role"       title="DNS Role"    datatype="xref" >
@@ -217,9 +217,9 @@ IPV4ADDRESS_TEMPLATE = '''
             </fragment>
         </section>
 
-        <section id="details" title="details">
+        <section id="header">
         
-            <properties-fragment id="info">
+            <properties-fragment id="header">
                 <property name="ipv4"               title="IP"                  value="#!name" /> 
                 <property name="subnet"             title="Subnet"              value="#!subnet" />
                 <property name="location"           title="Location"            value="#!location" />
@@ -256,9 +256,9 @@ NODE_TEMPLATE = '''
             </fragment>
         </section>
         
-        <section id="details">
+        <section id="header">
 
-            <properties-fragment id="info">
+            <properties-fragment id="header">
                 <property name="nodename" title="Name" value="#!name" />
                 <property name="nodetype" title="Node Type" value="#!type" />
                 <property name="location" title="Location" value="#!location" />
