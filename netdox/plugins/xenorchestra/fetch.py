@@ -137,7 +137,7 @@ async def makeNodes(network: Network) -> None:
                             uuid = uuid,
                             template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else '—',
                             os = vm['os_version'],
-                            host = vm['$container'],
+                            host = f"_nd_node_{hosts[vm['$container']]['address'].replace('.','_')}",
                             pool = poolNames[vm['$pool']],
                             private_ip = vm['mainIpAddress'],
                     ))
