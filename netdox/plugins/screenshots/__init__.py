@@ -3,14 +3,16 @@ import json
 import os
 import shutil
 from typing import Iterable, Tuple
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 import diffimg
 import utils
-from networkobjs import Domain, DomainSet, Network
+from networkobjs import Domain, Network
 from plugins import Plugin as BasePlugin
 from pyppeteer import launch
 from pyppeteer.page import Page
-from datetime import date, datetime
+from datetime import date
 import pageseeder
 
 
@@ -70,6 +72,12 @@ class ScreenshotManager:
                     )
 
             else:
+                domain.psmlFooter.append(BeautifulSoup(f'''
+                    <fragment id="screenshot">
+                        <para><img src="{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{domain.docid}.jpg"
+                    </fragment>
+                ''', features = 'xml'))
+                
                 try:
                     diffratio = diffimg.diff(
                         im1_file = f'{self.basedir}/{domain.docid}.jpg', 
@@ -186,9 +194,9 @@ class Plugin(BasePlugin):
         os.mkdir('plugins/screenshots/src')
         if not os.path.exists('/etc/netdox/base'):
             os.mkdir('/etc/netdox/base')
-        if os.path.exists(f'out/screenshot_history/{datetime.today().isoformat()}'):
-            shutil.rmtree(f'out/screenshot_history/{datetime.today().isoformat()}')
-        os.mkdir(f'out/screenshot_history/{datetime.today().isoformat()}')
+        if os.path.exists(f'out/screenshot_history/{date.today().isoformat()}'):
+            shutil.rmtree(f'out/screenshot_history/{date.today().isoformat()}')
+        os.mkdir(f'out/screenshot_history/{date.today().isoformat()}')
 
     def runner(self, network: Network, stage: str) -> None:
         mngr = ScreenshotManager(
