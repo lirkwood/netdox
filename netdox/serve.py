@@ -165,4 +165,3 @@ def approved_ip(uri):
 
 if 'gunicorn' in sys.argv[0]:
     pluginmaster = plugins.PluginManager()
-    pluginmaster.initStage('nodes')
