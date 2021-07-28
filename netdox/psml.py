@@ -164,7 +164,7 @@ DOMAIN_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="6.0" />
+                <property name="template_version"     title="Template version"   value="6.1" />
             </properties>
         </metadata>
 
@@ -206,7 +206,7 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="2.2" />
+                <property name="template_version"     title="Template version"   value="3.1" />
             </properties>
         </metadata>
 

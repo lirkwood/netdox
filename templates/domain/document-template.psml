@@ -2,7 +2,7 @@
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="6.0" />
+            <property name="template_version"     title="Template version"   value="6.1" />
         </properties>
     </metadata>
   
@@ -34,8 +34,8 @@
       </fragment>
    </section>
   
-   <section id="details" title="Details">
-      <properties-fragment id="info">
+   <section id="header">
+      <properties-fragment id="header">
          <property name="name" title="Name" value=""/>
          <property name="root" title="Root Domain" value=""/>
          <property name="role"   title="DNS Role"    datatype="xref">
