@@ -108,7 +108,7 @@ class VirtualMachine(Node):
     pool: str
     """The name of the pool the VM's Host belongs to."""
     host: str
-    """The UUID of the Host the VM is running on."""
+    """A ref to the node this VM is hosted on."""
 
     def __init__(self, 
             name: str,
@@ -154,9 +154,15 @@ class VirtualMachine(Node):
         frag.append(psml.newprop(
             name='uuid', title='UUID', value=self.uuid
         ))
-        frag.append(psml.newxrefprop(
-            name='host', title='Host Machine', ref=f'_nd_node_xohost_{self.host}'
-        ))
+        if self.network:
+            # update ref if possible
+            frag.append(psml.newxrefprop(
+                name='host', title='Host Machine', ref=self.network.nodes[self.host].docid
+            ))
+        else:
+            frag.append(psml.newxrefprop(
+                name='host', title='Host Machine', ref=self.host
+            ))
         return frag
     
     @property
@@ -325,7 +331,7 @@ class Plugin(BasePlugin):
             self.pubdict = runner(network)
         else:
             try:
-                genpub(self.pubdict)
+                genpub(network, self.pubdict)
             except AttributeError:
                 print(
                     '[WARNING][xenorchestra] Failed to finish adding VirtualMachines to the network.',
