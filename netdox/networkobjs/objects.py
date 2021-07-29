@@ -4,8 +4,7 @@ import os
 import re
 from ipaddress import IPv4Address as BaseIP
 from typing import TYPE_CHECKING, Iterable, Tuple, Type, Union
-
-from PIL.Image import new
+from bs4 import BeautifulSoup
 
 import iptools
 import utils
@@ -562,7 +561,7 @@ class Node(NetworkObject):
             raise TypeError('Cannot merge two Nodes of different types or different private ips')
 
     @classmethod
-    def from_dict(cls: Type[Node], string: str) -> Node:
+    def from_dict(cls: Type[Node], constructor: str) -> Node:
         """
         Instantiates a Node from its __dict__ attribute.
 
@@ -571,7 +570,9 @@ class Node(NetworkObject):
         :return: A instance of this class.
         :rtype: Node
         """
-        instance = super(Node, cls).from_dict(string)
+        instance = cls(constructor['name'], constructor['private_ip'])
+        instance.__dict__.update(constructor)
         instance.public_ips = set(instance.public_ips)
         instance.domains = set(instance.domains)
+        instance.psmlFooter = [BeautifulSoup(tag, features = 'xml') for tag in instance.psmlFooter]
         return instance

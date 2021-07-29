@@ -10,7 +10,6 @@ from .objects import Domain, IPv4Address, Node
 
 if TYPE_CHECKING:
     from . import Network
-    from .base import NetworkObject
 
 
 class DomainSet(NetworkObjectContainer):
