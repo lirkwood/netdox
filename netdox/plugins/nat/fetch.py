@@ -30,8 +30,7 @@ def runner(network: Network):
                 natDict[match['dest']] = match['alias']
 
     # Gather pfSense NAT
-    pfsenseNat = asyncio.run(pfsenseScrapeNat())
-    natDict |= json.loads(pfsenseNat)
+    natDict |= asyncio.run(pfsenseScrapeNat())
 
     for ip in natDict:
         if ip not in network.ips:
@@ -49,12 +48,17 @@ async def pfsenseScrapeNat() -> dict:
     await (await page.J('#usernamefld')).type(utils.config()['plugins']['nat']['username'])
     await (await page.J('#passwordfld')).type(utils.config()['plugins']['nat']['password'])
     await page.click('.btn-sm')
+    await page.waitForNavigation(waitUntil = 'networkidle0')
 
-    await page.goto(f"https://{utils.config()['plugins']['nat']['host']}/firewall_nat_1to1.php")
+    await page.goto(f"https://{gateway}/firewall_nat_1to1.php", waitUntil = 'networkidle0')
     if await page.Jeval('.panel-title', 'title => title.textContent') == 'NAT 1:1 Mappings':
         rows = await page.JJ('tr.ui-sortable-handle')
         for row in rows:
             columns = await row.JJeval('td', 'columns => columns.map(column => column.textContent.trim())')
             nat[columns[3]] = columns[4]
             nat[columns[4]] = columns[3]
+    else:
+        print('[DEBUG][nat] Failed to navigate to pfSense NAT page')
+    
+    await browser.close()
     return nat
