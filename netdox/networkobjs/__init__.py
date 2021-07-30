@@ -14,8 +14,7 @@ from __future__ import annotations
 
 import json
 import os
-
-from psml import *
+import psml
 from utils import DEFAULT_CONFIG
 
 from .base import *
@@ -332,6 +331,18 @@ class PSMLWriter:
             for tag in nwobj.psmlFooter:
                 self.footer.append(tag)
 
+            search_octets = []
+            for ip in nwobj.ips:
+                octets = ip.split('.')
+                search_octets.append(octets[-1])
+                search_octets.append('.'.join(octets[-2:]))
+            frag = Tag(is_xml=True, name='fragment')
+            frag.append(psml.newprop(
+                name = 'octets', title = 'Octets for search', value = ', '.join(search_octets), multiple = 'true'
+            ))
+            nwobj.psmlFooter.append(frag)
+        
+
         dir = os.path.dirname(nwobj.outpath)
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -346,11 +357,11 @@ class PSMLWriter:
         :param domain: The Domain object to parse into PSML
         :type domain: Domain
         """
-        self.doc = populate(DOMAIN_TEMPLATE, domain)
+        self.doc = psml.populate(psml.DOMAIN_TEMPLATE, domain)
         self.body = self.doc.find(id = 'records')
 
         if domain.node:
-            self.doc.find('properties-fragment', id = 'header').append(newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.newxrefprop(
                 name = 'node',
                 title = 'Node',
                 ref = domain.node.docid
@@ -364,7 +375,7 @@ class PSMLWriter:
             roleprop['datatype'] = 'string'
             roleprop['value'] = '—'
 
-        for frag in recordset2pfrags(
+        for frag in psml.recordset2pfrags(
             recordset = domain._private_ips,
             id_prefix = 'private_ip_',
             docid_prefix = '_nd_ip_',
@@ -372,7 +383,7 @@ class PSMLWriter:
             p_title = 'Private IP'
         ):  self.body.append(frag)
 
-        for frag in recordset2pfrags(
+        for frag in psml.recordset2pfrags(
             recordset = domain._public_ips,
             id_prefix = 'public_ip_',
             docid_prefix = '_nd_ip_',
@@ -380,7 +391,7 @@ class PSMLWriter:
             p_title = 'Public IP'
         ):  self.body.append(frag)
 
-        for frag in recordset2pfrags(
+        for frag in psml.recordset2pfrags(
             recordset = domain._cnames,
             id_prefix = 'cname_',
             docid_prefix = '_nd_domain_',
@@ -395,24 +406,24 @@ class PSMLWriter:
         :param ip: The IPv4Address object to parse into PSML
         :type ip: IPv4Address
         """
-        self.doc = populate(IPV4ADDRESS_TEMPLATE, ip)
+        self.doc = psml.populate(psml.IPV4ADDRESS_TEMPLATE, ip)
         self.body = self.doc.find(id = 'records')
 
         if ip.nat:
-            self.doc.find('properties-fragment', id = 'header').append(newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.newxrefprop(
                 name = 'nat',
                 title = 'NAT Destination',
                 ref = f'_nd_ip_{ip.nat.replace(".","_")}'
             ))
 
         if ip.node:
-            self.doc.find('properties-fragment', id = 'header').append(newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.newxrefprop(
                 name = 'node',
                 title = 'Node',
                 ref = ip.node.docid
             ))
 
-        for frag in recordset2pfrags(
+        for frag in psml.recordset2pfrags(
             recordset = ip._ptr,
             id_prefix = 'ptr_',
             docid_prefix = '_nd_domain_',
@@ -422,7 +433,7 @@ class PSMLWriter:
 
         impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
         for domain in ip.implied_ptr:
-            impliedfrag.append(newxrefprop(
+            impliedfrag.append(psml.newxrefprop(
                 name = 'impliedptr',
                 title = 'Implied PTR Record',
                 ref = f'_nd_domain_{domain.replace(".","_")}'
@@ -436,7 +447,7 @@ class PSMLWriter:
         :param node: The Node object to parse into PSML
         :type node: Node
         """
-        self.doc = populate(NODE_TEMPLATE, node)
+        self.doc = psml.populate(psml.NODE_TEMPLATE, node)
         self.body = self.doc.find(id = 'body')
 
         for tag in node.psmlBody:
@@ -447,7 +458,7 @@ class PSMLWriter:
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
             if domain in node.network.domains:
-                domains.append(newxrefprop(
+                domains.append(psml.newxrefprop(
                     name = 'domain',
                     title = 'Domain',
                     ref = f'_nd_domain_{domain.replace(".","_")}'
