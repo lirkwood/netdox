@@ -122,7 +122,7 @@ class NetworkObjectContainer(ABC):
         del self.objects[key]
 
     def __iter__(self) -> Iterator[NetworkObject]:
-        yield from self.objects.values()
+        yield from set(self.objects.values())
 
     def __contains__(self, key: str) -> bool:
         return self.objects.__contains__(key)
