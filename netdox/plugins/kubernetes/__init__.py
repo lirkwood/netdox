@@ -213,8 +213,11 @@ class Plugin(BasePlugin):
                     # set node attr on all domains
                     for domain in node.domains:
                         if domain in network and network.domains[domain].node is not node:
-                            network.domains[domain].node.domains.remove(domain)
-                            network.domains[domain].node = node
+                            if set(network.domains[domain].node.ips) & set(utils.config()['plugins']['kubernetes'][node.cluster]):
+                                network.domains[domain].node.domains.remove(domain)
+                                network.domains[domain].node = node
+                            else:
+                                node.domains.remove(domain)
                     # gather all workers final docids
                     for pod in node.pods.values():
                         if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node is not None:
