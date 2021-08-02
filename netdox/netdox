@@ -61,21 +61,26 @@ function init {
     fi
 }
 
+## Encrypts a file to a Fernet token
+function encrypt {
+    python3 crypto.py 'encrypt' $1 $2
+}
 
-methods=("init" "refresh" "serve" "help")
-for arg in "$@"; do
-    if [[ ${methods[@]} =~ $arg ]]
-        then case $arg in
-            serve)
-                serve &
-                ;;
-            *)
-                $arg
-                ;;
-        esac
-    elif [[ $arg == 'start' ]]
-        then if init
-            then serve
-        fi
+## Decrypts a file from a Fernet token
+function decrypt {
+    python3 crypto.py 'decrypt' $1 $2
+}
+
+
+method=$1
+declare -a args
+for arg in $@; do
+    if [[ "$arg" != "$method" ]]
+        then args+=("$arg")
     fi
 done
+
+methods=("init" "serve" "refresh" "encrypt" "decrypt")
+if [[ ${methods[@]} =~ "$method" ]]
+    then $method ${args[@]}; else help
+fi
