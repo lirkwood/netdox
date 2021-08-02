@@ -490,7 +490,7 @@ class Node(NetworkObject):
         Return all the IPs that resolve to this node.
 
         :return: A list of IPv4 addresses as strings.
-        :rtype: [type]
+        :rtype: list[str]
         """
         return list(self.public_ips) + [self.private_ip]
 
