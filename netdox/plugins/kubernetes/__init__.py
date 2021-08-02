@@ -45,10 +45,15 @@ class App(Node):
     """
     Kubernetes app from a namespaced deployment
     """
+    private_ip: str = '—'
     cluster: str
+    """Cluster this app is running in"""
     labels: dict
+    """Labels applied to the pods"""
     template: dict
+    """Template pods are started from"""
     pods: dict
+    """A dict of the pods running this app"""
     _container: NetworkObjectContainer
 
     def __init__(self, 
