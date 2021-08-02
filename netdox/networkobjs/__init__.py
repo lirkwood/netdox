@@ -455,6 +455,7 @@ class PSMLWriter:
         self.body.unwrap()
         
         header = self.doc.find('section', id = 'header')
+
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
             if domain in node.network.domains:
@@ -462,5 +463,26 @@ class PSMLWriter:
                     name = 'domain',
                     title = 'Domain',
                     ref = f'_nd_domain_{domain.replace(".","_")}'
+                ))
+            else:
+                domains.append(psml.newprop(
+                    name = 'domain',
+                    title = 'Domain',
+                    value = domain
+                ))
+
+        ips = self.doc.new_tag('properties-fragment', id = 'ips')
+        for ip in node.ips:
+            if ip in node.network.ips:
+                ips.append(psml.newxrefprop(
+                    name = 'ipv4',
+                    title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
+                    ref = f'_nd_ip_{ip.replace(".","_")}'
+                ))
+            else:
+                ips.append(psml.newprop(
+                    name = 'ipv4',
+                    title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
+                    value = ip
                 ))
         header.append(domains)
