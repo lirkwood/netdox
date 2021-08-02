@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Iterator, Type
 
 import iptools
-from utils import DEFAULT_ROLES
+from utils import DEFAULT_DOMAIN_ROLES
 
 from .base import NetworkObjectContainer
 from .objects import Domain, IPv4Address, Node
@@ -22,7 +22,7 @@ class DomainSet(NetworkObjectContainer):
 
     def __init__(self, objectSet: list[Domain] = [], network: Network = None, roles: dict = None) -> None:
         super().__init__(objectSet, network)
-        self._roles = roles or DEFAULT_ROLES
+        self._roles = roles or DEFAULT_DOMAIN_ROLES
 
     def __getitem__(self, key: str) -> Domain:
         return self.objects[key]

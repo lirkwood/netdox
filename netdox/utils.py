@@ -46,8 +46,8 @@ def config() -> dict:
         return DEFAULT_CONFIG
 
 
-global DEFAULT_ROLES
-DEFAULT_ROLES = {'exclusions': []}
+global DEFAULT_DOMAIN_ROLES
+DEFAULT_DOMAIN_ROLES = {'exclusions': []}
 
 def roles() -> dict:
     """
@@ -61,7 +61,7 @@ def roles() -> dict:
             return json.load(stream)
     except Exception:
         print('[WARNING][utils] Failed to find or read domain roles configuration file')
-        return DEFAULT_ROLES
+        return DEFAULT_DOMAIN_ROLES
 
 
 MIN_STYLESHEET = '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" exclude-result-prefixes="#all" />'
