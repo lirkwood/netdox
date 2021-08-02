@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from functools import wraps
 from os import scandir
 from sys import argv
 from textwrap import dedent
 from traceback import format_exc
+
+from .crypto import cryptor
 
 ####################
 # Global constants #
@@ -29,36 +30,38 @@ DEFAULT_CONFIG = {
     },
     'plugins': {}
 }
-_config = dict(DEFAULT_CONFIG)
 
-def config():
+def config() -> dict:
     """
-    Loads the config file as a global var if it exists
+    Loads the encrypted config file if it exists
+
+    :return: A dictionary of configuration values.
+    :rtype: dict
     """
-    global _config
     try:
-        with open('src/config.json', 'r') as stream:
-            _config = json.load(stream)
-    except FileNotFoundError:
-        print('[WARNING][utils] Failed to load Netdox configuration file')
-    return _config
+        with open('src/config.bin', 'rb') as stream:
+            return json.loads(str(cryptor.decrypt(stream.read())))
+    except Exception:
+        print('[WARNING][utils] Failed to find, decrypt, or read primary configuration file')
+        return DEFAULT_CONFIG
 
 
-global DEFAULT_ROLES, _roles
+global DEFAULT_ROLES
 DEFAULT_ROLES = {'exclusions': []}
-_roles = dict(DEFAULT_ROLES)
 
-def roles():
+def roles() -> dict:
     """
-    Loads the DNS roles file as a global var if it exists
+    Loads the domain roles file if it exists
+
+    :return: A dictionary of configuration values.
+    :rtype: dict
     """
-    global _roles
     try:
         with open('src/roles.json', 'r') as stream:
-            _roles = json.load(stream)
-    except FileNotFoundError:
-        print('[WARNING][utils] Failed to load DNS roles configuration file')
-    return _roles
+            return json.load(stream)
+    except Exception:
+        print('[WARNING][utils] Failed to find or read domain roles configuration file')
+        return DEFAULT_ROLES
 
 
 MIN_STYLESHEET = '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" exclude-result-prefixes="#all" />'
