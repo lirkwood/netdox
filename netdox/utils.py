@@ -10,9 +10,9 @@ from functools import wraps
 from os import scandir
 from sys import argv
 from textwrap import dedent
-from traceback import format_exc
+from traceback import format_exc, print_exc
 
-from .crypto import cryptor
+from crypto import Cryptor
 
 ####################
 # Global constants #
@@ -40,10 +40,9 @@ def config() -> dict:
     """
     try:
         with open('src/config.bin', 'rb') as stream:
-            return json.loads(str(cryptor.decrypt(stream.read())))
+            return json.loads(str(Cryptor().decrypt(stream.read())))
     except Exception:
-        print('[WARNING][utils] Failed to find, decrypt, or read primary configuration file')
-        return DEFAULT_CONFIG
+        raise FileNotFoundError('Failed to find, decrypt, or read primary configuration file')
 
 
 global DEFAULT_DOMAIN_ROLES
