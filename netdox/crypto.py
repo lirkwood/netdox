@@ -1,11 +1,17 @@
 import os
 import sys
-import base64
 
 from cryptography.fernet import Fernet
 
-KEY = base64.urlsafe_b64encode(bytes.fromhex(os.environ['NETDOX_CRYPTO']))
-cryptor = Fernet(KEY)
+class Cryptor(Fernet):
+    def __init__(self):
+        try:
+            with open('src/crypto', 'rb') as stream:
+                key = stream.read()
+        except Exception:
+            raise FileNotFoundError('Failed to locate cryptography key. Try \'netdox init\'.')
+        else:
+            super().__init__(key)
 
 def encrypt_file(inpath: str, outpath: str = None) -> str:
     """
@@ -18,10 +24,9 @@ def encrypt_file(inpath: str, outpath: str = None) -> str:
     :return: The absolute path of the output file.
     :rtype: str
     """
-    global cryptor
     outpath = outpath or inpath + '.bin'
     with open(inpath, 'rb') as instream, open(outpath, 'wb') as outstream:
-        outstream.write(cryptor.encrypt(instream.read()))
+        outstream.write(Cryptor().encrypt(instream.read()))
     return os.path.abspath(outpath)
 
 def decrypt_file(inpath: str, outpath: str = None) -> str:
@@ -35,10 +40,9 @@ def decrypt_file(inpath: str, outpath: str = None) -> str:
     :return: The absolute path of the output file.
     :rtype: str
     """
-    global cryptor
     outpath = outpath or inpath + '.txt'
     with open(inpath, 'rb') as instream, open(outpath, 'wb') as outstream:
-        outstream.write(cryptor.decrypt(instream.read()))
+        outstream.write(Cryptor().decrypt(instream.read()))
     return os.path.abspath(outpath)
 
 
@@ -51,5 +55,3 @@ if __name__ == '__main__':
 
     elif sys.argv[1] == 'decrypt':
         decrypt_file(inpath, outpath)
-
-    print(sys.argv)
