@@ -39,4 +39,8 @@ WORKDIR /opt/app
 
 COPY netdox /opt/app
 
-CMD [ "/bin/bash", "netdox", "start" ]
+RUN ./netdox init
+RUN ./netdox encrypt src/config.json src/config.bin
+RUN rm -f src/config.json
+
+CMD [ "/bin/bash", "netdox", "serve", "&", "netdox", "refresh" ]
