@@ -192,8 +192,8 @@ class Plugin(BasePlugin):
         if os.path.exists('plugins/screenshots/src'):
             shutil.rmtree('plugins/screenshots/src')
         os.mkdir('plugins/screenshots/src')
-        if not os.path.exists('/etc/netdox/base'):
-            os.mkdir('/etc/netdox/base')
+        if not os.path.exists('src/base'):
+            os.mkdir('src/base')
         if os.path.exists(f'out/screenshot_history/{date.today().isoformat()}'):
             shutil.rmtree(f'out/screenshot_history/{date.today().isoformat()}')
         os.mkdir(f'out/screenshot_history/{date.today().isoformat()}')
@@ -202,7 +202,7 @@ class Plugin(BasePlugin):
         mngr = ScreenshotManager(
             domains = network.domains, 
             workdir = 'plugins/screenshots/src',
-            basedir = '/etc/netdox/base',
+            basedir = 'src/base',
             outdir = 'out',
             placeholder = 'src/placeholder.jpg'
         )
