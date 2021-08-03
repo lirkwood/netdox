@@ -108,15 +108,6 @@ def pre_upload():
     global today
     today = str(datetime.now().date())
 
-
-    # overwrite base images
-    try:
-        shutil.rmtree('/etc/netdox/base')
-    except FileNotFoundError:
-        pass
-    
-    shutil.copytree('out/screenshots', '/etc/netdox/base')
-
     # archive last review if exist
     try:
         pageseeder.archive(pageseeder.urimap()['review'])
