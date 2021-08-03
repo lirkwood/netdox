@@ -4,12 +4,12 @@ APPDIR=$(dirname $(realpath $0))
 
 ## Print usage help
 function help {
-    echo 'Usage: netdox init|serve|refresh|start|help'; echo
-    echo '       init:       Initialises the environment so that Netdox can run.'
-    echo '       serve:      Starts the serve and begins listening for webhooks.'
-    echo '       refresh:    Generates a new data set and uploads it to PageSeeder.'
-    echo "       start:      Runs 'init' and then 'serve'."
-    echo '       help:       Prints this message.'
+    echo 'Usage:'; echo
+    echo 'netdox init:                           Initialises the environment using the provided config files so that other methods can be used.'
+    echo 'netdox serve:                          Starts a Gunicorn web server listening for webhooks from the configured PageSeeder.'
+    echo 'netdox refresh:                        Generates a new set of PSML documents and uploads them to PageSeeder,'
+    echo 'netdox encrypt <infile> [outfile]:     Encrypts a file using the internal cryptography from infile to outfile.'
+    echo 'netdox decrypt <infile> [outfile]:     Decrypts a file using the internal cryptography from infile to outfile.'
 }
 
 ## Serve webhook listener
@@ -19,44 +19,26 @@ function serve {
 
 ## Refresh dataset and upload to PageSeeder
 function refresh {
-    _refresh 2>&1 | tee "/etc/netdox/log/refresh-$(date +%F-T%T).log"
-}
-function _refresh {
-    python3 refresh.py
-
-    cp $APPDIR/src/domains.json /etc/netdox/domains.json &> /dev/null
-    cp $APPDIR/src/ips.json /etc/netdox/ips.json &> /dev/null
-    cp $APPDIR/src/nodes.json /etc/netdox/nodes.json &> /dev/null
+    python3 refresh.py 2>&1 | tee "logs/refresh-$(date +%F-T%T).log"
 }
 
-## Initialise container to allow other processes to run
+## Initialise container with provided config to allow other processes to run
 function init {
-    [[ -d /etc/netdox ]] || (mkdir /etc/netdox \
-        && echo 'Please place the required configuration files in /etc/netdox and run this again.'; exit 1)
-
-    [[ -d /etc/netdox/log ]] || mkdir /etc/netdox/log
-
-    jsonfiles=("domains" "ips" "nodes")
-    for file in ${jsonfiles[@]}; do
-        [[ -f /etc/netdox/$file.json ]] && cp /etc/netdox/$file.json $APPDIR/src/$file.json
-    done
+    if [[ ! -f $APPDIR/src/config.bin ]]
+        then
+            echo '[WARNING][netdox] Primary configuration file missing. Please place config.bin in src/'
+            exit 1 
+    fi
 
     # make all scripts executable
-    chmod 777 $APPDIR/*
-    
-    # decrypt authentication details
-    ./crypto.sh decrypt $(printf authivpassphrase | xxd -p) "/etc/netdox/cfg/config.bin" "$APPDIR/src/config.json"
-    
-    # copy any unecrypted cfg files
-    for file in /etc/netdox/cfg/*.json; do
-        [[ -f $file ]] && cp $file $APPDIR/src/$(basename $file)
-    done
+    chmod 744 $APPDIR/*
 
     if python3 init.py
         then
-            echo '[INFO][netdox] Python initialisation successful.'
+            echo '[INFO][netdox] Initialisation successful.'
+            chmod 500 $APPDIR/src/crypto
         else
-            echo '[ERROR][netdox] Python initialisation unsuccessful. Terminating...'
+            echo '[ERROR][netdox] Initialisation unsuccessful. Please try again.'
             exit 1
     fi
 }
