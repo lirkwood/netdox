@@ -78,9 +78,8 @@ def runner(network: Network):
 
     pubdict = {
         pool: {
-            f'_nd_node_{hostip.replace(".","_")}': [
-                f'_nd_node_xovm_{vmuuid}'
-                for vmuuid in hostVMs[hostip]
+            hostip: [
+                vmuuid for vmuuid in hostVMs[hostip]
             ]
             for hostip in hostlist 
         } 

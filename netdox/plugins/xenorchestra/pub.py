@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
-from networkobjs import Node, Network
+from networkobjs import Network
+from networkobjs.base import Node
 
 def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
     """
