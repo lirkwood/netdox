@@ -3,14 +3,13 @@ from __future__ import annotations
 import os
 import re
 from ipaddress import IPv4Address as BaseIP
-from typing import TYPE_CHECKING, Iterable, Tuple, Type, Union
-from bs4 import BeautifulSoup
+from typing import TYPE_CHECKING, Iterable
 
 import iptools
 import utils
 from bs4 import Tag
 
-from .base import DNSObject, NetworkObject, RecordSet
+from .base import DNSObject, RecordSet, Node
 
 if TYPE_CHECKING:
     from . import Network
@@ -23,7 +22,6 @@ class Domain(DNSObject):
 
     Subclasses DNSObject
     """
-    _node: Node
     
     ## dunder methods
 
@@ -45,7 +43,6 @@ class Domain(DNSObject):
             self.role = role.lower()
 
             self.docid = f'_nd_domain_{self.name.replace(".","_")}'
-            self.location = None
             self.subnets = set()
             self._node = None
             self.psmlFooter = []
@@ -78,17 +75,16 @@ class Domain(DNSObject):
     def network(self, new_network: Network) -> None:
         """
         Set the _network attribute to new_network.
-        Also updates the location and creates implied links from any IPv4Addresses this Domain resolves to, back to itself.
+        Also creates implied links from any IPv4Addresses this Domain resolves to, back to itself.
 
         :param new_network: The network this Domain has been added to.
         :type new_network: Network
         """
         self._network = new_network
-        self.location = new_network.locator.locate(self.ips)
-        for ip in self.ips:
+        for ip in self.records['A']:
             if ip not in self.network:
                 self.network.add(IPv4Address(ip))
-            self.network.ips[ip].implied_ptr.add(self.name)
+            self.network.ips[ip].backrefs['A'].add(self.name)
 
     @property
     def outpath(self) -> str:
@@ -176,22 +172,6 @@ class Domain(DNSObject):
             if self.name in domains:
                 self.role = role
 
-    @property
-    def node(self) -> Node:
-        """
-        Returns the Node this Domain resolves to.
-
-        :return: The Node this Domain resolves to, or None.
-        :rtype: Node
-        """
-        return self._node
-
-    @node.setter
-    def node(self, new_node: Node) -> None:
-        self._node = new_node
-        if new_node.location:
-            self.location = new_node.location
-
 class IPv4Address(DNSObject, BaseIP):
     """
     A single IP address found in the network
@@ -205,8 +185,7 @@ class IPv4Address(DNSObject, BaseIP):
 
     def __init__(self, address: object, unused: bool = False) -> None:
         super().__init__(address)
-        self.name = self.name
-        self.location = None
+        self.name = address
         self.unused = unused
         
         self.docid = f'_nd_ip_{self.name.replace(".","_")}'
@@ -220,8 +199,8 @@ class IPv4Address(DNSObject, BaseIP):
         }
 
         self.backrefs = {
-            'A': RecordSet(),
-            'CNAME': RecordSet()
+            'A': set(),
+            'CNAME': set()
         }
     
     ## abstract properties
@@ -240,16 +219,15 @@ class IPv4Address(DNSObject, BaseIP):
     def network(self, new_network: Network) -> None:
         """
         Set the _network attribute to new_network.
-        Also updates the location and creates implied links from any Domains this IPv4Address resolves to, back to itself.
+        Also creates implied links from any Domains this IPv4Address resolves to, back to itself.
 
         :param new_network: The network this IPv4Address has been added to.
         :type new_network: Network
         """
         self._network = new_network
-        self.location = new_network.locator.locate([self.name])
-        for domain in self.domains:
+        for domain in self.records['PTR']:
             if domain in self.network:
-                self.network.domains[domain].implied_ips.add(self.name)
+                self.network.domains[domain].backrefs['PTR'].add(self.name)
 
     @property
     def outpath(self) -> str:
@@ -312,32 +290,42 @@ class IPv4Address(DNSObject, BaseIP):
     def subnet(self) -> str:
         return self.subnets[0]
 
+    ## methods
 
-class Node(NetworkObject):
+    def subnetFromMask(self, mask: str = '24') -> str:
+        """
+        Return the subnet of a given size containing this IP
+
+        :param mask: The subnet mask to use in bits, defaults to '24'
+        :type mask: Union[str, int], optional
+        :return: A IPv4 subnet in CIDR format
+        :rtype: str
+        """
+        subnet = f'{self.name}/{mask}'
+        return f'{iptools.subn_floor(subnet)}/{mask}'
+
+
+
+class DefaultNode(Node):
     """
-    A Node on the network representing one machine/VM/Kubelet/etc.
-    Name should be the FQDN of the machine unless it has a non-default type.
+    Default implementation of Node.
     """
     private_ip: str
     """The IP that this Node is using."""
     public_ips: set
     """A set of public IPs that this Node uses."""
-    domains: set
-    """A set of domains that are hosted on this Node."""
-    type: str
-    """The type of this Node."""
+    type = 'default'
 
     def __init__(self, 
             name: str, 
             private_ip: str, 
             public_ips: Iterable[str] = None, 
-            domains: Iterable[str] = None, 
-            type: str = 'default'
+            domains: Iterable[str] = None
         ) -> None:
 
         self.name = name.strip().lower()
+        self.identity = private_ip
         self.docid = f'_nd_node_{self.name.replace(".","_")}'
-        self.type = type
         self.location = None
 
         if iptools.valid_ip(private_ip) and not iptools.public_ip(private_ip):
@@ -392,10 +380,6 @@ class Node(NetworkObject):
             self.network.ips[ip].node = self
 
     @property
-    def outpath(self) -> str:
-        return os.path.abspath(f'out/nodes/{self.docid}.psml')
-
-    @property
     def psmlBody(self) -> Iterable[Tag]:
         """
         Returns an Iterable containing section tags to add to the body of this Node's output PSML.
@@ -405,7 +389,7 @@ class Node(NetworkObject):
         """
         return []
 
-    def merge(self, node: Node) -> Node:
+    def merge(self, node: Node) -> DefaultNode:
         """
         In place merge of two Node instances.
         This method should always be called on the object entering the set.
