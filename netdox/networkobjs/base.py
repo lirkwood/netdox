@@ -289,5 +289,7 @@ class JSONEncoder(json.JSONEncoder):
             return sorted(obj)
         elif isinstance(obj, datetime):
             return obj.isoformat()
+        elif isinstance(obj, RecordSet):
+            return obj._records
         else:
             return super().default(obj)
