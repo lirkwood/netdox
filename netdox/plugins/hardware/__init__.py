@@ -13,13 +13,17 @@ import psml
 import requests
 import utils
 from bs4 import BeautifulSoup, Tag
-from networkobjs import IPv4Address, Network, Node
+from networkobjs import DefaultNode, IPv4Address, Network
+from networkobjs.base import Node
 from plugins import Plugin as BasePlugin
 
 
-class HardwareNode(Node):
+class HardwareNode(DefaultNode):
     origin_doc: str
+    """The URI of the document this Node was created from."""
     filename: str
+    """The filename to give this Node."""
+    type: str = 'Hardware Node'
 
     def __init__(self, 
             name: str, 
@@ -27,12 +31,11 @@ class HardwareNode(Node):
             psml: Tag, 
             origin_doc: str, 
             filename: str,
-            public_ips: Iterable[str] = None, 
             domains: Iterable[str] = None
         ) -> None:
-        super().__init__(name, private_ip, public_ips=public_ips, domains=domains, type='Hardware Node')
-        self.docid = f'_nd_node_hardware_{self.private_ip.replace(".","_")}'
+        super().__init__(name, private_ip, domains = domains)
 
+        self.docid = f'_nd_node_hardware_{self.private_ip.replace(".","_")}'
         self.psml = psml
         self.origin_doc = origin_doc
         self.filename = filename
@@ -56,20 +59,15 @@ class HardwareNode(Node):
         :return: This Node object, which is now a superset of the two.
         :rtype: Node
         """
-        if node.private_ip == self.private_ip and node.type == 'default':
+        if node.type == 'default':
             self.psmlFooter += node.psmlFooter
-            self.public_ips |= node.public_ips
+            self.ips
             self.domains |= node.domains
             if node.network:
                 self.network = node.network
             return self
-        elif node.private_ip == self.private_ip:
-            node.psmlFooter += psml.newxrefprop(
-                'hardware', 'Hardware Info', self.origin_doc, reftype = 'uriid'
-            )
-            return node
         else:
-            raise TypeError('Cannot merge two Nodes of different private ips')
+            return node
     
     def to_dict(self) -> dict:
         return super().to_dict() | {'psml': str(self.psml)}
