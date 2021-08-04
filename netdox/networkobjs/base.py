@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING, Iterator, Type
@@ -27,8 +28,6 @@ class NetworkObject(ABC):
     """The internal reference to the containing Network object if there is one."""
     container: NetworkObjectContainer = None
     """The containing NetworkObjectContainer if there is one."""
-    location: str = None
-    """The location as it appears in ``locations.json``, assigned based on IP address by *Locator*."""
     subnets: set
     """A set of private subnets this object resolves to."""
     psmlFooter: list[Tag] = None
@@ -101,6 +100,9 @@ class RecordSet:
     def __init__(self) -> None:
         self._records = set()
 
+    def __iter__(self) -> Iterator[str]:
+        yield from self.records
+
     ## properties
 
     @property
@@ -145,6 +147,40 @@ class DNSObject(NetworkObject):
         """
         pass
 
+
+class Node(NetworkObject):
+    """
+    A single physical or virtual machine.
+    """
+    identity: str
+    """A string unique to this Node that can always be used to find it."""
+    location: str = None
+    """The location as it appears in ``locations.json``, assigned based on IP address by *Locator*."""
+    domains: set[str]
+    """A set of domains resolving to this Node."""
+    ips: set[str]
+    """A set of IPv4 addresses resolving to this Node."""
+    type: str
+    """A string unique to this implementation of Node."""
+
+    ## abstract properties
+
+    @property
+    @abstractmethod
+    def psmlBody(self) -> list[Tag]:
+        """
+        Returns a list of section tags to add to the body of this Node's output PSML.
+
+        :return: A list of ``<section />`` BeautifulSoup Tag objects.
+        :rtype: list[Tag]
+        """
+        pass
+
+    @property
+    def outpath(self) -> str:
+        return os.path.abspath(f'out/nodes/{self.docid}.psml')
+
+
 ##############
 # Containers #
 ##############
@@ -169,19 +205,19 @@ class NetworkObjectContainer(ABC):
         self.network = network
 
     def __getitem__(self, key: str) -> NetworkObject:
-        return self.objects[key]
+        return self.objects[key.lower()]
 
     def __setitem__(self, key: str, value: NetworkObject) -> None:
-        self.objects[key] = value
+        self.objects[key.lower()] = value
 
     def __delitem__(self, key: str) -> None:
-        del self.objects[key]
+        del self.objects[key.lower()]
 
     def __iter__(self) -> Iterator[NetworkObject]:
         yield from set(self.objects.values())
 
     def __contains__(self, key: str) -> bool:
-        return self.objects.__contains__(key)
+        return self.objects.__contains__(key.lower())
 
     ## methods
 
