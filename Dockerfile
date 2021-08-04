@@ -39,9 +39,6 @@ RUN python3 -c 'import pyppeteer; pyppeteer.chromium_downloader.download_chromiu
 WORKDIR /opt/app
 
 COPY netdox /opt/app
+COPY entrypoint.sh /opt/app
 
-RUN ./netdox init
-RUN ./netdox encrypt src/config.json src/config.bin
-RUN rm -f src/config.json
-
-CMD [ "/bin/bash", "netdox", "serve", "&", "netdox", "refresh" ]
+CMD [ "/bin/bash", "entrypoint.sh" ]
