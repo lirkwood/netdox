@@ -40,7 +40,7 @@ def config() -> dict:
     """
     try:
         with open('src/config.bin', 'rb') as stream:
-            return json.loads(str(Cryptor().decrypt(stream.read())))
+            return json.loads(str(Cryptor().decrypt(stream.read()), encoding='utf-8'))
     except Exception:
         raise FileNotFoundError('Failed to find, decrypt, or read primary configuration file')
 
