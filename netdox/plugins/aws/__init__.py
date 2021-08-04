@@ -6,11 +6,11 @@ import boto3
 import psml
 import utils
 from bs4.element import Tag
-from networkobjs import IPv4Address, Network, Node
+from networkobjs import IPv4Address, Network, DefaultNode
 from plugins import Plugin as BasePlugin
 
 
-class EC2Instance(Node):
+class EC2Instance(DefaultNode):
     """A single instance running on AWS EC2."""
     id: str
     """Instance ID."""
@@ -24,6 +24,7 @@ class EC2Instance(Node):
     """The region this instance belongs to."""
     tags: dict[str, str]
     """Dictionary of tags applied to this instance."""
+    type: str = 'AWS EC2 Instance'
 
     def __init__(self, 
             name: str,
@@ -37,8 +38,10 @@ class EC2Instance(Node):
             public_ips: Iterable[str] = None,
             domains: Iterable[str] = None
         ) -> None:
-        super().__init__(name, private_ip, public_ips, domains, 'AWS EC2 Instance')
+        super().__init__(name, private_ip, public_ips, domains)
+
         self.id = id.strip().lower()
+        self.identity = self.id
         self.docid = f'_nd_node_ec2_{self.id}'
         self.mac = mac.strip().lower()
         self.instance_type = instance_type
