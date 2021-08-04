@@ -3,11 +3,9 @@ Used to read and modify the deployments running on the configured clusters.
 """
 from __future__ import annotations
 
-import json
 import os
 from collections import defaultdict
 from typing import Iterable
-from bs4 import BeautifulSoup
 
 from bs4.element import Tag
 
@@ -15,7 +13,8 @@ import pageseeder
 import utils
 import yaml
 from flask import Response
-from networkobjs import JSONEncoder, Network, NetworkObjectContainer, Node
+from networkobjs import Network
+from networkobjs.base import Node
 from plugins import Plugin as BasePlugin
 import psml
 
@@ -39,13 +38,10 @@ def initContext(context: str = None) -> ApiClient:
     return ApiClient()
 
 
-## Node subclasses
-
 class App(Node):
     """
     Kubernetes app from a namespaced deployment
     """
-    private_ip: str = '—'
     cluster: str
     """Cluster this app is running in"""
     labels: dict
@@ -54,7 +50,9 @@ class App(Node):
     """Template pods are started from"""
     pods: dict
     """A dict of the pods running this app"""
-    _container: NetworkObjectContainer
+    type: str = 'Kubernetes App'
+
+    ## dunder methods
 
     def __init__(self, 
             name: str, 
@@ -67,18 +65,39 @@ class App(Node):
 
         self.name = name.lower()
         self.cluster = cluster
+        self.identity = f'k8s_{self.cluster}_{self.name}'
         self.docid = f'_nd_node_k8sapp_{self.cluster}_{self.name.replace(".","_")}'
         self.domains = set(domains)
         self.labels = labels or {}
         self.pods = pods or {}
         self.template = template or {}
-
-        self.type = 'Kubernetes App'
+        
+        self.ips = set()
         self.psmlFooter = []
 
+    ## abstract properties
+
     @property
-    def ips(self) -> list:
-        return []
+    def network(self) -> Network:
+        return self._network
+
+    @network.setter
+    def network(self, new_network: Network) -> None:
+        self._network = new_network
+        for domain in self.domains:
+            if domain in self.network.domains:
+                self.network.domains[domain].node = self
+    
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        return [self.psmlPodTemplate, self.psmlRunningPods]
+
+    ## abstract methods
+
+    def merge(self, *_) -> NotImplementedError:
+        raise NotImplementedError
+
+    ## properties
 
     @property
     def psmlPodTemplate(self) -> Tag:
@@ -129,24 +148,6 @@ class App(Node):
             section.append(frag)
             count += 1
         return section
-    
-    @property
-    def psmlBody(self) -> Iterable[Tag]:
-        return [self.psmlPodTemplate, self.psmlRunningPods]
-
-    @property
-    def network(self) -> Network:
-        return self._network
-
-    @network.setter
-    def network(self, new_network: Network) -> None:
-        self._network = new_network
-        for domain in self.domains:
-            if domain in self.network.domains:
-                self.network.domains[domain].node = self
-
-    def merge(self, *_) -> NotImplementedError:
-        raise NotImplementedError
 
 ## Public plugin class
 
