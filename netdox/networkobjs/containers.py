@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Iterator, Type
 import iptools
 from utils import DEFAULT_DOMAIN_ROLES
 
-from .base import NetworkObjectContainer
-from .objects import Domain, IPv4Address, Node
+from .base import NetworkObjectContainer, Node
+from .objects import Domain, IPv4Address
 
 if TYPE_CHECKING:
     from . import Network
@@ -25,7 +25,7 @@ class DomainSet(NetworkObjectContainer):
         self._roles = roles or DEFAULT_DOMAIN_ROLES
 
     def __getitem__(self, key: str) -> Domain:
-        return self.objects[key]
+        return super().__getitem__(key)
 
     ## Re-implemented to type hint
     def __iter__(self) -> Iterator[Domain]:
@@ -104,7 +104,7 @@ class IPv4AddressSet(NetworkObjectContainer):
         self.subnets = set()
 
     def __getitem__(self, key: str) -> IPv4Address:
-        return self.objects[key]
+        return super().__getitem__(key)
 
     def __iter__(self) -> Iterator[IPv4Address]:
         yield from super().__iter__()
@@ -181,16 +181,6 @@ class IPv4AddressSet(NetworkObjectContainer):
             for ip in iptools.subn_iter(subnet):
                 if ip not in self:
                     self[ip] = IPv4Address(ip, True)
-        
-        if self.network:
-            for domain in self.network.domains:
-                for ip in domain.ips:
-                    if ip not in self:
-                        self.add(IPv4Address(ip))
-            for node in self.network.nodes:
-                for ip in node.ips:
-                    if ip not in self:
-                        self.add(IPv4Address(ip))
 
 
 class NodeSet(NetworkObjectContainer):
@@ -200,63 +190,60 @@ class NodeSet(NetworkObjectContainer):
     objectType: str = 'nodes'
     objectClass: Type[Node] = Node
 
-    def __init__(self, objectSet: list[Node] = [], network: Network = None) -> None:
-        self.objects = {object.docid: object for object in objectSet}
+    def __init__(self, nodeSet: list[Node] = [], network: Network = None) -> None:
+        self.objects = {node.identity: node for node in nodeSet}
         self.network = network
+
+    def __getitem__(self, key: str) -> Node:
+        return super().__getitem__(key)
 
     def __iter__(self) -> Iterator[Node]:
         yield from super().__iter__()
-
-    def __getitem__(self, key: str) -> Node:
-        return self.objects[key]
 
     @property
     def nodes(self) -> dict[str, Node]:
         """
         Returns the underlying objects dict
 
-        :return: A dictionary of the Nodes in the set, with docids as keys
+        :return: A dictionary of the Nodes in the set, with identities as keys
         :rtype: dict[str, Node]
         """
         return self.objects
 
     def add(self, node: Node) -> None:
         """
-        Add a single Node to the set, merge if a Node with that docid is already present.
+        Add a single Node to the set, merge if a Node with that identity is already present.
 
         :param object: The Node to add to the set.
         :type object: Node
         """
-        if node.docid in self:
-            self[node.docid] = node.merge(self[node.docid])
+        if node.identity in self:
+            self[node.identity] = node.merge(self[node.identity])
         else:
             if self.network:
                 node.network = self.network
-            self[node.docid] = node
+            self[node.identity] = node
 
-    def replace(self, identifier: str, replacement: Node) -> None:
+    def replace(self, identity: str, replacement: Node) -> None:
         """
-        Replace the Node with the specified identifier with a new Node.
-
-        Calls merge on the replacement with the target Node passed as the argument,
-        then mutates the original Node into the superset, preserving its identity.
-        Also adds a ref under the replacement's docid in ``self.objects``.
+        Mutate the object with the specified identity into a superset of itself and *replacement*, 
+        and then point *identity* and the identity of *replacement* to the new Node.
 
         If target Node is not in the set, the new Node is simply added as-is, 
-        and *identifier* will point to it.
+        and *identity* will point to it.
 
-        :param identifier: The string to use to identify the existing object to replace.
-        :type identifier: str
+        :param identity: The string to use to identify the existing object to replace.
+        :type identity: str
         :param object: The Node to replace the existing Node with.
         :type object: Node
         """
-        if identifier in self:
-            original = self[identifier]
+        if identity in self:
+            original = self[identity]
             superset = replacement.merge(original)
             original.__class__ = superset.__class__
             for key, val in superset.__dict__.items():
                 original.__dict__[key] = val
-            self[replacement.docid] = original
+            self[replacement.identity] = original
         else:
             self.add(replacement)
-            self[identifier] = replacement
+            self[identity] = replacement
