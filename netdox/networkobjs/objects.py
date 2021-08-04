@@ -316,7 +316,8 @@ class DefaultNode(base.Node):
     def __init__(self, 
             name: str, 
             private_ip: str,
-            domains: Iterable[str] = None
+            public_ips: Iterable[str] = [],
+            domains: Iterable[str] = []
         ) -> None:
 
         if iptools.valid_ip(private_ip) and not iptools.public_ip(private_ip):
@@ -328,8 +329,9 @@ class DefaultNode(base.Node):
         self.identity = self.private_ip
         self.docid = f'_nd_node_{self.identity.replace(".","_")}'
         self.domains = set(domains) if domains else set()
+        self.ips = set(public_ips) if public_ips else set()
+        self.ips.add(self.private_ip)
 
-        self.ips = set([self.private_ip])
         self.psmlFooter = []
 
     @property
