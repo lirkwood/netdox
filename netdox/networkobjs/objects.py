@@ -9,13 +9,12 @@ import iptools
 import utils
 from bs4 import Tag
 
-from .base import DNSObject, RecordSet, Node
+from . import base
 
 if TYPE_CHECKING:
-    from . import Network
-    from .containers import *
+    from . import Network, containers
 
-class Domain(DNSObject):
+class Domain(base.DNSObject):
     """
     A domain defined in a managed DNS zone.
     Contains all A/CNAME DNS records from managed zones using this domain as the record name.
@@ -48,8 +47,8 @@ class Domain(DNSObject):
             self.psmlFooter = []
             
             self.records = {
-                'A': RecordSet(),
-                'CNAME': RecordSet()
+                'A': base.RecordSet(),
+                'CNAME': base.RecordSet()
             }
 
             self.backrefs = {
@@ -149,7 +148,7 @@ class Domain(DNSObject):
     ## properties
 
     @property
-    def container(self) -> DomainSet:
+    def container(self) -> containers.DomainSet:
         """
         Returns the current _container attribute
 
@@ -172,11 +171,11 @@ class Domain(DNSObject):
             if self.name in domains:
                 self.role = role
 
-class IPv4Address(DNSObject, BaseIP):
+class IPv4Address(base.DNSObject, BaseIP):
     """
     A single IP address found in the network
     """
-    nat: RecordSet
+    nat: base.RecordSet
     """The IP this address resolves to through the NAT."""
     unused: bool
     """Whether or not a Domain in the network resolves to this IP."""
@@ -194,8 +193,8 @@ class IPv4Address(DNSObject, BaseIP):
         self.node = None
 
         self.records = {
-            'PTR': RecordSet(),
-            'CNAME': RecordSet()
+            'PTR': base.RecordSet(),
+            'CNAME': base.RecordSet()
         }
 
         self.backrefs = {
@@ -306,47 +305,32 @@ class IPv4Address(DNSObject, BaseIP):
 
 
 
-class DefaultNode(Node):
+class DefaultNode(base.Node):
     """
-    Default implementation of Node.
+    Default implementation of Node, with one private IPv4 address.
     """
     private_ip: str
     """The IP that this Node is using."""
-    public_ips: set
-    """A set of public IPs that this Node uses."""
     type = 'default'
 
     def __init__(self, 
             name: str, 
-            private_ip: str, 
-            public_ips: Iterable[str] = None, 
+            private_ip: str,
             domains: Iterable[str] = None
         ) -> None:
-
-        self.name = name.strip().lower()
-        self.identity = private_ip
-        self.docid = f'_nd_node_{self.name.replace(".","_")}'
-        self.location = None
 
         if iptools.valid_ip(private_ip) and not iptools.public_ip(private_ip):
             self.private_ip = private_ip
         else:
             raise ValueError(f'Invalid private IP: {private_ip}')
-            
-        self.public_ips = set(public_ips) if public_ips else set()
+
+        self.name = name.strip().lower()
+        self.identity = self.private_ip
+        self.docid = f'_nd_node_{self.identity.replace(".","_")}'
         self.domains = set(domains) if domains else set()
 
+        self.ips = set([self.private_ip])
         self.psmlFooter = []
-
-    @property
-    def ips(self) -> list[str]:
-        """
-        Return all the IPs that resolve to this node.
-
-        :return: A list of IPv4 addresses as strings.
-        :rtype: list[str]
-        """
-        return list(self.public_ips) + [self.private_ip]
 
     @property
     def network(self) -> Network:
@@ -389,7 +373,7 @@ class DefaultNode(Node):
         """
         return []
 
-    def merge(self, node: Node) -> DefaultNode:
+    def merge(self, node: base.Node) -> DefaultNode:
         """
         In place merge of two Node instances.
         This method should always be called on the object entering the set.
