@@ -32,6 +32,7 @@ RUN pip install boto3
 RUN pip install kubernetes
 RUN pip install pyppeteer
 RUN pip install diffimg
+RUN pip install pypsrp
 
 RUN python3 -c 'import pyppeteer; pyppeteer.chromium_downloader.download_chromium()'
 
