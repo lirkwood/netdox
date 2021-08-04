@@ -214,6 +214,3 @@ def runner(network: Network) -> None:
             for domain in appnode.domains:
                 if domain not in network.domains:
                     network.domains.add(Domain(domain))
-
-                if not network.domains[domain].location:
-                    network.domains[domain].location = location
