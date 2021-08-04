@@ -5,10 +5,15 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING, Iterator, Type
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import Tag
 
 if TYPE_CHECKING:
     from . import Network
+    from .objects import Node
+
+###########
+# Objects #
+###########
 
 class NetworkObject(ABC):
     """
@@ -24,8 +29,12 @@ class NetworkObject(ABC):
     """The containing NetworkObjectContainer if there is one."""
     location: str = None
     """The location as it appears in ``locations.json``, assigned based on IP address by *Locator*."""
+    subnets: set
+    """A set of private subnets this object resolves to."""
     psmlFooter: list[Tag] = None
-    """A list of BeautifulSoup objects (must be valid children of ``section``) to add to the *footer* section of this object's output PSML."""
+    """A list of fragment tags to add to the *footer* section of this object's output PSML."""
+
+    ## properties
 
     @property
     def network(self) -> Network:
@@ -61,6 +70,8 @@ class NetworkObject(ABC):
         """ 
         pass
     
+    ## methods
+
     @abstractmethod
     def merge(self, object: NetworkObject) -> NetworkObject:
         """
@@ -79,21 +90,64 @@ class NetworkObject(ABC):
         """
         return self.__dict__ | {'_network': None, 'container': None, 'psmlFooter': [str(tag) for tag in self.psmlFooter]}
 
-    @classmethod
-    def from_dict(cls: Type[NetworkObject], constructor: dict) -> NetworkObject:
-        """
-        Instantiates this class from its __dict__ attribute.
 
-        :param constructor: The dictionary to use.
-        :type constructor: dict
-        :return: A instance of this class.
-        :rtype: NetworkObject
-        """
-        instance = cls(constructor['name'])
-        instance.__dict__.update(constructor)
-        instance.psmlFooter = [BeautifulSoup(tag, features = 'xml') for tag in instance.psmlFooter]
-        return instance
+class RecordSet:
+    """Container for DNS records"""
+    _records: set
+    """Set of 2-tuples containing a record value and the plugin name that provided it."""
 
+    ## dunder methods
+
+    def __init__(self) -> None:
+        self._records = set()
+
+    ## properties
+
+    @property
+    def records(self) -> list[str]:
+        """
+        Returns a list of the record values in this set
+
+        :return: A list record values as strings
+        :rtype: list[str]
+        """
+        return [value for value, _ in self._records]
+    
+    ## methods
+
+    def add(self, value: str, source: str) -> None:
+        self._records.add((value.lower().strip(), source))
+
+class DNSObject(NetworkObject):
+    """
+    A NetworkObject representing an object in a managed DNS zone.
+    """
+    zone: str
+    """The DNS zone this object is from."""
+    records: dict[str, RecordSet]
+    """A dictionary mapping record type to a RecordSet."""
+    backrefs: dict[str, set]
+    """Like records but stores reverse references from DNSObjects linking to this one."""
+    node: Node
+    """The node this DNSObject resolves to"""
+
+    ## methods
+
+    @abstractmethod
+    def link(self, value: str, source: str) -> None:
+        """
+        Adds a record from this object to a DNSObject named *value*.
+
+        :param value: The name of the DNSObject to link to.
+        :type value: str
+        :param source: The plugin that provided this link.
+        :type source: str
+        """
+        pass
+
+##############
+# Containers #
+##############
 
 class NetworkObjectContainer(ABC):
     """
@@ -107,6 +161,8 @@ class NetworkObjectContainer(ABC):
     """A dictionary of the NetworkObjects in this container."""
     network: Network
     """The network this container is in, if any."""
+
+    ## dunder methods
 
     def __init__(self, objectSet: list[NetworkObject] = [], network: Network = None) -> None:
         self.objects = {object.name: object for object in objectSet}
@@ -127,34 +183,7 @@ class NetworkObjectContainer(ABC):
     def __contains__(self, key: str) -> bool:
         return self.objects.__contains__(key)
 
-    @classmethod
-    def from_dict(cls, constructor: dict) -> NetworkObjectContainer:
-        """
-        Instantiates a NetworkObjectContainer from a dictionary of attributes.
-
-        :param constructor: A dictionary of the instances attributes.
-        :type constructor: dict
-        :return: An instance of this class.
-        :rtype: NetworkObjectContainer
-        """
-        if constructor['objectType'] == cls.objectType:
-            return cls([cls.objectClass.from_dict(object) for object in constructor['objects']])
-        else:
-            raise ValueError(f'Cannot instantiate {type(cls)._name__} from dictionary of {constructor["objectType"]}')
-
-    @classmethod
-    def from_json(cls, path: str) -> NetworkObjectContainer:
-        """
-        Instantiates this class from a JSON file.
-        Expects a string the same as that returned by *to_json*.
-
-        :param path: The JSON file to read.
-        :type path: str
-        :return: A instance of this class.
-        :rtype: NetworkObjectContainer
-        """
-        with open(path, 'r') as stream:
-            return cls.from_dict(json.loads(stream.read()))
+    ## methods
 
     def to_json(self, path: str) -> None:
         """
