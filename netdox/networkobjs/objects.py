@@ -10,215 +10,59 @@ import iptools
 import utils
 from bs4 import Tag
 
-from .base import NetworkObject
+from .base import DNSObject, NetworkObject, RecordSet
 
 if TYPE_CHECKING:
     from . import Network
     from .containers import *
 
-
-class Domain(NetworkObject):
+class Domain(DNSObject):
     """
-    A domain defined in a managed DNS server.
-    Contains all A/CNAME DNS records from managed servers using this domain as the record name.
+    A domain defined in a managed DNS zone.
+    Contains all A/CNAME DNS records from managed zones using this domain as the record name.
 
-    Subclasses NetworkObject
+    Subclasses DNSObject
     """
-    root: str
-    """The root DNS zone this domain was found in."""
-    role: str
-    """The configured DNS role this domain has been assigned."""
     _node: Node
-    """The Node this domain is hosted on."""
-    _container: DomainSet
-    _public_ips: set[str]
-    _private_ips: set[str]
-    _cnames: set[str]
-    implied_ips: set[str]
-    """A set of IPv4Addresses as strings have a PTR record resolving to this domain."""
-    subnets: set[str]
-    """The /24 subnets this domains private ips are in."""
+    
+    ## dunder methods
 
-    def __init__(self, name: str, root: str = None, role: str = 'default') -> None:
+    def __init__(self, name: str, zone: str = None, role: str = 'default') -> None:
         """
         Initialises a Domain
 
         :param name: The domain name to use
         :type name: str
-        :param root: The root DNS zone, defaults to None
-        :type root: str, optional
+        :param zone: The parent DNS zone, defaults to None
+        :type zone: str, optional
         :param role: The DNS role to apply to this domain, defaults to 'default'
         :type role: str, optional
         :raises ValueError: If *name* is not a valid FQDN
         """
         if re.fullmatch(utils.dns_name_pattern, name):
             self.name = name.lower()
-            self.docid = f'_nd_domain_{self.name.replace(".","_")}'
-            self.root = root.lower() if root else None
+            self.zone = zone.lower() if zone else None
             self.role = role.lower()
+
+            self.docid = f'_nd_domain_{self.name.replace(".","_")}'
             self.location = None
-
-            # destinations
-            self._public_ips = set()
-            self._private_ips = set()
-            self._cnames = set()
-
-            self.implied_ips = set()
             self.subnets = set()
-
             self._node = None
             self.psmlFooter = []
+            
+            self.records = {
+                'A': RecordSet(),
+                'CNAME': RecordSet()
+            }
+
+            self.backrefs = {
+                'CNAME': set(),
+                'PTR': set()
+            }
         else:
             raise ValueError('Must provide a valid name for dns record (some FQDN)')
-
-    def link(self, destination: str, source: str) -> None:
-        """
-        Adds a DNS record from this domain to the provided destination.
-
-        Adds a 2-tuple containing the destination and source to the relevant record set; self._cnames when destination is a FQDN, etc.
-
-        :param destination: The value for the DNS record, as a string.
-        :type destination: str
-        :param source: The plugin that provided this link.
-        :type source: str
-        :raises ValueError: If the destination cannot be recognised as a FQDN or IPv4 address.
-        """
-        destination = destination.lower().strip()
-        if iptools.valid_ip(destination):
-            recordtype = 'A'
-        elif re.fullmatch(utils.dns_name_pattern, destination):
-            recordtype = 'CNAME'
-        else:
-            raise ValueError('Unable to parse destination as a domain or IPv4 address')
-                
-        if recordtype == 'A':
-            if iptools.public_ip(destination):
-                self._public_ips.add((destination, source))
-            else:
-                self._private_ips.add((destination, source))
-        else:
-            self._cnames.add((destination, source))
-        
-        self.update()
-
-    def update(self) -> None:
-        """
-        Updates subnet and location data for this record.
-        """
-        for ip in self.private_ips:
-            self.subnets.add(iptools.sort(ip))
-        if self.network:
-            self.location = self.network.locator.locate(self.ips)
-
-    @property
-    def destinations(self) -> list[str]:
-        """
-        Returns a list of all the domains and IPv4 addresses this Domain resolves to, as strings.
-
-        :return: A list of FQDNs and IPv4 addresses, as strings.
-        :rtype: list
-        """
-        return self.public_ips + self.private_ips + self.cnames
-
-    @property
-    def _ips(self) -> set[Tuple[str, str]]:
-        """
-        Returns a set of the 2-tuples representing DNS records from self._public_ips and self._private_ips combined.
-
-        :return: A set of 2-tuples containing an IPv4 address and the plugin the link came from.
-        :rtype: set[Tuple[str, str]]
-        """
-        return self._public_ips.union(self._private_ips)
-
-    @property
-    def public_ips(self) -> list[str]:
-        """
-        Returns all IPs from this domain's links that are outside of protected ranges.
-
-        :return: A list of IPv4 addresses as strings.
-        :rtype: list[str]
-        """
-        return list(set([ip for ip,_ in self._public_ips]))
-
-    @property
-    def private_ips(self) -> list[str]:
-        """
-        Returns all IPs from this domain's links that are inside a protected range.
-
-        :return: A list of IPv4 addresses as strings.
-        :rtype: list[str]
-        """
-        return list(set([ip for ip,_ in self._private_ips]))
-
-    @property
-    def ips(self) -> list[str]:
-        """
-        Returns all IPs from this domain's links.
-
-        :return: A list of IPv4 addresses as strings.
-        :rtype: list[str]
-        """
-        return [ip for ip, _ in self._ips]
-
-    @property
-    def iplinks(self) -> list[str]:
-        """
-        Returns all ips that this domain points to, or that point back
-
-        :return: A list of IPv4 addresses as strings.
-        :rtype: list[str]
-        """
-        return list(set(self.ips) + self.implied_ips)
-
-    @property
-    def cnames(self) -> list[str]:
-        """
-        Returns all ips that this domain points to, or that point back
-
-        :return: A list of FQDNs.
-        :rtype: list[str]
-        """
-        return list(set([cname for cname,_ in self._cnames]))
-
-    @property
-    def node(self) -> Node:
-        """
-        Returns the Node this Domain resolves to.
-
-        :return: The Node this Domain resolves to, or None.
-        :rtype: Node
-        """
-        return self._node
-
-    @node.setter
-    def node(self, new_node: Node) -> None:
-        self._node = new_node
-        if new_node.location:
-            self.location = new_node.location
-
-    @property
-    def container(self) -> DomainSet:
-        """
-        Returns the current _container attribute
-
-        :return: The current DomainSet this Domain is in.
-        :rtype: Domain
-        """
-        return self._container
-
-    @container.setter
-    def container(self, new_container: Domain) -> None:
-        """
-        Set the _container attribute to new_container.
-        Also updates the role attribute.
-
-        :param new_network: The network this Domain has been added to.
-        :type new_network: Network
-        """
-        self._container = new_container
-        for role, domains in self.container.roles.items():
-            if self.name in domains:
-                self.role = role
+    
+    ## abstract properties
 
     @property
     def network(self) -> Network:
@@ -249,6 +93,29 @@ class Domain(NetworkObject):
     @property
     def outpath(self) -> str:
         return os.path.abspath(f'out/domains/{self.docid}.psml')
+    
+    ## abstract methods
+
+    def link(self, destination: str, source: str) -> None:
+        """
+        Adds a DNS record from this domain to the provided destination.
+
+        Adds a 2-tuple containing the destination and source to the relevant record set; self._cnames when destination is a FQDN, etc.
+
+        :param destination: The value for the DNS record, as a string.
+        :type destination: str
+        :param source: The plugin that provided this link.
+        :type source: str
+        :raises ValueError: If the destination cannot be recognised as a FQDN or IPv4 address.
+        """
+        if iptools.valid_ip(destination):
+            self.records['A'].add(destination, source)
+            if not iptools.public_ip(destination):
+                self.subnets.add(iptools.sort(destination))
+        elif re.fullmatch(utils.dns_name_pattern, destination):
+            self.records['CNAME'].add(destination, source)
+        else:
+            raise ValueError('Unable to parse value as a domain or IPv4 address')
 
     def merge(self, domain: Domain) -> Domain:
         """
@@ -263,12 +130,19 @@ class Domain(NetworkObject):
         """
         if self.name == domain.name:
             self.psmlFooter += domain.psmlFooter
-            self._private_ips |= domain._private_ips
-            self._public_ips |= domain._public_ips
-            self._cnames |= domain._cnames
+            self.subnets |= domain.subnets
+
+            for type in self.records:
+                for dest, source in domain.records[type]._records:
+                    self.link(dest, source)
+
+            for type in self.backrefs:
+                for dest in domain.backrefs[type]:
+                    self.backrefs[type].add(dest)
+
             if domain.network:
                 self._network = domain.network
-            self.update()
+
             return self
         else:
             raise ValueError('Cannot merge two Domains with different names')
@@ -276,106 +150,81 @@ class Domain(NetworkObject):
     def to_dict(self) -> dict:
         return super().to_dict() | {'_node': None, '_container': None}
 
-    @classmethod
-    def from_dict(cls: Type[Domain], string: str) -> Domain:
-        """
-        Instantiates a Domain from its __dict__ attribute.
+    ## properties
 
-        :param constructor: The dictionary to use.
-        :type constructor: dict
-        :return: A instance of this class.
+    @property
+    def container(self) -> DomainSet:
+        """
+        Returns the current _container attribute
+
+        :return: The current DomainSet this Domain is in.
         :rtype: Domain
         """
-        instance = super(Domain, cls).from_dict(string)
-        instance.implied_ips = set(instance.implied_ips)
-        for attribute in ('_public_ips', '_private_ips', '_cnames'):
-            listAttr = getattr(instance, attribute)
-            setattr(instance, attribute, {(value, plugin) for value, plugin in listAttr})
-        return instance
+        return self._container
 
+    @container.setter
+    def container(self, new_container: Domain) -> None:
+        """
+        Set the _container attribute to new_container.
+        Also updates the role attribute.
 
-class IPv4Address(BaseIP, NetworkObject):
+        :param new_network: The network this Domain has been added to.
+        :type new_network: Network
+        """
+        self._container = new_container
+        for role, domains in self.container.roles.items():
+            if self.name in domains:
+                self.role = role
+
+    @property
+    def node(self) -> Node:
+        """
+        Returns the Node this Domain resolves to.
+
+        :return: The Node this Domain resolves to, or None.
+        :rtype: Node
+        """
+        return self._node
+
+    @node.setter
+    def node(self, new_node: Node) -> None:
+        self._node = new_node
+        if new_node.location:
+            self.location = new_node.location
+
+class IPv4Address(DNSObject, BaseIP):
     """
     A single IP address found in the network
     """
-    addr: str
-    """Same as name. This IP as a string."""
-    node: Node
-    """The Node using this IP."""
-    subnet: str
-    """The /24 subnet this IP is in."""
-    _ptr: set[Tuple[str, str]]
-    implied_ptr: set[str]
-    """A set of domains which resolve to this IP."""
-    nat: str
+    nat: RecordSet
     """The IP this address resolves to through the NAT."""
     unused: bool
     """Whether or not a Domain in the network resolves to this IP."""
+    
+    ## dunder methods
 
     def __init__(self, address: object, unused: bool = False) -> None:
         super().__init__(address)
-        self.addr = str(address)
-        self.name = self.addr
-        self.docid = f'_nd_ip_{self.addr.replace(".","_")}'
-        self.subnet = iptools.sort(self.addr)
+        self.name = self.name
         self.location = None
         self.unused = unused
         
-        self._ptr = set()
-        self.implied_ptr = set()
+        self.docid = f'_nd_ip_{self.name.replace(".","_")}'
+        self.subnets = set([iptools.sort(self.name)])
         self.nat = None
         self.node = None
-        self.psmlFooter = []
 
-    def link(self, domain: str, source: str):
-        """
-        Adds a PTR record from this IP to the provided domain.
+        self.records = {
+            'PTR': RecordSet(),
+            'CNAME': RecordSet()
+        }
 
-        Adds a 2-tuple containing the domain and source to self._ptr
-
-        :param domain: The domain for the PTR record, as a string.
-        :type domain: str
-        :param source: The plugin that provided this link.
-        :type source: str
-        :raises ValueError: If the domain cannot be recognised as a valid FQDN.
-        """
-        if re.fullmatch(utils.dns_name_pattern, domain):
-            self._ptr.add((domain, source))
-        else:
-            raise ValueError(f'Invalid domain \'{domain}\'')
-
-    def subnetFromMask(self, mask: Union[str, int] = '24') -> str:
-        """
-        Return the subnet of a given size containing this IP
-
-        :param mask: The subnet mask to use in bits, defaults to '24'
-        :type mask: Union[str, int], optional
-        :return: A IPv4 subnet in CIDR format
-        :rtype: str
-        """
-        mask = str(mask) if isinstance(mask, int) else mask
-        subnet = f'{self.addr}/{mask}'
-        return f'{iptools.subn_floor(subnet)}/{mask}'
-
-    @property
-    def ptr(self) -> list[str]:
-        """
-        Returns all domains from this IPs links
-
-        :return: A list of FQDNs
-        :rtype: list[str]
-        """
-        return [domain for domain, _ in self._ptr]
-
-    @property
-    def domains(self) -> set[str]:
-        """
-        Returns the superset of domains this IP points to, and domains which point back.
-
-        :return: A set of FQDNs
-        :rtype: set[str]
-        """
-        return set(self.ptr).union(self.implied_ptr)
+        self.backrefs = {
+            'A': RecordSet(),
+            'CNAME': RecordSet()
+        }
+    
+    ## abstract properties
 
     @property
     def network(self) -> Network:
@@ -397,14 +246,32 @@ class IPv4Address(BaseIP, NetworkObject):
         :type new_network: Network
         """
         self._network = new_network
-        self.location = new_network.locator.locate([self.addr])
+        self.location = new_network.locator.locate([self.name])
         for domain in self.domains:
             if domain in self.network:
-                self.network.domains[domain].implied_ips.add(self.addr)
+                self.network.domains[domain].implied_ips.add(self.name)
 
     @property
     def outpath(self) -> str:
         return os.path.abspath(f'out/ips/{self.subnet.replace("/","_")}/{self.docid}.psml')
+    
+    ## abstract methods
+
+    def link(self, value: str, source: str) -> None:
+        """
+        Adds a record from this object to a DNSObject named *value*.
+
+        :param value: The name of the DNSObject to link to.
+        :type value: str
+        :param source: The plugin that provided this link.
+        :type source: str
+        """
+        if iptools.valid_ip(value):
+            self.records['CNAME'].add(value, source)
+        elif re.fullmatch(utils.dns_name_pattern, value):
+            self.records['PTR'].add(value, source)
+        else:
+            raise ValueError('Unable to parse value as a domain or IPv4 address')
 
     def merge(self, ip: IPv4Address) -> IPv4Address:
         """
@@ -417,34 +284,33 @@ class IPv4Address(BaseIP, NetworkObject):
         :return: This IPv4Address object, which is now a superset of the two.
         :rtype: IPv4Address
         """
-        if self.addr == ip.addr:
+        if self.name == ip.name:
             self.psmlFooter += ip.psmlFooter
-            self._ptr |= ip._ptr
-            self.implied_ptr |= ip.implied_ptr
             self.nat = ip.nat or self.nat
+
+            for type in self.records:
+                for dest, source in ip.records[type]._records:
+                    self.link(dest, source)
+
+            for type in self.backrefs:
+                for dest in ip.backrefs[type]:
+                    self.backrefs[type].add(dest)
+
             if ip.network:
                 self.network = ip.network
+                
             return self
         else:
             raise ValueError('Cannot merge two IPv4Addresses with different addresses')
 
     def to_dict(self) -> dict:
         return super().to_dict() | {'node': None}
+    
+    ## properties
 
-    @classmethod
-    def from_dict(cls: Type[IPv4Address], string: str) -> IPv4Address:
-        """
-        Instantiates an IPv4Address from its __dict__ attribute.
-
-        :param constructor: The dictionary to use.
-        :type constructor: dict
-        :return: A instance of this class.
-        :rtype: IPv4Address
-        """
-        instance = super(IPv4Address, cls).from_dict(string)
-        instance.implied_ptr = set(instance.implied_ptr)
-        instance._ptr = {(domain, plugin) for domain, plugin in instance._ptr}
-        return instance
+    @property
+    def subnet(self) -> str:
+        return self.subnets[0]
 
 
 class Node(NetworkObject):
@@ -559,20 +425,3 @@ class Node(NetworkObject):
             return self
         else:
             raise TypeError('Cannot merge two Nodes of different types or different private ips')
-
-    @classmethod
-    def from_dict(cls: Type[Node], constructor: str) -> Node:
-        """
-        Instantiates a Node from its __dict__ attribute.
-
-        :param constructor: The dictionary to use.
-        :type constructor: dict
-        :return: A instance of this class.
-        :rtype: Node
-        """
-        instance = cls(constructor['name'], constructor['private_ip'])
-        instance.__dict__.update(constructor)
-        instance.public_ips = set(instance.public_ips)
-        instance.domains = set(instance.domains)
-        instance.psmlFooter = [BeautifulSoup(tag, features = 'xml') for tag in instance.psmlFooter]
-        return instance
