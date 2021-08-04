@@ -16,9 +16,10 @@ import json
 import os
 import psml
 from utils import DEFAULT_CONFIG
+from bs4 import BeautifulSoup
+from typing import Iterator
 
-from .base import *
-from .containers import *
+from . import base, containers
 from .objects import *
 
 ######################
@@ -29,19 +30,19 @@ class Network:
     """
     Container for sets of network objects.
     """
-    domains: DomainSet
+    domains: containers.DomainSet
     """A NetworkObjectContainer for the Domains in the network."""
-    ips: IPv4AddressSet
+    ips: containers.IPv4AddressSet
     """A NetworkObjectContainer for the IPv4Addresses in the network."""
-    nodes: NodeSet
+    nodes: containers.NodeSet
     """A NetworkObjectContainer for the Nodes in the network."""
     config: dict
     """The currently loaded config from :ref:`utils`."""
 
     def __init__(self, 
-            domains: DomainSet = None, 
-            ips: IPv4AddressSet = None, 
-            nodes: NodeSet = None,
+            domains: containers.DomainSet = None, 
+            ips: containers.IPv4AddressSet = None, 
+            nodes: containers.NodeSet = None,
             config: dict = None,
             roles: dict = None
         ) -> None:
@@ -60,9 +61,9 @@ class Network:
         :type roles: dict, optional
         """
 
-        self.domains = domains or DomainSet(network = self, roles = roles)
-        self.ips = ips or IPv4AddressSet(network = self)
-        self.nodes = nodes or NodeSet(network = self)
+        self.domains = domains or containers.DomainSet(network = self, roles = roles)
+        self.ips = ips or containers.IPv4AddressSet(network = self)
+        self.nodes = nodes or containers.NodeSet(network = self)
         
         self.config = config or DEFAULT_CONFIG
         self.locator = Locator()
@@ -75,7 +76,7 @@ class Network:
             self.nodes.__contains__(object)
         )
 
-    def add(self, object: NetworkObject) -> None:
+    def add(self, object: base.NetworkObject) -> None:
         """
         Calls the *add* method on one of the three NetworkObjectContainers in this network. based on the class inheritance of *object*.
 
@@ -86,10 +87,10 @@ class Network:
             self.domains.add(object)
         elif isinstance(object, IPv4Address):
             self.ips.add(object)
-        elif isinstance(object, Node):
+        elif isinstance(object, base.Node):
             self.nodes.add(object)
 
-    def replace(self, identifier: str, object: NetworkObject) -> None:
+    def replace(self, identifier: str, object: base.NetworkObject) -> None:
         """
         Replace a NetworkObject in the network
         """
@@ -97,10 +98,10 @@ class Network:
             self.domains.replace(identifier, object)
         elif isinstance(object, IPv4Address):
             self.ips.replace(identifier, object)
-        elif isinstance(object, Node):
+        elif isinstance(object, base.Node):
             self.nodes.replace(identifier, object)
 
-    def addSet(self, object_set: NetworkObjectContainer) -> None:
+    def addSet(self, object_set: base.NetworkObjectContainer) -> None:
         """
         Add a set of network objects to the network
 
@@ -109,56 +110,33 @@ class Network:
         :param object_set: An NetworkObjectContainer to add to the network
         :type object_set: NetworkObjectContainer
         """
-        if isinstance(object_set, DomainSet):
+        if isinstance(object_set, containers.DomainSet):
             object_set.network = self
             self.domains = object_set
-        elif isinstance(object_set, IPv4AddressSet):
+        elif isinstance(object_set, containers.IPv4AddressSet):
             object_set.network = self
             self.ips = object_set
-        elif isinstance(object_set, NodeSet):
+        elif isinstance(object_set, containers.NodeSet):
             object_set.network = self
             self.nodes = object_set
-
-    @property
-    def records(self) -> dict:
-        """
-        Returns a dictionary of the defined links between domains and IPs
-
-        :return: A dictionary with 'forward' and 'reverse' keys mapped to a dictionary of forward/reverse DNS records.
-        :rtype: dict
-        """
-        return {
-            'forward': {domain.name: domain.destinations for domain in self.domains},
-            'reverse': {ip.name: ip.ptr for ip in self.ips}
-        }
-
-    @property
-    def implied_records(self) -> dict:
-        """
-        Returns a dictionary of the implied links between domains and IPs
-
-        :return: A dictionary with 'forward' and 'reverse' keys mapped to a dictionary of forward/reverse implied DNS records.
-        :rtype: dict
-        """
-        return {
-            'forward': {ip.name: ip.domains for ip in self.ips},
-            'reverse': {domain.name: domain.iplinks for domain in self.domains}
-        }
 
     def discoverImpliedLinks(self) -> None:
         """
         Populates the implied link attributes for the Domain and IPv4Address objects in the Network.
         Also sets their Node attributes where possible.
         """
-        for domain, ips in self.records['forward'].items():
-            for ip in ips:
-                if ip in self.ips and domain not in self.ips[ip].ptr:
-                    self.ips[ip].implied_ptr.add(domain)
+        for domain in self.domains:
+            for ip in domain.records['A']:
+                if ip in self.ips and domain not in self.ips[ip].backrefs['A']:
+                    self.ips[ip].backrefs['A'].add(domain.name)
+            for alias in domain.records['CNAME']:
+                if alias in self.domains and domain not in self.domains[alias].backrefs['CNAME']:
+                    self.domains[alias].backrefs['CNAME'].add(domain.name)
 
-        for ip, domains in self.records['reverse'].items():
-            for domain in domains:
-                if domain in self.domains and ip not in self.domains[domain].ips:
-                    self.domains[domain].implied_ips.add(ip)
+        for ip in self.ips:
+            for domain in ip.records['PTR']:
+                if domain in self.domains and ip not in self.domains[domain].backrefs['PTR']:
+                    self.domains[domain].backrefs['PTR'].add(ip)
 
         for node in self.nodes:
             for ip in node.ips:
@@ -168,23 +146,6 @@ class Network:
             for domain in node.domains:
                 if domain in self.domains and not self.domains[domain].node:
                     self.domains[domain].node = node
-    
-    def setFromJSON(self, path: str) -> None:
-        """
-        Loads a NetworkObjectContainer from a JSON file.
-
-        :param path: Path to the JSON file.
-        :type path: str
-        """
-        with open(path, 'r') as stream:
-            setDict = json.load(stream)
-
-        if setDict['objectType'] == 'domains':
-            self.addSet(DomainSet.from_dict(setDict))
-        elif setDict['objectType'] == 'ips':
-            self.addSet(IPv4AddressSet.from_dict(setDict))
-        elif setDict['objectType'] == 'nodes':
-            self.addSet(NodeSet.from_dict(setDict))
 
     def setToJSON(self, set: str, path: str) -> None:
         """
@@ -299,7 +260,7 @@ class PSMLWriter:
     body: BeautifulSoup
     footer: list[Tag]
 
-    def serialiseSet(self, nwobjc: NetworkObjectContainer) -> None:
+    def serialiseSet(self, nwobjc: containers.NetworkObjectContainer) -> None:
         """
         Serialises a set of NetworkObjects.
 
@@ -309,7 +270,7 @@ class PSMLWriter:
         for nwobj in nwobjc:
             self.serialise(nwobj)
 
-    def serialise(self, nwobj: NetworkObject) -> None:
+    def serialise(self, nwobj: base.NetworkObject) -> None:
         """
         Serialises a NetworkObject to PSML and writes to disk.
 
@@ -320,7 +281,7 @@ class PSMLWriter:
             self.domainBody(nwobj)
         elif isinstance(nwobj, IPv4Address):
             self.ipBody(nwobj)
-        elif isinstance(nwobj, Node):
+        elif isinstance(nwobj, base.Node):
             self.nodeBody(nwobj)
         else:
             self.doc = None
@@ -440,7 +401,7 @@ class PSMLWriter:
             ))
         self.body.append(impliedfrag)
 
-    def nodeBody(self, node: Node) -> None:
+    def nodeBody(self, node: base.Node) -> None:
         """
         Populates the *body* section of a Node's output PSML
 
