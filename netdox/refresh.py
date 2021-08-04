@@ -18,7 +18,7 @@ import pageseeder
 import plugins
 import psml
 import utils
-from networkobjs import Network, Node
+from networkobjs import Network, DefaultNode
 
 ##################
 # Initialisation #
@@ -142,11 +142,11 @@ def main():
     # generate generic nodes
     for ip in network.ips.used:
         if ip.is_private:
-            network.nodes.add(Node(
+            network.nodes.add(DefaultNode(
                 name = ip.name,
                 private_ip = ip.name, 
                 public_ips = [ip.nat] if ip.nat else [],
-                domains = ip.domains
+                domains = set(ip.records['PTR']) | ip.backrefs['A']
             ))
 
     pluginmaster.runStage('nodes', network)
