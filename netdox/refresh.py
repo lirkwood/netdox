@@ -143,8 +143,8 @@ def main():
     for ip in network.ips.used:
         if ip.is_private:
             network.nodes.add(Node(
-                name = ip.addr,
-                private_ip = ip.addr, 
+                name = ip.name,
+                private_ip = ip.name, 
                 public_ips = [ip.nat] if ip.nat else [],
                 domains = ip.domains
             ))

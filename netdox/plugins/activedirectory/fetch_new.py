@@ -32,7 +32,7 @@ def fetchDNS(network: Network) -> None:
                     dnsobj = network.ips[ip]
                 else:
                     if fqdn not in network.domains:
-                        network.add(Domain(fqdn, root = zoneName))
+                        network.add(Domain(fqdn, zone = zoneName))
                     dnsobj = network.domains[fqdn]
 
                 if details['RecordType'] == 'A':

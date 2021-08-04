@@ -129,7 +129,7 @@ class Network:
         """
         return {
             'forward': {domain.name: domain.destinations for domain in self.domains},
-            'reverse': {ip.addr: ip.ptr for ip in self.ips}
+            'reverse': {ip.name: ip.ptr for ip in self.ips}
         }
 
     @property
@@ -141,7 +141,7 @@ class Network:
         :rtype: dict
         """
         return {
-            'forward': {ip.addr: ip.domains for ip in self.ips},
+            'forward': {ip.name: ip.domains for ip in self.ips},
             'reverse': {domain.name: domain.iplinks for domain in self.domains}
         }
 
