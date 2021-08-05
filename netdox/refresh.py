@@ -130,24 +130,10 @@ def main():
     network = Network(config = utils.config(), roles = utils.roles())
 
     #-------------------------------------------------------------------#
-    # Adding DNS NetworkObjects                                         #
+    # Primary data-gathering stages                                     #
     #-------------------------------------------------------------------#
     
     pluginmaster.runStage('dns', network)
-
-    #-------------------------------------------------------------------#
-    # Adding Nodes                                                      #
-    #-------------------------------------------------------------------#
-
-    # generate generic nodes
-    for ip in network.ips.used:
-        if ip.is_private:
-            network.nodes.add(DefaultNode(
-                name = ip.name,
-                private_ip = ip.name, 
-                public_ips = [ip.nat] if ip.nat else [],
-                domains = set(ip.records['PTR']) | ip.backrefs['A']
-            ))
 
     pluginmaster.runStage('nodes', network)
 
