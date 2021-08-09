@@ -55,6 +55,7 @@ class App(Node):
     ## dunder methods
 
     def __init__(self, 
+            network: Network,
             name: str, 
             domains: list[str],
             cluster: str, 
@@ -63,39 +64,25 @@ class App(Node):
             template: dict = None
         ) -> None:
 
-        self.name = name.lower()
-        self.cluster = cluster
-        self.identity = f'k8s_{self.cluster}_{self.name}'
-        self.docid = f'_nd_node_k8sapp_{self.cluster}_{self.name.replace(".","_")}'
-        self.domains = set(domains)
-        self.labels = labels or {}
-        self.pods = pods or {}
-        self.template = template or {}
+        super().__init__(
+            network = network, 
+            name = name,
+            docid = f'_nd_node_k8sapp_{cluster}_{name.replace(".","_")}',
+            identity = f'k8s_{cluster}_{name}',
+            domains = domains,
+            ips = []
+        )
         
-        self.ips = set()
-        self.psmlFooter = []
+        self.cluster = cluster
+        self.labels = labels or {}
+        self.template = template or {}
+        self.pods = pods or {}
 
     ## abstract properties
-
-    @property
-    def network(self) -> Network:
-        return self._network
-
-    @network.setter
-    def network(self, new_network: Network) -> None:
-        self._network = new_network
-        for domain in self.domains:
-            if domain in self.network.domains:
-                self.network.domains[domain].node = self
     
     @property
     def psmlBody(self) -> Iterable[Tag]:
         return [self.psmlPodTemplate, self.psmlRunningPods]
-
-    ## abstract methods
-
-    def merge(self, *_) -> NotImplementedError:
-        raise NotImplementedError
 
     ## properties
 
@@ -217,8 +204,8 @@ class Plugin(BasePlugin):
                 if node.type == 'Kubernetes App':
                     node: App
                     # set node attr on all domains
-                    for domain in node.domains:
-                        if domain in network and network.domains[domain].node is not node:
+                    for domain in list(node.domains):
+                        if domain in network.domains and network.domains[domain].node is not node:
                             if set(network.domains[domain].node.ips) & set(utils.config()['plugins']['kubernetes'][node.cluster]):
                                 network.domains[domain].node.domains.remove(domain)
                                 network.domains[domain].node = node

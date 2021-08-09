@@ -207,10 +207,11 @@ def runner(network: Network) -> None:
         location = auth[context]['location'] if 'location' in auth[context] else None
         
         for app in apps.values():
-            appnode = App(**app)
+            appnode = App(network, **app)
             appnode.location = location
-            network.add(appnode)
 
             for domain in appnode.domains:
                 if domain not in network.domains:
-                    network.domains.add(Domain(domain))
+                    Domain(network, domain)
+                if not network.domains[domain].node:
+                    network.domains[domain].node = appnode
