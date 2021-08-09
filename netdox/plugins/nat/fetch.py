@@ -34,7 +34,7 @@ def runner(network: Network):
 
     for ip in natDict:
         if ip not in network.ips:
-            network.ips.add(IPv4Address(ip, True))
+            IPv4Address(network, ip, True)
         network.ips[ip].nat = natDict[ip]
 
 
@@ -48,9 +48,8 @@ async def pfsenseScrapeNat() -> dict:
     await (await page.J('#usernamefld')).type(utils.config()['plugins']['nat']['username'])
     await (await page.J('#passwordfld')).type(utils.config()['plugins']['nat']['password'])
     await page.click('.btn-sm')
-    await page.waitForNavigation(waitUntil = 'networkidle0')
 
-    await page.goto(f"https://{gateway}/firewall_nat_1to1.php", waitUntil = 'networkidle0')
+    await page.goto(gateway + 'firewall_nat_1to1.php', waitUntil = 'networkidle0')
     if await page.Jeval('.panel-title', 'title => title.textContent') == 'NAT 1:1 Mappings':
         rows = await page.JJ('tr.ui-sortable-handle')
         for row in rows:
@@ -60,5 +59,6 @@ async def pfsenseScrapeNat() -> dict:
     else:
         print('[DEBUG][nat] Failed to navigate to pfSense NAT page')
     
+    await page.close()
     await browser.close()
     return nat
