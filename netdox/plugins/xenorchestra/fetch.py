@@ -8,13 +8,11 @@ This script is used during the refresh process to link DNS records to the VMs th
 """
 import asyncio
 import json
-from collections import defaultdict
 
 import iptools
 import utils
 from networkobjs import IPv4Address, Network
 from plugins.xenorchestra import VirtualMachine, authenticate, call
-from plugins.xenorchestra.pub import genpub
 
 #########################
 # Convenience functions #
@@ -124,22 +122,21 @@ async def makeNodes(network: Network) -> None:
                 if iptools.valid_ip(vm['mainIpAddress']):
 
                     if vm['mainIpAddress'] not in network.ips:
-                        network.add(IPv4Address(vm['mainIpAddress']))
+                        IPv4Address(network, vm['mainIpAddress'])
 
                     hostVMs[vm['$container']].append(vm['uuid'])
 
-                    existingNode = network.ips[vm['mainIpAddress']].node
-                    network.replace(existingNode.docid if existingNode is not None else '', 
-                        VirtualMachine(
-                            name = vm['name_label'],
-                            desc = vm['name_description'],
-                            uuid = uuid,
-                            template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else '—',
-                            os = vm['os_version'],
-                            host = f"_nd_node_{hosts[vm['$container']]['address'].replace('.','_')}",
-                            pool = poolNames[vm['$pool']],
-                            private_ip = vm['mainIpAddress'],
-                    ))
+                    VirtualMachine(
+                        network = network,
+                        name = vm['name_label'],
+                        desc = vm['name_description'],
+                        uuid = uuid,
+                        template = vm['other']['base_template_name'] if 'base_template_name' in vm['other'] else '—',
+                        os = vm['os_version'],
+                        host = hosts[vm['$container']]['address'],
+                        pool = poolNames[vm['$pool']],
+                        private_ip = vm['mainIpAddress'],
+                    )
 
                 else:
                     print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')

@@ -112,6 +112,7 @@ class VirtualMachine(DefaultNode):
     type: str = 'XenOrchestra VM'
 
     def __init__(self, 
+            network: Network,
             name: str,
             desc: str, 
             uuid: str,
@@ -120,27 +121,20 @@ class VirtualMachine(DefaultNode):
             host: str, 
             pool: str,
             private_ip: str,
-            public_ips: Iterable[str] = None,
-            domains: Iterable[str] = None
+            public_ips: Iterable[str] = [],
+            domains: Iterable[str] = []
         ) -> None:
         
-        super().__init__(name, private_ip, public_ips, domains)
+        super().__init__(network, name, private_ip, public_ips, domains)
 
         self.desc = desc.strip()
         self.uuid = uuid.strip().lower()
-        self.identity = 'xo' + self.uuid
-        self.docid = f'_nd_node_xovm_{self.uuid}'
         self.template = template
         self.os = os
         self.host = host.strip().lower()
         self.pool = pool.strip().lower()
-
-    def merge(self, node: DefaultNode) -> VirtualMachine:
-        self.ips |= node.ips
-        self.domains |= node.domains
-        if node.network:
-            self.network = node.network
-        return self
+        
+        self.network.addRef(self, self.uuid)
     
     @property
     def psmlCore(self) -> Tag:
@@ -157,15 +151,9 @@ class VirtualMachine(DefaultNode):
         frag.append(psml.newprop(
             name='uuid', title='UUID', value=self.uuid
         ))
-        if self.network:
-            # update ref if possible
-            frag.append(psml.newxrefprop(
-                name='host', title='Host Machine', ref=self.network.nodes[self.host].docid
-            ))
-        else:
-            frag.append(psml.newxrefprop(
-                name='host', title='Host Machine', ref=self.host
-            ))
+        frag.append(psml.newxrefprop(
+            name='host', title='Host Machine', ref=self.network.nodes[self.host].docid
+        ))
         return frag
     
     @property
