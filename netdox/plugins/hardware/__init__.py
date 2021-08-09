@@ -6,10 +6,9 @@ import time
 import zipfile
 from shutil import rmtree
 from traceback import print_exc
-from typing import Iterable, Type
+from typing import Iterable
 
 import pageseeder
-import psml
 import requests
 import utils
 from bs4 import BeautifulSoup, Tag
@@ -26,16 +25,16 @@ class HardwareNode(DefaultNode):
     type: str = 'Hardware Node'
 
     def __init__(self, 
+            network: Network,
             name: str, 
             private_ip: str, 
             psml: Tag, 
             origin_doc: str, 
             filename: str,
-            domains: Iterable[str] = None
+            domains: Iterable[str] = []
         ) -> None:
-        super().__init__(name, private_ip, domains = domains)
+        super().__init__(network, name, private_ip, domains = domains)
 
-        self.docid = f'_nd_node_hardware_{self.private_ip.replace(".","_")}'
         self.psml = psml
         self.origin_doc = origin_doc
         self.filename = filename
@@ -47,35 +46,9 @@ class HardwareNode(DefaultNode):
     @property
     def psmlBody(self) -> Iterable[Tag]:
         return [self.psml]
-
-    def merge(self, node: Node) -> Node:
-        """
-        Only merges if *node* has type 'default'.
-        Otherwise adds an xref to ``self.origin_doc`` in the footer of *node* and returns it.
-
-        :param node: The Node to merge with.
-        :type node: Node
-        :raises TypeError: If the node to merge with is not of 'default' type or has a different private_ip attribute.
-        :return: This Node object, which is now a superset of the two.
-        :rtype: Node
-        """
-        if node.type == 'default':
-            self.psmlFooter += node.psmlFooter
-            self.ips
-            self.domains |= node.domains
-            if node.network:
-                self.network = node.network
-            return self
-        else:
-            return node
     
     def to_dict(self) -> dict:
         return super().to_dict() | {'psml': str(self.psml)}
-    
-    @classmethod
-    def from_dict(cls: Type[HardwareNode], string: str) -> HardwareNode:
-        node = super().from_dict(string)
-        node.psml = BeautifulSoup(node.psml, features='xml').find('section', id='info').extract()
 
 
 class Plugin(BasePlugin):
@@ -132,7 +105,7 @@ class Plugin(BasePlugin):
                                 if property['name'] == 'ipv4':
                                     if 'value' in property.attrs:
                                         ip = property['value']
-                                    elif 'datatype' in property.attrs:
+                                    elif 'datatype' in property.attrs and property['datatype'] == 'xref':
                                         ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip'].replace('_','.')
                                 elif property['name'] == 'name':
                                     name = property['value'].replace(' ','_')
@@ -140,17 +113,16 @@ class Plugin(BasePlugin):
                             ## if minimum requirements met
                             if name and ip:
                                 if ip not in network.ips:
-                                    network.add(IPv4Address(ip))
+                                    IPv4Address(network, ip)
 
-                                oldNode = network.ips[ip].node.docid if network.ips[ip].node is not None else ''
-                                network.replace(oldNode, HardwareNode(
+                                HardwareNode(
+                                    network = network,
                                     name = name,
                                     private_ip = ip,
                                     psml = section.extract(),
                                     origin_doc = soup.document['id'],
                                     filename = os.path.basename(file)
-                                ))
-                                ## revisit
+                                )
                                 
                             else:
                                 print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\'',
