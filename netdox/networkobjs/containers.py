@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Type
+from typing import Iterable, TYPE_CHECKING, Iterator, Type, Union
 
 import iptools
 from utils import DEFAULT_DOMAIN_ROLES
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from . import Network
 
 
-class DomainSet(base.NetworkObjectContainer):
+class DomainSet(base.DNSObjectContainer):
     """
     Container for a set of Domains
     """
@@ -19,8 +19,8 @@ class DomainSet(base.NetworkObjectContainer):
     objectClass: Type[objects.Domain] = objects.Domain
     _roles: dict
 
-    def __init__(self, objectSet: list[objects.Domain] = [], network: Network = None, roles: dict = None) -> None:
-        super().__init__(objectSet, network)
+    def __init__(self, network: Network, domains: Iterable[objects.Domain] = [], roles: dict = None) -> None:
+        super().__init__(network, domains)
         self._roles = roles or DEFAULT_DOMAIN_ROLES
 
     def __getitem__(self, key: str) -> objects.Domain:
@@ -77,7 +77,7 @@ class DomainSet(base.NetworkObjectContainer):
         """
         return self._roles['exclusions']
 
-    def add(self, domain: objects.Domain) -> None:
+    def _add(self, domain: objects.Domain) -> None:
         """
         Add a single domain to the set if it is not in the exclusions list.
         Merge if an object with that name is already present.
@@ -86,10 +86,10 @@ class DomainSet(base.NetworkObjectContainer):
         :type domain: Domain
         """
         if domain.name not in self.exclusions:
-            super().add(domain)
+            super()._add(domain)
 
 
-class IPv4AddressSet(base.NetworkObjectContainer):
+class IPv4AddressSet(base.DNSObjectContainer):
     """
     Container for a set of IPv4Address
     """
@@ -98,8 +98,8 @@ class IPv4AddressSet(base.NetworkObjectContainer):
     subnets: set
     """A set of the /24 subnets of the private IPs in this container."""
 
-    def __init__(self, ips: list[objects.IPv4Address] = [], network: Network = None) -> None:
-        super().__init__(ips, network)
+    def __init__(self, network: Network, ips: list[objects.IPv4Address] = []) -> None:
+        super().__init__(network, ips)
         self.subnets = set()
 
     def __getitem__(self, key: str) -> objects.IPv4Address:
@@ -108,7 +108,7 @@ class IPv4AddressSet(base.NetworkObjectContainer):
     def __iter__(self) -> Iterator[objects.IPv4Address]:
         yield from super().__iter__()
 
-    def add(self, ip: objects.IPv4Address) -> None:
+    def _add(self, ip: objects.IPv4Address) -> None:
         """
         Add a single IPv4Address to the set, merge if that IP is already in the set. 
         Add the /24 bit subnet to the set of subnets.
@@ -116,7 +116,7 @@ class IPv4AddressSet(base.NetworkObjectContainer):
         :param ip: The IPv4Address to add to the set
         :type ip: IPv4Address
         """
-        super().add(ip)
+        super()._add(ip)
         if ip.is_private:
             self.subnets.add(ip.subnetFromMask())
 
@@ -179,7 +179,7 @@ class IPv4AddressSet(base.NetworkObjectContainer):
         for subnet in self.subnets:
             for ip in iptools.subn_iter(subnet):
                 if ip not in self:
-                    self[ip] = objects.IPv4Address(ip, True)
+                    self[ip] = objects.IPv4Address(self.network, ip, True)
 
 
 class NodeSet(base.NetworkObjectContainer):
@@ -189,7 +189,7 @@ class NodeSet(base.NetworkObjectContainer):
     objectType: str = 'nodes'
     objectClass: Type[base.Node] = base.Node
 
-    def __init__(self, nodeSet: list[base.Node] = [], network: Network = None) -> None:
+    def __init__(self, network: Network, nodeSet: list[base.Node] = []) -> None:
         self.objects = {node.identity: node for node in nodeSet}
         self.network = network
 
@@ -198,6 +198,12 @@ class NodeSet(base.NetworkObjectContainer):
 
     def __iter__(self) -> Iterator[base.Node]:
         yield from super().__iter__()
+
+    def __contains__(self, key: Union[str, base.Node]) -> bool:
+        if isinstance(key, str):
+            return super().__contains__(key)
+        else:
+            return super().__contains__(key.identity)
 
     @property
     def nodes(self) -> dict[str, base.Node]:
@@ -209,7 +215,7 @@ class NodeSet(base.NetworkObjectContainer):
         """
         return self.objects
 
-    def add(self, node: base.Node) -> None:
+    def _add(self, node: base.Node) -> None:
         """
         Add a single Node to the set, merge if a Node with that identity is already present.
 
@@ -219,30 +225,4 @@ class NodeSet(base.NetworkObjectContainer):
         if node.identity in self:
             self[node.identity] = node.merge(self[node.identity])
         else:
-            if self.network:
-                node.network = self.network
             self[node.identity] = node
-
-    def replace(self, identity: str, replacement: base.Node) -> None:
-        """
-        Mutate the object with the specified identity into a superset of itself and *replacement*, 
-        and then point *identity* and the identity of *replacement* to the new Node.
-
-        If target Node is not in the set, the new Node is simply added as-is, 
-        and *identity* will point to it.
-
-        :param identity: The string to use to identify the existing object to replace.
-        :type identity: str
-        :param object: The Node to replace the existing Node with.
-        :type object: Node
-        """
-        if identity in self:
-            original = self[identity]
-            superset = replacement.merge(original)
-            original.__class__ = superset.__class__
-            for key, val in superset.__dict__.items():
-                original.__dict__[key] = val
-            self[replacement.identity] = original
-        else:
-            self.add(replacement)
-            self[identity] = replacement
