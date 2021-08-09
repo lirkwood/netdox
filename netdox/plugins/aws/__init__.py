@@ -27,6 +27,7 @@ class EC2Instance(DefaultNode):
     type: str = 'AWS EC2 Instance'
 
     def __init__(self, 
+            network: Network,
             name: str,
             id: str,
             mac: str,
@@ -38,11 +39,9 @@ class EC2Instance(DefaultNode):
             public_ips: Iterable[str] = None,
             domains: Iterable[str] = None
         ) -> None:
-        super().__init__(name, private_ip, public_ips, domains)
+        super().__init__(network, name, private_ip, public_ips, domains)
 
         self.id = id.strip().lower()
-        self.identity = self.id
-        self.docid = f'_nd_node_ec2_{self.id}'
         self.mac = mac.strip().lower()
         self.instance_type = instance_type
         self.monitoring = monitoring
@@ -136,7 +135,8 @@ class Plugin(BasePlugin):
                     print(f'[WARNING][aws] Instance {instance["InstanceId"]} has no network interfaces and has been ignored')
                     continue
 
-                network.add(EC2Instance(
+                EC2Instance(
+                    network = network,
                     name = instance['KeyName'],
                     id = instance['InstanceId'],
                     mac = netInf['MacAddress'],
@@ -147,8 +147,8 @@ class Plugin(BasePlugin):
                     private_ip = netInf['PrivateIpAddress'],
                     public_ips = [netInf['Association']['PublicIp']],
                     domains = [netInf['Association']['PublicDnsName']]
-                ))
+                )
                 
                 for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
                     if ip not in network.ips:
-                        network.add(IPv4Address(ip))
+                        IPv4Address(network, ip)
