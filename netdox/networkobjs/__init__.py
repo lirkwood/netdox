@@ -69,37 +69,48 @@ class Network:
         self.locator = Locator()
         self.writer = PSMLWriter()
 
-    def __contains__(self, object: str) -> bool:
-        return (
-            self.domains.__contains__(object) or
-            self.ips.__contains__(object) or
-            self.nodes.__contains__(object)
-        )
+    def __contains__(self, *_) -> bool:
+        raise NotImplementedError
 
-    def add(self, object: base.NetworkObject) -> None:
+    def _add(self, object: base.NetworkObject) -> None:
         """
-        Calls the *add* method on one of the three NetworkObjectContainers in this network. based on the class inheritance of *object*.
+        Adds *object* to its correct NetworkObjectContainer.
 
         :param object: An object to add to one of the three NetworkObjectContainers.
         :type object: NetworkObject
         """
         if isinstance(object, Domain):
-            self.domains.add(object)
+            self.domains._add(object)
         elif isinstance(object, IPv4Address):
-            self.ips.add(object)
+            self.ips._add(object)
         elif isinstance(object, base.Node):
-            self.nodes.add(object)
+            self.nodes._add(object)
+        else:
+            raise TypeError(f'Cannot add object of type {type(object)} to a Network.')
 
-    def replace(self, identifier: str, object: base.NetworkObject) -> None:
+    def addRef(self, object: base.NetworkObject, ref: str) -> None:
         """
-        Replace a NetworkObject in the network
+        Adds a pointer from *ref* to *object* as long as it is present in the network.
+
+        :param object: The object to point *ref* to.
+        :type object: base.NetworkObject
+        :param ref: The identifier which can now be used to find *object*.
+        :type ref: str
+        :raises TypeError: If *object* is of an incompatible type.
+        :raises AttributeError: If *object*'s ``network`` attribute is not this network.
         """
-        if isinstance(object, Domain):
-            self.domains.replace(identifier, object)
-        elif isinstance(object, IPv4Address):
-            self.ips.replace(identifier, object)
-        elif isinstance(object, base.Node):
-            self.nodes.replace(identifier, object)
+        if object.network is self:
+            if isinstance(object, Domain):
+                self.domains[ref] = object
+            elif isinstance(object, IPv4Address):
+                self.ips[ref] = object
+            elif isinstance(object, base.Node):
+                self.nodes[ref] = object
+            else:
+                raise TypeError(f'Cannot add ref to object of type {type(object)}')
+        else:
+            AttributeError('Cannot add ref to object when it is part of a different network.')
+
 
     def addSet(self, object_set: base.NetworkObjectContainer) -> None:
         """
@@ -136,7 +147,7 @@ class Network:
         for ip in self.ips:
             for domain in ip.records['PTR']:
                 if domain in self.domains and ip not in self.domains[domain].backrefs['PTR']:
-                    self.domains[domain].backrefs['PTR'].add(ip)
+                    self.domains[domain].backrefs['PTR'].add(ip.name)
 
         for node in self.nodes:
             for ip in node.ips:
@@ -337,27 +348,19 @@ class PSMLWriter:
             roleprop['value'] = '—'
 
         for frag in psml.recordset2pfrags(
-            recordset = domain._private_ips,
-            id_prefix = 'private_ip_',
+            recordset = domain.records['A'],
+            id_prefix = 'A_record_',
             docid_prefix = '_nd_ip_',
             p_name = 'ipv4',
-            p_title = 'Private IP'
+            p_title = 'A Record'
         ):  self.body.append(frag)
 
         for frag in psml.recordset2pfrags(
-            recordset = domain._public_ips,
-            id_prefix = 'public_ip_',
-            docid_prefix = '_nd_ip_',
-            p_name = 'ipv4',
-            p_title = 'Public IP'
-        ):  self.body.append(frag)
-
-        for frag in psml.recordset2pfrags(
-            recordset = domain._cnames,
-            id_prefix = 'cname_',
-            docid_prefix = '_nd_domain_',
-            p_name = 'ipv4',
-            p_title = 'CNAME'
+            recordset = domain.records['CNAME'],
+            id_prefix = 'CNAME_record_',
+            docid_prefix = '_nd_dpmain_',
+            p_name = 'domain',
+            p_title = 'CNAME Record'
         ):  self.body.append(frag)
     
     def ipBody(self, ip: IPv4Address) -> None:
@@ -385,17 +388,17 @@ class PSMLWriter:
             ))
 
         for frag in psml.recordset2pfrags(
-            recordset = ip._ptr,
-            id_prefix = 'ptr_',
+            recordset = ip.records['PTR'],
+            id_prefix = 'PTR_record_',
             docid_prefix = '_nd_domain_',
-            p_name = 'ptr',
+            p_name = 'domain',
             p_title = 'PTR Record'
         ):  self.body.append(frag)
 
         impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
-        for domain in ip.implied_ptr:
+        for domain in ip.backrefs['A']:
             impliedfrag.append(psml.newxrefprop(
-                name = 'impliedptr',
+                name = 'domain',
                 title = 'Implied PTR Record',
                 ref = f'_nd_domain_{domain.replace(".","_")}'
             ))
