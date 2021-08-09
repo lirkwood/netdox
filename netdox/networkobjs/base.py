@@ -76,12 +76,12 @@ class NetworkObject(ABC):
 
     def to_dict(self) -> dict:
         """
-        Returns a JSON-safe dictionary, that can be passed to ``from_dict``.
+        Returns a JSON-safe dictionary to be used for serialisation / data exploration.
 
-        :return: A dictionary describing this class.
+        :return: A dictionary describing this class' attributes.
         :rtype: dict
         """
-        return self.__dict__ | {'_network': None, 'container': None, 'psmlFooter': [str(tag) for tag in self.psmlFooter]}
+        return self.__dict__ | {'network': None, 'psmlFooter': [str(tag) for tag in self.psmlFooter]}
 
 
 class RecordSet:
@@ -117,6 +117,9 @@ class RecordSet:
     def add(self, value: str, source: str) -> None:
         self._records.add((value.lower().strip(), source))
 
+    def items(self) -> Iterator[tuple[str, str]]:
+        yield from self._records
+
 class DNSObject(NetworkObject):
     """
     A NetworkObject representing an object in a managed DNS zone.
@@ -134,7 +137,7 @@ class DNSObject(NetworkObject):
 
     def __init__(self, network: Network, name: str, docid: str, zone: str) -> None:
         super().__init__(network, name, docid)
-        self.zone = zone.lower()
+        self.zone = zone.lower() if zone else zone
         self.node = None
 
     ## methods
@@ -168,6 +171,9 @@ class DNSObject(NetworkObject):
 
         return self
 
+    def to_dict(self) -> dict:
+        return super().to_dict() | {'node': None}
+
 class Node(NetworkObject):
     """
     A single physical or virtual machine.
@@ -196,16 +202,16 @@ class Node(NetworkObject):
         self.identity = identity.lower()
         super().__init__(network, name, docid)
 
-        self.domains = set(domains)
-        self.ips = set(ips)
+        self.domains = set(domains) if domains else set()
+        self.ips = set(ips) if ips else set()
         self.location = self.network.locator.locate(self.ips)
 
         for domain in self.domains:
-            if domain in self.network and not self.network.domains[domain].node:
+            if domain in self.network.domains and not self.network.domains[domain].node:
                 self.network.domains[domain].node = self
 
         for ip in self.ips:
-            if ip in self.network and not self.network.ips[ip].node:
+            if ip in self.network.domains and not self.network.ips[ip].node:
                 self.network.ips[ip].node = self
 
     ## abstract properties
