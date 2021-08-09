@@ -19,7 +19,7 @@ function serve {
 
 ## Refresh dataset and upload to PageSeeder
 function refresh {
-    python3 refresh.py 2>&1 | tee "logs/refresh-$(date +%F-T%T).log"
+    python3 refresh.py
 }
 
 ## Initialise container with provided config to allow other processes to run
