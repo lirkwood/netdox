@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Iterable, Tuple
 from bs4 import BeautifulSoup, Tag
 
 if TYPE_CHECKING:
-    from networkobjs import NetworkObject
+    from networkobjs.base import NetworkObject, RecordSet
 
 #############
 # Functions #
@@ -68,7 +68,7 @@ def newxrefprop(
 
 
 def recordset2pfrags(
-        recordset: Iterable[Tuple[str, str]], 
+        recordset: RecordSet, 
         id_prefix: str, 
         docid_prefix: str, 
         p_name: str, 
@@ -94,7 +94,7 @@ def recordset2pfrags(
     """
     frags = []
     count = 0
-    for value, plugin in recordset:
+    for value, plugin in recordset.items():
         frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id': id_prefix + str(count)})
         frag.append(newxrefprop(
             name = p_name, title = p_title, ref = docid_prefix + value.replace(".","_")
