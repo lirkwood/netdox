@@ -15,10 +15,9 @@ from bs4 import BeautifulSoup
 
 import cleanup
 import pageseeder
-import plugins
 import psml
 import utils
-from networkobjs import Network, DefaultNode
+from networkobjs import NetworkManager
 
 ##################
 # Initialisation #
@@ -41,11 +40,6 @@ def init():
                     shutil.rmtree(file)
         else:
             os.remove(folder)
-
-    # Initialise plugins
-    global pluginmaster
-    pluginmaster = plugins.PluginManager()
-    pluginmaster.initPlugins()
 
     roles = {"exclusions": []}
     # load dns config from pageseeder
@@ -126,36 +120,35 @@ def main():
     #-------------------------------------------------------------------#
 
     init()
-    global pluginmaster
-    network = Network(config = utils.config(), roles = utils.roles())
+    nwman = NetworkManager()
+    nwman.initPlugins()
 
     #-------------------------------------------------------------------#
     # Primary data-gathering stages                                     #
     #-------------------------------------------------------------------#
     
-    pluginmaster.runStage('dns', network)
-
-    pluginmaster.runStage('nodes', network)
+    nwman.runStage('dns')
+    nwman.runStage('nodes')
 
     #-------------------------------------------------------------------#
     # Generate objects for unused private IPs in used subnets,          #
     # resolve internal links, any pre-write plugins                     #
     #-------------------------------------------------------------------#
 
-    network.ips.fillSubnets()
-    network.discoverImpliedLinks()
+    nwman.network.ips.fillSubnets()
+    nwman.network.discoverImpliedLinks()
     
-    pluginmaster.runStage('pre-write', network)
+    nwman.runStage('pre-write')
 
     #-------------------------------------------------------------------#
     # Write domains, ips, and nodes to json and psml,                   #
     # and run any post-write plugins                                    #
     #-------------------------------------------------------------------#
     
-    network.dumpNetwork()
-    network.writePSML()
+    nwman.network.dumpNetwork()
+    nwman.network.writePSML()
 
-    pluginmaster.runStage('post-write', network)
+    nwman.runStage('post-write')
 
     #-------------------------------------------------------------------#
     # Clean up, upload, and clean again                                 #
