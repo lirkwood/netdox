@@ -4,13 +4,12 @@ import json
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import TYPE_CHECKING, Iterator, Type
+from typing import Iterable, TYPE_CHECKING, Iterator, Type, Union
 
 from bs4 import Tag
 
 if TYPE_CHECKING:
     from . import Network
-    from .objects import Node
 
 ###########
 # Objects #
@@ -19,44 +18,38 @@ if TYPE_CHECKING:
 class NetworkObject(ABC):
     """
     Base class for an object in the network.
+    Adds itself to *network* upon instantiation.
     """
     name: str
     """The name to give this object."""
     docid: str
     """A unique, predictable identifier to be used for docid and filename in PageSeeder."""
-    _network: Network = None
-    """The internal reference to the containing Network object if there is one."""
-    container: NetworkObjectContainer = None
-    """The containing NetworkObjectContainer if there is one."""
-    subnets: set
-    """A set of private subnets this object resolves to."""
+    network: Network
+    """The containing network."""
     psmlFooter: list[Tag] = None
     """A list of fragment tags to add to the *footer* section of this object's output PSML."""
 
+    ## dunder methods
+
+    def __init__(self, network: Network, name: str, docid: str) -> None:
+        """
+        Sets the instances attributes to the values provided, and adds itself to *network*.
+
+        :param network: The network to add this object to.
+        :type network: Network
+        :param name: The name to give this object in PageSeeder.
+        :type name: str
+        :param docid: The docid / filename to give this object's document in PageSeeder.
+        :type docid: str
+        """
+        self.network = network
+        self.name = name.lower().strip()
+        self.docid = docid.lower()
+        self.network._add(self)
+
+        self.psmlFooter = []
+
     ## properties
-
-    @property
-    def network(self) -> Network:
-        """
-        Return the current Network container.
-
-        :return: The current Network
-        :rtype: Network
-        """
-        return self._network
-
-    @network.setter
-    @abstractmethod
-    def network(self, new_network: Network):
-        """
-        Set the internal network attribute to new_network.
-        Should also trigger any link resolution etc. that must be done upon entering a network.
-
-        :param new_network: The network this NetworkObject has been added to.
-        :type new_network: Network
-        """
-        self._network = new_network
-        self.location = new_network.locator.locate(self)
 
     @property
     @abstractmethod
@@ -71,13 +64,14 @@ class NetworkObject(ABC):
     
     ## methods
 
-    @abstractmethod
     def merge(self, object: NetworkObject) -> NetworkObject:
         """
-        In place merge of two NetworkObject instances of the same type.
-        Must return self.
+        Should add the contents of any containers in *object* to the corresponding containers in *self*.
+
+        Used to resolve identity conflicts in containers.
         This method should always be called on the object entering the set.
         """
+        self.psmlFooter += object.psmlFooter
         return self
 
     def to_dict(self) -> dict:
@@ -102,6 +96,9 @@ class RecordSet:
 
     def __iter__(self) -> Iterator[str]:
         yield from self.records
+
+    def __ior__(self, recordset: RecordSet) -> RecordSet:
+        return self._records.__ior__(recordset._records)
 
     ## properties
 
@@ -133,12 +130,20 @@ class DNSObject(NetworkObject):
     node: Node
     """The node this DNSObject resolves to"""
 
+    ## dunder methods
+
+    def __init__(self, network: Network, name: str, docid: str, zone: str) -> None:
+        super().__init__(network, name, docid)
+        self.zone = zone.lower()
+        self.node = None
+
     ## methods
 
     @abstractmethod
     def link(self, value: str, source: str) -> None:
         """
         Adds a record from this object to a DNSObject named *value*.
+        Should also create a backref if there is a network.
 
         :param value: The name of the DNSObject to link to.
         :type value: str
@@ -147,6 +152,21 @@ class DNSObject(NetworkObject):
         """
         pass
 
+    def merge(self, object: DNSObject) -> DNSObject:
+        """
+        In place merge of two DNSObjects of the same type.
+        This method should always be called on the object entering the set.
+        """
+        super().merge(object)
+        for recordType in self.records:
+            if recordType in object.records:
+                self.records[recordType] |= object.records[recordType]
+
+        for recordType in self.backrefs:
+            if recordType in object.backrefs:
+                self.backrefs[recordType] |= object.backrefs[recordType]
+
+        return self
 
 class Node(NetworkObject):
     """
@@ -154,14 +174,39 @@ class Node(NetworkObject):
     """
     identity: str
     """A string unique to this Node that can always be used to find it."""
-    location: str = None
-    """The location as it appears in ``locations.json``, assigned based on IP address by *Locator*."""
     domains: set[str]
     """A set of domains resolving to this Node."""
     ips: set[str]
     """A set of IPv4 addresses resolving to this Node."""
+    location: str = None
+    """The location as it appears in ``locations.json``, assigned based on IP address by *Locator*."""
     type: str
     """A string unique to this implementation of Node."""
+
+    ## dunder methods
+
+    def __init__(self, 
+            network: Network, 
+            name: str, 
+            docid: str,
+            identity: str, 
+            domains: Iterable[str], 
+            ips: Iterable[str]
+        ) -> None:
+        self.identity = identity.lower()
+        super().__init__(network, name, docid)
+
+        self.domains = set(domains)
+        self.ips = set(ips)
+        self.location = self.network.locator.locate(self.ips)
+
+        for domain in self.domains:
+            if domain in self.network and not self.network.domains[domain].node:
+                self.network.domains[domain].node = self
+
+        for ip in self.ips:
+            if ip in self.network and not self.network.ips[ip].node:
+                self.network.ips[ip].node = self
 
     ## abstract properties
 
@@ -179,6 +224,14 @@ class Node(NetworkObject):
     @property
     def outpath(self) -> str:
         return os.path.abspath(f'out/nodes/{self.docid}.psml')
+
+    ## abstract methods
+
+    def merge(self, node: Node) -> Node:
+        super().merge(object)
+        self.domains |= node.domains
+        self.ips |= node.ips
+        self.location = self.network.locator.locate
 
 
 ##############
@@ -200,10 +253,6 @@ class NetworkObjectContainer(ABC):
 
     ## dunder methods
 
-    def __init__(self, objectSet: list[NetworkObject] = [], network: Network = None) -> None:
-        self.objects = {object.name: object for object in objectSet}
-        self.network = network
-
     def __getitem__(self, key: str) -> NetworkObject:
         return self.objects[key.lower()]
 
@@ -221,6 +270,16 @@ class NetworkObjectContainer(ABC):
 
     ## methods
 
+    @abstractmethod
+    def _add(self, object: NetworkObject) -> None:
+        """
+        Add a single NetworkObject to the set, merge if an object with that name is already present.
+
+        :param object: The NetworkObject to add to the set.
+        :type object: NetworkObject
+        """
+        pass
+
     def to_json(self, path: str) -> None:
         """
         Serialises the set of NetworkObjects to a JSON file using the JSONEncoder defined in this file.
@@ -231,46 +290,30 @@ class NetworkObjectContainer(ABC):
                 'objects': [object.to_dict() for object in self]
             }, indent = 2, cls = JSONEncoder))
 
-    def add(self, object: NetworkObject) -> None:
-        """
-        Add a single NetworkObject to the set, merge if an object with that name is already present.
+class DNSObjectContainer(NetworkObjectContainer):
+    """
+    Container for a set of DNSObjects.
+    """
 
-        :param object: The NetworkObject to add to the set.
-        :type object: NetworkObject
-        """
+    ## dunder methods
+
+    def __init__(self, network: Network, objects: Iterable[DNSObject] = []) -> None:
+        self.network = network
+        self.objects = {object.name: object for object in objects}
+
+    def __contains__(self, key: Union[str, DNSObject]) -> bool:
+        if isinstance(key, str):
+            return super().__contains__(key)
+        else:
+            return super().__contains__(key.name)
+
+    ## abstract methods
+
+    def _add(self, object: DNSObject) -> None:
         if object.name in self:
             self[object.name] = object.merge(self[object.name])
         else:
-            object.container = self
-            if self.network:
-                object.network = self.network
             self[object.name] = object
-
-    def replace(self, identifier: str, replacement: NetworkObject) -> None:
-        """
-        Replace the object with the specified identifier with a new object.
-
-        Calls merge on the replacement with the target object passed as the argument,
-        then mutates the original object into the superset, preserving its identity.
-        Also adds a ref under the replacement's name in ``self.objects``.
-
-        If target object is not in the set, the new object is simply added as-is, 
-        and *identifier* will point to it.
-
-        :param identifier: The string to use to identify the existing object to replace.
-        :type identifier: str
-        :param object: The object to replace the existing object with.
-        :type object: NetworkObject
-        """
-        if identifier in self:
-            original = self[identifier]
-            superset = replacement.merge(original)
-            original.__class__ = superset.__class__
-            for key, val in superset.__dict__.items():
-                original.__dict__[key] = val
-            self[replacement.name] = original
-        else:
-            self.add(replacement)
 
 
 ######################
