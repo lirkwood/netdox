@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterable, TYPE_CHECKING, Iterator, Type, Union
+from typing import Iterable, Iterator, Type, Union
 
 import iptools
-from utils import DEFAULT_DOMAIN_ROLES
+from utils import DEFAULT_CONFIG, DEFAULT_DOMAIN_ROLES
 
-from . import base, objects
-
-if TYPE_CHECKING:
-    from . import Network
+from . import base, objects, helpers
 
 
 class DomainSet(base.DNSObjectContainer):
@@ -226,3 +223,171 @@ class NodeSet(base.NetworkObjectContainer):
             self[node.identity] = node.merge(self[node.identity])
         else:
             self[node.identity] = node
+
+class Network:
+    """
+    Container for sets of network objects.
+    """
+    domains: DomainSet
+    """A NetworkObjectContainer for the Domains in the network."""
+    ips: IPv4AddressSet
+    """A NetworkObjectContainer for the IPv4Addresses in the network."""
+    nodes: NodeSet
+    """A NetworkObjectContainer for the Nodes in the network."""
+    config: dict
+    """The currently loaded config from :ref:`utils`."""
+
+    def __init__(self, 
+            domains: DomainSet = None, 
+            ips: IPv4AddressSet = None, 
+            nodes: NodeSet = None,
+            config: dict = None,
+            roles: dict = None
+        ) -> None:
+        """
+        Instantiate a Network object.
+
+        :param domains: A DomainSet to include in the network, defaults to None
+        :type domains: DomainSet, optional
+        :param ips: A IPv4AddressSet to include in the network, defaults to None
+        :type ips: IPv4AddressSet, optional
+        :param nodes: A NodeSet to include in the network, defaults to None
+        :type nodes: NodeSet, optional
+        :param config: A dictionary of config values like that returned by ``utils.config()``, defaults to None
+        :type config: dict, optional
+        :param roles: A dictionary of role configuration values to pass to the DomainSet of the network, defaults to None
+        :type roles: dict, optional
+        """
+
+        self.domains = domains or DomainSet(network = self, roles = roles or DEFAULT_DOMAIN_ROLES)
+        self.ips = ips or IPv4AddressSet(network = self)
+        self.nodes = nodes or NodeSet(network = self)
+        
+        self.config = config or DEFAULT_CONFIG
+        self.locator = helpers.Locator()
+        self.writer = helpers.PSMLWriter()
+
+    def __contains__(self, *_) -> bool:
+        raise NotImplementedError
+
+    def _add(self, object: base.NetworkObject) -> None:
+        """
+        Adds *object* to its correct NetworkObjectContainer.
+
+        :param object: An object to add to one of the three NetworkObjectContainers.
+        :type object: NetworkObject
+        """
+        if isinstance(object, objects.Domain):
+            self.domains._add(object)
+        elif isinstance(object, objects.IPv4Address):
+            self.ips._add(object)
+        elif isinstance(object, base.Node):
+            self.nodes._add(object)
+        else:
+            raise TypeError(f'Cannot add object of type {type(object)} to a Network.')
+
+    def addRef(self, object: base.NetworkObject, ref: str) -> None:
+        """
+        Adds a pointer from *ref* to *object* as long as it is present in the network.
+
+        :param object: The object to point *ref* to.
+        :type object: base.NetworkObject
+        :param ref: The identifier which can now be used to find *object*.
+        :type ref: str
+        :raises TypeError: If *object* is of an incompatible type.
+        :raises AttributeError: If *object*'s ``network`` attribute is not this network.
+        """
+        if object.network is self:
+            if isinstance(object, objects.Domain):
+                self.domains[ref] = object
+            elif isinstance(object, objects.IPv4Address):
+                self.ips[ref] = object
+            elif isinstance(object, base.Node):
+                self.nodes[ref] = object
+            else:
+                raise TypeError(f'Cannot add ref to object of type {type(object)}')
+        else:
+            AttributeError('Cannot add ref to object when it is part of a different network.')
+
+
+    def addSet(self, object_set: base.NetworkObjectContainer) -> None:
+        """
+        Add a set of network objects to the network
+
+        2do: Implement merge in NetworkObjectContainer ABC
+
+        :param object_set: An NetworkObjectContainer to add to the network
+        :type object_set: NetworkObjectContainer
+        """
+        if isinstance(object_set, DomainSet):
+            object_set.network = self
+            self.domains = object_set
+        elif isinstance(object_set, IPv4AddressSet):
+            object_set.network = self
+            self.ips = object_set
+        elif isinstance(object_set, NodeSet):
+            object_set.network = self
+            self.nodes = object_set
+
+    def discoverImpliedLinks(self) -> None:
+        """
+        Populates the implied link attributes for the Domain and IPv4Address objects in the Network.
+        Also sets their Node attributes where possible.
+        """
+        for domain in self.domains:
+            for ip in domain.records['A']:
+                if ip in self.ips and domain not in self.ips[ip].backrefs['A']:
+                    self.ips[ip].backrefs['A'].add(domain.name)
+            for alias in domain.records['CNAME']:
+                if alias in self.domains and domain not in self.domains[alias].backrefs['CNAME']:
+                    self.domains[alias].backrefs['CNAME'].add(domain.name)
+
+        for ip in self.ips:
+            for domain in ip.records['PTR']:
+                if domain in self.domains and ip not in self.domains[domain].backrefs['PTR']:
+                    self.domains[domain].backrefs['PTR'].add(ip.name)
+
+        for node in self.nodes:
+            for ip in node.ips:
+                if ip in self.ips and not self.ips[ip].node:
+                    self.ips[ip].node = node
+                    
+            for domain in node.domains:
+                if domain in self.domains and not self.domains[domain].node:
+                    self.domains[domain].node = node
+
+    def setToJSON(self, set: str, path: str) -> None:
+        """
+        Serialises a NetworkObjectContainer to JSON and writes the JSON to a file at *path*.
+
+        :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
+        :type set: str
+        :param path: The path to write the JSON to.
+        :type path: str
+        """
+        getattr(self, set).to_json(path)
+
+    def setToPSML(self, set: str) -> None:
+        """
+        Serialises a NetworkObjectContainer to PSML and writes the PSML files to *dir*.
+
+        :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
+        :type set: str
+        """
+        self.writer.serialiseSet(getattr(self, set))
+
+    def dumpNetwork(self) -> None:
+        """
+        Writes the domains, ips, and nodes of a network to their default locations.
+        """
+        self.setToJSON('domains', 'src/domains.json')
+        self.setToJSON('ips', 'src/ips.json')
+        self.setToJSON('nodes', 'src/nodes.json')
+
+    def writePSML(self) -> None:
+        """
+        Writes the domains, ips, and nodes of a network to PSML using ``self.writer``.
+        """
+        self.setToPSML('domains')
+        self.setToPSML('ips')
+        self.setToPSML('nodes')
