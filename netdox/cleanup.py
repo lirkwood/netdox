@@ -42,9 +42,9 @@ def sentenceStale() -> dict:
         }))
 
         # if folder exists in upload
-        if os.path.exists(f'out/{folder}') and folder not in ('config', 'review', 'screenshot_history'):
+        if os.path.exists(os.path.join('out', folder)) and folder not in ('config', 'review', 'screenshot_history'):
             # get all files in given folder in upload
-            local = utils.fileFetchRecursive(f'out/{folder}')
+            local = utils.fileFetchRecursive(os.path.join('out', folder))
 
             for file in remote["uris"]:
                 commonpath = file["decodedpath"].split(f"{group_path}/website/")[-1]
@@ -61,7 +61,7 @@ def sentenceStale() -> dict:
                 else:
                     expiry = None
                 
-                if f'out/{commonpath}' not in local:
+                if os.path.normpath(os.path.join('out', commonpath)) not in local:
                     if marked_stale:
                         if expiry <= today:
                             pageseeder.archive(uri)
