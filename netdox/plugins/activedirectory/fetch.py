@@ -10,13 +10,7 @@ from pypsrp.wsman import WSMan
 
 
 def fetchDNS(network: Network) -> None:
-    conf = utils.config()['plugins']['activedirectory']
-    wsman = WSMan(
-        server = conf['host'], 
-        username = conf['username'], 
-        password = conf['password'],
-        ssl = False
-    )
+    wsman = WSMan(**utils.config()['plugins']['activedirectory'], ssl = False)
     with wsman, RunspacePool(wsman) as pool:
         zones = fetchZones(pool)
         records = fetchRecords(pool, zones.values())
@@ -28,11 +22,11 @@ def fetchDNS(network: Network) -> None:
                 if fqdn.endswith('.in-addr.arpa'):
                     ip = '.'.join(fqdn.replace('.in-addr.arpa','').split('.')[::-1])
                     if ip not in network.ips:
-                        network.add(IPv4Address(ip))
+                        dnsobj = IPv4Address(network, ip)
                     dnsobj = network.ips[ip]
                 else:
                     if fqdn not in network.domains:
-                        network.add(Domain(fqdn, zone = zoneName))
+                        Domain(network, fqdn, zone = zoneName)
                     dnsobj = network.domains[fqdn]
 
                 if details['RecordType'] == 'A':
@@ -124,9 +118,3 @@ def parseDN(distinguished_name: str) -> tuple[str, str]:
                     return '.'.join(name).lower(), '.'.join(name[1:]).lower()
             else:
                 return None, None
-
-
-if __name__ == '__main__':
-    n = Network()
-    fetchDNS(n)
-    n.dumpNetwork()
