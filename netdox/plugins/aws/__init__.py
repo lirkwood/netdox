@@ -7,7 +7,7 @@ import psml
 import utils
 from bs4.element import Tag
 from networkobjs import IPv4Address, Network, DefaultNode
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 
 
 class EC2Instance(DefaultNode):

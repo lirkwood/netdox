@@ -2,7 +2,7 @@
 Used to retrieve NAT information from FortiGate and pfSense
 """
 from plugins.nat.fetch import runner
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 from networkobjs import Network
 
 class Plugin(BasePlugin):

@@ -2,7 +2,7 @@
 Used to read and modify DNS records stored in CloudFlare.
 """
 from networkobjs import Network
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 from plugins.cloudflare.fetch import main
 
 

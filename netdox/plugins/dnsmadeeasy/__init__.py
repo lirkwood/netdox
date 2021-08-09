@@ -9,7 +9,7 @@ from datetime import datetime
 
 import utils
 from networkobjs import Network
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 
 
 def genheader() -> dict[str, str]:

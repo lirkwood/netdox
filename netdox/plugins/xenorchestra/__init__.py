@@ -14,7 +14,7 @@ import utils
 import websockets
 from bs4 import Tag
 from networkobjs import Network, DefaultNode
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 
 ##################################
 # Generic websocket interactions #

@@ -14,7 +14,7 @@ import utils
 from bs4 import BeautifulSoup, Tag
 from networkobjs import DefaultNode, IPv4Address, Network
 from networkobjs.base import Node
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 
 
 class HardwareNode(DefaultNode):

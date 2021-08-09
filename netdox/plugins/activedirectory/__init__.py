@@ -5,7 +5,7 @@ This plugin uses a shared storage location in order to pass information back and
 """
 
 from networkobjs import Network
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 from plugins.activedirectory.create import create_forward, create_reverse
 from plugins.activedirectory.fetch import fetchDNS
 

@@ -4,12 +4,11 @@ import os
 import shutil
 from typing import Iterable, Tuple
 from bs4 import BeautifulSoup
-from bs4.element import Tag
 
 import diffimg
 import utils
 from networkobjs import Domain, Network
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 from pyppeteer import launch
 from pyppeteer.page import Page
 from datetime import date

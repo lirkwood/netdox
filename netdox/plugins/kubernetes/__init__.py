@@ -15,7 +15,7 @@ import yaml
 from flask import Response
 from networkobjs import Network
 from networkobjs.base import Node
-from plugins import Plugin as BasePlugin
+from plugins import BasePlugin as BasePlugin
 import psml
 
 from kubernetes import config
