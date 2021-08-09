@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, Iterator, Type, Union
 
 import iptools
-from utils import DEFAULT_CONFIG, DEFAULT_DOMAIN_ROLES
+from utils import DEFAULT_DOMAIN_ROLES
 
 from . import base, objects, helpers
 
@@ -241,8 +241,7 @@ class Network:
             domains: DomainSet = None, 
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
-            config: dict = None,
-            roles: dict = None
+            domainroles: dict = None
         ) -> None:
         """
         Instantiate a Network object.
@@ -259,11 +258,10 @@ class Network:
         :type roles: dict, optional
         """
 
-        self.domains = domains or DomainSet(network = self, roles = roles or DEFAULT_DOMAIN_ROLES)
+        self.domains = domains or DomainSet(network = self, roles = domainroles or DEFAULT_DOMAIN_ROLES)
         self.ips = ips or IPv4AddressSet(network = self)
         self.nodes = nodes or NodeSet(network = self)
         
-        self.config = config or DEFAULT_CONFIG
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
 

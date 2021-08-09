@@ -9,5 +9,7 @@ DefaultNode is an implementation of Node which has exactly one private IPv4 addr
 This may be useful for plugin writers who do not want to implement the whole Node class.
 """
 
-import base, containers, helpers
-from objects import *
+from . import base, containers, helpers
+from .objects import Domain, IPv4Address, DefaultNode
+from .containers import Network
+from .nwman import NetworkManager
