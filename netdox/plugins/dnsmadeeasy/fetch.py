@@ -72,7 +72,7 @@ def add_A(network: Network, record: dict, root: str):
 
     if fqdn not in network.domains.exclusions:
         if fqdn not in network.domains:
-            network.add(Domain(fqdn, root))
+            Domain(network, fqdn, root)
         network.domains[fqdn].link(ip, 'DNSMadeEasy')	
 
 @utils.handle
@@ -94,8 +94,8 @@ def add_CNAME(network: Network, record: dict, root: str):
 
     if fqdn not in network.domains.exclusions:
         if fqdn not in network.domains:
-            network.add(Domain(fqdn, root))
-        network.domains[fqdn].link(dest, 'DNSMadeEasy')	
+            Domain(network, fqdn, root)
+        network.domains[fqdn].link(dest, 'DNSMadeEasy')
 
 @utils.handle
 def add_PTR(network: Network, record: dict, root: str):
@@ -117,7 +117,7 @@ def add_PTR(network: Network, record: dict, root: str):
     
     if iptools.valid_ip(ip):
         if ip not in network.ips:
-            network.add(IPv4Address(ip))
+            IPv4Address(network, ip)
         network.ips[ip].link(fqdn, 'DNSMadeEasy')
 
 
