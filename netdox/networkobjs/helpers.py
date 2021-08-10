@@ -154,6 +154,12 @@ class PSMLWriter:
                 title = 'Node',
                 ref = domain.node.docid
             ))
+        else:
+            self.doc.find('properties-fragment', id = 'header').append(psml.newprop(
+                name = 'node',
+                title = 'Node',
+                value = '—'
+            ))
 
         if 'uri' in utils.roles()[domain.role]:
             self.doc.find(title='DNS Role').xref['uriid'] = utils.roles()[domain.role]['uri']
@@ -174,7 +180,7 @@ class PSMLWriter:
         for frag in psml.recordset2pfrags(
             recordset = domain.records['CNAME'],
             id_prefix = 'CNAME_record_',
-            docid_prefix = '_nd_dpmain_',
+            docid_prefix = '_nd_domain_',
             p_name = 'domain',
             p_title = 'CNAME Record'
         ):  self.body.append(frag)
@@ -195,12 +201,24 @@ class PSMLWriter:
                 title = 'NAT Destination',
                 ref = f'_nd_ip_{ip.nat.replace(".","_")}'
             ))
+        else:
+            self.doc.find('properties-fragment', id = 'header').append(psml.newprop(
+                name = 'nat',
+                title = 'NAT Destination',
+                value = '—'
+            ))
 
         if ip.node:
             self.doc.find('properties-fragment', id = 'header').append(psml.newxrefprop(
                 name = 'node',
                 title = 'Node',
                 ref = ip.node.docid
+            ))
+        else:
+            self.doc.find('properties-fragment', id = 'header').append(psml.newprop(
+                name = 'node',
+                title = 'Node',
+                value = '—'
             ))
 
         for frag in psml.recordset2pfrags(
