@@ -1,42 +1,23 @@
 """
-Fetching data
-*************
+Used to retrieve NAT information from pfSense.
 """
-import asyncio
-import json
-import re
-
-import utils
-from iptools import regex_ip
 from networkobjs import IPv4Address, Network
+import utils
 from pyppeteer import launch
+from plugins import BasePlugin
+import asyncio
 
-patt_nat = re.compile(rf'(?P<alias>{regex_ip.pattern}).+?(?P<dest>{regex_ip.pattern}).*')
+class Plugin(BasePlugin):
+    name = 'pfsense'
+    stages = ['nat']
 
-def runner(network: Network):
-    """
-    Reads the NAT dump from FortiGate and calls the pfSense node script.
-
-    :param network: The network
-    :type network: Network
-    """
-    # Gather FortiGate NAT
-    with open('src/nat.txt','r') as stream:
-        natDict = {}
-        for line in stream.read().splitlines():
-            match = re.match(patt_nat, line)
-            if match:
-                natDict[match['alias']] = match['dest']
-                natDict[match['dest']] = match['alias']
-
-    # Gather pfSense NAT
-    natDict |= asyncio.run(pfsenseScrapeNat())
-
-    for ip in natDict:
-        if ip not in network.ips:
-            IPv4Address(network, ip, True)
-        network.ips[ip].nat = natDict[ip]
-
+    def runner(network: Network, stage: str) -> None:
+        if stage == 'nat':
+            nat = asyncio.run(pfsenseScrapeNat())
+            for ip, alias in nat.items():
+                if ip not in network.ips:
+                    IPv4Address(network, ip, True)
+                network.ips[ip].nat = alias
 
 async def pfsenseScrapeNat() -> dict:
     nat = {}
@@ -57,7 +38,7 @@ async def pfsenseScrapeNat() -> dict:
             nat[columns[3]] = columns[4]
             nat[columns[4]] = columns[3]
     else:
-        print('[DEBUG][nat] Failed to navigate to pfSense NAT page')
+        print('[DEBUG][pfsense] Failed to navigate to pfSense NAT page')
     
     await page.close()
     await browser.close()
