@@ -29,6 +29,7 @@ class NetworkManager:
         self.pluginmap = {
             'all':{},
             'dns': {},
+            'nat': {},
             'nodes': {},
             'pre-write': {},
             'post-write': {}
