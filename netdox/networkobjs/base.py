@@ -191,7 +191,7 @@ class Node(NetworkObject):
     """A set of IPv4 addresses resolving to this Node."""
     location: str = None
     """The location as it appears in ``locations.json``, assigned based on IP address by *Locator*."""
-    type: str
+    type: str = None
     """A string unique to this implementation of Node."""
 
     ## dunder methods
@@ -205,6 +205,7 @@ class Node(NetworkObject):
             ips: Iterable[str]
         ) -> None:
         self.identity = identity.lower()
+        self.type = self.__class__.type
         super().__init__(network, name, docid)
 
         self.domains = set(domains) if domains else set()
