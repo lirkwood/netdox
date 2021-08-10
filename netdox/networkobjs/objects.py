@@ -44,9 +44,6 @@ class Domain(base.DNSObject):
             super().__init__(network, name, f'_nd_domain_{name.replace(".","_")}', zone)
 
             self.role = 'default'
-            for role, domains in self.network.domains.roles.items():
-                if self.name in domains:
-                    self.role = role
             
             self.records = {
                 'A': base.RecordSet(),
