@@ -31,6 +31,12 @@ class NetworkObject(ABC):
 
     ## dunder methods
 
+    def __new__(cls, network: Network, *args, **kwargs) -> NetworkObject:
+        nwobj = super().__new__(cls)
+        nwobj.__init__(network, *args, **kwargs)
+        network._add(nwobj)
+        return nwobj
+
     def __init__(self, network: Network, name: str, docid: str) -> None:
         """
         Sets the instances attributes to the values provided, and adds itself to *network*.
@@ -45,7 +51,6 @@ class NetworkObject(ABC):
         self.network = network
         self.name = name.lower().strip()
         self.docid = docid.lower()
-        self.network._add(self)
 
         self.psmlFooter = []
 
