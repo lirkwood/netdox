@@ -233,10 +233,10 @@ class NodeSet(base.NetworkObjectContainer):
         else:
             self[node.identity] = node
 
-        for domain in self[node.identity].domains:
+        for domain in list(self[node.identity].domains):
             self.network.createNoderefs(node.identity, domain)
 
-        for ip in self[node.identity].ips:
+        for ip in list(self[node.identity].ips):
             if ip not in self.network.ips:
                 objects.IPv4Address(self.network, ip)
             self.network.createNoderefs(node.identity, ip)
