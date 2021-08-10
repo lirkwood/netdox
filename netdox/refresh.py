@@ -136,7 +136,6 @@ def main():
     #-------------------------------------------------------------------#
 
     nwman.network.ips.fillSubnets()
-    nwman.network.discoverImpliedLinks()
     
     nwman.runStage('pre-write')
 
