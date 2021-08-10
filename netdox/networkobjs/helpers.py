@@ -106,29 +106,31 @@ class PSMLWriter:
         """
         if isinstance(nwobj, objects.Domain):
             self.domainBody(nwobj)
+            ip_iter = nwobj.records['A']
         elif isinstance(nwobj, objects.IPv4Address):
             self.ipBody(nwobj)
+            ip_iter = [nwobj.name]
         elif isinstance(nwobj, base.Node):
             self.nodeBody(nwobj)
+            ip_iter = nwobj.ips
         else:
             self.doc = None
             raise NotImplementedError
 
-        self.footer = self.doc.find(id = 'footer')
-        if nwobj.psmlFooter:
-            for tag in nwobj.psmlFooter:
-                self.footer.append(tag)
+        search_octets = []
+        for ip in ip_iter:
+            octets = ip.split('.')
+            search_octets.append(octets[-1])
+            search_octets.append('.'.join(octets[-2:]))
+        frag = Tag(is_xml=True, name='fragment')
+        frag.append(psml.newprop(
+            name = 'octets', title = 'Octets for search', value = ', '.join(search_octets), multiple = 'true'
+        ))
+        nwobj.psmlFooter.append(frag)
 
-            search_octets = []
-            for ip in nwobj.ips:
-                octets = ip.split('.')
-                search_octets.append(octets[-1])
-                search_octets.append('.'.join(octets[-2:]))
-            frag = Tag(is_xml=True, name='fragment')
-            frag.append(psml.newprop(
-                name = 'octets', title = 'Octets for search', value = ', '.join(search_octets), multiple = 'true'
-            ))
-            nwobj.psmlFooter.append(frag)
+        self.footer = self.doc.find(id = 'footer')
+        for tag in nwobj.psmlFooter:
+            self.footer.append(tag)
         
 
         dir = os.path.dirname(nwobj.outpath)
