@@ -33,6 +33,7 @@ class NetworkManager:
             'pre-write': {},
             'post-write': {}
         }
+        self.nodemap = {}
         self.stages = self.pluginmap.keys()
 
         try:
@@ -65,22 +66,6 @@ class NetworkManager:
         A dictionary of all plugins in the pluginmap
         """
         return self.pluginmap['all']
-
-    @property
-    def nodes(self) -> ValuesView[BasePlugin]:
-        return self.pluginmap['nodes'].values()
-
-    @property
-    def dns(self) -> ValuesView[BasePlugin]:
-        return self.pluginmap['dns'].values()
-
-    @property
-    def pre(self) -> ValuesView[BasePlugin]:
-        return self.pluginmap['pre-write'].values()
-
-    @property
-    def post(self) -> ValuesView[BasePlugin]:
-        return self.pluginmap['post-write'].values()
 
     def add(self, plugin: BasePlugin) -> None:
         """
