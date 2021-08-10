@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 import re
-from typing import TYPE_CHECKING, Iterable, Tuple
+from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup, Tag
 
@@ -179,11 +179,10 @@ DOMAIN_TEMPLATE = '''
 
             <properties-fragment id="header">
                 <property name="name"       title="Name"        value="#!name" />
-                <property name="root"       title="Root Domain" value="#!root" />
+                <property name="zone"       title="DNS Zone"    value="#!zone" />
                 <property name="role"       title="DNS Role"    datatype="xref" >
                     <xref frag="default" uriid="" />
                 </property>
-                <property name="location"   title="Location"    value="#!location" />
             </properties-fragment>
 
         </section>
@@ -222,7 +221,6 @@ IPV4ADDRESS_TEMPLATE = '''
             <properties-fragment id="header">
                 <property name="ipv4"               title="IP"                  value="#!name" /> 
                 <property name="subnet"             title="Subnet"              value="#!subnet" />
-                <property name="location"           title="Location"            value="#!location" />
             </properties-fragment>
 
         </section>
