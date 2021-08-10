@@ -12,16 +12,6 @@ function help {
     echo 'netdox decrypt <infile> [outfile]:     Decrypts a file using the internal cryptography from infile to outfile.'
 }
 
-## Serve webhook listener
-function serve {
-    gunicorn --reload -b '0.0.0.0:8080' -t 900 serve:app
-}
-
-## Refresh dataset and upload to PageSeeder
-function refresh {
-    python3 refresh.py
-}
-
 ## Initialise container with provided config to allow other processes to run
 function init {
     if [[ ! -f $APPDIR/src/config.bin ]]
@@ -43,12 +33,22 @@ function init {
     fi
 }
 
-## Encrypts a file to a Fernet token
+## Refresh dataset and upload to PageSeeder
+function refresh {
+    python3 refresh.py
+}
+
+## Serve webhook listener
+function serve {
+    gunicorn --reload -b '0.0.0.0:8080' -t 900 serve:app
+}
+
+## Encrypt a file to a Fernet token
 function encrypt {
     python3 crypto.py 'encrypt' $1 $2
 }
 
-## Decrypts a file from a Fernet token
+## Decrypt a file from a Fernet token
 function decrypt {
     python3 crypto.py 'decrypt' $1 $2
 }
