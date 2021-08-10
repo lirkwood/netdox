@@ -160,4 +160,4 @@ class NetworkManager:
         """
         print(f'[INFO][plugins] Starting stage: {stage}')
         for pluginName, plugin in self.pluginmap[stage].items():
-            self.runPlugin(pluginName, plugin, self.network, stage)
+            self.runPlugin(pluginName, plugin, stage)
