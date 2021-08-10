@@ -16,6 +16,8 @@ class DomainSet(base.DNSObjectContainer):
     objectClass: Type[objects.Domain] = objects.Domain
     _roles: dict
 
+    ## dunder methods
+
     def __init__(self, network: Network, domains: Iterable[objects.Domain] = [], roles: dict = None) -> None:
         super().__init__(network, domains)
         self._roles = roles or DEFAULT_DOMAIN_ROLES
@@ -26,6 +28,8 @@ class DomainSet(base.DNSObjectContainer):
     ## Re-implemented to type hint
     def __iter__(self) -> Iterator[objects.Domain]:
         yield from super().__iter__()
+
+    ## properties
 
     @property
     def domains(self) -> dict[str, objects.Domain]:
@@ -73,6 +77,8 @@ class DomainSet(base.DNSObjectContainer):
         :rtype: list[str]
         """
         return self._roles['exclusions']
+    
+    ## methods
 
     def _add(self, domain: objects.Domain) -> None:
         """
@@ -84,6 +90,9 @@ class DomainSet(base.DNSObjectContainer):
         """
         if domain.name not in self.exclusions:
             super()._add(domain)
+        for role, domains in self.roles.items():
+            if domain.name in domains:
+                domain.role = role
 
 
 class IPv4AddressSet(base.DNSObjectContainer):
@@ -225,19 +234,12 @@ class NodeSet(base.NetworkObjectContainer):
             self[node.identity] = node
 
         for domain in self[node.identity].domains:
-            if domain in self.network.domains and not self.network.domains[domain].node:
-                self.network.domains[domain].node = self[node.identity]
+            self.network.createNoderefs(node.identity, domain)
 
         for ip in self[node.identity].ips:
             if ip not in self.network.ips:
                 objects.IPv4Address(self.network, ip)
-            ipv4obj = self.network.ips[ip]
-
-            if not ipv4obj.node:
-                ipv4obj.node = self[node.identity]
-
-            if ipv4obj.nat and not self.network.ips[ipv4obj.nat].node:
-                self.network.ips[ipv4obj.nat].node = self[node.identity]
+            self.network.createNoderefs(node.identity, ip)
 
 class Network:
     """
@@ -339,32 +341,34 @@ class Network:
             object_set.network = self
             self.nodes = object_set
 
-    def discoverImpliedLinks(self) -> None:
+    def createNoderefs(self, node_identity: str, dnsobj_name: str) -> None:
         """
-        Populates the implied link attributes for the Domain and IPv4Address objects in the Network.
-        Also sets their Node attributes where possible.
+        Creates noderefs from the DNSObj at *dnsobj_name* (and DNSObjs which resolve to it) to the node with *node_identity*.
+
+        :param node_identity: The identity of the target node.
+        :type node_identity: str
+        :param dnsobj_name: The name of the DNSObj to link from.
+        :type dnsobj_name: str
         """
-        for domain in self.domains:
-            for ip in domain.records['A']:
-                if ip in self.ips and domain not in self.ips[ip].backrefs['A']:
-                    self.ips[ip].backrefs['A'].add(domain.name)
-            for alias in domain.records['CNAME']:
-                if alias in self.domains and domain not in self.domains[alias].backrefs['CNAME']:
-                    self.domains[alias].backrefs['CNAME'].add(domain.name)
+        if dnsobj_name in self.ips and not self.ips[dnsobj_name].node:
+            dnsobj = self.ips[dnsobj_name]
+            self.nodes[node_identity].ips.add(dnsobj.name)
+        elif dnsobj_name in self.domains and not self.domains[dnsobj_name].node:
+            dnsobj = self.domains[dnsobj_name]
+            self.nodes[node_identity].domains.add(dnsobj.name)
+        else: return
 
-        for ip in self.ips:
-            for domain in ip.records['PTR']:
-                if domain in self.domains and ip not in self.domains[domain].backrefs['PTR']:
-                    self.domains[domain].backrefs['PTR'].add(ip.name)
+        dnsobj.node = self.nodes[node_identity]
 
-        for node in self.nodes:
-            for ip in node.ips:
-                if ip in self.ips and not self.ips[ip].node:
-                    self.ips[ip].node = node
-                    
-            for domain in node.domains:
-                if domain in self.domains and not self.domains[domain].node:
-                    self.domains[domain].node = node
+        for records in dnsobj.records.values():
+            for record in records:
+                self.createNoderefs(node_identity, record)
+        for backrefs in dnsobj.backrefs.values():
+            for backref in backrefs:
+                self.createNoderefs(node_identity, backref)
+
+        if hasattr(dnsobj, 'nat') and dnsobj.nat:
+            self.createNoderefs(node_identity, dnsobj.nat)
 
     def setToJSON(self, set: str, path: str) -> None:
         """
