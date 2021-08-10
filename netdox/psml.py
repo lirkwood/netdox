@@ -1,3 +1,7 @@
+"""
+Provides some useful functions and constants for generating and manipulating PSML using BeautifulSoup4.
+"""
+
 from __future__ import annotations
 from collections import defaultdict
 

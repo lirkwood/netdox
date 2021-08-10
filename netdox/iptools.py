@@ -1,5 +1,5 @@
 """
-Module of useful classes and functions for manipulating IPv4 addresses and subnets.
+Module of useful functions for manipulating IPv4 addresses, subnets, and ranges.
 """
 
 import math
