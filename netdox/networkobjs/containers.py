@@ -224,6 +224,21 @@ class NodeSet(base.NetworkObjectContainer):
         else:
             self[node.identity] = node
 
+        for domain in self[node.identity].domains:
+            if domain in self.network.domains and not self.network.domains[domain].node:
+                self.network.domains[domain].node = self[node.identity]
+
+        for ip in self[node.identity].ips:
+            if ip not in self.network.ips:
+                objects.IPv4Address(self.network, ip)
+            ipv4obj = self.network.ips[ip]
+
+            if not ipv4obj.node:
+                ipv4obj.node = self[node.identity]
+
+            if ipv4obj.nat and not self.network.ips[ipv4obj.nat].node:
+                self.network.ips[ipv4obj.nat].node = self[node.identity]
+
 class Network:
     """
     Container for sets of network objects.
@@ -264,9 +279,6 @@ class Network:
         
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
-
-    def __contains__(self, *_) -> bool:
-        raise NotImplementedError
 
     def _add(self, object: base.NetworkObject) -> None:
         """
