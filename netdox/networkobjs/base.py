@@ -234,10 +234,11 @@ class Node(NetworkObject):
     ## abstract methods
 
     def merge(self, node: Node) -> Node:
-        super().merge(object)
+        super().merge(node)
         self.domains |= node.domains
         self.ips |= node.ips
         self.location = self.network.locator.locate
+        return self
 
 
 ##############
