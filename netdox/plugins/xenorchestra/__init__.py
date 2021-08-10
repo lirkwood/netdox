@@ -216,9 +216,6 @@ class Plugin(BasePlugin):
         if not os.path.exists('plugins/xenorchestra/src'):
             os.mkdir('plugins/xenorchestra/src')
 
-        for type in ('poolHosts', 'templates'):
-            utils.jsonForXslt(f'plugins/xenorchestra/src/{type}.xml', f'{type}.json')
-
     def runner(self, network: Network, stage: str) -> None:
         if stage == 'nodes':
             self.pubdict = runner(network)

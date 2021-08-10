@@ -180,4 +180,3 @@ async def template_map(vms: dict):
 
     with open('plugins/xenorchestra/src/templates.json', 'w', encoding='utf-8') as stream:
         stream.write(json.dumps(vmSource, indent=2, ensure_ascii=False))
-    utils.xslt('plugins/xenorchestra/templates.xslt', 'plugins/xenorchestra/src/templates.xml', 'out/config/templates.psml')
