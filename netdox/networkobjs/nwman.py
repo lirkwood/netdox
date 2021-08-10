@@ -21,9 +21,8 @@ class NetworkManager:
 
     def __init__(self) -> None:
 
-        self.network = Network()
+        self.network = Network(domainroles = utils.roles())
         self.config = utils.config()
-
         
         self.pluginmap = defaultdict(dict)
         self.pluginmap = {
