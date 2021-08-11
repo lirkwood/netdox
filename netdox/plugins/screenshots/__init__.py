@@ -81,9 +81,10 @@ class ScreenshotManager:
                     diffratio = diffimg.diff(
                         im1_file = f'{self.basedir}/{domain.docid}.jpg', 
                         im2_file = f'{self.workdir}/ss/{domain.docid}.jpg',
-                        diff_img_file = f'{self.outdir}/review/{domain.docid}.jpg'
+                        diff_img_file = f'{self.outdir}/diffimg/{domain.docid}.jpg'
                     )
                 except FileNotFoundError:
+                    # if no base img
                     self.nobase.append(domain.docid)
                     shutil.copyfile(
                         f'{self.workdir}/ss/{domain.docid}.jpg',
@@ -93,7 +94,7 @@ class ScreenshotManager:
                     # if diff > 5%
                     if diffratio > 0.05:
                         self.diff.append(domain.docid)
-                        # save base img
+                        # save old base img
                         shutil.copyfile(
                             f'{self.basedir}/{domain.docid}.jpg', 
                             f'{self.outdir}/screenshot_history/{date.today().isoformat()}/{domain.docid}.jpg'
@@ -103,9 +104,13 @@ class ScreenshotManager:
                             f'{self.workdir}/ss/{domain.docid}.jpg',
                             f'{self.outdir}/screenshots/{domain.docid}.jpg'
                         )
+                        shutil.copyfile(
+                            f'{self.workdir}/screenshots/{domain.docid}.jpg',
+                            f'{self.basedir}/{domain.docid}.jpg'
+                        )
                     else:
                         # delete empty diff file
-                        os.remove(f'{self.outdir}/review/{domain.docid}.jpg')
+                        os.remove(f'{self.outdir}/diffimg/{domain.docid}.jpg')
         
         with open(f'{self.workdir}/stats.json', 'w') as stream:
             stream.write(json.dumps(self.stats))
@@ -201,7 +206,7 @@ class Plugin(BasePlugin):
         mngr = ScreenshotManager(
             domains = network.domains, 
             workdir = 'plugins/screenshots/src',
-            basedir = 'src/base',
+            basedir = 'plugins/screenshots/base',
             outdir = 'out',
             placeholder = 'src/placeholder.jpg'
         )
