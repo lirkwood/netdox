@@ -250,11 +250,11 @@ class PSMLWriter:
         self.doc = psml.populate(psml.NODE_TEMPLATE, node)
         self.body = self.doc.find(id = 'body')
 
+        self.doc.find(attrs={'name':'location'})['value'] = node.location
+
         for tag in node.psmlBody:
             self.body.append(tag)
         self.body.unwrap()
-        
-        header = self.doc.find('section', id = 'header')
 
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
@@ -285,4 +285,7 @@ class PSMLWriter:
                     title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
                     value = ip
                 ))
+
+        header = self.doc.find('section', id = 'header')
         header.append(domains)
+        header.append(ips)
