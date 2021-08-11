@@ -353,16 +353,15 @@ class Network:
         if dnsobj_name in self.ips and not self.ips[dnsobj_name].node:
             dnsobj = self.ips[dnsobj_name]
             self.nodes[node_identity].ips.add(dnsobj.name)
+
         elif dnsobj_name in self.domains and not self.domains[dnsobj_name].node:
             dnsobj = self.domains[dnsobj_name]
             self.nodes[node_identity].domains.add(dnsobj.name)
+            
         else: return
 
         dnsobj.node = self.nodes[node_identity]
-
-        for records in dnsobj.records.values():
-            for record in records:
-                self.createNoderefs(node_identity, record)
+        
         for backrefs in dnsobj.backrefs.values():
             for backref in backrefs:
                 self.createNoderefs(node_identity, backref)
