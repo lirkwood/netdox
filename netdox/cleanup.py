@@ -10,10 +10,7 @@ and generating placeholder images for websites which Netdox failed to screenshot
 import json
 import os
 import re
-import shutil
 from datetime import date, datetime, timedelta
-
-from PIL import Image, UnidentifiedImageError
 
 import pageseeder
 import utils
@@ -21,68 +18,62 @@ import utils
 stale_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
 
 @utils.handle
-def sentenceStale() -> dict:
+def sentenceStale(dir: str) -> list:
     """
-    The purpose of this function is to mark documents which are present on PageSeeder but not in the local upload context as *stale* (out of date/nonexistent).
-    Any documents which exist exclusively on PageSeeder have a document label applied matching a string like ``expires-on-<date + 30 days>``.
-    Should a document exist that was sentenced to expire today or in the past, Netdox will archive it.
+    Adds stale labels to any files present in *dir* on PageSeeder, but not locally.
 
-    :return: A dictionary of domains newly marked as stale
-    :rtype: dict
+    :param dir: The directory, relative to `website/` on PS or `out/` locally.
+    :type dir: str
+    :return: A list of stale URIs.
+    :rtype: list
     """
     today = datetime.now().date()
     group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
-    stale = {}
-    # for every folder in context on pageseeder
-    for folder, folder_uri in pageseeder.urimap().items():
-        # get all files descended from folder
-        remote = json.loads(pageseeder.get_uris(folder_uri, params={
+    stale = []
+    if dir in pageseeder.urimap():
+        local = utils.fileFetchRecursive(os.path.join('out', dir))
+
+        remote = json.loads(pageseeder.get_uris(pageseeder.urimap()[dir], params={
             'type': 'document',
             'relationship': 'descendants'
         }))
 
-        # if folder exists in upload
-        if os.path.exists(os.path.join('out', folder)) and folder not in ('config', 'review', 'screenshot_history'):
-            # get all files in given folder in upload
-            local = utils.fileFetchRecursive(os.path.join('out', folder))
+        for file in remote["uris"]:
+            commonpath = file["decodedpath"].split(f"{group_path}/website/")[-1]
+            uri = file["id"]
+            if 'labels' in  file: 
+                labels = ','.join(file['labels'])
+                marked_stale = re.search(stale_pattern, labels)
+            else:
+                labels = ''
+                marked_stale = False
 
-            for file in remote["uris"]:
-                commonpath = file["decodedpath"].split(f"{group_path}/website/")[-1]
-                uri = file["id"]
-                if 'labels' in  file: 
-                    labels = ','.join(file['labels'])
-                    marked_stale = re.search(stale_pattern, labels)
-                else:
-                    labels = ''
-                    marked_stale = False
-
+            if marked_stale:
+                expiry = date.fromisoformat(marked_stale['date'])
+            else:
+                expiry = None
+            
+            if os.path.normpath(os.path.join('out', commonpath)) not in local:
                 if marked_stale:
-                    expiry = date.fromisoformat(marked_stale['date'])
-                else:
-                    expiry = None
-                
-                if os.path.normpath(os.path.join('out', commonpath)) not in local:
-                    if marked_stale:
-                        if expiry <= today:
-                            pageseeder.archive(uri)
-                        else:
-                            stale[uri] = marked_stale['date']
+                    if expiry <= today:
+                        pageseeder.archive(uri)
                     else:
-                        plus_thirty = today + timedelta(days = 30)
-                        if labels: labels += ','
-                        labels += f'stale,expires-{plus_thirty}'
-                        pageseeder.patch_uri(uri, {'labels':labels})
-                        print(f'[INFO][cleanup] File {commonpath} is stale and has been sentenced.')
-                        stale[uri] = str(plus_thirty)
-                # if marked stale but exists locally
+                        stale[uri] = marked_stale['date']
                 else:
-                    if marked_stale:
-                        labels = re.sub(stale_pattern, '', labels) # remove expiry label
-                        labels = re.sub(r',,',',', labels) # remove double commas
-                        labels = re.sub(r',$','', labels) # remove trailing commas
-                        labels = re.sub(r'^,','', labels) # remove leading commas
-                        pageseeder.patch_uri(uri, {'labels':labels})
-    return {k: v for k, v in sorted(stale.items(), key = lambda item: item[1])}
+                    plus_thirty = today + timedelta(days = 30)
+                    if labels: labels += ','
+                    labels += f'stale,expires-{plus_thirty}'
+                    pageseeder.patch_uri(uri, {'labels':labels})
+                    print(f'[INFO][cleanup] File {commonpath} is stale and has been sentenced.')
+                    stale[uri] = str(plus_thirty)
+            # if marked stale but exists locally
+            else:
+                if marked_stale:
+                    labels = re.sub(stale_pattern, '', labels) # remove expiry label
+                    labels = re.sub(r',,',',', labels) # remove double commas
+                    labels = re.sub(r',$','', labels) # remove trailing commas
+                    labels = re.sub(r'^,','', labels) # remove leading commas
+                    pageseeder.patch_uri(uri, {'labels':labels})
             
 
 # best guess at the transformation PageSeeder applies
