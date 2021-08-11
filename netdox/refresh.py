@@ -13,7 +13,6 @@ from distutils.util import strtobool
 
 from bs4 import BeautifulSoup
 
-import cleanup
 import pageseeder
 import psml
 import utils
@@ -133,7 +132,7 @@ def main():
 
     #-------------------------------------------------------------------#
     # Generate objects for unused private IPs in used subnets,          #
-    # resolve internal links, any pre-write plugins                     #
+    # run any pre-write plugins                                         #
     #-------------------------------------------------------------------#
 
     nwman.network.ips.fillSubnets()
@@ -151,15 +150,11 @@ def main():
     nwman.runStage('post-write')
 
     #-------------------------------------------------------------------#
-    # Clean up, upload, and clean again                                 #
+    # Zip and upload                                                    #
     #-------------------------------------------------------------------#
-
-    cleanup.pre_upload()
 
     zip = shutil.make_archive('netdox-psml', 'zip', 'out')
     pageseeder.zip_upload(zip, 'website')
-
-    cleanup.post_upload()
 
     print('[INFO][refresh] Done.')
 
