@@ -127,7 +127,7 @@ def getServiceDomains(namespace: str='default') -> dict[str, set]:
     return serviceDomains
 
 
-def getApps(context: str, namespace: str='default') -> dict[str]:
+def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     """
     Returns a dictionary of apps running from deployments in the specified context/namespace.
 
@@ -207,11 +207,9 @@ def runner(network: Network) -> None:
         location = auth[context]['location'] if 'location' in auth[context] else None
         
         for app in apps.values():
-            appnode = App(network, **app)
-            appnode.location = location
 
-            for domain in appnode.domains:
+            for domain in app['domains']:
                 if domain not in network.domains:
-                    Domain(network, domain)
-                if not network.domains[domain].node:
-                    network.domains[domain].node = appnode
+                    Domain(network, domain, 'k8s')
+
+            App(network, **app).location = location
