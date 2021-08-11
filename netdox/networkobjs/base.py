@@ -189,10 +189,10 @@ class Node(NetworkObject):
     """A set of domains resolving to this Node."""
     ips: set[str]
     """A set of IPv4 addresses resolving to this Node."""
-    location: str = None
-    """The location as it appears in ``locations.json``, assigned based on IP address by *Locator*."""
     type: str = None
     """A string unique to this implementation of Node."""
+    _location: str = None
+    """Optional manual location attribute to use instead of the network locator."""
 
     ## dunder methods
 
@@ -210,15 +210,6 @@ class Node(NetworkObject):
 
         self.domains = set(domains) if domains else set()
         self.ips = set(ips) if ips else set()
-        self.location = self.network.locator.locate(self.ips)
-
-        for domain in self.domains:
-            if domain in self.network.domains and not self.network.domains[domain].node:
-                self.network.domains[domain].node = self
-
-        for ip in self.ips:
-            if ip in self.network.domains and not self.network.ips[ip].node:
-                self.network.ips[ip].node = self
 
     ## abstract properties
 
@@ -245,6 +236,26 @@ class Node(NetworkObject):
         self.ips |= node.ips
         self.location = self.network.locator.locate
         return self
+
+    ## properties
+
+    @property
+    def location(self) -> str:
+        """
+        Returns a location code based on the IPs associated with this node, and the configuration in `locations.json`.
+
+        :return: The location of this node
+        :rtype: str
+        """
+        return self._location or self.network.locator.locate(self.ips) or '—'
+
+    @location.setter
+    def location(self, value: str) -> None:
+        self._location = value
+
+    @location.deleter
+    def location(self) -> None:
+        self._location = None
 
 
 ##############
