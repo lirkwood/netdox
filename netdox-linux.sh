@@ -1,32 +1,33 @@
 #!/usr/bin/env bash
 
 APPDIR=$(dirname $(realpath $0))
+cd "$APPDIR/netdox"
 
 ## Print usage help
 function help {
-    echo 'Usage:'; echo
-    echo 'netdox init:                           Initialises the environment using the provided config files so that other methods can be used.'
-    echo 'netdox serve:                          Starts a Gunicorn web server listening for webhooks from the configured PageSeeder.'
-    echo 'netdox refresh:                        Generates a new set of PSML documents and uploads them to PageSeeder,'
-    echo 'netdox encrypt <infile> [outfile]:     Encrypts a file using the internal cryptography from infile to outfile.'
-    echo 'netdox decrypt <infile> [outfile]:     Decrypts a file using the internal cryptography from infile to outfile.'
+    echo 'Methods'
+    echo 'init:                           Initialises the environment and generates a new cryptographic key.'
+    echo 'serve:                          Starts a Gunicorn web server listening for webhooks from the configured PageSeeder.'
+    echo 'refresh:                        Generates a new set of PSML documents and uploads them to PageSeeder,'
+    echo 'encrypt <infile> [outfile]:     Encrypts a file using the internal cryptography from infile to outfile.'
+    echo 'decrypt <infile> [outfile]:     Decrypts a file using the internal cryptography from infile to outfile.'
 }
 
 ## Initialise container with provided config to allow other processes to run
 function init {
-    if [[ ! -f $APPDIR/src/config.bin ]]
+    if [[ ! -f src/config.bin ]]
         then
             echo '[WARNING][netdox] Primary configuration file missing. Please place config.bin in src/'
             exit 1 
     fi
 
     # make all scripts executable
-    chmod 744 $APPDIR/*
+    chmod 744 *
 
     if python3 init.py
         then
             echo '[INFO][netdox] Initialisation successful.'
-            chmod 500 $APPDIR/src/crypto
+            chmod 500 src/crypto
         else
             echo '[ERROR][netdox] Initialisation unsuccessful. Please try again.'
             exit 1
