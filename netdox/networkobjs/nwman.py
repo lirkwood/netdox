@@ -115,7 +115,7 @@ class NetworkManager:
         """
         Initialises all plugins in the pluginmap.
         """
-        for plugin in self:
+        for plugin in self.plugins.values():
             plugin.init()
 
     def runPlugin(self, name: str = None, plugin: BasePlugin = None, stage: str = 'none') -> None:
@@ -133,7 +133,7 @@ class NetworkManager:
         if not name and not plugin:
             raise RuntimeError('Must provide one of: plugin name, plugin')
         elif not plugin:
-            plugin = self[name]
+            plugin = self.plugins[name]
         
         try:
             plugin.runner(self.network, stage)
@@ -174,17 +174,14 @@ class NetworkManager:
             for file in remote["uris"]:
                 commonpath = file["decodedpath"].split(f"{group_path}/website/")[-1]
                 uri = file["id"]
-                if 'labels' in  file: 
+                if 'labels' in file: 
                     labels = ','.join(file['labels'])
                     marked_stale = re.search(self.stale_pattern, labels)
                 else:
                     labels = ''
                     marked_stale = False
 
-                if marked_stale:
-                    expiry = date.fromisoformat(marked_stale['date'])
-                else:
-                    expiry = None
+                expiry = date.fromisoformat(marked_stale['date']) if marked_stale else None
                 
                 if os.path.normpath(os.path.join('out', commonpath)) not in local:
                     if marked_stale:
