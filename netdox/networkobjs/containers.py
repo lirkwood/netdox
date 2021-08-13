@@ -369,17 +369,6 @@ class Network:
         if hasattr(dnsobj, 'nat') and dnsobj.nat:
             self.createNoderefs(node_identity, dnsobj.nat)
 
-    def setToJSON(self, set: str, path: str) -> None:
-        """
-        Serialises a NetworkObjectContainer to JSON and writes the JSON to a file at *path*.
-
-        :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
-        :type set: str
-        :param path: The path to write the JSON to.
-        :type path: str
-        """
-        getattr(self, set).to_json(path)
-
     def setToPSML(self, set: str) -> None:
         """
         Serialises a NetworkObjectContainer to PSML and writes the PSML files to *dir*.
@@ -393,9 +382,7 @@ class Network:
         """
         Writes the domains, ips, and nodes of a network to their default locations.
         """
-        self.setToJSON('domains', 'src/domains.json')
-        self.setToJSON('ips', 'src/ips.json')
-        self.setToJSON('nodes', 'src/nodes.json')
+        ...
 
     def writePSML(self) -> None:
         """
