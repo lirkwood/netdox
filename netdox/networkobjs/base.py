@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
 import os
-from abc import ABC, abstractmethod
+from abc import ABCMeta, ABC, abstractmethod
 from typing import TYPE_CHECKING, Iterable, Iterator, Type, Union
 
 from bs4 import Tag
@@ -14,10 +13,29 @@ if TYPE_CHECKING:
 # Objects #
 ###########
 
-class NetworkObject(ABC):
+class NetworkObjectMeta(ABCMeta):
+    """
+    Metaclass for an object belonging to a Network.
+    Adds itself to the provided network object *after* instantiation.
+    """
+
+    def __call__(cls, *args, **kwargs) -> NetworkObject:
+        """
+        Calls the `_add` method on *network* after `__init__`, 
+        allowing the network to override attributes set during initialisation.
+
+        :param network: The network.
+        :type network: Network
+        :return: An instance of this class.
+        :rtype: NetworkObject
+        """
+        nwobj = super().__call__(*args, **kwargs)
+        nwobj.network._add(nwobj)
+        return nwobj
+
+class NetworkObject(metaclass=NetworkObjectMeta):
     """
     Base class for an object in the network.
-    Adds itself to *network* upon instantiation.
     """
     name: str
     """The name to give this object."""
@@ -29,12 +47,6 @@ class NetworkObject(ABC):
     """A list of fragment tags to add to the *footer* section of this object's output PSML."""
 
     ## dunder methods
-
-    def __new__(cls, network: Network, *args, **kwargs) -> NetworkObject:
-        nwobj = super().__new__(cls)
-        nwobj.__init__(network, *args, **kwargs)
-        network._add(nwobj)
-        return nwobj
 
     def __init__(self, network: Network, name: str, docid: str) -> None:
         """
