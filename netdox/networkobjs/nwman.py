@@ -35,7 +35,8 @@ class NetworkManager:
             'nat': {},
             'nodes': {},
             'pre-write': {},
-            'post-write': {}
+            'post-write': {},
+            'cleanup': {}
         }
         self.nodemap = {}
         self.stages = self.pluginmap.keys()

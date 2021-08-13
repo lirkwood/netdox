@@ -150,11 +150,17 @@ def main():
     nwman.runStage('post-write')
 
     #-------------------------------------------------------------------#
-    # Zip and upload                                                    #
+    # Zip, upload, and cleanup                                          #
     #-------------------------------------------------------------------#
 
     zip = shutil.make_archive('netdox-psml', 'zip', 'out')
     pageseeder.zip_upload(zip, 'website')
+
+    nwman.sentenceStale('domains')
+    nwman.sentenceStale('ips')
+    nwman.sentenceStale('nodes')
+
+    nwman.runStage('cleanup')
 
     print('[INFO][refresh] Done.')
 
