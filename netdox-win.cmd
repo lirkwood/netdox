@@ -55,7 +55,7 @@ set CALLED=0
 for %%m in ("help" "init" "refresh" "serve" "encrypt" "decrypt") do (
     if "%%~m"=="%1" (
         set CALLED=1
-        @REM call :%1
+        call :%1
         set FUNCSTATUS=%ERRORLEVEL%
     )
 )
