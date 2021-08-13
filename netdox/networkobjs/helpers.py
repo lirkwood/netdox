@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime
+from typing import Iterable, Iterator
+
+import iptools
 import psml
 import utils
-import iptools
 from bs4 import BeautifulSoup, Tag
-from typing import Iterator, Iterable
 
-from . import base, objects
-
+from . import objects, base
 
 ###################
 # Location Helper #
@@ -289,3 +290,65 @@ class PSMLWriter:
         header = self.doc.find('section', id = 'header')
         header.append(domains)
         header.append(ips)
+
+####################
+# RecordSet Helper #
+####################
+
+class RecordSet:
+    """Container for DNS records"""
+    _records: set
+    """Set of 2-tuples containing a record value and the plugin name that provided it."""
+
+    ## dunder methods
+
+    def __init__(self) -> None:
+        self._records = set()
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self.records
+
+    def __ior__(self, recordset: RecordSet) -> RecordSet:
+        return self._records.__ior__(recordset._records)
+
+    ## properties
+
+    @property
+    def records(self) -> list[str]:
+        """
+        Returns a list of the record values in this set
+
+        :return: A list record values as strings
+        :rtype: list[str]
+        """
+        return [value for value, _ in self._records]
+    
+    ## methods
+
+    def add(self, value: str, source: str) -> None:
+        self._records.add((value.lower().strip(), source))
+
+    def items(self) -> Iterator[tuple[str, str]]:
+        yield from self._records
+
+
+######################
+# JSONEncoder Helper #
+######################
+
+class JSONEncoder(json.JSONEncoder):
+    """
+    JSON Encoder compatible with sets and datetime objects
+    """
+    def default(self, obj):
+        """
+        :meta private:
+        """
+        if isinstance(obj, set):
+            return sorted(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, RecordSet):
+            return obj._records
+        else:
+            return super().default(obj)
