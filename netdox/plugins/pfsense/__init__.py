@@ -11,7 +11,7 @@ class Plugin(BasePlugin):
     name = 'pfsense'
     stages = ['nat']
 
-    def runner(network: Network, stage: str) -> None:
+    def runner(self, network: Network, stage: str) -> None:
         if stage == 'nat':
             nat = asyncio.run(pfsenseScrapeNat())
             for ip, alias in nat.items():
