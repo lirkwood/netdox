@@ -13,7 +13,6 @@ import requests
 import utils
 from bs4 import BeautifulSoup, Tag
 from networkobjs import DefaultNode, IPv4Address, Network
-from networkobjs.base import Node
 from plugins import BasePlugin as BasePlugin
 
 
@@ -46,9 +45,6 @@ class HardwareNode(DefaultNode):
     @property
     def psmlBody(self) -> Iterable[Tag]:
         return [self.psml]
-    
-    def to_dict(self) -> dict:
-        return super().to_dict() | {'psml': str(self.psml)}
 
 
 class Plugin(BasePlugin):
