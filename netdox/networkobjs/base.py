@@ -3,13 +3,12 @@ from __future__ import annotations
 import json
 import os
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Iterable, TYPE_CHECKING, Iterator, Type, Union
+from typing import TYPE_CHECKING, Iterable, Iterator, Type, Union
 
 from bs4 import Tag
 
 if TYPE_CHECKING:
-    from . import Network
+    from . import Network, helpers
 
 ###########
 # Objects #
@@ -79,59 +78,13 @@ class NetworkObject(ABC):
         self.psmlFooter += object.psmlFooter
         return self
 
-    def to_dict(self) -> dict:
-        """
-        Returns a JSON-safe dictionary to be used for serialisation / data exploration.
-
-        :return: A dictionary describing this class' attributes.
-        :rtype: dict
-        """
-        return self.__dict__ | {'network': None, 'psmlFooter': [str(tag) for tag in self.psmlFooter]}
-
-
-class RecordSet:
-    """Container for DNS records"""
-    _records: set
-    """Set of 2-tuples containing a record value and the plugin name that provided it."""
-
-    ## dunder methods
-
-    def __init__(self) -> None:
-        self._records = set()
-
-    def __iter__(self) -> Iterator[str]:
-        yield from self.records
-
-    def __ior__(self, recordset: RecordSet) -> RecordSet:
-        return self._records.__ior__(recordset._records)
-
-    ## properties
-
-    @property
-    def records(self) -> list[str]:
-        """
-        Returns a list of the record values in this set
-
-        :return: A list record values as strings
-        :rtype: list[str]
-        """
-        return [value for value, _ in self._records]
-    
-    ## methods
-
-    def add(self, value: str, source: str) -> None:
-        self._records.add((value.lower().strip(), source))
-
-    def items(self) -> Iterator[tuple[str, str]]:
-        yield from self._records
-
 class DNSObject(NetworkObject):
     """
     A NetworkObject representing an object in a managed DNS zone.
     """
     zone: str
     """The DNS zone this object is from."""
-    records: dict[str, RecordSet]
+    records: dict[str, helpers.RecordSet]
     """A dictionary mapping record type to a RecordSet."""
     backrefs: dict[str, set]
     """Like records but stores reverse references from DNSObjects linking to this one."""
@@ -175,9 +128,6 @@ class DNSObject(NetworkObject):
                 self.backrefs[recordType] |= object.backrefs[recordType]
 
         return self
-
-    def to_dict(self) -> dict:
-        return super().to_dict() | {'node': None}
 
 class Node(NetworkObject):
     """
@@ -304,16 +254,6 @@ class NetworkObjectContainer(ABC):
         """
         pass
 
-    def to_json(self, path: str) -> None:
-        """
-        Serialises the set of NetworkObjects to a JSON file using the JSONEncoder defined in this file.
-        """
-        with open(path, 'w') as stream:
-            stream.write(json.dumps({
-                'objectType': self.objectType,
-                'objects': [object.to_dict() for object in self]
-            }, indent = 2, cls = JSONEncoder))
-
 class DNSObjectContainer(NetworkObjectContainer):
     """
     Container for a set of DNSObjects.
@@ -338,25 +278,3 @@ class DNSObjectContainer(NetworkObjectContainer):
             self[object.name] = object.merge(self[object.name])
         else:
             self[object.name] = object
-
-
-######################
-# Helper JSONEncoder #
-######################
-
-class JSONEncoder(json.JSONEncoder):
-    """
-    JSON Encoder compatible with sets and datetime objects
-    """
-    def default(self, obj):
-        """
-        :meta private:
-        """
-        if isinstance(obj, set):
-            return sorted(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
-        elif isinstance(obj, RecordSet):
-            return obj._records
-        else:
-            return super().default(obj)

@@ -9,7 +9,7 @@ import iptools
 import utils
 from bs4 import Tag
 
-from . import base
+from . import base, helpers
 
 if TYPE_CHECKING:
     from . import Network
@@ -46,8 +46,8 @@ class Domain(base.DNSObject):
             self.role = 'default'
             
             self.records = {
-                'A': base.RecordSet(),
-                'CNAME': base.RecordSet()
+                'A': helpers.RecordSet(),
+                'CNAME': helpers.RecordSet()
             }
 
             self.backrefs = {
@@ -125,14 +125,11 @@ class Domain(base.DNSObject):
         else:
             raise ValueError('Cannot merge two Domains with different names')
 
-    def to_dict(self) -> dict:
-        return super().to_dict() | {'_node': None}
-
 class IPv4Address(base.DNSObject, BaseIP):
     """
     A single IP address found in the network
     """
-    nat: base.RecordSet
+    nat: str
     """The IP this address resolves to through the NAT."""
     unused: bool
     """Whether or not a Domain in the network resolves to this IP."""
@@ -153,8 +150,8 @@ class IPv4Address(base.DNSObject, BaseIP):
         self.unused = unused
 
         self.records = {
-            'PTR': base.RecordSet(),
-            'CNAME': base.RecordSet()
+            'PTR': helpers.RecordSet(),
+            'CNAME': helpers.RecordSet()
         }
 
         self.backrefs = {
@@ -226,9 +223,6 @@ class IPv4Address(base.DNSObject, BaseIP):
             return self
         else:
             raise ValueError('Cannot merge two IPv4Addresses with different addresses')
-
-    def to_dict(self) -> dict:
-        return super().to_dict() | {'node': None}
 
     ## methods
 
