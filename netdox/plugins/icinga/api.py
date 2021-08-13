@@ -130,7 +130,7 @@ class MonitorManager:
          in any of the configured Icinga instances. False otherwise.
         :rtype: bool
         """
-        for selector in [domain.name] + list(domain.ips):
+        for selector in [domain.name] + list(domain.records['A']):
             for icinga_host in self.icingas:
                 # if has a manually created monitor, just load info
                 if selector in self.manual[icinga_host]:
@@ -155,13 +155,22 @@ class MonitorManager:
                 return False
 
         else:
-            if domain.location and self.locationIcingas[domain.location] is not None:
+            location = self.locateDomain(domain.name)
+            icinga = self.locationIcingas[location] if location in self.locationIcingas else None
+            if location and icinga:
                 if domain.name in self.generated:
-                    if self.generated[domain.name]['templates'][0] != utils.roles()[domain.role]['template']:
-                        set_host(domain.name, location = domain.location, template = utils.roles()[domain.role]['template'])
+                    # if location wrong
+                    if self.generated[domain.name]['icinga'] != icinga:
+                        rm_host(domain.name, icinga = self.generated[domain.name]['icinga'])
+                        set_host(domain.name, icinga = icinga, template = utils.roles()[domain.role]['template'])
                         return False
+                    # if template wrong
+                    elif self.generated[domain.name]['templates'][0] != utils.roles()[domain.role]['template']:
+                        set_host(domain.name, location = location, template = utils.roles()[domain.role]['template'])
+                        return False
+                # if no monitor
                 else:
-                    set_host(domain.name, location = domain.location, template = utils.roles()[domain.role]['template'])
+                    set_host(domain.name, location = location, template = utils.roles()[domain.role]['template'])
                     return False
 
         return True
@@ -188,8 +197,9 @@ class MonitorManager:
                             setattr(domain, 'icinga', self.manual[icinga][domain.name])
             else:
                 invalid.append(domain)
-                if domain.location:
-                    needsReload.add(self.locationIcingas[domain.location])
+                location = self.locateDomain(domain.name)
+                if location:
+                    needsReload.add(self.locationIcingas[location])
 
         for icinga in needsReload:
             reload(icinga = icinga)
@@ -217,17 +227,34 @@ class MonitorManager:
         """
         needsReload = set()
         for address, details in self.generated.items():
-
-            if (address not in self.network.domains 
-            or (self.network.domains[address].location is not None
-                and self.locationIcingas[self.network.domains[address].location] is not None
-                and self.locationIcingas[self.network.domains[address].location] != details['icinga'])):    
-
+            if address not in self.network.domains:
                 rm_host(address, icinga = details['icinga'])
                 needsReload.add(details['icinga'])
         
         for icinga in needsReload:
             reload(icinga = icinga)
+
+    def locateDomain(self, domain: str) -> str:
+        """
+        Guesses the best location to attribute to a domain name.
+        Returns None if no location can be found.
+
+        Checks in the network if the domain has a location through its node,
+        and if not attempts to locate based on it's A records.
+
+        :param domain: A FQDN to locate
+        :type domain: str
+        :return: The location of the domain, or None
+        :rtype: str
+        """
+        if domain in self.network.domains:
+            if self.network.domains[domain].node:
+                return self.network.domains[domain].node.location
+            else:
+                return self.network.locator.locate(
+                    self.network.domains[domain].records['A']
+                )
+        return None
 
     def addPSMLFooters(self) -> None:
         """
