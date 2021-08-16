@@ -195,14 +195,18 @@ class Plugin(BasePlugin):
     def init(self) -> None:
         if os.path.exists('plugins/screenshots/src'):
             shutil.rmtree('plugins/screenshots/src')
-        os.mkdir('plugins/screenshots/src')
-        if not os.path.exists('src/base'):
-            os.mkdir('src/base')
         if os.path.exists('out/screenshots'):
             shutil.rmtree('out/screenshots')
-        os.mkdir('out/screenshots')
         if os.path.exists(f'out/screenshot_history/{date.today().isoformat()}'):
             shutil.rmtree(f'out/screenshot_history/{date.today().isoformat()}')
+
+        if not os.path.exists('src/base'):
+            os.mkdir('src/base')
+        if not os.path.exists('out/screenshot_history'):
+            os.mkdir('out/screenshot_history')
+            
+        os.mkdir('plugins/screenshots/src')
+        os.mkdir('out/screenshots')
         os.mkdir(f'out/screenshot_history/{date.today().isoformat()}')
 
     def runner(self, network: Network, stage: str) -> None:
