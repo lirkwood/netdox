@@ -13,10 +13,8 @@ from distutils.util import strtobool
 
 from bs4 import BeautifulSoup
 
-import pageseeder
-import psml
-import utils
-from networkobjs import NetworkManager
+from netdox import pageseeder, psml, utils
+from netdox.networkobjs import NetworkManager
 
 ##################
 # Initialisation #
@@ -30,7 +28,7 @@ def init():
     If this config is not present or Netdox is unable to find or parse it, a default set of config files is copied to the upload context.
     """
     # remove old output files
-    for folder in os.scandir('out'):
+    for folder in os.scandir(utils.APPDIR+ 'out'):
         if folder.is_dir():
             for file in os.scandir(folder):
                 if file.is_file():
@@ -79,14 +77,14 @@ def init():
     else:
         print('[WARNING][refresh] No DNS config found on PageSeeder')
         # load default config and copy to upload context
-        for file in os.scandir('src/defaults/psconf'):
+        for file in os.scandir(utils.APPDIR+ 'src/defaults/psconf'):
             if file.name != 'config.psml':
                 with open(file, 'r') as stream:
                     soup = BeautifulSoup(stream.read(), features='xml')
                     roleConfig = psml.pfrag2dict(soup.find(id="config")) | {'domains':[]}
                     roles[roleConfig['name']] = roleConfig
 
-            shutil.copyfile(file.path, f'out/config/{file.name}')
+            shutil.copyfile(file.path, utils.APPDIR+ f'out/config/{file.name}')
 
 
     # load preconfigured roles
@@ -103,7 +101,7 @@ def init():
                 else:
                     roles[role][attribute] = value
 
-    with open('src/roles.json', 'w') as stream:
+    with open(utils.APPDIR+ 'src/roles.json', 'w') as stream:
         stream.write(json.dumps(roles, indent=2))
 
 

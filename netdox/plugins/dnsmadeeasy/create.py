@@ -30,7 +30,7 @@ def create_A(name: str, ip: str, zone: str) -> None:
 		if (ip, 'DNSMadeEasy') in domains[name]._ips:
 			return None
 
-		with open('plugin/dnsmadeeasy/src/zones.json', 'r') as zonestream:
+		with open(utils.APPDIR+ 'plugin/dnsmadeeasy/src/zones.json', 'r') as zonestream:
 			zones = json.load(zonestream)
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
@@ -70,7 +70,7 @@ def create_CNAME(name: str, value: str, zone: str) -> None:
 		if (value, 'DNSMadeEasy') in domains[name]._cnames:
 			return None
 
-		with open('src/zones.json', 'r') as stream:
+		with open(utils.APPDIR+ 'src/zones.json', 'r') as stream:
 			zones = json.load(stream)
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'
@@ -111,7 +111,7 @@ def create_PTR(ip: str, value: str) -> None:
 
 		addr = ip.split('.')[-1]
 		zone = f'{".".join(ip.split(".")[-2::-1])}.in-addr.arpa'
-		with open('src/zones.json', 'r') as stream:
+		with open(utils.APPDIR+ 'src/zones.json', 'r') as stream:
 			zones = json.load(stream)
 			if zone in zones:
 				endpoint = f'https://api.dnsmadeeasy.com/V2.0/dns/managed/{zones[zone]}/records/'

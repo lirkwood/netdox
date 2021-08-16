@@ -24,7 +24,7 @@ class Locator:
 
     def __init__(self) -> None:
         try:
-            with open('src/locations.json', 'r') as stream:
+            with open(utils.APPDIR+ 'src/locations.json', 'r') as stream:
                 self.location_map = json.load(stream)
         except Exception:
             self.location_map = {}

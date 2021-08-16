@@ -168,7 +168,7 @@ class NetworkManager:
         group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
         stale = []
         if dir in pageseeder.urimap():
-            local = utils.fileFetchRecursive(os.path.join(utils.APPDIR, 'out', dir))
+            local = utils.fileFetchRecursive(os.path.join('out', dir))
 
             remote = json.loads(pageseeder.get_uris(pageseeder.urimap()[dir], params={
                 'type': 'document',
@@ -209,7 +209,7 @@ class NetworkManager:
                         labels = re.sub(r'^,','', labels) # remove leading commas
                         pageseeder.patch_uri(uri, {'labels':labels})
 
-    def loadNetwork(self, inpath: str = 'src/network.bin') -> Network:
+    def loadNetwork(self, inpath: str = utils.APPDIR + 'src/network.bin') -> Network:
         """
         Loads an encrypted, pickled network object.
 
@@ -218,25 +218,25 @@ class NetworkManager:
         :return: The network
         :rtype: Network
         """
-        with open(utils.APPDIR+ inpath, 'rb') as nw:
+        with open(inpath, 'rb') as nw:
             self.network = pickle.loads(
                 Cryptor().decrypt(nw.read())
             )
 
-    def dumpNetwork(self, outpath: str = 'src/network.bin') -> None:
+    def dumpNetwork(self, outpath: str = utils.APPDIR + 'src/network.bin') -> None:
         """
         Pickles the Network object and saves it to a default location, encrypted.
 
         :param outpath: The path to save dump the network to, defaults to 'src/network.bin'
         :type outpath: str, optional
         """
-        with open(utils.APPDIR+ outpath, 'wb') as nw:
+        with open(outpath, 'wb') as nw:
             nw.write(
                 Cryptor().encrypt(pickle.dumps(self.network))
             )
 
     @classmethod
-    def fromDump(cls: Type[NetworkManager], inpath: str = 'src/network.bin') -> NetworkManager:
+    def fromDump(cls: Type[NetworkManager], inpath: str = utils.APPDIR + 'src/network.bin') -> NetworkManager:
         """
         Instantiates a NetworkManager to manage a dumped network at *inpath*.
 

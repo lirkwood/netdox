@@ -193,28 +193,28 @@ class Plugin(BasePlugin):
     stages = ['post-write']
 
     def init(self) -> None:
-        if os.path.exists('plugins/screenshots/src'):
-            shutil.rmtree('plugins/screenshots/src')
-        if os.path.exists('out/screenshots'):
-            shutil.rmtree('out/screenshots')
-        if os.path.exists(f'out/screenshot_history/{date.today().isoformat()}'):
-            shutil.rmtree(f'out/screenshot_history/{date.today().isoformat()}')
+        if os.path.exists(utils.APPDIR+ 'plugins/screenshots/src'):
+            shutil.rmtree(utils.APPDIR+ 'plugins/screenshots/src')
+        if os.path.exists(utils.APPDIR+ 'out/screenshots'):
+            shutil.rmtree(utils.APPDIR+ 'out/screenshots')
+        if os.path.exists(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat()):
+            shutil.rmtree(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
 
-        if not os.path.exists('src/base'):
-            os.mkdir('src/base')
-        if not os.path.exists('out/screenshot_history'):
-            os.mkdir('out/screenshot_history')
+        if not os.path.exists(utils.APPDIR+ 'src/base'):
+            os.mkdir(utils.APPDIR+ 'src/base')
+        if not os.path.exists(utils.APPDIR+ 'out/screenshot_history'):
+            os.mkdir(utils.APPDIR+ 'out/screenshot_history')
             
-        os.mkdir('plugins/screenshots/src')
-        os.mkdir('out/screenshots')
-        os.mkdir(f'out/screenshot_history/{date.today().isoformat()}')
+        os.mkdir(utils.APPDIR+ 'plugins/screenshots/src')
+        os.mkdir(utils.APPDIR+ 'out/screenshots')
+        os.mkdir(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
 
     def runner(self, network: Network, stage: str) -> None:
         mngr = ScreenshotManager(
             domains = network.domains, 
-            workdir = 'plugins/screenshots/src',
-            basedir = 'plugins/screenshots/base',
-            outdir = 'out',
-            placeholder = 'src/placeholder.jpg'
+            workdir = utils.APPDIR+ 'plugins/screenshots/src',
+            basedir = utils.APPDIR+ 'plugins/screenshots/base',
+            outdir = utils.APPDIR+ 'out',
+            placeholder = utils.APPDIR+ 'src/placeholder.jpg'
         )
         mngr.start()

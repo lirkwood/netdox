@@ -105,13 +105,13 @@ class Plugin(BasePlugin):
     stages = ['nodes']
 
     def init(self) -> None:
-        if not os.path.exists('plugins/aws/src'):
-            os.mkdir('plugins/aws/src')
-        os.environ['AWS_CONFIG_FILE'] = f'{os.getcwd()}/plugins/aws/src/awsconfig'
+        if not os.path.exists(utils.APPDIR+ 'plugins/aws/src'):
+            os.mkdir(utils.APPDIR+ 'plugins/aws/src')
+        os.environ['AWS_CONFIG_FILE'] = utils.APPDIR+ 'plugins/aws/src/awsconfig'
 
         auth = utils.config()['plugins']['aws']
         # set up aws iam profile
-        with open('plugins/aws/src/awsconfig', 'w') as stream:
+        with open(utils.APPDIR+ 'plugins/aws/src/awsconfig', 'w') as stream:
             stream.write(dedent(f"""
             [default]
             output = json

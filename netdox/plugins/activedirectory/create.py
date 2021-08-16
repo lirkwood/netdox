@@ -33,7 +33,7 @@ def create_forward(name: str, value: str, zone: str, type: str) -> None:
 
         try:
             subprocess.check_call('./crypto.sh decrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/nfs/scheduled.bin plugins/activedirectory/src/scheduled.json', shell=True)
-            with open('plugins/activedirectory/src/scheduled.json', 'r') as stream:
+            with open(utils.APPDIR+ 'plugins/activedirectory/src/scheduled.json', 'r') as stream:
                 existing = json.load(stream)
         except subprocess.CalledProcessError:
             existing = []
@@ -45,7 +45,7 @@ def create_forward(name: str, value: str, zone: str, type: str) -> None:
                 "type": type
             }
             existing.append(new)
-            with open('plugins/activedirectory/src/scheduled.json', 'w') as stream:
+            with open(utils.APPDIR+ 'plugins/activedirectory/src/scheduled.json', 'w') as stream:
                 stream.write(json.dumps(existing))
             # subprocess.run('./crypto.sh encrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/src/scheduled.json plugins/activedirectory/nfs/scheduled.bin', shell=True)
 
@@ -68,7 +68,7 @@ def create_reverse(ip: str, value: str) -> None:
         zone = f'{".".join(ip.split(".")[-2::-1])}.in-addr.arpa'
         try:
             subprocess.check_call('./crypto.sh decrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/nfs/scheduled.bin plugins/activedirectory/src/scheduled.json', shell=True)
-            with open('plugins/activedirectory/src/scheduled.json', 'r') as stream:
+            with open(utils.APPDIR+ 'plugins/activedirectory/src/scheduled.json', 'r') as stream:
                 existing = json.load(stream)
         except subprocess.CalledProcessError:
             existing = []
@@ -80,6 +80,6 @@ def create_reverse(ip: str, value: str) -> None:
                 "type": "PTR"
             }
             existing.append(new)
-            with open('plugins/activedirectory/src/scheduled.json', 'w') as stream:
+            with open(utils.APPDIR+ 'plugins/activedirectory/src/scheduled.json', 'w') as stream:
                 stream.write(json.dumps(existing))
             # subprocess.run('./crypto.sh encrypt plugins/activedirectory/nfs/vector.txt plugins/activedirectory/src/scheduled.json plugins/activedirectory/nfs/scheduled.bin', shell=True)

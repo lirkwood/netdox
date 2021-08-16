@@ -124,7 +124,7 @@ class Domain(base.DNSObject):
         else:
             raise ValueError('Cannot merge two Domains with different names')
 
-class IPv4Address(base.DNSObject, BaseIP):
+class IPv4Address(base.DNSObject):
     """
     A single IP address found in the network
     """
@@ -138,29 +138,34 @@ class IPv4Address(base.DNSObject, BaseIP):
     ## dunder methods
 
     def __init__(self, network: Network, address: object, unused: bool = False) -> None:
-        BaseIP.__init__(self, address)
-        base.DNSObject.__init__(self, 
-            network = network, 
-            name = address, 
-            docid = f'_nd_ip_{address.replace(".","_")}',
-            zone = '.'.join(address.split('.')[-2::-1])+ '.in-addr.arpa'
-        )
+        if iptools.valid_ip(address):
+            base.DNSObject.__init__(self, 
+                network = network, 
+                name = address, 
+                docid = f'_nd_ip_{address.replace(".","_")}',
+                zone = '.'.join(address.split('.')[-2::-1])+ '.in-addr.arpa'
+            )
 
-        self.unused = unused
+            self.unused = unused
 
-        self.records = {
-            'PTR': helpers.RecordSet(),
-            'CNAME': helpers.RecordSet()
-        }
+            self.records = {
+                'PTR': helpers.RecordSet(),
+                'CNAME': helpers.RecordSet()
+            }
 
-        self.backrefs = {
-            'A': set(),
-            'CNAME': set()
-        }
+            self.backrefs = {
+                'A': set(),
+                'CNAME': set()
+            }
 
-        self.subnet = self.subnetFromMask()
-        self.nat = None
+            self.subnet = self.subnetFromMask()
+            self.nat = None
+        else:
+            raise ValueError()
     
+    def __reduce__(self):
+        return (IPv4Address, (self.network, self.name, self.unused))
+
     ## abstract properties
 
     @property

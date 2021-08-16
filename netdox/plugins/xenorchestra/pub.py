@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 
 from netdox.networkobjs import Network
 from netdox.networkobjs.base import Node
+from netdox.utils import APPDIR
 
 
 def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
@@ -34,7 +35,7 @@ def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
         section.append(xfrag)
         count += 1
 
-    with open('out/xopub.psml', 'w') as stream:
+    with open(APPDIR+ 'out/xopub.psml', 'w') as stream:
         stream.write(pub.prettify())
 
 

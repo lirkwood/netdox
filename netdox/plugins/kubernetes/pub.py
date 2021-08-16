@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from netdox.utils import APPDIR
 
 def genpub(pubdict: dict) -> None:
     pub = BeautifulSoup(TEMPLATE, features='xml')
@@ -20,7 +21,7 @@ def genpub(pubdict: dict) -> None:
         section.append(xfrag)
         count += 1
     
-    with open('out/k8spub.psml', 'w') as stream:
+    with open(APPDIR+ 'out/k8spub.psml', 'w') as stream:
         stream.write(pub.prettify())
 
 TEMPLATE = '''

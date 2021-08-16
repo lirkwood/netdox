@@ -40,7 +40,7 @@ class HardwareNode(DefaultNode):
 
     @property
     def outpath(self) -> str:
-        return os.path.abspath(f'out/hardware/{self.filename}')
+        return os.path.abspath(utils.APPDIR+ f'out/hardware/{self.filename}')
 
     @property
     def psmlBody(self) -> Iterable[Tag]:
@@ -54,9 +54,9 @@ class Plugin(BasePlugin):
     """The thread tag returned by PageSeeder when starting the download."""
 
     def init(self) -> None:
-        if os.path.exists('plugins/hardware/src'):
-            rmtree('plugins/hardware/src')
-        os.mkdir('plugins/hardware/src')
+        if os.path.exists(utils.APPDIR+ 'plugins/hardware/src'):
+            rmtree(utils.APPDIR+ 'plugins/hardware/src')
+        os.mkdir(utils.APPDIR+ 'plugins/hardware/src')
 
         self.thread = BeautifulSoup(
             pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True), 
@@ -79,12 +79,12 @@ class Plugin(BasePlugin):
                 stream = True
             ) as zipResponse:
                 zipResponse.raise_for_status()
-                with open('plugins/hardware/src/hardware.zip', 'wb') as stream:
+                with open(utils.APPDIR+ 'plugins/hardware/src/hardware.zip', 'wb') as stream:
                     for chunk in zipResponse.iter_content(8192):
                         stream.write(chunk)
                     
-            zip = zipfile.ZipFile('plugins/hardware/src/hardware.zip')
-            zip.extractall('plugins/hardware/src')
+            zip = zipfile.ZipFile(utils.APPDIR+ 'plugins/hardware/src/hardware.zip')
+            zip.extractall(utils.APPDIR+ 'plugins/hardware/src')
 
             for file in utils.fileFetchRecursive('plugins/hardware/src'):
                 try:

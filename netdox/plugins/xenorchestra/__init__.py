@@ -213,8 +213,8 @@ class Plugin(BasePlugin):
         creds = utils.config()['plugins']['xenorchestra']
         global url
         url = f"wss://{creds['host']}/api/"
-        if not os.path.exists('plugins/xenorchestra/src'):
-            os.mkdir('plugins/xenorchestra/src')
+        if not os.path.exists(utils.APPDIR+ 'plugins/xenorchestra/src'):
+            os.mkdir(utils.APPDIR+ 'plugins/xenorchestra/src')
 
     def runner(self, network: Network, stage: str) -> None:
         if stage == 'nodes':

@@ -157,11 +157,11 @@ class Plugin(BasePlugin):
         """
         # Create output dir
         for dir in ('out', 'src'):
-            if not os.path.exists(f'plugins/kubernetes/{dir}'):
-                os.mkdir(f'plugins/kubernetes/{dir}')
+            if not os.path.exists(utils.APPDIR+ f'plugins/kubernetes/{dir}'):
+                os.mkdir(utils.APPDIR+ f'plugins/kubernetes/{dir}')
 
         auth = utils.config()['plugins']['kubernetes']
-        with open('plugins/kubernetes/src/kubeconfig', 'w') as stream:
+        with open(utils.APPDIR+ 'plugins/kubernetes/src/kubeconfig', 'w') as stream:
             clusters = []
             users = []
             contexts = []

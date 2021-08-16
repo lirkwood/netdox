@@ -4,8 +4,9 @@ This is a utility plugin, providing some convenience functions for executing com
 
 from typing import Union
 from paramiko import client, AutoAddPolicy
+from netdox.utils import APPDIR
 
-def exec(cmd: str, host: str, port: int = 22, username: str = 'root', private_key: str = 'src/ssh/ssh-ed25519') -> str:
+def exec(cmd: str, host: str, port: int = 22, username: str = 'root', private_key: str = APPDIR+ 'src/ssh/ssh-ed25519') -> str:
     """
     Executes a single command on the host machine through SSH.
 
@@ -38,7 +39,7 @@ def exec(cmd: str, host: str, port: int = 22, username: str = 'root', private_ke
         return stdout
 
 def exec_batch(cmdlist: list[str], host: str, port: int = 22, username: str = 'root',
-                private_key: str = 'src/ssh/ssh-ed25519', error_action: str = 'continue') -> list[Union[str, RuntimeError]]:
+                private_key: str = APPDIR+ 'src/ssh/ssh-ed25519', error_action: str = 'continue') -> list[Union[str, RuntimeError]]:
     """
     Executes a single command on the host machine through SSH.
 

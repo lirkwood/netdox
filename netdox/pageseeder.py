@@ -29,7 +29,7 @@ def refreshToken(credentials: dict) -> str:
     :return: An access token for use with the PageSeeder API
     :rtype: str
     """
-    with open('src/pstoken.json', 'w') as stream:
+    with open(utils.APPDIR+ 'src/pstoken.json', 'w') as stream:
         print('[INFO][pageseeder] Requesting new access token...')
 
         url = f'https://{credentials["host"]}/ps/oauth/token'
@@ -60,7 +60,7 @@ def token(credentials: dict) -> str:
     :rtype: str
     """
     try:
-        with open('src/pstoken.json', 'r') as stream:
+        with open(utils.APPDIR+ 'src/pstoken.json', 'r') as stream:
             details = json.load(stream)
             token = details['token']
             issued = details['issued']

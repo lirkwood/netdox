@@ -50,9 +50,9 @@ class Plugin(BasePlugin):
 		for id, domain in fetchDomains():
 			zones[domain] = id
 
-		if not os.path.exists('plugins/dnsmadeeasy/src'):
-			os.mkdir('plugins/dnsmadeeasy/src')
-		with open('plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
+		if not os.path.exists(utils.APPDIR+ 'plugins/dnsmadeeasy/src'):
+			os.mkdir(utils.APPDIR+ 'plugins/dnsmadeeasy/src')
+		with open(utils.APPDIR+ 'plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
 			stream.write(json.dumps(zones, indent=2))
 
 	def runner(self, network: Network, *_) -> None:
