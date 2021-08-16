@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import importlib
 import json
 import os
+import pickle
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from traceback import format_exc
+from typing import Type
 
-import pageseeder
-import utils
-from plugins import BasePlugin
-
-from .containers import Network
+from netdox import pageseeder, utils
+from netdox.crypto import Cryptor
+from netdox.networkobjs.containers import Network
+from netdox.plugins import BasePlugin
 
 
 class NetworkManager:
@@ -42,7 +45,7 @@ class NetworkManager:
         self.stages = self.pluginmap.keys()
 
         try:
-            with open('src/plugins.json', 'r') as stream:
+            with open(utils.APPDIR+ 'src/plugins.json', 'r') as stream:
                 self.enabled = json.load(stream)
         except Exception:
             print('[WARNING][nwman] Unable to load plugin configuration file. No plugins will run.')
@@ -165,7 +168,7 @@ class NetworkManager:
         group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
         stale = []
         if dir in pageseeder.urimap():
-            local = utils.fileFetchRecursive(os.path.join('out', dir))
+            local = utils.fileFetchRecursive(os.path.join(utils.APPDIR, 'out', dir))
 
             remote = json.loads(pageseeder.get_uris(pageseeder.urimap()[dir], params={
                 'type': 'document',
@@ -184,7 +187,7 @@ class NetworkManager:
 
                 expiry = date.fromisoformat(marked_stale['date']) if marked_stale else None
                 
-                if os.path.normpath(os.path.join('out', commonpath)) not in local:
+                if os.path.normpath(os.path.join(utils.APPDIR, 'out', commonpath)) not in local:
                     if marked_stale:
                         if expiry <= today:
                             pageseeder.archive(uri)
@@ -205,3 +208,41 @@ class NetworkManager:
                         labels = re.sub(r',$','', labels) # remove trailing commas
                         labels = re.sub(r'^,','', labels) # remove leading commas
                         pageseeder.patch_uri(uri, {'labels':labels})
+
+    def loadNetwork(self, inpath: str = 'src/network.bin') -> Network:
+        """
+        Loads an encrypted, pickled network object.
+
+        :param inpath: The path to the binary network dump, defaults to 'src/network.bin'
+        :type inpath: str, optional
+        :return: The network
+        :rtype: Network
+        """
+        with open(utils.APPDIR+ inpath, 'rb') as nw:
+            self.network = pickle.loads(
+                Cryptor().decrypt(nw.read())
+            )
+
+    def dumpNetwork(self, outpath: str = 'src/network.bin') -> None:
+        """
+        Pickles the Network object and saves it to a default location, encrypted.
+
+        :param outpath: The path to save dump the network to, defaults to 'src/network.bin'
+        :type outpath: str, optional
+        """
+        with open(utils.APPDIR+ outpath, 'wb') as nw:
+            nw.write(
+                Cryptor().encrypt(pickle.dumps(self.network))
+            )
+
+    @classmethod
+    def fromDump(cls: Type[NetworkManager], inpath: str = 'src/network.bin') -> NetworkManager:
+        """
+        Instantiates a NetworkManager to manage a dumped network at *inpath*.
+
+        :param inpath: Path to the binary network file, defaults to 'src/network.bin'
+        :type inpath: str, optional
+        :return: An instance of NetworkManager with the network found at *inpath*.
+        :rtype: NetworkManager
+        """
+        return cls().loadNetwork(inpath)

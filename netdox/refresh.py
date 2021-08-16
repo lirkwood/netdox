@@ -143,8 +143,8 @@ def main():
     # Write domains, ips, and nodes to json and psml,                   #
     # and run any post-write plugins                                    #
     #-------------------------------------------------------------------#
-    
-    nwman.network.dumpNetwork()
+
+    nwman.dumpNetwork()
     nwman.network.writePSML()
 
     nwman.runStage('post-write')
