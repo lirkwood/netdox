@@ -3,9 +3,9 @@ Provides some useful functions and constants for generating and manipulating PSM
 """
 
 from __future__ import annotations
-from collections import defaultdict
 
 import re
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup, Tag

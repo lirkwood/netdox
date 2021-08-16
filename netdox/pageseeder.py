@@ -14,7 +14,7 @@ from time import sleep
 import requests
 from bs4 import BeautifulSoup
 
-import utils
+from netdox import utils
 
 #####################
 # Utility functions #

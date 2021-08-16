@@ -7,18 +7,22 @@ from __future__ import annotations
 import json
 import re
 from functools import wraps
-from os import scandir
+import os
+import sys
 from sys import argv
-from textwrap import dedent
-from traceback import format_exc, print_exc
+from traceback import format_exc
 
-from crypto import Cryptor
+from netdox.crypto import Cryptor
 
 ####################
 # Global constants #
 ####################
 
-global DEFAULT_CONFIG, _config
+global APPDIR
+APPDIR = os.path.dirname(os.path.realpath(__file__)) + os.pathsep
+sys.path.append(APPDIR)
+
+global DEFAULT_CONFIG
 DEFAULT_CONFIG = {
     'pageseeder': {
         'id': '',
@@ -39,7 +43,7 @@ def config() -> dict:
     :rtype: dict
     """
     try:
-        with open('src/config.bin', 'rb') as stream:
+        with open(APPDIR+ 'src/config.bin', 'rb') as stream:
             return json.loads(str(Cryptor().decrypt(stream.read()), encoding='utf-8'))
     except Exception:
         raise FileNotFoundError('Failed to find, decrypt, or read primary configuration file')
@@ -56,14 +60,12 @@ def roles() -> dict:
     :rtype: dict
     """
     try:
-        with open('src/roles.json', 'r') as stream:
+        with open(APPDIR+ 'src/roles.json', 'r') as stream:
             return json.load(stream)
     except Exception:
         print('[WARNING][utils] Failed to find or read domain roles configuration file')
         return DEFAULT_DOMAIN_ROLES
 
-
-MIN_STYLESHEET = '<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" exclude-result-prefixes="#all" />'
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
@@ -109,7 +111,7 @@ def fileFetchRecursive(dir: str, extension: str = None) -> list[str]:
     :rtype: list[str]
     """
     fileset = []
-    for file in scandir(dir):
+    for file in os.scandir(dir):
         if file.is_dir():
             fileset += fileFetchRecursive(file.path)
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
