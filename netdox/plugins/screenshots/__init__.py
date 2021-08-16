@@ -2,17 +2,17 @@ import asyncio
 import json
 import os
 import shutil
+from datetime import date
 from typing import Iterable, Tuple
-from bs4 import BeautifulSoup
 
 import diffimg
-import utils
-from networkobjs import Domain, Network
-from plugins import BasePlugin as BasePlugin
+from bs4 import BeautifulSoup
 from pyppeteer import launch
 from pyppeteer.page import Page
-from datetime import date
-import pageseeder
+
+from netdox import pageseeder, utils
+from netdox.networkobjs import Domain, Network
+from netdox.plugins import BasePlugin as BasePlugin
 
 
 class ScreenshotManager:
