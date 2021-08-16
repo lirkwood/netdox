@@ -5,14 +5,13 @@ import re
 from ipaddress import IPv4Address as BaseIP
 from typing import TYPE_CHECKING, Iterable
 
-import iptools
-import utils
 from bs4 import Tag
 
-from . import base, helpers
+from netdox import iptools, utils
+from netdox.networkobjs import base, helpers
 
 if TYPE_CHECKING:
-    from . import Network
+    from netdox.networkobjs import Network
 
 class Domain(base.DNSObject):
     """

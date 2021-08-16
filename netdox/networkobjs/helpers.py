@@ -5,12 +5,10 @@ import os
 from datetime import datetime
 from typing import Iterable, Iterator
 
-import iptools
-import psml
-import utils
 from bs4 import BeautifulSoup, Tag
 
-from . import objects, base
+from netdox import iptools, psml, utils
+from netdox.networkobjs import base, objects
 
 ###################
 # Location Helper #

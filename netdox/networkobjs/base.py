@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import os
-from abc import ABCMeta, ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Iterable, Iterator, Type, Union
 
 from bs4 import Tag
 
 if TYPE_CHECKING:
-    from . import Network, helpers
+    from netdox.networkobjs import Network, helpers
 
 ###########
 # Objects #
