@@ -198,6 +198,9 @@ class Plugin(BasePlugin):
         os.mkdir('plugins/screenshots/src')
         if not os.path.exists('src/base'):
             os.mkdir('src/base')
+        if os.path.exists('out/screenshots'):
+            shutil.rmtree('out/screenshots')
+        os.mkdir('out/screenshots')
         if os.path.exists(f'out/screenshot_history/{date.today().isoformat()}'):
             shutil.rmtree(f'out/screenshot_history/{date.today().isoformat()}')
         os.mkdir(f'out/screenshot_history/{date.today().isoformat()}')
