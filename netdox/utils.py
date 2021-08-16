@@ -19,7 +19,7 @@ from netdox.crypto import Cryptor
 ####################
 
 global APPDIR
-APPDIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
+APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
 sys.path.append(APPDIR)
 
 global DEFAULT_CONFIG
@@ -99,21 +99,22 @@ def handle(func):
 # Miscellaneous convenience functions #
 #######################################
 
-def fileFetchRecursive(dir: str, extension: str = None) -> list[str]:
+def fileFetchRecursive(dir: str, relative: str = APPDIR, extension: str = None) -> list[str]:
     """
     Returns a list of paths of all files descended from some directory.
 
-    :param dir: The path to the directory to search for files in.
+    :param dir: The path to the directory to search for files in, relative to *relative*.
     :type dir: str
+    :param relative: The path base path *dir* is relative to. Will not be included in returned paths.
     :param extension: The file extension to restrict your search to, defaults to None
     :type extension: str, optional
     :return: A list of paths to the files descended from *dir*.
     :rtype: list[str]
     """
     fileset = []
-    for file in os.scandir(dir):
+    for file in os.scandir(relative + dir):
         if file.is_dir():
             fileset += fileFetchRecursive(file.path)
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
-            fileset.append(file.path)
+            fileset.append(os.path.relpath(file.path, relative))
     return fileset
