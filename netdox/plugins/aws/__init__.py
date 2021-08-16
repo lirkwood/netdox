@@ -3,11 +3,11 @@ from textwrap import dedent
 from typing import Iterable
 
 import boto3
-import psml
-import utils
 from bs4.element import Tag
-from networkobjs import IPv4Address, Network, DefaultNode
-from plugins import BasePlugin as BasePlugin
+
+from netdox import psml, utils
+from netdox.networkobjs import DefaultNode, IPv4Address, Network
+from netdox.plugins import BasePlugin as BasePlugin
 
 
 class EC2Instance(DefaultNode):

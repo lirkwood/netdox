@@ -7,9 +7,10 @@ Provides some functions which parse and act upon the impulse sent by a PageSeede
 Can be used to create a XenOrchestra VM.
 """
 
-from plugins.xenorchestra import call, authenticate
-from plugins.xenorchestra.fetch import fetchObj
-import utils
+from netdox import utils
+from netdox.plugins.xenorchestra import authenticate, call
+from netdox.plugins.xenorchestra.fetch import fetchObj
+
 
 @utils.handle
 @authenticate

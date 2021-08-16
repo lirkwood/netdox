@@ -4,9 +4,11 @@ Creating Records
 
 Provides some functions for creating DNS records in ActiveDirectory.
 """
-import re, json, subprocess
-import networkobjs
-import utils, iptools
+import json
+import re
+import subprocess
+
+from netdox import iptools, networkobjs, utils
 
 
 def create_forward(name: str, value: str, zone: str, type: str) -> None:

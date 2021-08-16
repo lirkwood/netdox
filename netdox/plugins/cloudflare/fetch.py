@@ -10,8 +10,8 @@ import json
 from typing import Generator
 
 import requests
-import utils
-from networkobjs import Domain, Network
+from netdox import utils
+from netdox.networkobjs import Domain, Network
 
 
 def main(network: Network) -> None:

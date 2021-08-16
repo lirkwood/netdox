@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
-from networkobjs import Network
-from networkobjs.base import Node
+
+from netdox.networkobjs import Network
+from netdox.networkobjs.base import Node
+
 
 def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
     """

@@ -9,10 +9,9 @@ This script is used during the refresh process to link DNS records to the VMs th
 import asyncio
 import json
 
-import iptools
-import utils
-from networkobjs import IPv4Address, Network
-from plugins.xenorchestra import VirtualMachine, authenticate, call
+from netdox import iptools, utils
+from netdox.networkobjs import IPv4Address, Network
+from netdox.plugins.xenorchestra import VirtualMachine, authenticate, call
 
 #########################
 # Convenience functions #

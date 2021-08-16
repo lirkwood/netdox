@@ -4,15 +4,16 @@ Used to read and modify DNS records stored in ActiveDirectory.
 This plugin uses a shared storage location in order to pass information back and forth between the Netdox host and the ActiveDirectory DNS server.
 """
 
-from networkobjs import Network
-from plugins import BasePlugin as BasePlugin
-from plugins.activedirectory.create import create_forward, create_reverse
-from plugins.activedirectory.fetch import fetchDNS
+from netdox.networkobjs import Network
+from netdox.plugins import BasePlugin as BasePlugin
+from netdox.plugins.activedirectory.create import (create_forward,
+                                                   create_reverse)
+from netdox.plugins.activedirectory.dns import fetchDNS
 
 
 class Plugin(BasePlugin):
     name = 'activedirectory'
-    stages = ['dns']
+    stages = ['dns', 'nodes']
 
     def runner(self, network: Network, *_) -> None:
         fetchDNS(network)

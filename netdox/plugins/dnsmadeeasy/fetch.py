@@ -7,13 +7,13 @@ Used to read DNS records from DNSMadeEasy.
 Requests all managed domains and then all the records under each domain.
 """
 import json
-from typing import Any, Generator, Tuple
+from typing import Generator, Tuple
 
-import iptools
 import requests
-import utils
-from networkobjs import Domain, IPv4Address, Network
-from plugins.dnsmadeeasy import genheader
+
+from netdox import iptools, utils
+from netdox.networkobjs import Domain, IPv4Address, Network
+from netdox.plugins.dnsmadeeasy import genheader
 
 
 def fetchDomains() -> Generator[Tuple[str, str], None, None]:

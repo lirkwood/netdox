@@ -9,12 +9,12 @@ import random
 from functools import wraps
 from typing import Iterable
 
-import psml
-import utils
 import websockets
 from bs4 import Tag
-from networkobjs import Network, DefaultNode
-from plugins import BasePlugin as BasePlugin
+
+from netdox import psml, utils
+from netdox.networkobjs import DefaultNode, Network
+from netdox.plugins import BasePlugin as BasePlugin
 
 ##################################
 # Generic websocket interactions #

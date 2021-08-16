@@ -7,19 +7,16 @@ import os
 from collections import defaultdict
 from typing import Iterable
 
-from bs4.element import Tag
-
-import pageseeder
-import utils
 import yaml
+from bs4.element import Tag
 from flask import Response
-from networkobjs import Network
-from networkobjs.base import Node
-from plugins import BasePlugin as BasePlugin
-import psml
-
 from kubernetes import config
 from kubernetes.client import ApiClient
+
+from netdox import pageseeder, psml, utils
+from netdox.networkobjs import Network
+from netdox.networkobjs.base import Node
+from netdox.plugins import BasePlugin as BasePlugin
 
 ##  Plugin functions
 
@@ -138,8 +135,8 @@ class App(Node):
 
 ## Public plugin class
 
-from plugins.kubernetes.refresh import runner
 from plugins.kubernetes.pub import genpub
+from plugins.kubernetes.refresh import runner
 from plugins.kubernetes.webhooks import create_app
 
 

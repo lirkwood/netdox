@@ -1,11 +1,14 @@
 """
 Used to retrieve NAT information from pfSense.
 """
-from networkobjs import IPv4Address, Network
-import utils
-from pyppeteer import launch
-from plugins import BasePlugin
 import asyncio
+
+from pyppeteer import launch
+
+from netdox import utils
+from netdox.networkobjs import IPv4Address, Network
+from netdox.plugins import BasePlugin
+
 
 class Plugin(BasePlugin):
     name = 'pfsense'

@@ -9,14 +9,18 @@ Can be used to create or scale a Kubernetes application.
 **This module is out of date and not currently functional.**
 """
 
-from plugins.kubernetes import initContext
-from kubernetes.client.rest import ApiException
-from kubernetes import client
-from bs4 import BeautifulSoup
+import json
+import re
 from typing import Union
+
+import yaml
+from bs4 import BeautifulSoup
 from flask import Response
-import json, yaml, re
-import pageseeder
+from kubernetes import client
+from kubernetes.client.rest import ApiException
+
+from netdox import pageseeder
+from netdox.plugins.kubernetes import initContext
 
 
 def app_action(uri: Union[str, int], status: str) -> Response:

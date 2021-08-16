@@ -8,12 +8,12 @@ from shutil import rmtree
 from traceback import print_exc
 from typing import Iterable
 
-import pageseeder
 import requests
-import utils
 from bs4 import BeautifulSoup, Tag
-from networkobjs import DefaultNode, IPv4Address, Network
-from plugins import BasePlugin as BasePlugin
+
+from netdox import utils, pageseeder
+from netdox.networkobjs import DefaultNode, IPv4Address, Network
+from netdox.plugins import BasePlugin as BasePlugin
 
 
 class HardwareNode(DefaultNode):

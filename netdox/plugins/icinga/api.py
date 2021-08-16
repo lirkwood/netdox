@@ -4,13 +4,15 @@ API Functions
 
 Provides functions for interacting with the Icinga API and a class for managing Netdox-generated monitors.
 """
-from bs4 import BeautifulSoup
-from bs4.element import Tag
-from plugins.icinga.ssh import set_host, rm_host, reload
+import json
 from typing import Iterable, Tuple
-import requests, json
-import utils
-from networkobjs import Domain, Network
+
+import requests
+from bs4 import BeautifulSoup
+
+from netdox import utils
+from netdox.networkobjs import Domain, Network
+from netdox.plugins.icinga.ssh import reload, rm_host, set_host
 
 ####################################
 # Generic resource fetch functions #

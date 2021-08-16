@@ -5,10 +5,12 @@ SSH Functions
 Provides functions for executing commands on Icinga instances over SSH,
 and some convenience functions for creating/deleting generated monitors etc.
 """
-from plugins.ssh import exec
-from textwrap import dedent
 from functools import wraps
-import utils
+from textwrap import dedent
+
+from netdox import utils
+from netdox.plugins.ssh import exec
+
 
 def setloc(func):
     """

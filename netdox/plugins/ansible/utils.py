@@ -1,9 +1,10 @@
 import json
 import re
-from typing import Tuple
 
 import ssh
+
 import utils
+
 
 def playbook(path: str, tags: list[str]=[], vars: dict[str, str]={}) -> str:
     """

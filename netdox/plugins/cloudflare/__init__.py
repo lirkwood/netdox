@@ -1,9 +1,9 @@
 """
 Used to read and modify DNS records stored in CloudFlare.
 """
-from networkobjs import Network
-from plugins import BasePlugin as BasePlugin
-from plugins.cloudflare.fetch import main
+from netdox.networkobjs import Network
+from netdox.plugins import BasePlugin as BasePlugin
+from netdox.plugins.cloudflare.fetch import main
 
 
 class Plugin(BasePlugin):

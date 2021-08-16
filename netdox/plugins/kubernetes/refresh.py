@@ -8,14 +8,14 @@ This script is used during the refresh process to link DNS records to their apps
 which describes all apps running from deployments in the configured Kubernetes clusters.
 """
 
-from collections import defaultdict
 import json
-
-import utils
-from networkobjs import Domain, Network
-from plugins.kubernetes import initContext, App
+from collections import defaultdict
 
 from kubernetes import client
+
+from netdox import utils
+from netdox.networkobjs import Domain, Network
+from netdox.plugins.kubernetes import App, initContext
 
 
 def getDeploymentDetails(namespace: str='default') -> dict[str, dict]:

@@ -7,9 +7,9 @@ import json
 import os
 from datetime import datetime
 
-import utils
-from networkobjs import Network
-from plugins import BasePlugin as BasePlugin
+from netdox import utils
+from netdox.networkobjs import Network
+from netdox.plugins import BasePlugin as BasePlugin
 
 
 def genheader() -> dict[str, str]:

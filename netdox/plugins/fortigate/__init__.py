@@ -1,10 +1,11 @@
 """
 Used to retrieve NAT information from FortiGate.
 """
-from plugins import BasePlugin
-from networkobjs import Network, IPv4Address
 import re
-from iptools import regex_ip
+
+from netdox.iptools import regex_ip
+from netdox.networkobjs import IPv4Address, Network
+from netdox.plugins import BasePlugin
 
 patt_nat = re.compile(rf'(?P<alias>{regex_ip.pattern}).+?(?P<dest>{regex_ip.pattern}).*')
 

@@ -1,12 +1,12 @@
 import re
-from pprint import pprint
 from typing import Iterable
 
-import utils
-from networkobjs import Domain, IPv4Address, Network
 from pypsrp.complex_objects import GenericComplexObject
 from pypsrp.powershell import PowerShell, RunspacePool
 from pypsrp.wsman import WSMan
+
+from netdox import utils
+from netdox.networkobjs import Domain, IPv4Address, Network
 
 
 def fetchDNS(network: Network) -> None:

@@ -4,9 +4,11 @@ Creating Records
 
 Provides some functions for creating DNS records in DNSMadeEasy
 """
-import networkobjs
-import utils, iptools
-import re, json
+import json
+import re
+
+from netdox import iptools, networkobjs, utils
+
 
 @utils.handle
 def create_A(name: str, ip: str, zone: str) -> None:
