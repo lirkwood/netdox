@@ -123,7 +123,7 @@ class PSMLWriter:
             octets = ip.split('.')
             search_octets.append(octets[-1])
             search_octets.append('.'.join(octets[-2:]))
-        frag = Tag(is_xml=True, name='fragment', attrs={'id':'for-search', 'labels':'s-hide-content'})
+        frag = Tag(is_xml=True, name='properties-fragment', attrs={'id':'for-search', 'labels':'s-hide-content'})
         frag.append(psml.newprop(
             name = 'octets', title = 'Octets for search', value = ', '.join(search_octets), multiple = 'true'
         ))
