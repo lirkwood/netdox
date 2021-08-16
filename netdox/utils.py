@@ -19,7 +19,7 @@ from netdox.crypto import Cryptor
 ####################
 
 global APPDIR
-APPDIR = os.path.dirname(os.path.realpath(__file__)) + os.pathsep
+APPDIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
 sys.path.append(APPDIR)
 
 global DEFAULT_CONFIG

@@ -8,11 +8,12 @@ import os
 import sys
 
 from cryptography.fernet import Fernet
+from netdox import utils
 
 class Cryptor(Fernet):
     def __init__(self):
         try:
-            with open('src/crypto', 'rb') as stream:
+            with open(utils.APPDIR+ 'src/crypto', 'rb') as stream:
                 key = stream.read()
         except Exception:
             raise FileNotFoundError('Failed to locate cryptography key. Try \'netdox init\'.')
