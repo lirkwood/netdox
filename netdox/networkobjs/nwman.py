@@ -51,7 +51,7 @@ class NetworkManager:
             print('[WARNING][nwman] Unable to load plugin configuration file. No plugins will run.')
             self.enabled = []
         
-        self.loadPlugins('plugins')
+        self.loadPlugins(utils.APPDIR + 'plugins')
 
     @property
     def plugins(self) -> dict[str, BasePlugin]:
