@@ -36,8 +36,9 @@ def genheader() -> dict[str, str]:
 	return header
 
 
-from plugins.dnsmadeeasy.create import create_A, create_CNAME, create_PTR
-from plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
+from netdox.plugins.dnsmadeeasy.create import (create_A, create_CNAME,
+                                               create_PTR)
+from netdox.plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
 
 
 class Plugin(BasePlugin):
@@ -65,6 +66,3 @@ class Plugin(BasePlugin):
 
 	def create_PTR(self, ip: str, value: str) -> None:
 		create_PTR(ip, value)
-
-
-## Imports

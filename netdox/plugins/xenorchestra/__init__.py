@@ -192,8 +192,8 @@ class VirtualMachine(DefaultNode):
 
 ## Plugin
 
-from plugins.xenorchestra.fetch import runner
-from plugins.xenorchestra.pub import genpub
+from netdox.plugins.xenorchestra.fetch import runner
+from netdox.plugins.xenorchestra.pub import genpub
 
 
 class Plugin(BasePlugin):

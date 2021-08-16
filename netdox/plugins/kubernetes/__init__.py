@@ -135,9 +135,9 @@ class App(Node):
 
 ## Public plugin class
 
-from plugins.kubernetes.pub import genpub
-from plugins.kubernetes.refresh import runner
-from plugins.kubernetes.webhooks import create_app
+from netdox.plugins.kubernetes.pub import genpub
+from netdox.plugins.kubernetes.refresh import runner
+from netdox.plugins.kubernetes.webhooks import create_app
 
 
 class Plugin(BasePlugin):
