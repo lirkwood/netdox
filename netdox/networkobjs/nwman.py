@@ -217,4 +217,6 @@ class NetworkManager:
         :return: An instance of NetworkManager with the network found at *inpath*.
         :rtype: NetworkManager
         """
-        return cls().loadNetwork(inpath)
+        nwman = cls()
+        nwman.loadNetwork(inpath)
+        return nwman
