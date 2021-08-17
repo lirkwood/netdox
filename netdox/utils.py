@@ -5,10 +5,9 @@ This module contains any multi-purpose or generic code for use by both internal 
 from __future__ import annotations
 
 import json
+import os
 import re
 from functools import wraps
-import os
-import sys
 from sys import argv
 from traceback import format_exc
 
@@ -20,7 +19,6 @@ from netdox.crypto import Cryptor
 
 global APPDIR
 APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
-sys.path.append(APPDIR)
 
 global DEFAULT_CONFIG
 DEFAULT_CONFIG = {
@@ -116,5 +114,5 @@ def fileFetchRecursive(dir: str, relative: str = APPDIR, extension: str = None) 
         if file.is_dir():
             fileset += fileFetchRecursive(file.path)
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
-            fileset.append(os.path.relpath(file.path, relative))
+            fileset.append(os.path.normpath(os.path.relpath(file.path, relative)))
     return fileset
