@@ -73,7 +73,7 @@ def set_host(address: str, icinga: str = '', location: str = '', template: str =
     }}' > /etc/icinga2/conf.d/hosts/generated/{address.replace('.','_')}.conf
     """)
 
-    print(f'[INFO][icinga] Setting template for {address} to {template}')
+    print(f'[INFO][icinga] Setting template for {address} to {template} in {icinga}')
     return exec(cmd, host=icinga)
 
 @setloc
@@ -90,7 +90,7 @@ def rm_host(address: str, icinga: str = '', location: str = '') -> str:
     """
     cmd = f'rm -f /etc/icinga2/conf.d/hosts/generated/{address.replace(".","_")}.conf'
 
-    print(f'[INFO][icinga] Removing monitor on {address}')
+    print(f'[INFO][icinga] Removing monitor on {address} from {icinga}')
     return exec(cmd, host=icinga)
 
 @setloc
