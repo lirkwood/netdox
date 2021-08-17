@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Iterable, Iterator, Type, Union
 
 from bs4 import Tag
 
+from netdox.utils import APPDIR
+
 if TYPE_CHECKING:
     from netdox.networkobjs import Network, helpers
 
@@ -188,7 +190,7 @@ class Node(NetworkObject):
 
     @property
     def outpath(self) -> str:
-        return os.path.abspath(f'out/nodes/{self.docid}.psml')
+        return os.path.normpath(os.path.join(APPDIR, f'out/nodes/{self.docid}.psml'))
 
     ## abstract methods
 
