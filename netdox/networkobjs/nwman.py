@@ -8,12 +8,14 @@ import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from traceback import format_exc
-from typing import Type
+from types import ModuleType
+from typing import Callable, Type
+import pkgutil
 
 from netdox import pageseeder, utils
 from netdox.crypto import Cryptor
 from netdox.networkobjs.containers import Network
-from netdox.plugins import BasePlugin
+import netdox.plugins
 
 
 class NetworkManager:
@@ -22,8 +24,10 @@ class NetworkManager:
     """
     network: Network
     """The network object this class should manage."""
-    plugins: set
-    """Set of plugins loaded by the networkmaanager."""
+    config: dict
+    """Dictionary of config values for communicating with PageSeeder etc."""
+    pluginmap: dict[str, set[ModuleType]]
+    """Dictionary of stages and their plugins"""
     stale_pattern: re.Pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
 
     def __init__(self) -> None:
@@ -31,15 +35,14 @@ class NetworkManager:
         self.network = Network(domainroles = utils.roles())
         self.config = utils.config()
         
-        self.pluginmap = defaultdict(dict)
         self.pluginmap = {
-            'all':{},
-            'dns': {},
-            'nat': {},
-            'nodes': {},
-            'pre-write': {},
-            'post-write': {},
-            'cleanup': {}
+            'any': set(),
+            'dns': set(),
+            'nodes': set(),
+            'nat': set(),
+            'footers': set(),
+            'write': set(),
+            'cleanup': set()
         }
         self.nodemap = {}
         self.stages = self.pluginmap.keys()
@@ -51,98 +54,67 @@ class NetworkManager:
             print('[WARNING][nwman] Unable to load plugin configuration file. No plugins will run.')
             self.enabled = []
         
-        self.loadPlugins(utils.APPDIR + 'plugins')
+        self.loadPlugins(netdox.plugins)
 
     @property
-    def plugins(self) -> dict[str, BasePlugin]:
+    def plugins(self) -> set[ModuleType]:
         """
-        A dictionary of all plugins in the pluginmap
+        A set of all plugins in the pluginmap
         """
-        return self.pluginmap['all']
+        return self.pluginmap['any']
 
-    def add(self, plugin: BasePlugin) -> None:
+    def add(self, plugin: ModuleType) -> None:
         """
         Adds a plugin to the pluginmap
 
         :param plugin: An instantiated subclass of Plugin
         :type plugin: Plugin
         """
-        self.plugins[plugin.name] = plugin
+        self.plugins.add(plugin)
 
         if hasattr(plugin, 'node_types'):
-            for node_type in plugin.node_types:
+            for node_type in plugin.__nodes__:
                 self.nodemap[node_type] = plugin
 
-        for stage in plugin.stages:
-            self.pluginmap[stage][plugin.name] = plugin
+        for stage in plugin.__stages__:
+            self.pluginmap[stage].add(plugin)
 
-    def loadPlugins(self, dir: str) -> None:
+    def loadPlugins(self, namespace: ModuleType) -> None:
         """
-        Scans a directory for valid python modules and imports them.
+        Scans a namespace for valid python modules and imports them.
 
-        :param dir: The directory to scan for plugins
+        :param dir: The namespace to scan for plugins
         :type dir: str
         :raises ImportError: If an Exception is raised during the call to ``importlib.import_module``
         """
-        for plugindir in os.scandir(dir):
-            if plugindir.is_dir() and plugindir.name != '__pycache__':
-                pluginName = plugindir.name
-                if pluginName in self.enabled:
-                    try:
-                        plugin = importlib.import_module(f'plugins.{pluginName}')
-                    except Exception:
-                        raise ImportError(f'[ERROR][nwman] Failed to import {pluginName}: \n{format_exc()}')
-                    else:
-                        if hasattr(plugin, 'Plugin'):
-                            self.add(plugin.Plugin())
-
-    def initPlugin(self, plugin_name: str) -> None:
-        """
-        Calls the *init* method on the plugin with name *plugin_name*.
-
-        :param plugin_name: The name of the plugin to initialise
-        :type plugin_name: str
-        """
-        self.plugins[plugin_name].init()
-
-    def initStage(self, stage: str) -> None:
-        """
-        Initialises all plugins in *stage*.
-
-        :param stage: The stage to initialise.
-        :type stage: str
-        """
-        for plugin in self.pluginmap[stage].values():
-            plugin.init()
+        for plugin in pkgutil.iter_modules(namespace.__path__):
+            if plugin.name in self.enabled:
+                try:
+                    self.add(importlib.import_module(namespace.__name__ +'.'+ plugin.name))
+                except Exception:
+                    raise ImportError(f'[ERROR][nwman] Failed to import {plugin}: \n{format_exc()}')
 
     def initPlugins(self) -> None:
         """
         Initialises all plugins in the pluginmap.
         """
-        for plugin in self.plugins.values():
-            plugin.init()
+        for plugin in self.plugins:
+            if hasattr(plugin, 'init') and isinstance(plugin.init, Callable):
+                plugin.init()
 
-    def runPlugin(self, name: str = None, plugin: BasePlugin = None, stage: str = 'none') -> None:
+    def runPlugin(self, plugin: ModuleType, stage: str = 'none') -> None:
         """
         Runs the runner method of a plugin with a Network object and the current stage as arguments.
 
-        :param name: The name of a plugin already loaded by the NetworkManager. Must be provided if ``plugin`` is not. Defaults to None
-        :type name: str, optional
-        :param plugin: An instance of Plugin or a class that inherits from it. Must be provided if ``name`` is not. Defaults to None
-        :type plugin: Plugin, optional
-        :param stage: The current stage to pass to the runner method, defaults to 'none'
+        :param plugin: The plugin module to run.
+        :type plugin: ModuleType
+        :param stage: The stage to run
         :type stage: str, optional
-        :raises RuntimeError: If both name and plugin take Falsy values
-        """        
-        if not name and not plugin:
-            raise RuntimeError('Must provide one of: plugin name, plugin')
-        elif not plugin:
-            plugin = self.plugins[name]
-        
+        """
         try:
-            plugin.runner(self.network, stage)
+            plugin.__stages__[stage](self.network)
         except Exception:
-            print(f'[ERROR][nwman] {plugin.name} threw an exception: \n{format_exc()}')
+            print(f'[ERROR][nwman] {plugin.__name__} threw an exception during stage {stage}: \n{format_exc()}')
 
     def runStage(self, stage: str) -> None:
         """
@@ -152,8 +124,8 @@ class NetworkManager:
         :type stage: str
         """
         print(f'[INFO][nwman] Starting stage: {stage}')
-        for pluginName, plugin in self.pluginmap[stage].items():
-            self.runPlugin(pluginName, plugin, stage)
+        for plugin in self.pluginmap[stage]:
+            self.runPlugin(plugin, stage)
 
     def sentenceStale(self, dir: str) -> None:
         """
@@ -168,7 +140,7 @@ class NetworkManager:
         group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
         stale = []
         if dir in pageseeder.urimap():
-            local = utils.fileFetchRecursive(os.path.join('out', dir))
+            local = utils.fileFetchRecursive(os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)))
 
             remote = json.loads(pageseeder.get_uris(pageseeder.urimap()[dir], params={
                 'type': 'document',
