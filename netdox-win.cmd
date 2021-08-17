@@ -1,7 +1,6 @@
 @echo off
 setlocal
 set APPDIR=%~dp0
-cd "%APPDIR%/netdox"
 GOTO :argparse
 
 :: Print usage help
@@ -16,11 +15,11 @@ EXIT /B 0
 
 :: Initialise container with provided config to allow other processes to run
 :init
-if not exist "src/config.bin" (
+if not exist "%APPDIR%\src\config.bin" (
     echo "[WARNING][netdox] Primary configuration file missing. Please place config.bin in src/"
     EXIT /B 1
 )
-python "init.py"
+python -m netdox.init
 if %ERRORLEVEL% equ 0 (
     echo "[INFO][netdox] Initialisation successful."
 ) else (
@@ -31,7 +30,7 @@ EXIT /B 0
 
 :: Refresh dataset and upload to PageSeeder
 :refresh
-python "refresh.py"
+python -m netdox.refresh
 EXIT /B 0
 
 :: Serve webhook listener
@@ -41,12 +40,12 @@ EXIT /B 0
 
 :: Encrypt a file to a Fernet token
 :encrypt
-python "crypto.py" "encrypt" %2 %3
+python -m netdox.crypto "encrypt" %1 %2
 EXIT /B 0
 
 :: Decrypt a file from a Fernet token
 :decrypt
-python "crypto.py" "decrypt" %2 %3
+python -m netdox.crypto "decrypt" %1 %2
 EXIT /B 0
 
 
@@ -55,7 +54,7 @@ set CALLED=0
 for %%m in ("help" "init" "refresh" "serve" "encrypt" "decrypt") do (
     if "%%~m"=="%1" (
         set CALLED=1
-        call :%1
+        call :%1 %2 %3
         set FUNCSTATUS=%ERRORLEVEL%
     )
 )

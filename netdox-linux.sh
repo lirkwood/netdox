@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 APPDIR=$(dirname $(realpath $0))
-cd "$APPDIR/netdox"
 
 ## Print usage help
 function help {
@@ -15,7 +14,7 @@ function help {
 
 ## Initialise container with provided config to allow other processes to run
 function init {
-    if [[ ! -f src/config.bin ]]
+    if [[ ! -f $APPDIR/src/config.bin ]]
         then
             echo '[WARNING][netdox] Primary configuration file missing. Please place config.bin in src/'
             exit 1 
@@ -24,10 +23,10 @@ function init {
     # make all scripts executable
     chmod 744 *
 
-    if python3 init.py
+    if python3 -m netdox.init
         then
             echo '[INFO][netdox] Initialisation successful.'
-            chmod 500 src/crypto
+            chmod 500 $APPDIR/src/crypto
         else
             echo '[ERROR][netdox] Initialisation unsuccessful. Please try again.'
             exit 1
@@ -36,7 +35,7 @@ function init {
 
 ## Refresh dataset and upload to PageSeeder
 function refresh {
-    python3 refresh.py
+    python3 -m netdox.refresh
 }
 
 ## Serve webhook listener
@@ -46,12 +45,12 @@ function serve {
 
 ## Encrypt a file to a Fernet token
 function encrypt {
-    python3 crypto.py 'encrypt' $1 $2
+    python3 -m netdox.crypto 'encrypt' $1 $2
 }
 
 ## Decrypt a file from a Fernet token
 function decrypt {
-    python3 crypto.py 'decrypt' $1 $2
+    python3 -m netdox.crypto 'decrypt' $1 $2
 }
 
 
