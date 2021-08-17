@@ -63,7 +63,7 @@ async def fetchObjByFields(fieldmap: dict[str, str]) -> dict:
 # User functions #
 ##################
 
-def runner(network: Network):
+def runner(network: Network) -> dict[str, dict[str, list[str]]]:
     """
     Generates VirtualMachine and Host instances and adds them to the network.
 

@@ -7,30 +7,23 @@ from pyppeteer import launch
 
 from netdox import utils
 from netdox.networkobjs import IPv4Address, Network
-from netdox.plugins import BasePlugin
 
-
-class Plugin(BasePlugin):
-    name = 'pfsense'
-    stages = ['nat']
-
-    def runner(self, network: Network, stage: str) -> None:
-        if stage == 'nat':
-            nat = asyncio.run(pfsenseScrapeNat())
-            for ip, alias in nat.items():
-                if ip not in network.ips:
-                    IPv4Address(network, ip, True)
-                network.ips[ip].nat = alias
+def runner(network: Network) -> None:
+    for ip, alias in asyncio.run(pfsenseScrapeNat()).items():
+        if ip not in network.ips:
+            IPv4Address(network, ip, True)
+        network.ips[ip].nat = alias
 
 async def pfsenseScrapeNat() -> dict:
     nat = {}
+    config = utils.config()['plugins']['pfsense']
     browser = await launch(args = ['--no-sandbox'])
     page = await browser.newPage()
-    gateway = f"https://{utils.config()['plugins']['nat']['host']}/"
+    gateway = f"https://{config['host']}/"
     await page.goto(gateway, waitUntil = 'networkidle0')
 
-    await (await page.J('#usernamefld')).type(utils.config()['plugins']['nat']['username'])
-    await (await page.J('#passwordfld')).type(utils.config()['plugins']['nat']['password'])
+    await (await page.J('#usernamefld')).type(config['username'])
+    await (await page.J('#passwordfld')).type(config['password'])
     await page.click('.btn-sm')
 
     await page.goto(gateway + 'firewall_nat_1to1.php', waitUntil = 'networkidle0')
@@ -46,3 +39,5 @@ async def pfsenseScrapeNat() -> dict:
     await page.close()
     await browser.close()
     return nat
+
+__stages__ = {'nat': runner}

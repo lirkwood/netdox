@@ -12,7 +12,6 @@ from pyppeteer.page import Page
 
 from netdox import pageseeder, utils
 from netdox.networkobjs import Domain, Network
-from netdox.plugins import BasePlugin as BasePlugin
 
 
 class ScreenshotManager:
@@ -188,33 +187,32 @@ class ScreenshotManager:
         }
 
 
-class Plugin(BasePlugin):
-    name = "screenshots"
-    stages = ['post-write']
+def init() -> None:
+    if os.path.exists(utils.APPDIR+ 'plugins/screenshots/src'):
+        shutil.rmtree(utils.APPDIR+ 'plugins/screenshots/src')
+    if os.path.exists(utils.APPDIR+ 'out/screenshots'):
+        shutil.rmtree(utils.APPDIR+ 'out/screenshots')
+    if os.path.exists(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat()):
+        shutil.rmtree(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
 
-    def init(self) -> None:
-        if os.path.exists(utils.APPDIR+ 'plugins/screenshots/src'):
-            shutil.rmtree(utils.APPDIR+ 'plugins/screenshots/src')
-        if os.path.exists(utils.APPDIR+ 'out/screenshots'):
-            shutil.rmtree(utils.APPDIR+ 'out/screenshots')
-        if os.path.exists(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat()):
-            shutil.rmtree(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
+    if not os.path.exists(utils.APPDIR+ 'src/base'):
+        os.mkdir(utils.APPDIR+ 'src/base')
+    if not os.path.exists(utils.APPDIR+ 'out/screenshot_history'):
+        os.mkdir(utils.APPDIR+ 'out/screenshot_history')
+        
+    os.mkdir(utils.APPDIR+ 'plugins/screenshots/src')
+    os.mkdir(utils.APPDIR+ 'out/screenshots')
+    os.mkdir(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
 
-        if not os.path.exists(utils.APPDIR+ 'src/base'):
-            os.mkdir(utils.APPDIR+ 'src/base')
-        if not os.path.exists(utils.APPDIR+ 'out/screenshot_history'):
-            os.mkdir(utils.APPDIR+ 'out/screenshot_history')
-            
-        os.mkdir(utils.APPDIR+ 'plugins/screenshots/src')
-        os.mkdir(utils.APPDIR+ 'out/screenshots')
-        os.mkdir(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
+def runner(network: Network) -> None:
+    mngr = ScreenshotManager(
+        domains = network.domains, 
+        workdir = utils.APPDIR+ 'plugins/screenshots/src',
+        basedir = utils.APPDIR+ 'plugins/screenshots/base',
+        outdir = utils.APPDIR+ 'out',
+        placeholder = utils.APPDIR+ 'src/placeholder.jpg'
+    )
+    mngr.start()
 
-    def runner(self, network: Network, stage: str) -> None:
-        mngr = ScreenshotManager(
-            domains = network.domains, 
-            workdir = utils.APPDIR+ 'plugins/screenshots/src',
-            basedir = utils.APPDIR+ 'plugins/screenshots/base',
-            outdir = utils.APPDIR+ 'out',
-            placeholder = utils.APPDIR+ 'src/placeholder.jpg'
-        )
-        mngr.start()
+
+__stages__ = {'footers': runner}

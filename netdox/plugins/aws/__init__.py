@@ -7,8 +7,8 @@ from bs4.element import Tag
 
 from netdox import psml, utils
 from netdox.networkobjs import DefaultNode, IPv4Address, Network
-from netdox.plugins import BasePlugin as BasePlugin
 
+## node subclass
 
 class EC2Instance(DefaultNode):
     """A single instance running on AWS EC2."""
@@ -100,55 +100,59 @@ class EC2Instance(DefaultNode):
         section.append(self.psmlTags)
         return [section]
 
-class Plugin(BasePlugin):
-    name = 'aws'
-    stages = ['nodes']
+## plugin funcs
 
-    def init(self) -> None:
-        if not os.path.exists(utils.APPDIR+ 'plugins/aws/src'):
-            os.mkdir(utils.APPDIR+ 'plugins/aws/src')
-        os.environ['AWS_CONFIG_FILE'] = utils.APPDIR+ 'plugins/aws/src/awsconfig'
+def init() -> None:
+    if not os.path.exists(utils.APPDIR+ 'plugins/aws/src'):
+        os.mkdir(utils.APPDIR+ 'plugins/aws/src')
+    os.environ['AWS_CONFIG_FILE'] = utils.APPDIR+ 'plugins/aws/src/awsconfig'
 
-        auth = utils.config()['plugins']['aws']
-        # set up aws iam profile
-        with open(utils.APPDIR+ 'plugins/aws/src/awsconfig', 'w') as stream:
-            stream.write(dedent(f"""
-            [default]
-            output = json
-            region = {auth['region']}
-            aws_access_key_id = {auth['aws_access_key_id']}
-            aws_secret_access_key = {auth['aws_secret_access_key']}
-            """).strip())
+    auth = utils.config()['plugins']['aws']
+    # set up aws iam profile
+    with open(utils.APPDIR+ 'plugins/aws/src/awsconfig', 'w') as stream:
+        stream.write(dedent(f"""
+        [default]
+        output = json
+        region = {auth['region']}
+        aws_access_key_id = {auth['aws_access_key_id']}
+        aws_secret_access_key = {auth['aws_secret_access_key']}
+        """).strip())
 
 
-    def runner(self, network: Network, *_) -> None:
-        """
-        Links domains to AWS EC2 instances with the same IP
-        """
-        client = boto3.client('ec2')
-        allEC2 = client.describe_instances()
-        for reservation in allEC2['Reservations']:
-            for instance in reservation['Instances']:
-                if instance['NetworkInterfaces']:
-                    netInf = instance['NetworkInterfaces'][0]
-                else:
-                    print(f'[WARNING][aws] Instance {instance["InstanceId"]} has no network interfaces and has been ignored')
-                    continue
+def runner(network: Network) -> None:
+    """
+    Links domains to AWS EC2 instances with the same IP
+    """
+    client = boto3.client('ec2')
+    allEC2 = client.describe_instances()
+    for reservation in allEC2['Reservations']:
+        for instance in reservation['Instances']:
+            if instance['NetworkInterfaces']:
+                netInf = instance['NetworkInterfaces'][0]
+            else:
+                print(f'[WARNING][aws] Instance {instance["InstanceId"]} has no network interfaces and has been ignored')
+                continue
 
-                EC2Instance(
-                    network = network,
-                    name = instance['KeyName'],
-                    id = instance['InstanceId'],
-                    mac = netInf['MacAddress'],
-                    instance_type = instance['InstanceType'],
-                    monitoring = instance['Monitoring']['State'],
-                    region = instance['Placement']['AvailabilityZone'],
-                    tags = instance['Tags'],
-                    private_ip = netInf['PrivateIpAddress'],
-                    public_ips = [netInf['Association']['PublicIp']],
-                    domains = [netInf['Association']['PublicDnsName']]
-                )
-                
-                for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
-                    if ip not in network.ips:
-                        IPv4Address(network, ip)
+            EC2Instance(
+                network = network,
+                name = instance['KeyName'],
+                id = instance['InstanceId'],
+                mac = netInf['MacAddress'],
+                instance_type = instance['InstanceType'],
+                monitoring = instance['Monitoring']['State'],
+                region = instance['Placement']['AvailabilityZone'],
+                tags = instance['Tags'],
+                private_ip = netInf['PrivateIpAddress'],
+                public_ips = [netInf['Association']['PublicIp']],
+                domains = [netInf['Association']['PublicDnsName']]
+            )
+            
+            for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
+                if ip not in network.ips:
+                    IPv4Address(network, ip)
+
+
+## metadata
+
+__stages__ = {'nodes': runner}
+__nodes__ = [EC2Instance]

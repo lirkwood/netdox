@@ -8,8 +8,6 @@ import os
 from datetime import datetime
 
 from netdox import utils
-from netdox.networkobjs import Network
-from netdox.plugins import BasePlugin as BasePlugin
 
 
 def genheader() -> dict[str, str]:
@@ -41,28 +39,15 @@ from netdox.plugins.dnsmadeeasy.create import (create_A, create_CNAME,
 from netdox.plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
 
 
-class Plugin(BasePlugin):
-	name = 'dnsmadeeasy'
-	stages = ['dns']
+__stages__ = {'dns': fetchDNS}
 
-	def init(self) -> None:
-		zones = {}
-		for id, domain in fetchDomains():
-			zones[domain] = id
 
-		if not os.path.exists(utils.APPDIR+ 'plugins/dnsmadeeasy/src'):
-			os.mkdir(utils.APPDIR+ 'plugins/dnsmadeeasy/src')
-		with open(utils.APPDIR+ 'plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
-			stream.write(json.dumps(zones, indent=2))
+def init() -> None:
+	zones = {}
+	for id, domain in fetchDomains():
+		zones[domain] = id
 
-	def runner(self, network: Network, *_) -> None:
-		fetchDNS(network)
-
-	def create_A(self, name:str, ip: str, zone: str) -> None:
-		create_A(name, ip, zone)
-
-	def create_CNAME(self, name: str, value: str, zone: str) -> None:
-		create_CNAME(name, value, zone)
-
-	def create_PTR(self, ip: str, value: str) -> None:
-		create_PTR(ip, value)
+	if not os.path.exists(utils.APPDIR+ 'plugins/dnsmadeeasy/src'):
+		os.mkdir(utils.APPDIR+ 'plugins/dnsmadeeasy/src')
+	with open(utils.APPDIR+ 'plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
+		stream.write(json.dumps(zones, indent=2))

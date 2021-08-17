@@ -14,7 +14,6 @@ from bs4 import Tag
 
 from netdox import psml, utils
 from netdox.networkobjs import DefaultNode, Network
-from netdox.plugins import BasePlugin as BasePlugin
 
 ##################################
 # Generic websocket interactions #
@@ -195,35 +194,30 @@ class VirtualMachine(DefaultNode):
 from netdox.plugins.xenorchestra.fetch import runner
 from netdox.plugins.xenorchestra.pub import genpub
 
+def init() -> None:
+    """
+    Some initialisation for the plugin to work correctly
 
-class Plugin(BasePlugin):
-    name = 'xenorchestra'
-    stages = ['nodes', 'pre-write']
+    :meta private:
+    """
+    global creds
+    creds = utils.config()['plugins']['xenorchestra']
+    global url
+    url = f"wss://{creds['host']}/api/"
+    if not os.path.exists(utils.APPDIR+ 'plugins/xenorchestra/src'):
+        os.mkdir(utils.APPDIR+ 'plugins/xenorchestra/src')
 
-    pubdict: dict
-    """A dictionary describing the hierarchy from pools -> hosts -> vms"""
+global pubdict
+pubdict = {}
+def nodes(network: Network) -> None:
+    global pubdict
+    pubdict = runner(network)
 
-    def init(self) -> None:
-        """
-        Some initialisation for the plugin to work correctly
+def write(network: Network) -> None:
+    genpub(network, pubdict)
 
-        :meta private:
-        """
-        global creds
-        creds = utils.config()['plugins']['xenorchestra']
-        global url
-        url = f"wss://{creds['host']}/api/"
-        if not os.path.exists(utils.APPDIR+ 'plugins/xenorchestra/src'):
-            os.mkdir(utils.APPDIR+ 'plugins/xenorchestra/src')
 
-    def runner(self, network: Network, stage: str) -> None:
-        if stage == 'nodes':
-            self.pubdict = runner(network)
-        else:
-            try:
-                genpub(network, self.pubdict)
-            except AttributeError:
-                print(
-                    '[WARNING][xenorchestra] Failed to finish adding VirtualMachines to the network.',
-                    'As a result no publication can be generated.'
-                )
+__stages__ = {
+    'nodes': nodes,
+    'write': write
+}
