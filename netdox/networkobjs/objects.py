@@ -56,7 +56,7 @@ class Domain(base.DNSObject):
 
             self.subnets = set()
         else:
-            raise ValueError('Must provide a valid name for dns record (some FQDN)')
+            raise ValueError('Must provide a valid name for a Domain (some FQDN)')
     
     ## abstract properties
 
@@ -134,12 +134,14 @@ class IPv4Address(base.DNSObject):
     """Whether or not a Domain in the network resolves to this IP."""
     subnet: str
     """The 24 bit CIDR subnet this IP is in."""
+    is_private: bool
+    """Whether or not this IP is private"""
     
     ## dunder methods
 
     def __init__(self, network: Network, address: object, unused: bool = False) -> None:
         if iptools.valid_ip(address):
-            base.DNSObject.__init__(self, 
+            super().__init__(
                 network = network, 
                 name = address, 
                 docid = f'_nd_ip_{address.replace(".","_")}',
@@ -147,6 +149,7 @@ class IPv4Address(base.DNSObject):
             )
 
             self.unused = unused
+            self.is_private = not iptools.public_ip(self.name)
 
             self.records = {
                 'PTR': helpers.RecordSet(),
@@ -161,10 +164,7 @@ class IPv4Address(base.DNSObject):
             self.subnet = self.subnetFromMask()
             self.nat = None
         else:
-            raise ValueError()
-    
-    def __reduce__(self):
-        return (IPv4Address, (self.network, self.name, self.unused))
+            raise ValueError('Must provide a valid name for an IPv4Address (some IPv4, in CIDR form)')
 
     ## abstract properties
 
