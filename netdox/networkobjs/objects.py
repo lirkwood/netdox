@@ -62,7 +62,7 @@ class Domain(base.DNSObject):
 
     @property
     def outpath(self) -> str:
-        return os.path.abspath(f'out/domains/{self.docid}.psml')
+        return os.path.normpath(os.path.join(utils.APPDIR, f'out/domains/{self.docid}.psml'))
     
     ## abstract methods
 
@@ -170,7 +170,7 @@ class IPv4Address(base.DNSObject):
 
     @property
     def outpath(self) -> str:
-        return os.path.abspath(f'out/ips/{self.subnet.replace("/","_")}/{self.docid}.psml')
+        return os.path.normpath(os.path.join(utils.APPDIR, f'out/ips/{self.subnet.replace("/","_")}/{self.docid}.psml'))
     
     ## abstract methods
 
