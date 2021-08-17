@@ -27,6 +27,8 @@ def init():
     Removes any leftover output files, initialises all plugins, and loads the dns roles and other config from PageSeeder.
     If this config is not present or Netdox is unable to find or parse it, a default set of config files is copied to the upload context.
     """
+    if not os.path.exists(utils.APPDIR+ 'out'):
+        os.mkdir(utils.APPDIR+ 'out')
     # remove old output files
     for folder in os.scandir(utils.APPDIR+ 'out'):
         if folder.is_dir():
@@ -134,8 +136,7 @@ def main():
     #-------------------------------------------------------------------#
 
     nwman.network.ips.fillSubnets()
-    
-    nwman.runStage('pre-write')
+    nwman.runStage('footers')
 
     #-------------------------------------------------------------------#
     # Write domains, ips, and nodes to json and psml,                   #
@@ -144,8 +145,7 @@ def main():
 
     nwman.dumpNetwork()
     nwman.network.writePSML()
-
-    nwman.runStage('post-write')
+    nwman.runStage('write')
 
     #-------------------------------------------------------------------#
     # Zip, upload, and cleanup                                          #
