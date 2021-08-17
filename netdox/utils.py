@@ -99,7 +99,8 @@ def handle(func):
 
 def fileFetchRecursive(dir: str, relative: str = APPDIR, extension: str = None) -> list[str]:
     """
-    Returns a list of paths of all files descended from some directory.
+    Returns a list of paths of all files descended from some directory. 
+    By default paths are returned relative to *APPDIR*. 
 
     :param dir: The path to the directory to search for files in, relative to *relative*.
     :type dir: str
@@ -110,7 +111,7 @@ def fileFetchRecursive(dir: str, relative: str = APPDIR, extension: str = None) 
     :rtype: list[str]
     """
     fileset = []
-    for file in os.scandir(relative + dir):
+    for file in os.scandir(dir):
         if file.is_dir():
             fileset += fileFetchRecursive(file.path)
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
