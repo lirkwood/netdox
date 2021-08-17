@@ -56,6 +56,8 @@ class NetworkManager:
         
         self.loadPlugins(netdox.plugins)
 
+    ## Plugin methods
+
     @property
     def plugins(self) -> set[ModuleType]:
         """
@@ -127,6 +129,8 @@ class NetworkManager:
         for plugin in self.pluginmap[stage]:
             self.runPlugin(plugin, stage)
 
+    ## Cleanup
+
     def sentenceStale(self, dir: str) -> None:
         """
         Adds stale labels to any files present in *dir* on PageSeeder, but not locally.
@@ -181,7 +185,9 @@ class NetworkManager:
                         labels = re.sub(r'^,','', labels) # remove leading commas
                         pageseeder.patch_uri(uri, {'labels':labels})
 
-    def loadNetwork(self, inpath: str = utils.APPDIR + 'src/network.bin') -> Network:
+    ## Serialisation
+
+    def loadNetwork(self, inpath: str = utils.APPDIR + 'src/network.bin') -> None:
         """
         Loads an encrypted, pickled network object.
 
