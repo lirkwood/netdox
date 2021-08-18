@@ -5,7 +5,7 @@ import re
 
 from netdox import utils
 from netdox.iptools import regex_ip
-from netdox.networkobjs import IPv4Address, Network
+from netdox.objs import IPv4Address, Network
 
 patt_nat = re.compile(rf'(?P<alias>{regex_ip.pattern}).+?(?P<dest>{regex_ip.pattern}).*')
 

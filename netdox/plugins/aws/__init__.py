@@ -6,7 +6,7 @@ import boto3
 from bs4.element import Tag
 
 from netdox import psml, utils
-from netdox.networkobjs import DefaultNode, IPv4Address, Network
+from netdox.objs import DefaultNode, IPv4Address, Network
 
 ## node subclass
 

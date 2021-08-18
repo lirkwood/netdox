@@ -12,7 +12,7 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from netdox import utils, pageseeder
-from netdox.networkobjs import DefaultNode, IPv4Address, Network
+from netdox.objs import DefaultNode, IPv4Address, Network
 
 
 class HardwareNode(DefaultNode):

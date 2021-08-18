@@ -9,7 +9,7 @@ from bs4 import Tag
 from netdox.utils import APPDIR
 
 if TYPE_CHECKING:
-    from netdox.networkobjs import Network, helpers
+    from netdox.objs import Network, helpers
 
 ###########
 # Objects #

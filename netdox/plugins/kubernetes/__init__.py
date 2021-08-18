@@ -13,8 +13,8 @@ from kubernetes import config
 from kubernetes.client import ApiClient
 
 from netdox import psml, utils
-from netdox.networkobjs import Network
-from netdox.networkobjs.base import Node
+from netdox.objs import Network
+from netdox.objs.base import Node
 
 ##  Plugin functions
 

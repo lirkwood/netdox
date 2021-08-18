@@ -11,7 +11,7 @@ from pyppeteer import launch
 from pyppeteer.page import Page
 
 from netdox import pageseeder, utils
-from netdox.networkobjs import Domain, Network
+from netdox.objs import Domain, Network
 
 
 class ScreenshotManager:

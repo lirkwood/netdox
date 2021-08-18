@@ -11,7 +11,7 @@ from typing import Generator
 
 import requests
 from netdox import utils
-from netdox.networkobjs import Domain, Network
+from netdox.objs import Domain, Network
 
 
 def main(network: Network) -> None:

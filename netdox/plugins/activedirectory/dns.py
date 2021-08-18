@@ -6,7 +6,7 @@ from pypsrp.powershell import PowerShell, RunspacePool
 from pypsrp.wsman import WSMan
 
 from netdox import utils
-from netdox.networkobjs import Domain, IPv4Address, Network
+from netdox.objs import Domain, IPv4Address, Network
 
 
 def fetchDNS(network: Network) -> None:

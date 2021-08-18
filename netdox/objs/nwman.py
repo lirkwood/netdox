@@ -14,7 +14,7 @@ import pkgutil
 
 from netdox import pageseeder, utils
 from netdox.crypto import Cryptor
-from netdox.networkobjs.containers import Network
+from netdox.objs.containers import Network
 import netdox.plugins
 
 

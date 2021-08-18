@@ -7,7 +7,7 @@ Provides some functions for creating DNS records in DNSMadeEasy
 import json
 import re
 
-from netdox import iptools, networkobjs, utils
+from netdox import iptools, objs, utils
 
 
 @utils.handle
@@ -26,7 +26,7 @@ def create_A(name: str, ip: str, zone: str) -> None:
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and iptools.valid_ip(ip):
 			
-		domains = networkobjs.DomainSet.from_json('src/domains.json')
+		domains = objs.DomainSet.from_json('src/domains.json')
 		if (ip, 'DNSMadeEasy') in domains[name]._ips:
 			return None
 
@@ -66,7 +66,7 @@ def create_CNAME(name: str, value: str, zone: str) -> None:
 	"""
 	if re.fullmatch(utils.dns_name_pattern, name) and re.fullmatch(utils.dns_name_pattern, value):
 
-		domains = networkobjs.DomainSet.from_json('src/domains.json')
+		domains = objs.DomainSet.from_json('src/domains.json')
 		if (value, 'DNSMadeEasy') in domains[name]._cnames:
 			return None
 
@@ -105,7 +105,7 @@ def create_PTR(ip: str, value: str) -> None:
 	"""
 	if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
 
-		ips = networkobjs.IPv4AddressSet.from_json('src/ips.json')
+		ips = objs.IPv4AddressSet.from_json('src/ips.json')
 		if (value, 'DNSMadeEasy') in ips[ip]._ptr:
 			return None
 

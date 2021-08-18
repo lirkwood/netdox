@@ -4,7 +4,7 @@ This package contains the source code of that tool, and can be used to develop p
 """
 
 from . import (
-    networkobjs,
+    objs,
     crypto,
     iptools,
     pageseeder,

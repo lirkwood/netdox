@@ -14,7 +14,7 @@ from distutils.util import strtobool
 from bs4 import BeautifulSoup
 
 from netdox import pageseeder, psml, utils
-from netdox.networkobjs import NetworkManager
+from netdox.objs import NetworkManager
 
 ##################
 # Initialisation #

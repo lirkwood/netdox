@@ -8,7 +8,7 @@ import json
 import re
 import subprocess
 
-from netdox import iptools, networkobjs, utils
+from netdox import iptools, objs, utils
 
 
 def create_forward(name: str, value: str, zone: str, type: str) -> None:
@@ -27,7 +27,7 @@ def create_forward(name: str, value: str, zone: str, type: str) -> None:
     if  re.fullmatch(utils.dns_name_pattern, name) and (
         iptools.valid_ip(value) or re.fullmatch(utils.dns_name_pattern, value)):
 
-        domains = networkobjs.DomainSet.from_json('src/domains.json')
+        domains = objs.DomainSet.from_json('src/domains.json')
         if (value, 'ActiveDirectory') in (domains[name]._ips + domains[name]._cnames):
             return None
 
@@ -60,7 +60,7 @@ def create_reverse(ip: str, value: str) -> None:
     """
     if iptools.valid_ip(ip) and re.fullmatch(utils.dns_name_pattern, value):
         
-        ips = networkobjs.IPv4AddressSet.from_json('src/ips.json')
+        ips = objs.IPv4AddressSet.from_json('src/ips.json')
         if (value, 'ActiveDirectory') in ips[ip]._ptr:
             return None
     

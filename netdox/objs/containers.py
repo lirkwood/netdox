@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, Iterator, Type, Union
 
 from netdox import iptools
-from netdox.networkobjs import base, helpers, objects
+from netdox.objs import base, helpers, objects
 from netdox.utils import DEFAULT_DOMAIN_ROLES
 
 

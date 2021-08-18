@@ -13,7 +13,7 @@ import websockets
 from bs4 import Tag
 
 from netdox import psml, utils
-from netdox.networkobjs import DefaultNode, Network
+from netdox.objs import DefaultNode, Network
 
 ##################################
 # Generic websocket interactions #

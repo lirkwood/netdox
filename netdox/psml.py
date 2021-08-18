@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING
 from bs4 import BeautifulSoup, Tag
 
 if TYPE_CHECKING:
-    from networkobjs.base import NetworkObject
-    from networkobjs.helpers import RecordSet
+    from objs.base import NetworkObject
+    from objs.helpers import RecordSet
 
 #############
 # Functions #

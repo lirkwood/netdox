@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Iterable
 from bs4 import Tag
 
 from netdox import iptools, utils
-from netdox.networkobjs import base, helpers
+from netdox.objs import base, helpers
 
 if TYPE_CHECKING:
-    from netdox.networkobjs import Network
+    from netdox.objs import Network
 
 class Domain(base.DNSObject):
     """

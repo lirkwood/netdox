@@ -6,7 +6,7 @@ import asyncio
 from pyppeteer import launch
 
 from netdox import utils
-from netdox.networkobjs import IPv4Address, Network
+from netdox.objs import IPv4Address, Network
 
 def runner(network: Network) -> None:
     for ip, alias in asyncio.run(pfsenseScrapeNat()).items():

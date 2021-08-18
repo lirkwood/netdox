@@ -8,7 +8,7 @@ from typing import Iterable, Iterator
 from bs4 import BeautifulSoup, Tag
 
 from netdox import iptools, psml, utils
-from netdox.networkobjs import base, objects
+from netdox.objs import base, objects
 
 ###################
 # Location Helper #

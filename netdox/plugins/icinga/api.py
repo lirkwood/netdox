@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from netdox import utils
-from netdox.networkobjs import Domain, Network
+from netdox.objs import Domain, Network
 from netdox.plugins.icinga.ssh import reload, rm_host, set_host
 
 ####################################

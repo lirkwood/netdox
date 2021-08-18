@@ -14,7 +14,7 @@ from collections import defaultdict
 from kubernetes import client
 
 from netdox import utils
-from netdox.networkobjs import Domain, Network
+from netdox.objs import Domain, Network
 from netdox.plugins.kubernetes import App, initContext
 
 
