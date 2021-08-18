@@ -8,7 +8,7 @@ from typing import Iterable, Iterator
 from bs4 import BeautifulSoup, Tag
 
 from netdox import iptools, psml, utils
-from netdox.objs import base, objects
+from netdox.objs import base, nwobjs
 
 ###################
 # Location Helper #
@@ -103,10 +103,10 @@ class PSMLWriter:
         :param nwobj: The object to serialise to PSML.
         :type nwobj: NetworkObject
         """
-        if isinstance(nwobj, objects.Domain):
+        if isinstance(nwobj, nwobjs.Domain):
             self.domainBody(nwobj)
             ip_iter = nwobj.records['A']
-        elif isinstance(nwobj, objects.IPv4Address):
+        elif isinstance(nwobj, nwobjs.IPv4Address):
             self.ipBody(nwobj)
             ip_iter = [nwobj.name]
         elif isinstance(nwobj, base.Node):
@@ -139,7 +139,7 @@ class PSMLWriter:
         with open(nwobj.outpath, 'w', encoding = 'utf-8') as stream:
             stream.write(str(self.doc))
     
-    def domainBody(self, domain: objects.Domain) -> None:
+    def domainBody(self, domain: nwobjs.Domain) -> None:
         """
         Populates the *body* section of a Domain's output PSML
 
@@ -186,7 +186,7 @@ class PSMLWriter:
             p_title = 'CNAME Record'
         ):  self.body.append(frag)
     
-    def ipBody(self, ip: objects.IPv4Address) -> None:
+    def ipBody(self, ip: nwobjs.IPv4Address) -> None:
         """
         Populates the *body* section of a IPv4Address' output PSML
 

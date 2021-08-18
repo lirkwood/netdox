@@ -10,6 +10,6 @@ This may be useful for plugin writers who do not want to implement the whole Nod
 """
 
 from . import base, containers, helpers
-from .objects import Domain, IPv4Address, DefaultNode
+from .nwobjs import Domain, IPv4Address, DefaultNode
 from .containers import Network
 from .nwman import NetworkManager
