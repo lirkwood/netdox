@@ -116,6 +116,11 @@ class PSMLWriter:
             self.doc = None
             raise NotImplementedError
 
+        self.footer = self.doc.find(id = 'footer')
+        for tag in nwobj.psmlFooter:
+            self.footer.append(tag)
+
+        # Add search octet fragment to doc footer but not nwobj
         search_octets = []
         for ip in ip_iter:
             octets = ip.split('.')
@@ -125,12 +130,7 @@ class PSMLWriter:
         frag.append(psml.newprop(
             name = 'octets', title = 'Octets for search', value = ', '.join(search_octets), multiple = 'true'
         ))
-        nwobj.psmlFooter.append(frag)
-
-        self.footer = self.doc.find(id = 'footer')
-        for tag in nwobj.psmlFooter:
-            self.footer.append(tag)
-        
+        self.footer.append(frag)
 
         dir = os.path.dirname(nwobj.outpath)
         if not os.path.exists(dir):
