@@ -121,9 +121,11 @@ class App(Node):
             frag.append(psml.newxrefprop(
                 name = 'ipv4', title = 'Worker IP', ref = f'_nd_ip_{pod["workerIp"].replace(".","_")}'
             ))
-            frag.append(psml.newxrefprop(
-                name = 'worker_node', title = 'Worker Node', ref = pod["workerNode"]
-            ))
+            if self.network.ips[pod["workerIp"]].node:
+                frag.append(psml.newxrefprop(
+                    name = 'worker_node', title = 'Worker Node', 
+                    ref = self.network.ips[pod["workerIp"]].node.docid
+                ))
             link = psml.newprop(name = 'rancher', title="Pod on Rancher")
             link.append(Tag(name='link', attrs={'href': pod['rancher']}))
             frag.append(link)
