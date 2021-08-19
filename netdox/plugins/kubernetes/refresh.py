@@ -202,14 +202,25 @@ def runner(network: Network) -> None:
 
     workerApps = {}
     for context in auth:
+        proxyIps = set(auth[context]['proxies'])
         apps = getApps(context)
         workerApps[context] = defaultdict(set)
         location = auth[context]['location'] if 'location' in auth[context] else None
         
         for app in apps.values():
 
+            domains = []
+            # only allow domains which resolve to a proxy
             for domain in app['domains']:
                 if domain not in network.domains:
-                    Domain(network, domain, 'k8s')
+                    domains.append(
+                        Domain(network, domain, 'k8s').name
+                    )
+                else:
+                    domain = network.domains[domain]
+                    for proxy in auth[context]['proxies']:
+                        if proxy in network.ips and network.resolvesTo(domain, network.ips[proxy]):
+                            domains.append(domain.name)
+            app['domains'] = domains
 
             App(network, **app).location = location

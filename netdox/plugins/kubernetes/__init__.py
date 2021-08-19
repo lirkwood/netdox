@@ -186,22 +186,22 @@ def init() -> None:
 def publication(network: Network) -> None:
     workerApps = defaultdict(lambda: defaultdict(list))
     conf = utils.config()['plugins']['kubernetes']
-    for node in network.nodes:
-        if node.type == 'Kubernetes App':
-            node: App
-            # set node attr on all domains
-            for domain in list(node.domains):
-                if domain in network.domains and network.domains[domain].node is not node:
-                    if set(network.domains[domain].node.ips) & set(conf[node.cluster]['proxies']):
-                        network.domains[domain].node.domains.remove(domain)
-                        network.domains[domain].node = node
-                    else:
-                        node.domains.remove(domain)
-            # gather all workers final docids
-            for pod in node.pods.values():
-                if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node is not None:
-                    pod['workerNode'] = network.ips[pod['workerIp']].node.docid
-                    workerApps[node.cluster][pod['workerNode']].append(node.docid)
+    # for node in network.nodes:
+    #     if node.type == 'Kubernetes App':
+    #         node: App
+    #         # set node attr on all domains
+    #         for domain in list(node.domains):
+    #             if domain in network.domains and network.domains[domain].node is not node:
+    #                 if set(network.domains[domain].node.ips) & set(conf[node.cluster]['proxies']):
+    #                     network.domains[domain].node.domains.remove(domain)
+    #                     network.domains[domain].node = node
+    #                 else:
+    #                     node.domains.remove(domain)
+    #         # gather all workers final docids
+    #         for pod in node.pods.values():
+    #             if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node is not None:
+    #                 pod['workerNode'] = network.ips[pod['workerIp']].node.docid
+    #                 workerApps[node.cluster][pod['workerNode']].append(node.docid)
 
     for cluster in workerApps:
         workerApps[cluster] = {k: workerApps[cluster][k] for k in sorted(workerApps[cluster])}
