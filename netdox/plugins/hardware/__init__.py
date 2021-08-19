@@ -85,7 +85,7 @@ def runner(network: Network) -> None:
     for file in utils.fileFetchRecursive(utils.APPDIR+ 'plugins/hardware/src'):
         try:
             if file.endswith('.psml'):
-                with open(utils.APPDIR+ file, 'r') as stream:
+                with open(utils.APPDIR+ file, 'r', encoding = 'utf-8') as stream:
                     soup = BeautifulSoup(stream.read(), features = 'xml')
                     
                 section = soup.find('section', id='info')
@@ -97,7 +97,11 @@ def runner(network: Network) -> None:
                         if property['name'] == 'ipv4':
                             if 'value' in property.attrs:
                                 ip = property['value']
-                            elif 'datatype' in property.attrs and property['datatype'] == 'xref':
+                            elif ( 
+                                'datatype' in property.attrs
+                                and property['datatype'] == 'xref'
+                                and property.xref
+                            ):
                                 ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip'].replace('_','.')
                         elif property['name'] == 'name':
                             name = property['value'].replace(' ','_')
