@@ -112,6 +112,30 @@ class DNSObject(NetworkObject):
         self.zone = zone.lower() if zone else zone
         self.node = None
 
+    ## properties
+
+    @property
+    @abstractmethod
+    def domains(self) -> set[str]:
+        """
+        Returns a set of all the domains this DNSObject has a record / backref to.
+
+        :return: A set of domains relevant to this object, as strings.
+        :rtype: set[str]
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def ips(self) -> set[str]:
+        """
+        Returns a set of all the ips this DNSObject has a record / backref to.
+
+        :return: A set of ips relevant to this object, as strings.
+        :rtype: set[str]
+        """
+        ...
+
     ## methods
 
     @abstractmethod

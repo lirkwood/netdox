@@ -63,6 +63,14 @@ class Domain(base.DNSObject):
     @property
     def outpath(self) -> str:
         return os.path.normpath(os.path.join(utils.APPDIR, f'out/domains/{self.docid}.psml'))
+
+    @property
+    def domains(self) -> set[str]:
+        return set(self.records['CNAME'].records + [self.name]).union(self.backrefs['CNAME'])
+
+    @property
+    def ips(self) -> set[str]:
+        return set(self.records['A'].records).union(self.backrefs['PTR'])
     
     ## abstract methods
 
@@ -171,6 +179,14 @@ class IPv4Address(base.DNSObject):
     @property
     def outpath(self) -> str:
         return os.path.normpath(os.path.join(utils.APPDIR, f'out/ips/{self.subnet.replace("/","_")}/{self.docid}.psml'))
+
+    @property
+    def domains(self) -> set[str]:
+        return set(self.records['PTR'].records).union(self.backrefs['A'])
+
+    @property
+    def ips(self) -> set[str]:
+        return set(self.records['CNAME'].records + [self.name]).union(self.backrefs['CNAME'])
     
     ## abstract methods
 
