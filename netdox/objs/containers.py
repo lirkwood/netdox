@@ -253,6 +253,8 @@ class Network:
     """A NetworkObjectContainer for the Nodes in the network."""
     config: dict
     """The currently loaded config from :ref:`utils`."""
+    cache: set
+    """A set of cached names. Used when resolving long record chains."""
 
     def __init__(self, 
             domains: DomainSet = None, 
@@ -281,6 +283,7 @@ class Network:
         
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
+        self.cache = set()
 
     ## Adding objects
 
@@ -371,6 +374,38 @@ class Network:
 
         if hasattr(dnsobj, 'nat') and dnsobj.nat:
             self.createNoderefs(node_identity, dnsobj.nat)
+
+    ## resolving refs
+
+    def resolvesTo(self, startObj: Union[base.DNSObject, str], target: Union[base.DNSObject, str]) -> bool:
+        """
+        Returns a bool based on if *startObj* resolves to *target*.
+
+        :param startObj: The DNSObject to start with.
+        :type startObj: base.DNSObject
+        :param target: The target DNSObject to test.
+        :type target: base.DNSObject
+        :return: A boolean value.
+        :rtype: bool
+        """
+        for set in ('domains', 'ips'):
+            networkSet = getattr(self, set)
+            objSet = getattr(startObj, set)
+
+            if set == 'ips' and isinstance(startObj, nwobjs.IPv4Address) and startObj.nat:
+                objSet.add(startObj.nat)
+
+            for name in objSet:
+                if name not in self.cache:
+                    self.cache.add(name)
+
+                    if name == target.name:
+                        self.cache.clear()
+                        return True
+
+                    elif name in networkSet and self.resolvesTo(networkSet[name], target):
+                        return True
+        return False
 
     ## Serialisation
 
