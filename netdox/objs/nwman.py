@@ -131,18 +131,18 @@ class NetworkManager:
 
     ## Cleanup
 
-    def sentenceStale(self, dir: str) -> None:
+    def sentenceStale(self, dir: str) -> dict[str, str]:
         """
         Adds stale labels to any files present in *dir* on PageSeeder, but not locally.
 
         :param dir: The directory, relative to `website/` on PS or `out/` locally.
         :type dir: str
-        :return: A list of stale URIs.
-        :rtype: list
+        :return: A dict of stale URIs, mapped to their expiry date.
+        :rtype: dict[str, str]
         """
         today = datetime.now().date()
         group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
-        stale = []
+        stale = {}
         if dir in pageseeder.urimap():
             local = utils.fileFetchRecursive(os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)))
 
@@ -184,45 +184,17 @@ class NetworkManager:
                         labels = re.sub(r',$','', labels) # remove trailing commas
                         labels = re.sub(r'^,','', labels) # remove leading commas
                         pageseeder.patch_uri(uri, {'labels':labels})
+        return stale
 
     ## Serialisation
 
-    def loadNetwork(self, inpath: str = utils.APPDIR + 'src/network.bin') -> None:
+    def loadNetworkDump(self, inpath: str = utils.APPDIR + 'src/network.bin', encrypted = True) -> None:
         """
         Loads an encrypted, pickled network object.
 
         :param inpath: The path to the binary network dump, defaults to 'src/network.bin'
         :type inpath: str, optional
-        :return: The network
-        :rtype: Network
+        :param encrypted: Whether or not the dump was encrypted, defaults to True
+        :type encrypted: bool, optional
         """
-        with open(inpath, 'rb') as nw:
-            self.network = pickle.loads(
-                Cryptor().decrypt(nw.read())
-            )
-
-    def dumpNetwork(self, outpath: str = utils.APPDIR + 'src/network.bin') -> None:
-        """
-        Pickles the Network object and saves it to a default location, encrypted.
-
-        :param outpath: The path to save dump the network to, defaults to 'src/network.bin'
-        :type outpath: str, optional
-        """
-        with open(outpath, 'wb') as nw:
-            nw.write(
-                Cryptor().encrypt(pickle.dumps(self.network))
-            )
-
-    @classmethod
-    def fromDump(cls: Type[NetworkManager], inpath: str = utils.APPDIR + 'src/network.bin') -> NetworkManager:
-        """
-        Instantiates a NetworkManager to manage a dumped network at *inpath*.
-
-        :param inpath: Path to the binary network file, defaults to 'src/network.bin'
-        :type inpath: str, optional
-        :return: An instance of NetworkManager with the network found at *inpath*.
-        :rtype: NetworkManager
-        """
-        nwman = cls()
-        nwman.loadNetwork(inpath)
-        return nwman
+        self.network = Network.fromDump(inpath, encrypted)

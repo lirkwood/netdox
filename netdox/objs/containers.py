@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from typing import Iterable, Iterator, Type, Union
+import pickle
 
-from netdox import iptools
+from netdox import iptools, crypto
 from netdox.objs import base, helpers, nwobjs
-from netdox.utils import DEFAULT_DOMAIN_ROLES
+from netdox.utils import DEFAULT_DOMAIN_ROLES, APPDIR
 
 
 class DomainSet(base.DNSObjectContainer):
@@ -281,6 +282,8 @@ class Network:
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
 
+    ## Adding objects
+
     def _add(self, object: base.NetworkObject) -> None:
         """
         Adds *object* to its correct NetworkObjectContainer.
@@ -296,6 +299,27 @@ class Network:
             self.nodes._add(object)
         else:
             raise TypeError(f'Cannot add object of type {type(object)} to a Network.')
+
+    def addSet(self, object_set: base.NetworkObjectContainer) -> None:
+        """
+        Add a set of network objects to the network
+
+        2do: Implement merge in NetworkObjectContainer ABC
+
+        :param object_set: An NetworkObjectContainer to add to the network
+        :type object_set: NetworkObjectContainer
+        """
+        if isinstance(object_set, DomainSet):
+            object_set.network = self
+            self.domains = object_set
+        elif isinstance(object_set, IPv4AddressSet):
+            object_set.network = self
+            self.ips = object_set
+        elif isinstance(object_set, NodeSet):
+            object_set.network = self
+            self.nodes = object_set
+
+    ## Adding refs
 
     def addRef(self, object: base.NetworkObject, ref: str) -> None:
         """
@@ -319,26 +343,6 @@ class Network:
                 raise TypeError(f'Cannot add ref to object of type {type(object)}')
         else:
             AttributeError('Cannot add ref to object when it is part of a different network.')
-
-
-    def addSet(self, object_set: base.NetworkObjectContainer) -> None:
-        """
-        Add a set of network objects to the network
-
-        2do: Implement merge in NetworkObjectContainer ABC
-
-        :param object_set: An NetworkObjectContainer to add to the network
-        :type object_set: NetworkObjectContainer
-        """
-        if isinstance(object_set, DomainSet):
-            object_set.network = self
-            self.domains = object_set
-        elif isinstance(object_set, IPv4AddressSet):
-            object_set.network = self
-            self.ips = object_set
-        elif isinstance(object_set, NodeSet):
-            object_set.network = self
-            self.nodes = object_set
 
     def createNoderefs(self, node_identity: str, dnsobj_name: str) -> None:
         """
@@ -368,6 +372,43 @@ class Network:
         if hasattr(dnsobj, 'nat') and dnsobj.nat:
             self.createNoderefs(node_identity, dnsobj.nat)
 
+    ## Serialisation
+
+    def dump(self, outpath: str = APPDIR + 'src/network.bin', encrypt = True) -> None:
+        """
+        Pickles the Network object and saves it to *path*, encrypted.
+
+        :param outpath: The path to save dump the network to, defaults to 'src/network.bin' within *APPDIR*.
+        :type outpath: str, optional
+        :param encrypt: Whether or not to encrypt the dump, defaults to True
+        :type encrypt: bool, optional
+        """
+        with open(outpath, 'wb') as nw:
+            nw.write(
+                crypto.Cryptor().encrypt(pickle.dumps(self))
+                if encrypt else pickle.dumps(self)
+            )
+
+    @classmethod
+    def fromDump(cls: Type[Network], inpath: str = APPDIR + 'src/network.bin', encrypted = True) -> Network:
+        """
+        Instantiates a Network from a pickled dump.
+
+        :param cls: The Network class, passed implicitly
+        :type cls: Type[Network]
+        :param inpath: Path to the binary network file, defaults to 'src/network.bin'
+        :type inpath: str, optional
+        :param encrypted: Whether or not the dump is encrypted, defaults to True
+        :type encrypted: bool, optional
+        :return: The pickled network object at *inpath*.
+        :rtype: Network
+        """
+        with open(inpath, 'rb') as nw:
+            return pickle.loads(
+                crypto.Cryptor().decrypt(nw.read())
+                if encrypted else nw.read()
+            )
+
     def setToPSML(self, set: str) -> None:
         """
         Serialises a NetworkObjectContainer to PSML and writes the PSML files to *dir*.
@@ -376,12 +417,6 @@ class Network:
         :type set: str
         """
         self.writer.serialiseSet(getattr(self, set))
-
-    def dumpNetwork(self) -> None:
-        """
-        Writes the domains, ips, and nodes of a network to their default locations.
-        """
-        ...
 
     def writePSML(self) -> None:
         """
