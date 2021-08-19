@@ -144,7 +144,10 @@ class NetworkManager:
         group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
         stale = {}
         if dir in pageseeder.urimap():
-            local = utils.fileFetchRecursive(os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)))
+            local = utils.fileFetchRecursive(
+                os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)),
+                relative = utils.APPDIR + 'out'
+            )
 
             remote = json.loads(pageseeder.get_uris(pageseeder.urimap()[dir], params={
                 'type': 'document',
@@ -152,7 +155,7 @@ class NetworkManager:
             }))
 
             for file in remote["uris"]:
-                commonpath = file["decodedpath"].split(f"{group_path}/website/")[-1]
+                commonpath = os.path.normpath(file["decodedpath"].split(f"{group_path}/website/")[-1])
                 uri = file["id"]
                 if 'labels' in file: 
                     labels = ','.join(file['labels'])
@@ -163,7 +166,7 @@ class NetworkManager:
 
                 expiry = date.fromisoformat(marked_stale['date']) if marked_stale else None
                 
-                if os.path.normpath(os.path.join(utils.APPDIR, 'out', commonpath)) not in local:
+                if commonpath not in local:
                     if marked_stale:
                         if expiry <= today:
                             pageseeder.archive(uri)
