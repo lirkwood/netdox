@@ -102,9 +102,10 @@ def fileFetchRecursive(dir: str, relative: str = APPDIR, extension: str = None) 
     Returns a list of paths of all files descended from some directory. 
     By default paths are returned relative to *APPDIR*. 
 
-    :param dir: The path to the directory to search for files in, relative to *relative*.
+    :param dir: The path to the directory to search for files in.
     :type dir: str
-    :param relative: The path base path *dir* is relative to. Will not be included in returned paths.
+    :param relative: The path all returned paths will be relative to.
+    :type relative: str, optional
     :param extension: The file extension to restrict your search to, defaults to None
     :type extension: str, optional
     :return: A list of paths to the files descended from *dir*.
@@ -113,7 +114,7 @@ def fileFetchRecursive(dir: str, relative: str = APPDIR, extension: str = None) 
     fileset = []
     for file in os.scandir(dir):
         if file.is_dir():
-            fileset += fileFetchRecursive(file.path)
+            fileset += fileFetchRecursive(file.path, relative)
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
-            fileset.append(os.path.normpath(os.path.relpath(file.path, relative)))
+            fileset.append(os.path.relpath(file.path, relative))
     return fileset
