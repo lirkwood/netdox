@@ -143,7 +143,7 @@ def main():
     # and run any post-write plugins                                    #
     #-------------------------------------------------------------------#
 
-    nwman.dumpNetwork()
+    nwman.network.dump()
     nwman.network.writePSML()
     nwman.runStage('write')
 
