@@ -5,7 +5,8 @@ API Functions
 Provides functions for interacting with the Icinga API and a class for managing Netdox-generated monitors.
 """
 import json
-from typing import Iterable, Tuple
+from typing import Iterable
+from collections import defaultdict
 
 import requests
 from bs4 import BeautifulSoup
@@ -42,71 +43,66 @@ def fetchType(type: str, icinga_host: str) -> dict:
 # Main plugin functions #
 #########################
 
-def objectsByDomain(icingas: list[str]) -> Tuple[dict, dict]:
+def fetchMonitors(icinga_host: str) -> tuple[dict[str, list[dict]], dict[str, list[dict]]]:
     """
-    Returns a tuple of dictionaries containing all host objects known to each Icinga instance in *icingas*.
+    Returns a dictionary mapping a unique address to its generated and manually created monitor objects.
 
-    The manual dictionary maps the address of each host object not in the ``generated`` host group, to some information about it.
-    The generated dictionary maps each instance of icinga to another dictionary, similar to the manual dict, 
-    containing the host objects that **do** belong to the ``generated`` host group.  
-
-    :param icingas: A list of domain names of Icinga instances to query.
-    :type icingas: list[str]
-    :return: A 2-tuple of dictionaries, the manual and generated host objects.
-    :rtype: Tuple[dict, dict]
+    :param icinga_host: The FQDN / IPv4 of the Icinga instance to query.
+    :type icinga_host: str
+    :return: A 2-tuple of dicts of strings mapped to lists of dictionaries (monitor objects)
+    :rtype: tuple[dict[str, list[dict]], dict[str, list[dict]]]
     """
-    manual, generated = {}, {}
-    for icinga in icingas:
-        manual[icinga] = {}
+    hosts = fetchType('hosts', icinga_host)
+    services = fetchType('services', icinga_host)
 
-        hosts = fetchType('hosts', icinga)
-        services = fetchType('services', icinga)
+    hostServices = {}
+    for service in services['results']:
+        host = service['attrs']['host_name']
+        if host not in hostServices:
+            hostServices[host] = []
+        hostServices[host].append(service['name'].split('!')[-1])
 
-        hostServices = {}
-        for service in services['results']:
-            host = service['attrs']['host_name']
-            if host not in hostServices:
-                hostServices[host] = []
-            hostServices[host].append(service['name'].split('!')[-1])
+    generated, manual = defaultdict(list), defaultdict(list)
+    for host in hosts['results']:
+        # first template is just host name
+        host['attrs']['templates'].pop(0)
 
-        for host in hosts['results']:
-            name = host['name']
-            addr = host['attrs']['address']
-            
-            if host['attrs']['groups'] == ['generated']:
-                group = generated
-            else:
-                group = manual[icinga]
-
-            if addr not in group:
-                group[addr] = {
-                    "icinga": icinga,
-                    "templates": host['attrs']['templates'],
-                    "services": [host['attrs']['check_command']],
-                    "display": name
-                }
-                if name in hostServices:
-                    group[addr]['services'] += hostServices[name]
-                # remove top template; should be specific to host
-                del group[addr]['templates'][0]
-            else:
-                if group is generated:
-                    print(f'[WARNING][icinga] Duplicate generated monitor for {name} in {icinga}')
-                else:
-                    print(f'[WARNING][icinga] Duplicate manual monitor for {name} in {icinga}')
-    return manual, generated
+        # (group is generated) XNOR (group should be generated)
+        if host['attrs']['groups'] == ['generated']:
+            container = generated
+        else:
+            container = manual
+        container[host['attrs']['address']].append({
+            "icinga": icinga_host,
+            "address": host['attrs']['address'],
+            "templates": host['attrs']['templates'],
+            "services": [host['attrs']['check_command']],
+            "display": host['name']
+        })
+    return generated, manual
 
 class MonitorManager:
     """
     Manages the Icinga monitors created by Netdox
     """
+    network: Network
+    """The network to validate the monitors against."""
     icingas: list[str]
-    manual: dict = {}
-    generated: dict = {}
+    """List of the FQDN's of the available Icinga instances."""
+    locationIcingas: dict[str, str]
+    """Maps every location in the network to an Icinga instance FQDN, or `None`."""
+    manual: dict
+    """Dictionary of the manual monitors."""
+    generated: dict
+    """Dictionary of the generated monitors."""
+    overflow: defaultdict[str, list[dict]]
+    """Dictionary to hold extra generated monitors for a given domain."""
+    reloadQueue: set[str]
+    """A set of Icinga instances that have had their configuration modified."""
 
     def __init__(self, network: Network) -> None:
-        self.icingas = dict(utils.config()['plugins']['icinga'])
         self.network = network
+        self.icingas = dict(utils.config()['plugins']['icinga'])
 
         self.locationIcingas = {location: None for location in self.network.locator}
         for icinga, details in self.icingas.items():
@@ -114,15 +110,95 @@ class MonitorManager:
             for location in icingaLocations:
                 self.locationIcingas[location] = icinga
 
+        self.reloadQueue = set()
+
         self.refreshMonitorInfo()
+
+    ## Interacting with Icinga instances
+
+    def makeMonitor(self, domain: str, icinga: str, template = 'generic-host') -> None:
+        """
+        Creates a generated monitor for *domain* in *icinga*.
+        Also adds *icinga* to the reload queue.
+
+        :param domain: Address used by the monitor
+        :type domain: str
+        :param icinga: FQDN of the Icinga instance to create the monitor in.
+        :type icinga: str
+        """
+        set_host(domain, icinga = icinga, template = template)
+        self.reloadQueue.add(icinga)
+
+    def removeMonitor(self, domain: str, icinga: str) -> None:
+        """
+        Removes the generated monitor for *domain* in *icinga*.
+        Also adds *icinga* to the reload queue.
+
+        :param domain: Address used by the monitor
+        :type domain: str
+        :param icinga: FQDN of the Icinga instance to remove the monitor from.
+        :type icinga: str
+        """
+        rm_host(domain, icinga = icinga)
+        self.reloadQueue.add(icinga)
+
+    def reload(self) -> None:
+        """
+        Reloads any Icinga instances that have had their configurations modified.
+        """
+        for icinga in self.reloadQueue:
+            reload(icinga = icinga)
+        self.reloadQueue = set()
+
+    ## Data gathering and normalisation
 
     def refreshMonitorInfo(self) -> None:
         """
         Updates the stored monitor details
         """
-        self.manual, self.generated = objectsByDomain(self.icingas)
+        self.generated, self.manual = {}, {}
+        self.overflow = defaultdict(list)
+        for icinga in self.icingas:
+            generated, self.manual[icinga] = fetchMonitors(icinga)
+            for domain, monitorlist in generated.items():
+                assert len(monitorlist) == 1, f'Multiple monitors on {domain} in {icinga}'
+                
+                monitor = monitorlist[0]
+                if domain not in self.generated:
+                    self.generated[domain] = monitor
+                else:
+                    self.overflow[domain].append(monitor)
+        self._resolveOverflow()
+    
+    def _resolveOverflow(self) -> None:
+        """
+        Removes extra generated monitors from a domain.
+        Will attempt to choose the best instance to keep the monitor
+        """
+        for domain, monitors in self.overflow.items():
+            monitors.append(self.generated[domain])
+            location = self.locateDomain(domain)
+            if location and self.locationIcingas[location]:
+                icinga = self.locationIcingas[location]
+            else:
+                icinga = self.generated[domain]['icinga']
+                print(f'[WARNING][icinga] Unable to meaningfully decide which instance should monitor {domain}; Chose {icinga}')
 
-    def manualMonitor(self, domain: Domain) -> bool:
+            for monitor in monitors:
+                if monitor['icinga'] != icinga:
+                    self.removeMonitor(domain, icinga = monitor['icinga'])
+                    monitors.remove(monitor)
+            
+            if monitors:
+                assert len(monitors) == 1
+                self.generated[domain] = monitors[0]
+            else:
+                self.makeMonitor(domain, icinga)
+        self.reload()
+
+    ## Monitor validation
+
+    def hasManualMonitor(self, domain: Domain) -> bool:
         """
         Tests if a domain or any of its IPs are manually monitored
 
@@ -141,45 +217,47 @@ class MonitorManager:
 
     def validateDomain(self, domain: Domain) -> bool:
         """
-        Validates the current monitor on a DNS record. Modifies if necessary.
+        Validates the current monitor on a domain. Modifies if necessary.
 
         :param domain: The Domain object to validate.
         :type domain: Domain
         :return: True if the Domain's monitor was already valid. False if it needed to be modified.
         :rtype: bool
         """
-        if (self.manualMonitor(domain) or
+        if (self.hasManualMonitor(domain) or
             'template' not in utils.roles()[domain.role] or
             utils.roles()[domain.role]['template'] == 'None'):
             
+            # if manual and generated monitor
             if domain.name in self.generated:
-                rm_host(domain.name, icinga = self.generated[domain.name]['icinga'])
+                self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
                 return False
 
         else:
             location = self.locateDomain(domain.name)
             icinga = self.locationIcingas[location] if location in self.locationIcingas else None
-            if location and icinga:
+            if icinga:
                 if domain.name in self.generated:
                     # if location wrong
                     if self.generated[domain.name]['icinga'] != icinga:
-                        rm_host(domain.name, icinga = self.generated[domain.name]['icinga'])
-                        set_host(domain.name, icinga = icinga, template = utils.roles()[domain.role]['template'])
+                        self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
+                        self.makeMonitor(domain.name, icinga, utils.roles()[domain.role]['template'])
                         return False
                     # if template wrong
                     elif self.generated[domain.name]['templates'][0] != utils.roles()[domain.role]['template']:
-                        set_host(domain.name, location = location, template = utils.roles()[domain.role]['template'])
+                        self.makeMonitor(domain.name, icinga, utils.roles()[domain.role]['template'])
                         return False
                 # if no monitor
                 else:
-                    set_host(domain.name, location = location, template = utils.roles()[domain.role]['template'])
+                    self.makeMonitor(domain.name, icinga, utils.roles()[domain.role]['template'])
                     return False
 
         return True
 
     def validateDomainSet(self, domain_set: Iterable[Domain]) -> list[Domain]:
         """
-        Calls validateRecord on each record in a given set, and reloads the relevant Icinga if invalid.
+        Returns a list of domains that previously had invalid monitors on them,
+        so that the Icinga instances can be reloaded and validated again.
 
         :param domain_set: An iterable object containing Domains.
         :type domain_set: Iterable[Domain]
@@ -187,24 +265,16 @@ class MonitorManager:
         :rtype: list[Domain]
         """
         invalid = []
-        needsReload = set()
         for domain in domain_set:
             if self.validateDomain(domain):
                 if domain.name in self.generated:
-                    setattr(domain, 'icinga', self.generated[domain.name])
-                
+                    domain.icinga = self.generated[domain.name]
                 else:
                     for icinga in self.icingas:
                         if domain.name in self.manual[icinga]:
-                            setattr(domain, 'icinga', self.manual[icinga][domain.name])
+                            domain.icinga = self.manual[icinga][domain.name][0]
             else:
                 invalid.append(domain)
-                location = self.locateDomain(domain.name)
-                if location:
-                    needsReload.add(self.locationIcingas[location])
-
-        for icinga in needsReload:
-            reload(icinga = icinga)
         
         return invalid
 
@@ -219,22 +289,22 @@ class MonitorManager:
                 self.refreshMonitorInfo()
             tries += 1
             invalid = self.validateDomainSet(invalid)
+            self.reload()
         
         if invalid:
-            print(f'[WARNING][icinga] Unable to resolve invalid monitors for: {", ".join([r.name for r in invalid])}')
+            print(f'[WARNING][icinga] Unable to resolve invalid monitors for:\n\t', \
+                ",\n\t".join([r.name for r in invalid]))
 
     def pruneGenerated(self) -> None:
         """
         Removes all generated monitors whose address is not in the network domain set
         """
-        needsReload = set()
         for address, details in self.generated.items():
             if address not in self.network.domains:
-                rm_host(address, icinga = details['icinga'])
-                needsReload.add(details['icinga'])
-        
-        for icinga in needsReload:
-            reload(icinga = icinga)
+                self.removeMonitor(address, icinga = details['icinga'])
+        self.reload()
+
+    ## Miscellaneous
 
     def locateDomain(self, domain: str) -> str:
         """
