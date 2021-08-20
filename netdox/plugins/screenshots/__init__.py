@@ -195,7 +195,6 @@ class ScreenshotManager:
         :return: True if a screenshot is successfully saved. False otherwise.
         :rtype: bool
         """
-        print(domain.name)
         try:
             page = await browser.newPage()
             await page.setViewport({'width':1680,'height':1050})
@@ -240,25 +239,3 @@ def runner(network: Network) -> None:
 
 
 __stages__ = {'footers': runner}
-
-
-
-from pprint import pprint
-
-if __name__ == '__main__':
-
-    net = Network.fromDump()
-    domains = []
-    for domain in net.domains.roles['website']:
-        if domain in net.domains:
-            domains.append(net.domains[domain])
-
-    mngr = ScreenshotManager(
-        domains = domains[:9], 
-        workdir = utils.APPDIR+ 'plugins/screenshots/src',
-        basedir = utils.APPDIR+ 'plugins/screenshots/base',
-        outdir = utils.APPDIR+ 'out',
-        placeholder = utils.APPDIR+ 'src/placeholder.jpg'
-    )
-    mngr.start()
-    pprint(mngr.stats)
