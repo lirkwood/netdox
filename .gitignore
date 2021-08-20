@@ -24,5 +24,6 @@ netdox/logs
 
 !netdox/plugins/kubernetes/src/templates/
 netdox/plugins/activedirectory/records/
+netdox/plugins/screenshots/base/
 
 docs/_build/
