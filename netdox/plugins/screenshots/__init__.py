@@ -72,7 +72,7 @@ class ScreenshotManager:
             else:
                 domain.psmlFooter.append(BeautifulSoup(f'''
                     <fragment id="screenshot">
-                        <para><img src="{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{domain.docid}.jpg"
+                        <para><image src="{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{domain.docid}.jpg"
                     </fragment>
                 ''', features = 'xml'))
                 
