@@ -128,7 +128,7 @@ class PSMLWriter:
             search_octets.append('.'.join(octets[-2:]))
         frag = Tag(is_xml=True, name='properties-fragment', attrs={'id':'for-search', 'labels':'s-hide-content'})
         frag.append(psml.newprop(
-            name = 'octets', title = 'Octets for search', value = ', '.join(search_octets), multiple = 'true'
+            name = 'octets', title = 'Octets for search', value = ', '.join(search_octets)
         ))
         self.footer.append(frag)
 
