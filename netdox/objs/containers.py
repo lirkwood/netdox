@@ -388,7 +388,8 @@ class Network:
         :return: A boolean value.
         :rtype: bool
         """
-        for set in ('domains', 'ips'):
+        self.cache.add(startObj.name)
+        for set in ('ips', 'domains'):
             networkSet = getattr(self, set)
             objSet = getattr(startObj, set)
 
@@ -397,8 +398,6 @@ class Network:
 
             for name in objSet:
                 if name not in self.cache:
-                    self.cache.add(name)
-
                     if name == target.name:
                         self.cache.clear()
                         return True
