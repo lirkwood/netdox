@@ -6,13 +6,119 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable, Mapping, Any
 
 from bs4 import BeautifulSoup, Tag
 
 if TYPE_CHECKING:
     from objs.base import NetworkObject
     from objs.helpers import RecordSet
+
+###########
+# Classes #
+###########
+
+class PropertiesFragment(Tag):
+    """
+    PSML PropertiesFragment element.
+    """
+    id: str
+    """ID unique within the document"""
+    properties: Iterable[Property]
+    """Some properties to immediately append to this element."""
+
+    def __init__(self, 
+            id: str, 
+            namespace: str = None, 
+            prefix: str = None, 
+            attrs: Mapping[str, Any] = {},
+            properties: Iterable[Property] = []
+        ) -> None:
+
+        self.id = id
+        super().__init__(
+            name = 'properties-fragment', 
+            is_xml = True, 
+            can_be_empty_element = True, 
+            namespace = namespace, 
+            prefix = prefix, 
+            attrs = {'id': id} | attrs
+        )
+
+        for property in properties:
+            self.append(property)
+
+class Property(Tag):
+    """
+    PSML Property element.
+    """
+
+    def __init__(self, 
+        name: str,
+        title: str,
+        value: str = None,
+        xref_href: str = None,
+        xref_docid: str = None,
+        xref_uriid: str = None,
+        frag: str = 'default',
+        namespace: str = None,
+        prefix: str = None,
+        attrs: Mapping[str, Any] = {}
+    ) -> None:
+        """
+        Basic constructor.
+
+        :param name: Value for the required name attribute.
+        :type name: str
+        :param title: Value for the required title attribute.
+        :type title: str
+        :param value: Value for the value attribute, defaults to None
+        :type value: str, optional
+        :param xref_href: Path to the xref destination. Ignored if value is present. Defaults to None
+        :type xref_href: str, optional
+        :param xref_docid: Docid of the xref destination. Ignored if value is present. Defaults to None
+        :type xref_docid: str, optional
+        :param xref_uriid: URIID of the xref destination. Ignored if value is present. Defaults to None
+        :type xref_uriid: str, optional
+        :param frag: Value for the required frag attribute on the child xref element, defaults to 'default'
+        :type frag: str, optional
+        :param namespace: Namespace for the tag, defaults to None
+        :type namespace: str, optional
+        :param prefix: Prefix for the tag, defaults to None
+        :type prefix: str, optional
+        :param attrs: Any attributes to set on the property tag, defaults to None
+        :type attrs: Mapping[str, Any], optional
+        :raises AttributeError: If value AND all the xref_* parameters are unset.
+        """
+        _attrs = {'name': name, 'title': title}
+        xref_params = {'href': xref_href, 'docid': xref_docid, 'uriid': xref_uriid}
+        xref_attrs = {}
+
+        if value:
+            _attrs['value'] = value
+        elif any(xref_params.values()):
+            _attrs['datatype'] = 'xref'
+            xref_attrs = {k: v for k, v in xref_params.items() if v is not None}
+        else:
+            raise AttributeError('Property must have at least one of: value, xref_href, xref_docid, xref_uriid')
+        
+        super().__init__(
+            name = 'property', 
+            is_xml = True, 
+            can_be_empty_element = True, 
+            namespace = namespace, 
+            prefix = prefix, 
+            attrs = _attrs | attrs
+        )
+
+        if xref_attrs:
+            self.append(Tag(
+                is_xml=True, 
+                can_be_empty_element = True, 
+                name = 'xref', 
+                attrs = {'frag': frag} | xref_attrs
+            ))
+
 
 #############
 # Functions #
@@ -32,6 +138,8 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
     for attribute, value in nwobj.__dict__.items():
         if isinstance(value, str):
             template = re.sub(f'#!{attribute}', value, template)
+        elif value is None:
+            template = re.sub(f'#!{attribute}', '—', template)
     soup = BeautifulSoup(template, features = 'xml')
     return soup
 
