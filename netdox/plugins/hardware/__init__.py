@@ -101,6 +101,7 @@ def runner(network: Network) -> None:
                                 'datatype' in property.attrs
                                 and property['datatype'] == 'xref'
                                 and property.xref
+                                and '_nd_ip_' in property.xref['docid']
                             ):
                                 ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip'].replace('_','.')
                         elif property['name'] == 'name':
