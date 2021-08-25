@@ -13,7 +13,7 @@ from kubernetes import config
 from kubernetes.client import ApiClient
 
 from netdox import psml, utils
-from netdox.objs import Network
+from netdox.objs import Network, Domain
 from netdox.objs.base import Node
 
 ##  Plugin functions
@@ -40,6 +40,9 @@ class App(Node):
     """
     cluster: str
     """Cluster this app is running in"""
+    paths: set[str]
+    """Ingress paths that resolve to this node. 
+    Only includes paths starting on domains that also resolve to a configured proxy IP."""
     labels: dict
     """Labels applied to the pods"""
     template: dict
@@ -53,22 +56,35 @@ class App(Node):
     def __init__(self, 
             network: Network,
             name: str, 
-            domains: list[str],
             cluster: str, 
+            paths: Iterable[str] = None,
             labels: dict = None, 
             pods: dict = None, 
             template: dict = None
         ) -> None:
+
+        domains = {p.split('/')[0] for p in sorted(paths, key = len)}
+        for domain in list(domains):
+            if domain in network.domains:
+                for proxy in utils.config()['plugins']['kubernetes'][cluster]['proxies']:
+                    if not ( proxy in network.ips and network.resolvesTo(network.domains[domain], network.ips[proxy]) ):
+                        domains.remove(domain)
+
+            else:
+                Domain(network, domain)       
+        
+        self.paths = {path for path in paths if path.split('/')[0] in domains}
 
         super().__init__(
             network = network, 
             name = name,
             docid = f'_nd_node_k8sapp_{cluster}_{name.replace(".","_")}',
             identity = f'k8s_{cluster}_{name}',
-            domains = domains,
+            domains = [],
             ips = []
         )
         
+        self.paths = set(paths) if paths else set()
         self.cluster = cluster
         self.labels = labels or {}
         self.template = template or {}
@@ -183,6 +199,31 @@ def init() -> None:
         'contexts': contexts
         }))
 
+def domainapps(network: Network) -> None:
+    pathnodes = {}
+    domainpaths = defaultdict(set)
+    for node in network.nodes:
+        if node.type == 'Kubernetes App':
+            node: App
+            for path in node.paths:
+                domainpaths[path.split('/')[0]].add(path)
+                pathnodes[path] = node
+    
+    for domain, paths in domainpaths.items():
+        ## Add a pfrag of paths relevant to each domain
+        network.domains[domain].psmlFooter.append(
+            psml.PropertiesFragment(
+                id = 'k8sapps',
+                properties = [
+                    psml.Property(
+                        name = 'app', 
+                        title = 'Path: ' + path[len(domain):], 
+                        xref_docid = pathnodes[path].docid
+                    ) for path in paths
+                ]
+            )
+        )
+
 def publication(network: Network) -> None:
     workerApps = defaultdict(lambda: defaultdict(list))
     conf = utils.config()['plugins']['kubernetes']
@@ -211,5 +252,6 @@ def publication(network: Network) -> None:
 
 __stages__ = {
     'nodes': runner,
+    'footers': domainapps,
     'write': publication
 }

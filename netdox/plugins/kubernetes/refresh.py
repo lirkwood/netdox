@@ -105,26 +105,24 @@ def getServiceMatchLabels(namespace: str='default') -> dict[str, dict[str, str]]
     
     return serviceMatchLabels
 
-def getServiceDomains(namespace: str='default') -> dict[str, set]:
+def getServicePaths(namespace: str='default') -> dict[str, set]:
     """
-    Maps a service in a given namespace to any domains that resolve to it
+    Maps a service in a given namespace to the domains / paths on the domains that will forward requests to it.
 
     :param namespace: The namespace to search in, defaults to 'default'
     :type namespace: str, optional
-    :return: A dictionary mapping service names to the domains that resolve to them.
+    :return: A dictionary mapping service names to the domain paths that resolve to them.
     :rtype: dict[str, set]
     """
-    serviceDomains = {}
+    servicePaths = defaultdict(set)
     api = client.ExtensionsV1beta1Api(apiClient)
     allIngress = api.list_namespaced_ingress(namespace)
     for ingress in allIngress.items:
         for rule in ingress.spec.rules:
             for path in rule.http.paths:
-                if path.backend.service_name not in serviceDomains:
-                    serviceDomains[path.backend.service_name] = set()
-                serviceDomains[path.backend.service_name].add(rule.host)
+                servicePaths[path.backend.service_name].add(rule.host + (path.path if path.path else '/'))
 
-    return serviceDomains
+    return servicePaths
 
 
 def getApps(context: str, namespace: str='default') -> dict[str, dict]:
@@ -142,25 +140,23 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     apiClient = initContext(context)
     podsByLabel = getPodsByLabel(namespace)
     serviceMatchLabels = getServiceMatchLabels(namespace)
-    serviceDomains = getServiceDomains(namespace)
+    serviceDomains = getServicePaths(namespace)
 
     contextDetails = utils.config()["plugins"]["kubernetes"][context]
     podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
     # map domains to their destination pods
-    podDomains = {}
-    for service, domains in serviceDomains.items():
+    podPaths = defaultdict(set)
+    for service, paths in serviceDomains.items():
         if service in serviceMatchLabels:
             labelHash = hash(json.dumps(serviceMatchLabels[service], sort_keys=True))
             if labelHash in podsByLabel:
                 pods = podsByLabel[labelHash]
                 for pod in pods:
                     podName = pod['name']
-                    if podName not in podDomains:
-                        podDomains[podName] = set()
-                    podDomains[podName] |= domains
+                    podPaths[podName] |= paths
         else:
-            print(f'[WARNING][kubernetes] Domains {", ".join(domains)} are being routed to non-existent service {service}'
+            print(f'[WARNING][kubernetes] Domain paths {", ".join(paths)} are being routed to non-existent service {service}'
             +f' (cluster: {context}, namespace: {namespace})')
     
     apps = {}
@@ -171,7 +167,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
         apps[deployment] = {
             'name': deployment,
             'pods':{},
-            'domains': set(),
+            'paths': set(),
             'cluster': context,
             'labels': labels,
             'template': details['template']
@@ -185,8 +181,8 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
                 pod['rancher'] = podLinkBase + podName
                 app['pods'][podName] = pod
                 
-                if podName in podDomains:
-                    app['domains'] |= podDomains[podName]
+                if podName in podPaths:
+                    app['paths'] |= podPaths[podName]
     
     return apps
     
@@ -202,25 +198,9 @@ def runner(network: Network) -> None:
 
     workerApps = {}
     for context in auth:
-        proxyIps = set(auth[context]['proxies'])
         apps = getApps(context)
         workerApps[context] = defaultdict(set)
         location = auth[context]['location'] if 'location' in auth[context] else None
         
         for app in apps.values():
-
-            domains = []
-            # only allow domains which resolve to a proxy
-            for domain in app['domains']:
-                if domain not in network.domains:
-                    domains.append(
-                        Domain(network, domain, 'k8s').name
-                    )
-                else:
-                    domain = network.domains[domain]
-                    for proxy in auth[context]['proxies']:
-                        if proxy in network.ips and network.resolvesTo(domain, network.ips[proxy]):
-                            domains.append(domain.name)
-            app['domains'] = domains
-
             App(network, **app).location = location
