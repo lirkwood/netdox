@@ -151,7 +151,7 @@ def main():
     # Zip, upload, and cleanup                                          #
     #-------------------------------------------------------------------#
 
-    zip = shutil.make_archive('netdox-psml', 'zip', utils.APPDIR + 'out')
+    zip = shutil.make_archive(utils.APPDIR+ 'src/netdox-psml', 'zip', utils.APPDIR + 'out')
     pageseeder.zip_upload(zip, 'website')
 
     nwman.sentenceStale('domains')
