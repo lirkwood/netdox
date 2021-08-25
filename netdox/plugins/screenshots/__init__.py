@@ -8,8 +8,8 @@ from typing import Iterable, Tuple
 import diffimg
 from bs4 import BeautifulSoup
 from pyppeteer import launch
-from pyppeteer.browser import Browser
-from pyppeteer.page import Page
+from pyppeteer.browser import Page
+from pyppeteer.errors import PageError, TimeoutError
 
 from netdox import pageseeder, utils
 from netdox.objs import Domain, Network
@@ -84,7 +84,8 @@ class ScreenshotManager:
                     if diffimg.diff(
                         im1_file = f'{self.basedir}/{filename}', 
                         im2_file = f'{self.workdir}/{filename}',
-                        diff_img_file = f'{self.outdir}/diffimg/{filename}'
+                        diff_img_file = f'{self.outdir}/diffimg/{filename}',
+                        ignore_alpha = True
                     ) > 0.05:
                         # if diff > 5%
                         self.stats['diff'].append(domain.docid)
@@ -133,10 +134,10 @@ class ScreenshotManager:
         :param filename: Filename of the screenshot in question.
         :type filename: str
         """
-        if f'{filename}.jpg' not in self.existingScreens:
+        if filename not in self.existingScreens:
             shutil.copyfile(
                 self.placeholder, 
-                f'{self.outdir}/screenshots/{filename}.jpg'
+                f'{self.outdir}/screenshots/{filename}'
             )
 
     ## Taking screenshots
@@ -177,14 +178,15 @@ class ScreenshotManager:
         :return: A list of tuples containing a Domain object and boolean. True if successfully screenshotted.
         :rtype: list[Tuple[Domain, bool]]
         """
-        browser = await launch(args = ['--no-sandbox'], autoClose = False)
-        values = await asyncio.gather(
-            *[self.screenshot(browser, domain) for domain in domains]
-        )
+        browser = await launch(ignoreHTTPSErrors = True)
+        page = await browser.newPage()
+        await page.setViewport({'width':1680,'height':1050})
+        values = [ await self.screenshot(page, domain) for domain in domains ]
+        await page.close()
         await browser.close()
         return values
 
-    async def screenshot(self, browser: Browser, domain: Domain) -> bool:
+    async def screenshot(self, page: Page, domain: Domain) -> bool:
         """
         Takes a screenshot of a domain
 
@@ -196,35 +198,32 @@ class ScreenshotManager:
         :rtype: bool
         """
         try:
-            page = await browser.newPage()
-            await page.setViewport({'width':1680,'height':1050})
-            await page.goto(f'https://{domain.name}/', waitUntil = 'domcontentloaded', timeout = 3000)
+            await page.goto(f'https://{domain.name}/', timeout = 5000, waitUntil = 'networkidle0')
             await page.screenshot(path = f'{self.workdir}/{domain.docid}.jpg')
-            await page.close()
             return (domain, True)
-        except Exception:
-            return (domain, False)
+        except TimeoutError:
+            print(f'[WARNING][screenshots] Navigation to {domain.name} timed out.')
+        except Exception as e:
+            print(f'[WARNING][screenshots] Screenshot for {domain.name} failed: \n\t'+ str(e))
+
+        return (domain, False)
 
 
 def init() -> None:
-    if os.path.exists(utils.APPDIR+ 'plugins/screenshots/src'):
-        shutil.rmtree(utils.APPDIR+ 'plugins/screenshots/src')
-    if os.path.exists(utils.APPDIR+ 'out/screenshots'):
-        shutil.rmtree(utils.APPDIR+ 'out/screenshots')
-    if os.path.exists(utils.APPDIR+ 'out/diffimg'):
-        shutil.rmtree(utils.APPDIR+ 'out/diffimg')
-    if os.path.exists(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat()):
-        shutil.rmtree(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
-
     if not os.path.exists(utils.APPDIR+ 'plugins/screenshots/base'):
         os.mkdir(utils.APPDIR+ 'plugins/screenshots/base')
     if not os.path.exists(utils.APPDIR+ 'out/screenshot_history'):
         os.mkdir(utils.APPDIR+ 'out/screenshot_history')
-        
-    os.mkdir(utils.APPDIR+ 'plugins/screenshots/src')
-    os.mkdir(utils.APPDIR+ 'out/screenshots')
-    os.mkdir(utils.APPDIR+ 'out/diffimg')
-    os.mkdir(utils.APPDIR+ 'out/screenshot_history/'+ date.today().isoformat())
+
+    for path in (
+        'plugins/screenshots/src',
+        'out/screenshots',
+        'out/diffimg',
+        'out/screenshot_history/'+ date.today().isoformat()
+    ):
+        if os.path.exists(utils.APPDIR + path):
+            shutil.rmtree(utils.APPDIR + path)
+        os.mkdir(utils.APPDIR + path)
 
 def runner(network: Network) -> None:
     mngr = ScreenshotManager(
@@ -235,7 +234,10 @@ def runner(network: Network) -> None:
         placeholder = utils.APPDIR+ 'src/placeholder.jpg'
     )
     mngr.start()
-    return mngr.stats
 
 
 __stages__ = {'footers': runner}
+
+if __name__ == '__main__':
+    init()
+    runner(Network.fromDump())
