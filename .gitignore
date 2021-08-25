@@ -1,7 +1,7 @@
 **/__pycache__
 **/*.zip
 **/*log.txt
-
+**/.venv/
 
 .vscode
 .dockerignore
