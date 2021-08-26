@@ -170,6 +170,7 @@ class NetworkManager:
                     if marked_stale:
                         if expiry <= today:
                             pageseeder.archive(uri)
+                            print(f'[INFO][nwman] Archiving URI {uri} as it is >=30 days stale.')
                         else:
                             stale[uri] = marked_stale['date']
                     else:
