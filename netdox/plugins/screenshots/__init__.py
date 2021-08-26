@@ -198,7 +198,7 @@ class ScreenshotManager:
         :rtype: bool
         """
         try:
-            await page.goto(f'https://{domain.name}/', timeout = 5000, waitUntil = 'networkidle0')
+            await page.goto(f'https://{domain.name}/', timeout = 5000, waitUntil = 'networkidle0')  #@IgnoreException
             await page.screenshot(path = f'{self.workdir}/{domain.docid}.jpg')
             return (domain, True)
         except TimeoutError:

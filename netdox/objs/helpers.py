@@ -61,7 +61,7 @@ class Locator:
 
         # first key when keys are sorted by descending size is largest mask
         try:
-            largest = matches[list(matches.keys())[0]]
+            largest = matches[list(matches.keys())[0]]  #@IgnoreException
             largest = list(dict.fromkeys(largest))
             # if multiple unique locations given by equally specific subnets
             if len(largest) > 1:
