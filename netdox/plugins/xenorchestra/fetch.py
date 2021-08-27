@@ -11,6 +11,7 @@ import json
 
 from netdox import iptools, utils
 from netdox.objs import IPv4Address, Network
+from netdox.objs.nwobjs import PlaceholderNode
 from netdox.plugins.xenorchestra import VirtualMachine, authenticate, call
 
 #########################
@@ -113,6 +114,8 @@ async def makeNodes(network: Network) -> None:
     for host in hosts.values():
         hostVMs[host['uuid']] = []
         poolHosts[poolNames[host['$pool']]].append(host['address'])
+        PlaceholderNode(network, name = host['name_label'], ips = [host['address']])
+
 
     # VMs
     for uuid, vm in vms.items():
