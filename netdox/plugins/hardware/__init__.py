@@ -1,7 +1,11 @@
+"""
+This plugin is intended to support manual entry of Node objects describing physical machines.
+"""
 from __future__ import annotations
 
 import os
 import re
+import shutil
 import time
 import zipfile
 from shutil import rmtree
@@ -9,13 +13,20 @@ from traceback import print_exc
 from typing import Iterable
 
 import requests
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Tag, SoupStrainer
 
 from netdox import utils, pageseeder
-from netdox.objs import DefaultNode, IPv4Address, Network
+from netdox.objs import Network
+from netdox.objs.base import Node
+
+INFO_SECTION = SoupStrainer('section', id = 'info')
+URI_PATTERN = re.compile(r'<uri\s+id="(?P<id>\d+)"')
 
 
-class HardwareNode(DefaultNode):
+class HardwareNode(Node):
+    """
+    A Node built from manual-entry data.
+    """
     origin_doc: str
     """The URI of the document this Node was created from."""
     filename: str
@@ -24,18 +35,39 @@ class HardwareNode(DefaultNode):
 
     def __init__(self, 
             network: Network,
-            name: str, 
-            private_ip: str, 
-            psml: Tag, 
+            psml: BeautifulSoup, 
             origin_doc: str, 
-            filename: str,
-            domains: Iterable[str] = []
+            filename: str
         ) -> None:
-        super().__init__(network, name, private_ip, domains = domains)
+
+        domains, ips = [], []
+        name = None
+        for property in psml('property'):
+            if property['name'] == 'domain':
+                domain = self._addrFromProperty(property)
+                if domain: domains.append(domain)
+
+            elif property['name'] == 'ipv4':
+                ip = self._addrFromProperty(property)
+                if ip: ips.append(ip)
+
+            elif property['name'] == 'name':
+                name = property['value']
+
+        super().__init__(
+            network = network, 
+            name = name if name else filename, 
+            docid = f'_nd_node_{os.path.splitext(filename)[0]}',
+            identity = filename,
+            domains = domains,
+            ips = ips
+        )
 
         self.psml = psml
         self.origin_doc = origin_doc
         self.filename = filename
+
+    ## abstract properties
 
     @property
     def outpath(self) -> str:
@@ -44,6 +76,27 @@ class HardwareNode(DefaultNode):
     @property
     def psmlBody(self) -> Iterable[Tag]:
         return [self.psml]
+
+    ## methods
+
+    def _addrFromProperty(self, property: Tag) -> None:
+        """
+        Extracts the name of the referenced DNS object from *property*.
+
+        :param property: A PSML property
+        :type property: Tag
+        """
+        if 'value' in property.attrs:
+            return property['value']
+
+        elif (
+            'datatype' in property.attrs                and
+            property['datatype'] == 'xref'              and
+            property.xref                               and
+            'unresolved' not in property.xref.attrs
+        ):
+            return property.xref['urititle']
+
 
 global thread
 thread = None
@@ -81,54 +134,31 @@ def runner(network: Network) -> None:
             
     zip = zipfile.ZipFile(utils.APPDIR+ 'plugins/hardware/src/hardware.zip')
     zip.extractall(utils.APPDIR+ 'plugins/hardware/src')
+    shutil.rmtree(utils.APPDIR+ 'plugins/hardware/src/META-INF')
 
     for file in utils.fileFetchRecursive(utils.APPDIR+ 'plugins/hardware/src'):
+        filename = os.path.basename(file)
         try:
             if file.endswith('.psml'):
                 with open(utils.APPDIR+ file, 'r', encoding = 'utf-8') as stream:
-                    soup = BeautifulSoup(stream.read(), features = 'xml')
-                    
-                section = soup.find('section', id='info')
-                if section:
-                    ## For every file matching the structure (is psml, has section with id 'info')
-                    ## Must be one 'name' and one 'ipv4' property at least.
-                    name, ip = '', ''
-                    for property in section.find_all('property'):
-                        if property['name'] == 'ipv4':
-                            if 'value' in property.attrs:
-                                ip = property['value']
-                            elif ( 
-                                'datatype' in property.attrs
-                                and property['datatype'] == 'xref'
-                                and property.xref
-                                and '_nd_ip_' in property.xref['docid']
-                            ):
-                                ip = re.search(r'_nd_ip_(?P<ip>.*)$', property.xref['docid'])['ip'].replace('_','.')
-                        elif property['name'] == 'name':
-                            name = property['value'].replace(' ','_')
-                    
-                    ## if minimum requirements met
-                    if name and ip:
-                        if ip not in network.ips:
-                            IPv4Address(network, ip)
+                    content = stream.read()
+                soup = BeautifulSoup(content, features = 'xml', parse_only = INFO_SECTION)
+                uri = re.search(URI_PATTERN, content)
+                assert uri is not None, 'Failed to parse URIID from hardware document '+ filename
 
-                        HardwareNode(
-                            network = network,
-                            name = name,
-                            private_ip = ip,
-                            psml = section.extract(),
-                            origin_doc = soup.document['id'],
-                            filename = os.path.basename(file)
-                        )
-                        
-                    else:
-                        print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\'',
-                        ' is missing property with name \'name\' or \'ipv4\' in section \'info\'.')
+                if soup:
+                    HardwareNode(
+                        network = network,
+                        psml = soup,
+                        origin_doc = uri['id'],
+                        filename = filename
+                    )
+                    
                 else:
-                    print(f'[DEBUG][hardware] Hardware document with URIID \'{soup.document["id"]}\' has no section \'info\'.')
+                    print(f'[DEBUG][hardware] Hardware document \'{filename}\' has no section \'info\'.')
 
         except Exception:
-            print(f'[ERROR][hardware] Failed while processing document with filename \'{os.path.basename(file)}\'')
+            print(f'[ERROR][hardware] Failed while processing document with filename \'{filename}\'')
             print_exc()
 
 __stages__ = {
