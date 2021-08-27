@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 import re
-from ipaddress import IPv4Address as BaseIP
 from typing import TYPE_CHECKING, Iterable
+from uuid import uuid4
 
 from bs4 import Tag
 
@@ -40,8 +40,6 @@ class Domain(base.DNSObject):
         :raises ValueError: If *name* is not a valid FQDN
         """
         if re.fullmatch(utils.dns_name_pattern, name):
-            super().__init__(network, name, f'_nd_domain_{name.replace(".","_")}', zone)
-
             self.role = 'default'
             
             self.records = {
@@ -55,6 +53,8 @@ class Domain(base.DNSObject):
             }
 
             self.subnets = set()
+            
+            super().__init__(network, name, f'_nd_domain_{name.replace(".","_")}', zone)
         else:
             raise ValueError('Must provide a valid name for a Domain (some FQDN)')
     
@@ -303,3 +303,86 @@ class DefaultNode(base.Node):
         :rtype: Iterable[Tag]
         """
         return []
+
+
+class PlaceholderNode(base.Node):
+    """
+    A placeholder Node intended to be consumed by another Node.
+    If one of it's domains / ips get the node attribute set, 
+    this object will be consumed by the new node and replaced in all locations.
+    """
+
+    def __init__(self, 
+            network: Network, 
+            name: str, 
+            domains: Iterable[str] = [], 
+            ips: Iterable[str] = []
+        ) -> None:
+        """
+        Generates a random UUID to use for it's identity.
+        If any of its domains / ips already have a node,
+        it will create a ref from its own identity to that node, forcing a merge.
+        If there are multiple unique nodes referenced by its DNSObjs, 
+        an exception wil be raised.
+
+        :param network: The network.
+        :type network: Network
+        :param name: Name for this node.
+        :type name: str
+        :param domains: A set of domains this node will listen on, defaults to []
+        :type domains: Iterable[str], optional
+        :param ips: [description], defaults to []
+        :type ips: Iterable[str], optional
+        """
+
+        self.uuid = str(uuid4())
+        super().__init__(
+            network = network, 
+            name = name, 
+            docid = '_nd_node_placeholder_'+ self.uuid, 
+            identity = self.uuid, 
+            domains = domains, 
+            ips = ips
+        )
+
+        nodes = set()
+        for domain in self.domains:
+            if self.network.domains[domain].node:
+                nodes.add(self.network.domains[domain].node)
+        for ip in self.ips:
+            if self.network.ips[ip].node:
+                nodes.add(self.network.ips[ip].node)
+            
+        assert len(nodes) <= 1, 'Placeholder cannot be consumed by more than one node.'
+        if nodes:
+            self.network.addRef(nodes.pop(), self.identity)
+
+    ## abstract properties
+
+    @property
+    def psmlBody(self) -> Iterable[Tag]:
+        """
+        Returns an Iterable containing section tags to add to the body of this Node's output PSML.
+
+        :return: A set of ``<section />`` BeautifulSoup tags.
+        :rtype: Iterable[Tag]
+        """
+        return []
+
+    ## properties
+
+    @property
+    def aliases(self) -> set[str]:
+        """
+        Returns all the refs to this node in the containing NodeSet.
+        This is useful for guaranteeing this objects removal after consumption.
+
+        :return: A set of refs to this node.
+        :rtype: set[str]
+        """
+        return {ref for ref, node in self.network.nodes.nodes.items() if node is self}
+
+    ## methods
+
+    def merge(self, node: base.Node) -> base.Node:
+        return node.merge(self)

@@ -233,13 +233,36 @@ class NodeSet(base.NetworkObjectContainer):
         else:
             self[node.identity] = node
 
-        for domain in list(self[node.identity].domains):
-            self.network.createNoderefs(node.identity, domain)
+        node = self[node.identity]
+        cache = set()
+        for domain in list(node.domains):
+            cache |= self.network.createNoderefs(node.identity, domain, cache)
 
-        for ip in list(self[node.identity].ips):
+        for ip in list(node.ips):
             if ip not in self.network.ips:
                 nwobjs.IPv4Address(self.network, ip)
-            self.network.createNoderefs(node.identity, ip)
+            cache |= self.network.createNoderefs(node.identity, ip, cache)
+
+    def consumePlaceholder(self, placeholder: nwobjs.PlaceholderNode, replacement: base.Node) -> None:
+        """
+        Merges *replacement* with *placeholder*, 
+        then replaces all refs to *placeholder* to refs to *replacement*.
+
+        :param placeholder: The PlaceholderNode to consume.
+        :type placeholder: nwobjs.PlaceholderNode
+        :param replacement: The replacement Node, which will consume *placeholder*.
+        :type replacement: base.Node
+        """
+        replacement.merge(placeholder)
+        for domain in placeholder.domains:
+            self.network.domains[domain].node = replacement
+        for ip in placeholder.ips:
+            self.network.ips[ip].node = replacement
+
+        self[placeholder.identity] = replacement
+        for alias in placeholder.aliases:
+            self[alias] = replacement
+
 
 class Network:
     """
@@ -347,7 +370,7 @@ class Network:
         else:
             AttributeError('Cannot add ref to object when it is part of a different network.')
 
-    def createNoderefs(self, node_identity: str, dnsobj_name: str) -> None:
+    def createNoderefs(self, node_identity: str, dnsobj_name: str, cache: set[str] = None) -> None:
         """
         Creates noderefs from the DNSObj at *dnsobj_name* (and DNSObjs which resolve to it) to the node with *node_identity*.
 
@@ -356,24 +379,43 @@ class Network:
         :param dnsobj_name: The name of the DNSObj to link from.
         :type dnsobj_name: str
         """
-        if dnsobj_name in self.ips and not self.ips[dnsobj_name].node:
+        node = self.nodes[node_identity]
+        if not cache:
+            cache = set()
+        elif dnsobj_name in cache:
+            return cache
+        cache.add(dnsobj_name)
+
+        if dnsobj_name in self.ips:
             dnsobj = self.ips[dnsobj_name]
-            self.nodes[node_identity].ips.add(dnsobj.name)
+            dnsobj_set = node.ips
 
-        elif dnsobj_name in self.domains and not self.domains[dnsobj_name].node:
+        elif dnsobj_name in self.domains:
             dnsobj = self.domains[dnsobj_name]
-            self.nodes[node_identity].domains.add(dnsobj.name)
-            
-        else: return
+            dnsobj_set = node.domains
+        
+        else: return cache
 
-        dnsobj.node = self.nodes[node_identity]
+        if dnsobj.node:
+            if isinstance(dnsobj.node, nwobjs.PlaceholderNode):
+                assert dnsobj.node is not node, \
+                    'Trying to replace placeholder node with itself.'
+                self.nodes.consumePlaceholder(dnsobj.node, node)
+            return cache
+
+        elif dnsobj.node: return
+
+        dnsobj_set.add(dnsobj.name)
+        dnsobj.node = node
         
         for backrefs in dnsobj.backrefs.values():
             for backref in backrefs:
-                self.createNoderefs(node_identity, backref)
+                cache |= self.createNoderefs(node_identity, backref, cache)
 
         if hasattr(dnsobj, 'nat') and dnsobj.nat:
-            self.createNoderefs(node_identity, dnsobj.nat)
+            cache |= self.createNoderefs(node_identity, dnsobj.nat, cache)
+
+        return cache
 
     ## resolving refs
 
