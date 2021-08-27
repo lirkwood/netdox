@@ -1,3 +1,6 @@
+"""
+This module contains some helper classes that are essential to the other classes in the objs package.
+"""
 from __future__ import annotations
 
 import json

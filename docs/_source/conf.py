@@ -13,7 +13,9 @@
 import re
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../netdox'))
+sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../netdox'))
+sys.path.insert(0, os.path.abspath('../netdox/plugins'))
 sys.path.insert(0, os.path.abspath('.'))
 
 
@@ -24,7 +26,7 @@ copyright = '2021, Linus Kirkwood'
 author = 'Linus Kirkwood'
 
 # The full version, including alpha/beta/rc tags
-release = '1.2'
+release = '0.0.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,7 +36,7 @@ release = '1.2'
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.linkcode",
+    # "sphinx.ext.linkcode",
     "psmlwriter"
 ]
 

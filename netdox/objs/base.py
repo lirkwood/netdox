@@ -1,3 +1,6 @@
+"""
+This module contains the abstract base classes for most of the other classes in the objs package.
+"""
 from __future__ import annotations
 
 import os

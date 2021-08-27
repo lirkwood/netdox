@@ -1,3 +1,6 @@
+"""
+This module contains any container classes.
+"""
 from __future__ import annotations
 
 from typing import Iterable, Iterator, Type, Union

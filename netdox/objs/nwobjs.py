@@ -1,3 +1,6 @@
+"""
+This module contains the objects that directly represent an object in the network.
+"""
 from __future__ import annotations
 
 import os

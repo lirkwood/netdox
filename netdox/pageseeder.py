@@ -408,3 +408,6 @@ def zip_upload(path, uploadpath, host='', group='', header={}):
         'overwrite-properties': 'true',
         'validate': 'false'
         })
+
+if __name__ == '__main__':
+    urimap()

@@ -1,59 +1,59 @@
-.. _index:
+.. _about:
 
-Dev
-===
+About
+#####
 
 Netdox Overview
----------------
-The following pages are for developers that need to maintain or extend Netdox, an application that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
-
-Netdox is a highly modular, containerised application built with primarily with Python (although it utilises Java and Node.js for certain tasks).
+===============
+Netdox is a highly modular, Python 3 application that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
 The objective of Netdox is to improve the productivity of network administrators by consolidating information from a range of systems.
 This reduces the need for administrators to move between many different interfaces, and minimises the familiarity required with each service.
-The documentation is updated and pruned daily to keep data current and accurate, and can be refreshed at any time.
+The documentation is updated and pruned daily to keep data current and accurate, and can be refreshed at any time. 
+Moreover, any changes are preserved in comprehensive versions provided by PageSeeder's document history functionality.
 
-Plugins used in the Allette instance of Netdox interface with the following services:
+Netdox leverages plugins to retrieve data from the services in *your* environment.
+This allows you to effectively provide your network administrators with a one-stop shop for querying the state of the network.
+This combined with the XRef links between the documents results in a highly connected and transparent visualisation of your network.
 
-- ActiveDirectory
-- DNSMadeEasy
-- CloudFlare
-- Xen Orchestra
-- Kubernetes
-- AWS EC2
-- Icinga
-- Ansible
-- FortiGate
-- pfSense
+Using Netdox
+------------
+Quick setup guide can be found **here**, and more detail on how to correctly configure Netdox is available here: :ref:`config`.
 
 Architecture
 ------------
-Netdox is, at it's simplest, a DNS record aggregator.
-All other functionality simply extends Netdox's ability to define network nodes by the DNS records that reference them.
-A core concept that Netdox leverages to deduce the topology of a network is that IP addresses are both immutable and permanent.
-More IP addresses cannot be created in an existing address space, and a single IP address always represents a single node on the network.
-This provides Netdox with an anchor that can be used to identify a node's position and role in the network's ecosystem.
+The primary objects in Netdox are DNS objects, Nodes and their containing Network. 
+DNS objects (domains and IPv4 addresses) represent a single, unique name in the DNS.
+These objects are the primary anchors for the documentation, and are likely what you will find yourself searching for when trying to diagnose an issue.
 
-As IP addresses are deployed, released and redeployed, all changes are captured in PageSeeder through the document history.
-This can help to identify the cause of a problem, or even resolve one before it arises.
-Furthermore, this tracking of IP address usage means it is trivial to capture the next unused address for use within other automated services.
+Nodes represent a single (physical or virtualised) machine; In other words, a significant endpoint for a DNS record.
+For example, the XenOrchestra plugin will connect to your XenOrchestra instance and retrieve any running VMs. 
+It then provides VirtualMachine nodes to the Network object, which will serialise them to PSML and upload them during a refresh.
 
-Objects and their meaning
--------------------------
-The most important objects in Netdox are the NetworkObjects and their containers.
-There are three subclasses of NetworkObject in the core code; The Domain, IPv4Address, and Node objects.
-Domain and IPv4Address are both containers for DNS records with the same name. For example, a Domain with the name 'netdox.allette.com.au' contains all the A and CNAME DNS records which have that name.
-For more details on how these classes can be used / extended, see :ref:`networkobjs` and :ref:`plugins`.
+Plugins also have the opportunity to generate additional documentation to provide extra context or information. 
+In the case of XenOrchestra, 
+a PageSeeder publication is generated which allows you to walk through the hierarchy of objects and easily see their relationship to each other,
+from pools to hosts to VMs.
 
+However the uses for Netdox go beyond simple documentation generation. 
+Plugins in Netdox are able to respond to *webhooks* sent by PageSeeder when a document is updated, 
+meaning you are able to use the documentation to trigger automation tools such as Ansible, modify your DNS, alert your network admins, etc.
+More information available here: :ref:`webhooks`.
+
+
+Development
+===========
+Developing plugins for Netdox is extremely simple. 
+No configuration is required in Netdox beyond adding the name of the package to a whitelist. 
+Everything else can be done from within your python code.
+Each plugin should be a python package in the `netdox.plugins` namespace package, 
+and will be loaded and run at the correct stage automatically.
+More detail is available here: :ref:`plugins`.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 4
 
    config.rst
-   networkobjs.rst
-   utils.rst
-   plugins.rst
-   refresh.rst
    webhooks.rst
-   security.rst
-   files.rst
+   plugins.rst
+   source.rst
    releases.rst

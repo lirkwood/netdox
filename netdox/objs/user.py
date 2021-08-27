@@ -1,3 +1,6 @@
+"""
+This module is a stub. It will contain classes used to gather and manipulate user data.
+"""
 from __future__ import annotations
 from abc import ABC, abstractmethod
 

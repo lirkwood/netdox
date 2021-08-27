@@ -11,6 +11,9 @@ from cryptography.fernet import Fernet
 from netdox import utils
 
 class Cryptor(Fernet):
+    """
+    Can encrypt and decrypt files using the generated cryptography key.
+    """
     def __init__(self):
         try:
             with open(utils.APPDIR+ 'src/crypto', 'rb') as stream:

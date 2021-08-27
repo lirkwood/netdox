@@ -1,21 +1,21 @@
+"""
+This module contains the NetworkManager class.
+"""
 from __future__ import annotations
 
 import importlib
 import json
 import os
-import pickle
+import pkgutil
 import re
-from collections import defaultdict
 from datetime import date, datetime, timedelta
 from traceback import format_exc
 from types import ModuleType
-from typing import Callable, Type
-import pkgutil
+from typing import Callable
 
-from netdox import pageseeder, utils
-from netdox.crypto import Cryptor
-from netdox.objs.containers import Network
 import netdox.plugins
+from netdox import pageseeder, utils
+from netdox.objs.containers import Network
 
 
 class NetworkManager:
@@ -38,8 +38,8 @@ class NetworkManager:
         self.pluginmap = {
             'any': set(),
             'dns': set(),
-            'nodes': set(),
             'nat': set(),
+            'nodes': set(),
             'footers': set(),
             'write': set(),
             'cleanup': set()
