@@ -14,6 +14,7 @@ from bs4 import Tag
 
 from netdox import psml, utils
 from netdox.objs import DefaultNode, Network
+from netdox.objs.nwobjs import IPv4Address
 
 ##################################
 # Generic websocket interactions #
@@ -106,8 +107,8 @@ class VirtualMachine(DefaultNode):
     """Dictionary of info about the VM's operating system."""
     pool: str
     """The name of the pool the VM's Host belongs to."""
-    host: str
-    """A ref to the node this VM is hosted on."""
+    hostIp: IPv4Address
+    """The IPv4 address of the node this VM is hosted on."""
     type: str = 'XenOrchestra VM'
 
     def __init__(self, 
@@ -130,7 +131,7 @@ class VirtualMachine(DefaultNode):
         self.uuid = uuid.strip().lower()
         self.template = template
         self.os = os
-        self.host = host.strip().lower()
+        self.hostIp = self.network.ips[host]
         self.pool = pool.strip().lower()
         
         self.network.addRef(self, self.uuid)
@@ -151,8 +152,16 @@ class VirtualMachine(DefaultNode):
             name='uuid', title='UUID', value=self.uuid
         ))
         frag.append(psml.newxrefprop(
-            name='host', title='Host Machine', ref=self.network.nodes[self.host].docid
+            name='ipv4', title='Host IP', ref = '_nd_ip_'+ self.hostIp.name.replace('.','_')
         ))
+        if self.hostIp.node:
+            frag.append(psml.newxrefprop(
+                name='host', title='Host Node', ref=self.hostIp.node.docid
+            ))
+        else:
+            frag.append(psml.newprop(
+                name='host', title='Host Node', value = '—'
+            ))
         return frag
     
     @property
