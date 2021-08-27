@@ -24,9 +24,8 @@ def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
         heading.wrap(pub.new_tag('fragment', id = f'heading_{count}'))
 
         xfrag = pub.new_tag(name = 'xref-fragment', id = f'pool_{count}')
-        for host, vms in hosts.items():
-            finalref = network.nodes[host].docid
-            xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = finalref))
+        for hostip, vms in hosts.items():
+            xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = network.ips[hostip].node.docid))
 
             for vm in vms:
                 finalref = network.nodes[vm].docid
