@@ -196,7 +196,7 @@ class Node(NetworkObject):
         self.type = self.__class__.type
         super().__init__(network, name, docid)
 
-        self.domains = set(domains) if domains else set()
+        self.domains = {d.lower() for d in domains} if domains else set()
         self.ips = set(ips) if ips else set()
 
     ## abstract properties
