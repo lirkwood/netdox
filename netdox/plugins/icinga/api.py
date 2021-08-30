@@ -90,7 +90,7 @@ class MonitorManager:
     icingas: list[str]
     """List of the FQDN's of the available Icinga instances."""
     locationIcingas: dict[str, str]
-    """Maps every location in the network to an Icinga instance FQDN, or `None`."""
+    """Maps every location in the network to an Icinga instance FQDN, or ``None``."""
     manual: dict
     """Dictionary of the manual monitors."""
     generated: dict

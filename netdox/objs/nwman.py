@@ -135,7 +135,7 @@ class NetworkManager:
         """
         Adds stale labels to any files present in *dir* on PageSeeder, but not locally.
 
-        :param dir: The directory, relative to `website/` on PS or `out/` locally.
+        :param dir: The directory, relative to ``website/`` on PS or ``out/`` locally.
         :type dir: str
         :return: A dict of stale URIs, mapped to their expiry date.
         :rtype: dict[str, str]

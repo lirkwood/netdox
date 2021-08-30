@@ -27,7 +27,7 @@ class ScreenshotManager:
     existingScreens: list[str]
     """List of filenames of screenshots on PageSeeder."""
     roles: list[str]
-    """List of roles that have the `screenshot` property set."""
+    """List of roles that have the ``screenshot`` property set."""
     _failed: list[str]
     """List of domain docids that failed to be screenshot"""
     _diff: list[str]
@@ -60,7 +60,7 @@ class ScreenshotManager:
 
     def start(self) -> None:
         """
-        Screenshots all domains with the `screenshot` property set in the domain's role, 
+        Screenshots all domains with the ``screenshot`` property set in the domain's role, 
         and then diffs them to against a base image (previous screenshot).
 
         If screenshot fails, and there is not a screenshot on PageSeeder already, a placeholder is generated.

@@ -1,7 +1,7 @@
 """
 Cryptography module used by netdox to encrypt / decrypt sensitive files.
 This script can be called like an executable, with the following signature:
-`python crypto.py <encrypt|decrypt> <inpath> <outpath>`.
+``python crypto.py <encrypt|decrypt> <inpath> <outpath>``.
 """
 
 import os

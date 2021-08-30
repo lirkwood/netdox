@@ -26,7 +26,7 @@ class NetworkObjectMeta(ABCMeta):
 
     def __call__(cls, *args, **kwargs) -> NetworkObject:
         """
-        Calls the `_add` method on *network* after `__init__`, 
+        Calls the ``_add`` method on *network* after ``__init__``, 
         allowing the network to override attributes set during initialisation.
 
         :param network: The network.
@@ -233,7 +233,7 @@ class Node(NetworkObject):
     @property
     def location(self) -> str:
         """
-        Returns a location code based on the IPs associated with this node, and the configuration in `locations.json`.
+        Returns a location code based on the IPs associated with this node, and the configuration in ``locations.json``.
 
         :return: The location of this node
         :rtype: str
