@@ -6,7 +6,7 @@ Plugins
 About Plugins
 =============
 Plugins allow Netdox to retrieve data from an arbitrary number of services or tools.
-They are modules or packages placed in the ``netdox.plugins``, and will be called by Netdox at a series of hook points,
+They are modules or packages placed in the ``netdox.plugins`` namespace, and will be called by Netdox at a series of hook points,
 known as stages. These stages represent the logical stages within the core code, 
 and you should restrict the functionality of each stage of your plugin to the purpose of the stage in order to avoid confusion about the state of the Network object.
 
@@ -39,7 +39,7 @@ Those that are untested or non-functional have been omitted.
     plugins/plugins.fortigate
     plugins/plugins.hardware
     plugins/plugins.icinga
-    plugins/plugins.kubernetes
+    plugins/plugins.k8s
     plugins/plugins.pfsense
     plugins/plugins.screenshots
     plugins/plugins.xenorchestra

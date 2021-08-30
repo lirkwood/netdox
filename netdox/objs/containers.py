@@ -278,7 +278,7 @@ class Network:
     nodes: NodeSet
     """A NetworkObjectContainer for the Nodes in the network."""
     config: dict
-    """The currently loaded config from :ref:`utils`."""
+    """The currently loaded config."""
     cache: set
     """A set of cached names. Used when resolving long record chains."""
 

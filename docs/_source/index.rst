@@ -5,7 +5,7 @@ About
 
 Netdox Overview
 ===============
-Netdox is a highly modular, Python 3 application that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
+Netdox is a highly modular Python 3 application that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
 The objective of Netdox is to improve the productivity of network administrators by consolidating information from a range of systems.
 This reduces the need for administrators to move between many different interfaces, and minimises the familiarity required with each service.
 The documentation is updated and pruned daily to keep data current and accurate, and can be refreshed at any time. 
@@ -45,7 +45,7 @@ Development
 Developing plugins for Netdox is extremely simple. 
 No configuration is required in Netdox beyond adding the name of the package to a whitelist. 
 Everything else can be done from within your python code.
-Each plugin should be a python package in the `netdox.plugins` namespace package, 
+Each plugin should be a python package in the ``netdox.plugins`` namespace package, 
 and will be loaded and run at the correct stage automatically.
 More detail is available here: :ref:`plugins`.
 
