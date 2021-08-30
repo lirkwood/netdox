@@ -3,7 +3,7 @@ from sphinx.builders import Builder
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxTranslator
 from docutils.writers import Writer
-from docutils.io import StringOutput
+from docutils.io import FileOutput
 from urllib.parse import quote
 from shutil import rmtree
 from xml.sax.saxutils import escape
@@ -11,6 +11,9 @@ import os, re
 
 from conf import project
 project = project.lower()
+
+# re pattern of chars not allowed in fragment ids
+FRAGMENT_ID_INVALID = re.compile(r'[^a-zA-Z0-9_=,&\.-]{1}')
 
 def setup(app: Sphinx):
     entry_points = {
@@ -25,8 +28,10 @@ class PSMLTranslator(SphinxTranslator):
     indent: int = 0
     heading_level: int = 0
     frag_count: int = 0
+    """Counter for generating unique fragment ids"""
+    fragment: str = None
+    section: bool = False
     textelems: list[str] = ['para', 'heading', 'item']
-    fragments: list[str] = ["fragment", "xref-fragment", "properties-fragment"]
     xref_type: str = "none"
     docname: str = ''
     title: str = ''
@@ -52,17 +57,47 @@ class PSMLTranslator(SphinxTranslator):
             if self.in_tag(elem):
                 self.body += f'</{elem}>'
 
-    @property
-    def in_frag(self):
-        for elem in self.fragments:
-            if self.in_tag(elem):
-                return True
-        return False
+    def enter_section(self, id: str, title: str = None):
+        """
+        Starts a new section element. Exits current section if necessary.
+        """
+        if self.section:
+            self.exit_section()
+        titleattr = f'title="{title}"' if title else ''
+        self.body += f'<section id="{id}" {titleattr}>'
+        self.section = True
 
-    def depart_frag(self):
-        for elem in self.fragments:
-            if self.in_tag(elem):
-                self.body += f'</{elem}>'
+    def exit_section(self):
+        """
+        Exits the current section element, if any.
+        """
+        if self.section:
+            self.body += '</section>'
+        self.section = False
+
+    def enter_frag(self, type: str, id: str = None):
+        """
+        Starts a new fragment element. Exits current fragment if necessary.
+        """
+        assert self.section, 'Cannot start fragment outside of section.'
+        if self.fragment:
+            self.exit_frag()
+        if id:
+            id = re.sub(FRAGMENT_ID_INVALID, "_", id)
+        else:
+            self.frag_count += 1
+            id = str(self.frag_count)
+        
+        self.body += f'<{type} id="{id}">'
+        self.fragment = type
+
+    def exit_frag(self):
+        """
+        Exits the current fragment element, if any.
+        """
+        if self.fragment:
+            self.body += f'</{self.fragment}>'
+            self.fragment = None
 
     
     ############################
@@ -84,20 +119,17 @@ class PSMLTranslator(SphinxTranslator):
             root = False
 
         self.body += f'<document level="portable" type="{"references" if root else "default"}">'
-        self.body += f'<documentinfo><uri docid="_sphinx_{project}_{self.docname.split(".")[0]}" title="#_title_#"/>'
+        self.body += f'<documentinfo><uri title="#_title_#"/>'
 
         if root: self.body += f'<publication id="_sphinx_{project}_root"/>'
 
-        self.body += '</documentinfo><section id="body">'
+        self.body += '</documentinfo>'
+        self.enter_section('body')
 
     def depart_document(self, node: nodes.Node = None):
-        if self.in_frag:
-            self.depart_frag()
-        if self.toc:
-            if len(re.findall(r'<section id=".+?">', self.body)) > len(re.findall(r'</section>', self.body)):
-                self.body += '</section>'
-            self.body += self.toc
-        self.body += '</section></document>'
+        self.exit_frag()
+        self.exit_section()
+        self.body += '</document>'
 
     # Section
     def visit_section(self, node: nodes.Node = None) -> None:
@@ -146,9 +178,9 @@ class PSMLTranslator(SphinxTranslator):
         else:
             raise nodes.SkipNode
 
-        if self.in_frag:
-            self.depart_frag()
-        self.body += f'<fragment id="{id}">'
+        if self.fragment:
+            self.exit_frag()
+        self.enter_frag('fragment', id)
         raise nodes.SkipDeparture
 
     # Xref
@@ -165,12 +197,18 @@ class PSMLTranslator(SphinxTranslator):
                 document, refid = self.docname, node['refid']
             else:
                 raise nodes.SkipNode
+            
+            refid = re.sub(FRAGMENT_ID_INVALID, '_', refid)
 
-            docid = document.split('.')[0]
             if self.xref_type in ("embed", "transclude"):
-                self.body += f'<blockxref frag="{refid}" display="{xref_display}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
+                self.body += f'<blockxref frag="{refid}" display="{xref_display}" type="{self.xref_type}" href="{document}">'
             else:
-                self.body += f'<xref frag="{refid}" display="{xref_display}" type="{self.xref_type}" docid="_sphinx_{project}_{docid}">'
+                self.body += f'<xref frag="{refid}" display="{xref_display}" type="{self.xref_type}" href="{document}">'
+
+            text = node.children[0].rawsource
+            self.body += text
+            self.depart_reference()
+            raise nodes.SkipNode
         else:
             if 'name' in node:
                 text = node['name']
@@ -189,8 +227,8 @@ class PSMLTranslator(SphinxTranslator):
 
     # Paragraph
     def visit_paragraph(self, node: nodes.Node = None) -> None:
-        if not self.in_frag:
-            self.body += f'<fragment id="{self.frag_count}">'
+        if not self.fragment:
+            self.enter_frag('fragment', self.frag_count)
         if not self.in_textelem:
             if self.indent:
                 self.body += f'<para indent="{self.indent}">'
@@ -209,22 +247,16 @@ class PSMLTranslator(SphinxTranslator):
     def visit_title(self, node: nodes.Node) -> None:
         if self.in_textelem:
             self.depart_textelem()
+        if not self.fragment:
+            self.enter_frag('fragment')
         if not self.title:
             self.title = node.astext()
             self.body = re.sub(r'#_title_#', self.title, self.body)
-        
+        assert len(node.children) <= 1, 'Title element contains >1 children'
         self.body += f'<heading level="{self.heading_level}">'
     
     def depart_title(self, node: nodes.Node) -> None:
         self.body += '</heading>'
-
-    @property
-    def in_title(self):
-        headings = re.split(r'<heading( level="\d+")?>', self.body)
-        if len(headings) > 1:
-            if '</heading>' not in headings[-1]:
-                return True
-        return False
 
     # Text
     def visit_Text(self, node: nodes.Node) -> None:
@@ -242,19 +274,14 @@ class PSMLTranslator(SphinxTranslator):
     # ToC
     def visit_compound(self, node: nodes.Node) -> None:
         self.xref_type = "embed"
-        if self.in_frag:
-            self.depart_frag()
-        # swap body for toc so any edits go to toc
-        self.store = str(self.body)
-        self.body = str(self.toc)
-        self.body += f'<toc/><section id="toc"><fragment id="toc">'
+        if self.fragment:
+            self.exit_frag()
+        self.enter_section('toc')
+        self.enter_frag('fragment', 'toc')
     
     def depart_compound(self, node: nodes.Node) -> None:
-        self.toc += self.body
-        self.toc += f'</fragment>'
+        self.exit_frag()
         self.xref_type = "none"
-        self.body = str(self.store)
-        del self.store
 
     @property
     def in_toc(self):
@@ -413,7 +440,6 @@ class PSMLTranslator(SphinxTranslator):
         raise nodes.SkipDeparture
     
 
-
 class PSMLBuilder(Builder):
     """
     Builds PSML documents
@@ -436,10 +462,11 @@ class PSMLBuilder(Builder):
         self.outdir = self.app.outdir
 
     def write_doc(self, docname: str, doctree: nodes.document) -> None:
-        dest = StringOutput(encoding='utf-8')
-        doc = self.docwriter.write(doctree, dest)
-        with open(os.path.join(self.outdir, f'{docname}.psml'), 'w', encoding='utf-8') as stream:
-            stream.write(str(doc, encoding='utf-8'))
+        outpath = os.path.join(self.outdir, docname)
+        if os.path.dirname(outpath) and not os.path.exists(os.path.dirname(outpath)):
+            os.makedirs(os.path.dirname(outpath))
+        dest = FileOutput(destination_path = os.path.join(self.outdir, f'{docname}.psml'), encoding = 'utf-8')
+        self.docwriter.write(doctree, dest)
 
 
 class PSMLWriter(Writer):
