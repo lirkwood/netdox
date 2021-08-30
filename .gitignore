@@ -22,7 +22,7 @@ netdox/logs
 !netdox/src/pageseeder.properties
 !netdox/src/nat.txt
 
-!netdox/plugins/kubernetes/src/templates/
+!netdox/plugins/k8s/src/templates/
 netdox/plugins/activedirectory/records/
 netdox/plugins/screenshots/base/
 

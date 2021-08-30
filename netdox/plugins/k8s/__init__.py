@@ -151,8 +151,8 @@ class App(Node):
         return section
 
 
-from netdox.plugins.kubernetes.pub import genpub
-from netdox.plugins.kubernetes.refresh import runner
+from netdox.plugins.k8s.pub import genpub
+from netdox.plugins.k8s.refresh import runner
 
 
 def init() -> None:

@@ -20,7 +20,7 @@ from kubernetes import client
 from kubernetes.client.rest import ApiException
 
 from netdox import pageseeder
-from netdox.plugins.kubernetes import initContext
+from netdox.plugins.k8s import initContext
 
 
 def app_action(uri: Union[str, int], status: str) -> Response:

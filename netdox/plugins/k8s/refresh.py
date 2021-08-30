@@ -15,7 +15,7 @@ from kubernetes import client
 
 from netdox import utils
 from netdox.objs import Domain, Network
-from netdox.plugins.kubernetes import App, initContext
+from netdox.plugins.k8s import App, initContext
 
 
 def getDeploymentDetails(namespace: str='default') -> dict[str, dict]:
