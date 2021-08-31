@@ -10,8 +10,56 @@ import re
 from functools import wraps, cache
 from sys import argv
 from traceback import format_exc
+from cryptography.fernet import Fernet
 
-from netdox.crypto import Cryptor
+################
+# Cryptography #
+################
+
+class Cryptor(Fernet):
+    """
+    Can encrypt and decrypt files using the generated cryptography key.
+    """
+    def __init__(self):
+        try:
+            with open(APPDIR+ 'src/.crpt', 'rb') as stream:
+                key = stream.read()
+        except Exception:
+            raise FileNotFoundError('Failed to locate cryptography key. Try \'netdox init\'.')
+        else:
+            super().__init__(key)
+
+def encrypt_file(inpath: str, outpath: str = None) -> str:
+    """
+    Encrypts the file at *inpath* and saves the resulting fernet token to *outpath*.
+
+    :param inpath: The file to encrypt.
+    :type inpath: str
+    :param outpath: The path to save the resulting token to, defaults to *inpath* + '.bin'.
+    :type outpath: str, optional
+    :return: The absolute path of the output file.
+    :rtype: str
+    """
+    outpath = outpath or (inpath + '.bin')
+    with open(inpath, 'rb') as instream, open(outpath, 'wb') as outstream:
+        outstream.write(Cryptor().encrypt(instream.read()))
+    return os.path.abspath(outpath)
+
+def decrypt_file(inpath: str, outpath: str = None) -> str:
+    """
+    Decrypts the fernet token at *inpath* and saves the resulting content to *outpath*.
+
+    :param inpath: The file to decrypt.
+    :type inpath: str
+    :param outpath: The path to save the resulting content to, defaults to *inpath* + '.txt'.
+    :type outpath: str, optional
+    :return: The absolute path of the output file.
+    :rtype: str
+    """
+    outpath = outpath or (inpath + '.txt')
+    with open(inpath, 'rb') as instream, open(outpath, 'wb') as outstream:
+        outstream.write(Cryptor().decrypt(instream.read()))
+    return os.path.abspath(outpath)
 
 ####################
 # Global constants #
