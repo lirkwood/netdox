@@ -258,6 +258,15 @@ def patch_uri(uri, params={}, host='', group='', member='', header={}):
     return r.text
 
 @auth
+def get_group(host='', group='', header={}):
+    """
+    Gets a group
+    """
+    service = f'/groups/{group}'
+    r = requests.get(host+service, headers=header)
+    return r.text
+
+@auth
 def get_groupfolder(id, params={}, host='', group='', member='', header={}):
     """
     Gets some groupfolder
