@@ -1,19 +1,17 @@
 import json
 import re
 import subprocess
-import sys
 from traceback import format_exc, print_exc
 
 from bs4 import BeautifulSoup
 from flask import Flask, Response, request
 
-import iptools
-import pageseeder
-import plugins
-import utils
-import psml
+from netdox import iptools, utils, pageseeder, psml
 
 app = Flask(__name__)
+
+def serve(_):
+    raise NotImplementedError
 
 @app.route('/')
 def root():
@@ -162,6 +160,3 @@ def approved_ip(uri):
         print('[ERROR][webhooks] Missing mandatory fields: ipv4')
                 
     return Response(status=201)
-
-if 'gunicorn' in sys.argv[0]:
-    pluginmaster = plugins.PluginManager()
