@@ -107,7 +107,7 @@ def init() -> None:
         os.mkdir(utils.APPDIR+ 'plugins/aws/src')
     os.environ['AWS_CONFIG_FILE'] = utils.APPDIR+ 'plugins/aws/src/awsconfig'
 
-    auth = utils.config()['plugins']['aws']
+    auth = utils.config('aws')
     # set up aws iam profile
     with open(utils.APPDIR+ 'plugins/aws/src/awsconfig', 'w') as stream:
         stream.write(dedent(f"""

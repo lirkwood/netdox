@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from functools import wraps
+from functools import wraps, cache
 from sys import argv
 from traceback import format_exc
 
@@ -33,16 +33,21 @@ DEFAULT_CONFIG = {
     'plugins': {}
 }
 
-def config() -> dict:
+@cache
+def config(plugin: str = None) -> dict:
     """
-    Loads the encrypted config file if it exists
+    Loads the encrypted config file if it exists.
 
+    :param plugin: The plugin to select the config of, defaults to None
+    :type plugin: str, optional
+    :raises FileNotFoundError: If the config file is not present of parseable.
     :return: A dictionary of configuration values.
     :rtype: dict
     """
     try:
         with open(APPDIR+ 'src/config.bin', 'rb') as stream:
-            return json.loads(str(Cryptor().decrypt(stream.read()), encoding='utf-8'))
+            conf = json.loads(str(Cryptor().decrypt(stream.read()), encoding='utf-8'))
+            return conf['plugins'][plugin] if plugin else conf
     except Exception:
         raise FileNotFoundError('Failed to find, decrypt, or read primary configuration file')
 

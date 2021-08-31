@@ -142,7 +142,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServicePaths(namespace)
 
-    contextDetails = utils.config()["plugins"]["kubernetes"][context]
+    contextDetails = utils.config('kubernetes')[context]
     podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
     # map domains to their destination pods
@@ -194,7 +194,7 @@ def runner(network: Network) -> None:
     :param network: The network.
     :type network: Network
     """
-    auth = utils.config()['plugins']['kubernetes']
+    auth = utils.config('kubernetes')
 
     workerApps = {}
     for context in auth:

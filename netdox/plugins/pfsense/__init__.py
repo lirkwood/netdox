@@ -16,7 +16,7 @@ def runner(network: Network) -> None:
 
 async def pfsenseScrapeNat() -> dict:
     nat = {}
-    config = utils.config()['plugins']['pfsense']
+    config = utils.config('pfsense')
     browser = await launch(args = ['--no-sandbox'])
     page = await browser.newPage()
     gateway = f"https://{config['host']}/"

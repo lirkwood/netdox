@@ -66,7 +66,7 @@ class App(Node):
         domains = {p.split('/')[0] for p in sorted(paths, key = len)}
         for domain in list(domains):
             if domain in network.domains:
-                for proxy in utils.config()['plugins']['kubernetes'][cluster]['proxies']:
+                for proxy in utils.config('kubernetes')[cluster]['proxies']:
                     if not ( proxy in network.ips and network.resolvesTo(network.domains[domain], network.ips[proxy]) ):
                         domains.remove(domain)
 
@@ -166,7 +166,7 @@ def init() -> None:
         if not os.path.exists(utils.APPDIR+ f'plugins/kubernetes/{dir}'):
             os.mkdir(utils.APPDIR+ f'plugins/kubernetes/{dir}')
 
-    auth = utils.config()['plugins']['kubernetes']
+    auth = utils.config('kubernetes')
     with open(utils.APPDIR+ 'plugins/kubernetes/src/kubeconfig', 'w') as stream:
         clusters = []
         users = []
@@ -226,7 +226,7 @@ def domainapps(network: Network) -> None:
 
 def publication(network: Network) -> None:
     workerApps = defaultdict(lambda: defaultdict(list))
-    conf = utils.config()['plugins']['kubernetes']
+    conf = utils.config('kubernetes')
     # for node in network.nodes:
     #     if node.type == 'Kubernetes App':
     #         node: App

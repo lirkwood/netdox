@@ -17,7 +17,7 @@ def genheader() -> dict[str, str]:
 	:return: A dictionary of headers that can be passed to a requests request function.
 	:rtype: dict[str, str]
 	"""
-	creds = utils.config()['plugins']['dnsmadeeasy']
+	creds = utils.config('dnsmadeeasy')
 	api = creds['api']
 	secret = creds['secret']
 

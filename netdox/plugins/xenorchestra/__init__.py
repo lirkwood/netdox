@@ -210,7 +210,7 @@ def init() -> None:
     :meta private:
     """
     global creds
-    creds = utils.config()['plugins']['xenorchestra']
+    creds = utils.config('xenorchestra')
     global url
     url = f"wss://{creds['host']}/api/"
     if not os.path.exists(utils.APPDIR+ 'plugins/xenorchestra/src'):

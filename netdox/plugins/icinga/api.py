@@ -32,7 +32,7 @@ def fetchType(type: str, icinga_host: str) -> dict:
     :rtype: dict
     """
     try:
-        auth = utils.config()['plugins']['icinga'][icinga_host]
+        auth = utils.config('icinga')[icinga_host]
     except KeyError:
         raise ValueError(f'Unrecognised Icinga host: {icinga_host}')
     r = requests.get(f'https://{icinga_host}:5665/v1/objects/{type}', auth=(auth["username"], auth["password"]), verify=False)
@@ -102,7 +102,7 @@ class MonitorManager:
 
     def __init__(self, network: Network) -> None:
         self.network = network
-        self.icingas = dict(utils.config()['plugins']['icinga'])
+        self.icingas = dict(utils.config('icinga'))
 
         self.locationIcingas = {location: None for location in self.network.locator}
         for icinga, details in self.icingas.items():

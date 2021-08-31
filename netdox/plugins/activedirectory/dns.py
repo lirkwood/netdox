@@ -10,7 +10,7 @@ from netdox.objs import Domain, IPv4Address, Network
 
 
 def fetchDNS(network: Network) -> None:
-    wsman = WSMan(**utils.config()['plugins']['activedirectory'], ssl = False)
+    wsman = WSMan(**utils.config('activedirectory'), ssl = False)
     with wsman, RunspacePool(wsman) as pool:
         zones = fetchZones(pool)
         records = fetchRecords(pool, zones.values())

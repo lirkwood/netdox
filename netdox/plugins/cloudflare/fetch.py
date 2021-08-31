@@ -44,7 +44,7 @@ def init() -> None:
 
     global header
     header = {
-        "Authorization": f"Bearer {utils.config()['plugins']['cloudflare']['token']}",
+        "Authorization": f"Bearer {utils.config('cloudflare')['token']}",
         "Content-Type": "application/json"
     }
 

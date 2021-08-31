@@ -40,7 +40,7 @@ def playbook(path: str, tags: list[str]=[], vars: dict[str, str]={}) -> str:
         tagstring += tag
     if tagstring: tagstring += '"'
 
-    stdout, stderr = ssh.exec(f'ansible-playbook {path} {tagstring} {varstring}', utils.config()['ansible']['host'])
+    stdout, stderr = ssh.exec(f'ansible-playbook {path} {tagstring} {varstring}', utils.config('ansible')['host'])
     errors = validateStdout(stdout)
     if stderr:
         raise RuntimeError(f'[ERROR][ansible.py] Running playbook {path} with {tagstring} {varstring} failed:\n{stderr}')

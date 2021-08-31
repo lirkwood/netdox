@@ -14,7 +14,7 @@ def addFooters(network: Network) -> None:
     :param network: The network.
     :type network: Network
     """
-    wsman = WSMan(**utils.config()['plugins']['activedirectory'], ssl = False)
+    wsman = WSMan(**utils.config('activedirectory'), ssl = False)
     with wsman, RunspacePool(wsman) as pool:
         domain = PowerShell(pool).add_cmdlet('Get-ADDomain').add_parameter('Current','LoggedOnUser').invoke()[0]
         zone = domain.adapted_properties['DNSRoot']

@@ -9,7 +9,7 @@ from netdox import utils, iptools
 
 def runner(network: Network) -> None:
     client = FortiOSAPI()
-    client.tokenlogin(**utils.config()['plugins']['fortigate'])
+    client.tokenlogin(**utils.config('fortigate'))
     nat = {}
 
     vips = client.get('firewall/vip', '')

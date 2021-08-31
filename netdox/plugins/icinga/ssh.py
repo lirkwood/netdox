@@ -25,7 +25,7 @@ def setloc(func):
             host = kwargs['icinga']
 
         elif 'location' in kwargs:
-            for icinga, conf in utils.config()['plugins']['icinga'].items():
+            for icinga, conf in utils.config('icinga').items():
                 if kwargs['location'] in conf['locations']:
                     host = icinga
 
