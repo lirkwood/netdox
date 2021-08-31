@@ -11,30 +11,40 @@ Core Objects
     :undoc-members:
     :show-inheritance:
 
+objs.base
+---------
 
 .. automodule:: objs.base
     :members:
     :undoc-members:
     :show-inheritance:
 
+objs.nwobjs
+-----------
 
 .. automodule:: objs.nwobjs
     :members:
     :undoc-members:
     :show-inheritance:
 
+objs.containers
+---------------
 
 .. automodule:: objs.containers
     :members:
     :undoc-members:
     :show-inheritance:
 
+objs.nwman
+----------
 
 .. automodule:: objs.nwman
     :members:
     :undoc-members:
     :show-inheritance:
 
+objs.helpers
+------------
 
 .. automodule:: objs.helpers
     :members:
