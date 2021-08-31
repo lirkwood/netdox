@@ -6,6 +6,7 @@ APPDIR=$(dirname $(realpath $0))
 function help {
     echo 'Methods'
     echo 'init:                           Initialises the environment and generates a new cryptographic key.'
+    echo 'config:                         Encrypts the file and moves it to the config location (src/config.bin). Will also test the connection to PageSeeder.'
     echo 'serve:                          Starts a Gunicorn web server listening for webhooks from the configured PageSeeder.'
     echo 'refresh:                        Generates a new set of PSML documents and uploads them to PageSeeder,'
     echo 'encrypt <infile> [outfile]:     Encrypts a file using the internal cryptography from infile to outfile.'
@@ -14,10 +15,10 @@ function help {
 
 ## Initialise container with provided config to allow other processes to run
 function init {
-    if [[ ! -f $APPDIR/src/config.bin ]]
+    if [[ -f $APPDIR/src/config.bin ]]
         then
-            echo '[WARNING][netdox] Primary configuration file missing. Please place config.bin in src/'
-            exit 1 
+            echo '[WARNING][netdox] This will generate a new cryptographic key, and your current configuration will be lost. Remove the config file to confirm this action.'
+            exit 1
     fi
 
     # make all scripts executable
@@ -25,8 +26,8 @@ function init {
 
     if python3 -m netdox.init
         then
-            echo '[INFO][netdox] Initialisation successful.'
-            chmod 500 $APPDIR/src/crypto
+            echo '[INFO][netdox] Initialisation successful. Please run load a config file.'
+            chmod 500 $APPDIR/netdox/src/crypto
         else
             echo '[ERROR][netdox] Initialisation unsuccessful. Please try again.'
             exit 1
@@ -41,6 +42,23 @@ function refresh {
 ## Serve webhook listener
 function serve {
     gunicorn --reload -b '0.0.0.0:8080' -t 900 serve:app
+}
+
+## Load a file as config.bin
+function config {
+    if [[ -f "$APPDIR/netdox/src/config.bin" ]]; then
+        encrypt $1 "$APPDIR/netdox/src/config.bin"
+        if python3 -m netdox.PageSeeder
+            then
+                rm -f $1
+                echo '[INFO][netdox] Success: configuration is valid.'
+            else
+                echo '[ERROR][netdox] Unable to contact or authenticate with the configured PageSeeder instance. Please check your configuration and try again.'
+                exit 1
+        fi
+    else
+        echo "[ERROR][netdox] Unable to find or parse config file at: $1"
+    fi
 }
 
 ## Encrypt a file to a Fernet token
@@ -62,7 +80,7 @@ for arg in $@; do
     fi
 done
 
-methods=("init" "serve" "refresh" "encrypt" "decrypt")
+methods=("init" "config" "serve" "refresh" "encrypt" "decrypt")
 if [[ ${methods[@]} =~ "$method" ]]
     then $method ${args[@]}; else help
 fi
