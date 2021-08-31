@@ -1,26 +1,32 @@
 """
 Used to retrieve NAT information from FortiGate.
 """
-import re
+from fortiosapi import FortiOSAPI
+import json
 
-from netdox import utils
-from netdox.iptools import regex_ip
 from netdox.objs import IPv4Address, Network
-
-patt_nat = re.compile(rf'(?P<alias>{regex_ip.pattern}).+?(?P<dest>{regex_ip.pattern}).*')
+from netdox import utils, iptools
 
 def runner(network: Network) -> None:
-    with open(utils.APPDIR+ 'src/nat.txt','r') as stream:
-        natDict = {}
-        for line in stream.read().splitlines():
-            match = re.match(patt_nat, line)
-            if match:
-                natDict[match['alias']] = match['dest']
-                natDict[match['dest']] = match['alias']
+    client = FortiOSAPI()
+    client.tokenlogin(**utils.config()['plugins']['fortigate'])
+    nat = {}
 
-    for ip in natDict:
+    vips = client.get('firewall/vip', '')
+    for vip in vips['results']:
+        for mappedIp in vip['mappedip']:
+            if iptools.valid_ip(mappedIp['range']):
+                nat[mappedIp['range']] = vip['extip']
+                nat[vip['extip']] = mappedIp['range']
+            elif iptools.valid_range(mappedIp['range']):
+                raise NotImplementedError('Only 1:1 SNAT is currently implemented.')
+
+    for ip in nat:
         if ip not in network.ips:
             IPv4Address(network, ip, True)
-        network.ips[ip].nat = natDict[ip]
+        network.ips[ip].nat = nat[ip]
 
 __stages__ = {'nat': runner}
+
+if __name__ == '__main__':
+    runner(Network())
