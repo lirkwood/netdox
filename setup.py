@@ -29,7 +29,8 @@ setup(
         'kubernetes',
         'pyppeteer',
         'diffimg',
-        'pypsrp'
+        'pypsrp',
+        'fortiosapi'
     ],
     entry_points = {'console_scripts': ['netdox=netdox.cli:parse_args']}
 )
