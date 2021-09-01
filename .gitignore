@@ -3,17 +3,14 @@
 **/*log.txt
 **/.venv/
 
+dist
 .vscode
 .dockerignore
-docker-compose.yml
 *.code-workspace
-netdox-backend*.yml
-netdox-src
+netdox.egg-info
 netdox/out
 netdox/node_modules
 netdox/logs
-
-!cfg/
 
 **/src/*
 !netdox/src/defaults/
