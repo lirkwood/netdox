@@ -13,14 +13,21 @@ from netdox import pageseeder
 from netdox.refresh import main as _refresh
 from netdox.utils import APPDIR, decrypt_file, encrypt_file
 
-logging.basicConfig(format = '[%(asctime)s] %(name)s::%(levelname)s %(message)s', level = logging.DEBUG)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[{asctime}] [{levelname:8}] {name} :: {message}', style = '{')
 
-stdoutHandler = logging.StreamHandler(sys.stdout)
-stdoutHandler.setLevel(logging.INFO)
+streamHandler = logging.StreamHandler(sys.stdout)
+streamHandler.setLevel(logging.INFO)
+streamHandler.setFormatter(formatter)
+logger.addHandler(streamHandler)
 
 fileHandler = logging.FileHandler(APPDIR+ f'/logs/{date.today().isoformat()}.log')
 fileHandler.setLevel(logging.DEBUG)
+fileHandler.setFormatter(formatter)
+logger.addHandler(fileHandler)
+
+logger.debug('CLI invoked')
 
 
 def _confirm(message: str, default = False) -> bool:
