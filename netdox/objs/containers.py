@@ -6,9 +6,9 @@ from __future__ import annotations
 from typing import Iterable, Iterator, Type, Union
 import pickle
 
-from netdox import iptools, crypto
+from netdox import iptools
 from netdox.objs import base, helpers, nwobjs
-from netdox.utils import DEFAULT_DOMAIN_ROLES, APPDIR
+from netdox.utils import DEFAULT_DOMAIN_ROLES, APPDIR, Cryptor
 
 
 class DomainSet(base.DNSObjectContainer):
@@ -464,7 +464,7 @@ class Network:
         """
         with open(outpath, 'wb') as nw:
             nw.write(
-                crypto.Cryptor().encrypt(pickle.dumps(self))
+                Cryptor().encrypt(pickle.dumps(self))
                 if encrypt else pickle.dumps(self)
             )
 
@@ -484,7 +484,7 @@ class Network:
         """
         with open(inpath, 'rb') as nw:
             return pickle.loads(
-                crypto.Cryptor().decrypt(nw.read())
+                Cryptor().decrypt(nw.read())
                 if encrypted else nw.read()
             )
 
