@@ -10,12 +10,13 @@ import diffimg
 from bs4 import BeautifulSoup
 from pyppeteer import launch
 from pyppeteer.browser import Page
-from pyppeteer.errors import PageError, TimeoutError
+from pyppeteer.errors import TimeoutError
 
 from netdox import pageseeder, utils
 from netdox.objs import Domain, Network
 
 logger = logging.getLogger(__name__)
+logging.getLogger('pyppeteer').setLevel(logging.WARNING)
 
 
 class ScreenshotManager:
@@ -207,7 +208,7 @@ class ScreenshotManager:
         except TimeoutError:
             logger.warning(f'Navigation to {domain.name} timed out.')
         except Exception as e:
-            logger.warning(f'Screenshot for {domain.name} failed: \n\t'+ str(e))
+            logger.warning(f'Screenshot for {domain.name} failed: \'{e}\'')
 
         return (domain, False)
 

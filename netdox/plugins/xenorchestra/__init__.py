@@ -4,6 +4,7 @@ Used to read and modify the VMs managed by Xen Orchestra
 from __future__ import annotations
 
 import json
+import logging
 import os
 import random
 from functools import wraps
@@ -15,6 +16,8 @@ from bs4 import Tag
 from netdox import psml, utils
 from netdox.objs import DefaultNode, Network
 from netdox.objs.nwobjs import IPv4Address
+
+logging.getLogger('websockets').setLevel(logging.INFO)
 
 ##################################
 # Generic websocket interactions #
@@ -202,6 +205,7 @@ class VirtualMachine(DefaultNode):
 
 from netdox.plugins.xenorchestra.fetch import runner
 from netdox.plugins.xenorchestra.pub import genpub
+
 
 def init() -> None:
     """

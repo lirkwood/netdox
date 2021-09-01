@@ -6,6 +6,9 @@ This plugin uses a shared storage location in order to pass information back and
 
 from netdox.plugins.activedirectory.dns import fetchDNS
 from netdox.plugins.activedirectory.footers import addFooters
+import logging
+
+logging.getLogger('pypsrp').setLevel(logging.WARNING)
 
 __stages__ = {
     'dns': fetchDNS,

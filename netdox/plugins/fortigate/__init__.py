@@ -2,10 +2,12 @@
 Used to retrieve NAT information from FortiGate.
 """
 from fortiosapi import FortiOSAPI
-import json
+import logging
 
 from netdox.objs import IPv4Address, Network
 from netdox import utils, iptools
+
+logging.getLogger('fortiosapi').setLevel(logging.INFO)
 
 def runner(network: Network) -> None:
     client = FortiOSAPI()

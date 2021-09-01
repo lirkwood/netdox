@@ -10,6 +10,7 @@ from netdox import psml, utils
 from netdox.objs import DefaultNode, IPv4Address, Network
 
 logger = logging.getLogger(__name__)
+logging.getLogger('botocore').setLevel(logging.WARNING)
 
 ## node subclass
 

@@ -58,8 +58,8 @@ def addFooters(network: Network) -> None:
 
                 network.nodes[identity].psmlFooter.append(frag)
             except AssertionError:
-                logger.warning(f'Computer \'{properties["Name"]}\' has addresses that resolve to different nodes.',
-                            'This can be caused by ambiguous DNS records or misconfiguration in ActiveDirectory.')
+                logger.warning(f'Computer \'{properties["Name"]}\' has addresses that resolve to different nodes.'\
+                    + ' This can be caused by ambiguous DNS records or misconfiguration in ActiveDirectory.')
 
 
 if __name__ == '__main__':

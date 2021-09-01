@@ -19,6 +19,9 @@ from netdox import utils
 
 logger = logging.getLogger(__name__)
 
+logging.getLogger('urllib3').setLevel(logging.INFO)
+logging.getLogger('spnego').setLevel(logging.INFO)
+
 #####################
 # Utility functions #
 #####################
