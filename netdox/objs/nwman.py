@@ -48,7 +48,7 @@ class NetworkManager:
         self.stages = self.pluginmap.keys()
 
         try:
-            with open(utils.APPDIR+ 'src/plugins.json', 'r') as stream:
+            with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
                 self.enabled = json.load(stream)
         except Exception:
             print('[WARNING][nwman] Unable to load plugin configuration file. No plugins will run.')

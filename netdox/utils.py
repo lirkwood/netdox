@@ -111,7 +111,7 @@ def roles() -> dict:
     :rtype: dict
     """
     try:
-        with open(APPDIR+ 'src/roles.json', 'r') as stream:
+        with open(APPDIR+ 'cfg/roles.json', 'r') as stream:
             return json.load(stream)
     except Exception:
         print('[WARNING][utils] Failed to find or read domain roles configuration file')
