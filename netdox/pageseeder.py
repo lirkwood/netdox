@@ -30,8 +30,6 @@ def refreshToken(credentials: dict) -> str:
     :rtype: str
     """
     with open(utils.APPDIR+ 'src/pstoken.json', 'w') as stream:
-        print('[INFO][pageseeder] Requesting new access token...')
-
         url = f'https://{credentials["host"]}/ps/oauth/token'
         refresh_header = {
             'grant_type': 'client_credentials',
