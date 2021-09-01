@@ -67,7 +67,7 @@ def init(args: argparse.Namespace):
         for file in os.scandir(APPDIR+ 'src/defaults/localconf'):
             shutil.copy(file.path, APPDIR+ 'cfg/'+ file.name)
             
-        print('[INFO][netdox] Initialisation of directory successful. Please provide a config using \'netdox config\'.')
+        logger.info('Initialisation of directory successful. Please provide a config using \'netdox config\'.')
     
     else: exit(0)
 
@@ -87,14 +87,14 @@ def config(args: argparse.Namespace):
                 try:
                     pageseeder.get_group()
                 except Exception:
-                    print('[ERROR][netdox] Unable to contact or authenticate with the configured PageSeeder instance. Please check your configuration and try again.')
+                    logger.error('Unable to contact or authenticate with the configured PageSeeder instance. Please check your configuration and try again.')
                 else:
                     os.remove(args.path)
                     if os.path.exists(APPDIR+ 'src/config.old'):
                         os.remove(APPDIR+ 'src/config.old')
-                    print('[INFO][netdox] Success: configuration is valid.')
+                    logger.info('Success: configuration is valid.')
             else:
-                print(f'[ERROR][netdox] Unable to find or parse config file at: {args.path}. Reverting to previous config.')
+                logger.error(f'Unable to find or parse config file at: {args.path}. Reverting to previous config.')
                 os.remove(APPDIR+ 'src/config.bin')
                 if os.path.exists(APPDIR+ 'src/config.old'):
                     shutil.move(APPDIR+ 'src/config.old', APPDIR+ 'src/config.bin')

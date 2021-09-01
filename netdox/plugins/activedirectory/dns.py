@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import Iterable
 
@@ -8,6 +9,7 @@ from pypsrp.wsman import WSMan
 from netdox import utils
 from netdox.objs import Domain, IPv4Address, Network
 
+logger = logging.getLogger(__name__)
 
 def fetchDNS(network: Network) -> None:
     wsman = WSMan(**utils.config('activedirectory'), ssl = False)
@@ -43,7 +45,7 @@ def fetchDNS(network: Network) -> None:
                         value = value +'.'+ zoneName
 
                     if zones[zoneName].adapted_properties['IsReverseLookupZone']:
-                        print('[DEBUG][activedirectory] Ignoring CNAME in reverse lookup zone')
+                        logger.debug('[DEBUG][activedirectory] Ignoring CNAME in reverse lookup zone')
                     else:
                         dnsobj.link(value, 'ActiveDirectory')
 

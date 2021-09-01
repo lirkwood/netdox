@@ -5,8 +5,9 @@ API Functions
 Provides functions for interacting with the Icinga API and a class for managing Netdox-generated monitors.
 """
 import json
-from typing import Iterable
+import logging
 from collections import defaultdict
+from typing import Iterable
 
 import requests
 from bs4 import BeautifulSoup
@@ -14,6 +15,8 @@ from bs4 import BeautifulSoup
 from netdox import utils
 from netdox.objs import Domain, Network
 from netdox.plugins.icinga.ssh import reload, rm_host, set_host
+
+logger = logging.getLogger(__name__)
 
 ####################################
 # Generic resource fetch functions #
@@ -182,7 +185,7 @@ class MonitorManager:
                 icinga = self.locationIcingas[location]
             else:
                 icinga = self.generated[domain]['icinga']
-                print(f'[WARNING][icinga] Unable to meaningfully decide which instance should monitor {domain}; Chose {icinga}')
+                logger.warning(f'Unable to meaningfully decide which instance should monitor {domain}; Chose {icinga}')
 
             for monitor in monitors:
                 if monitor['icinga'] != icinga:
@@ -292,7 +295,7 @@ class MonitorManager:
             self.reload()
         
         if invalid:
-            print(f'[WARNING][icinga] Unable to resolve invalid monitors for:\n\t', \
+            logger.warning(f'Unable to resolve invalid monitors for:\n\t', \
                 ",\n\t".join([r.name for r in invalid]))
 
     def pruneGenerated(self) -> None:

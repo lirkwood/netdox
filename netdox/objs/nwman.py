@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import logging
 import os
 import pkgutil
 import re
@@ -17,6 +18,7 @@ import netdox.plugins
 from netdox import pageseeder, utils
 from netdox.objs.containers import Network
 
+logger = logging.getLogger(__name__)
 
 class NetworkManager:
     """
@@ -51,7 +53,7 @@ class NetworkManager:
             with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
                 self.enabled = json.load(stream)
         except Exception:
-            print('[WARNING][nwman] Unable to load plugin configuration file. No plugins will run.')
+            logger.warning('Unable to load plugin configuration file. No plugins will run.')
             self.enabled = []
         
         self.loadPlugins(netdox.plugins)
@@ -116,7 +118,7 @@ class NetworkManager:
         try:
             plugin.__stages__[stage](self.network)
         except Exception:
-            print(f'[ERROR][nwman] {plugin.__name__} threw an exception during stage {stage}: \n{format_exc()}')
+            logger.error(f'{plugin.__name__} threw an exception during stage {stage}: \n{format_exc()}')
 
     def runStage(self, stage: str) -> None:
         """
@@ -125,7 +127,7 @@ class NetworkManager:
         :param stage: The stage to check for plugins
         :type stage: str
         """
-        print(f'[INFO][nwman] Starting stage: {stage}')
+        logger.info(f'Starting stage: {stage}')
         for plugin in self.pluginmap[stage]:
             self.runPlugin(plugin, stage)
 
@@ -170,7 +172,7 @@ class NetworkManager:
                     if marked_stale:
                         if expiry <= today:
                             pageseeder.archive(uri)
-                            print(f'[INFO][nwman] Archiving URI {uri} as it is >=30 days stale.')
+                            logger.info(f'Archiving URI {uri} as it is >=30 days stale.')
                         else:
                             stale[uri] = marked_stale['date']
                     else:
@@ -178,7 +180,7 @@ class NetworkManager:
                         if labels: labels += ','
                         labels += f'stale,expires-{plus_thirty}'
                         pageseeder.patch_uri(uri, {'labels':labels})
-                        print(f'[INFO][nwman] File {commonpath} is stale and has been sentenced.')
+                        logger.info(f'File {commonpath} is stale and has been sentenced.')
                         stale[uri] = str(plus_thirty)
                 # if marked stale but exists locally
                 else:

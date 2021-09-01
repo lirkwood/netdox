@@ -9,14 +9,16 @@ which describes all apps running from deployments in the configured Kubernetes c
 """
 
 import json
+import logging
 from collections import defaultdict
 
 from kubernetes import client
 
 from netdox import utils
-from netdox.objs import Domain, Network
+from netdox.objs import Network
 from netdox.plugins.k8s import App, initContext
 
+logger = logging.getLogger(__name__)
 
 def getDeploymentDetails(namespace: str='default') -> dict[str, dict]:
     """
@@ -142,7 +144,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     serviceMatchLabels = getServiceMatchLabels(namespace)
     serviceDomains = getServicePaths(namespace)
 
-    contextDetails = utils.config('kubernetes')[context]
+    contextDetails = utils.config('k8s')[context]
     podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
 
     # map domains to their destination pods
@@ -156,7 +158,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
                     podName = pod['name']
                     podPaths[podName] |= paths
         else:
-            print(f'[WARNING][kubernetes] Domain paths {", ".join(paths)} are being routed to non-existent service {service}'
+            logger.warning(f'Domain paths {", ".join(paths)} are being routed to non-existent service {service}'
             +f' (cluster: {context}, namespace: {namespace})')
     
     apps = {}
@@ -194,7 +196,7 @@ def runner(network: Network) -> None:
     :param network: The network.
     :type network: Network
     """
-    auth = utils.config('kubernetes')
+    auth = utils.config('k8s')
 
     workerApps = {}
     for context in auth:

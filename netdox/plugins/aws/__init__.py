@@ -1,3 +1,4 @@
+import logging
 import os
 from textwrap import dedent
 from typing import Iterable
@@ -7,6 +8,8 @@ from bs4.element import Tag
 
 from netdox import psml, utils
 from netdox.objs import DefaultNode, IPv4Address, Network
+
+logger = logging.getLogger(__name__)
 
 ## node subclass
 
@@ -130,7 +133,7 @@ def runner(network: Network) -> None:
             if instance['NetworkInterfaces']:
                 netInf = instance['NetworkInterfaces'][0]
             else:
-                print(f'[WARNING][aws] Instance {instance["InstanceId"]} has no network interfaces and has been ignored')
+                logger.warning(f'Instance {instance["InstanceId"]} has no network interfaces and has been ignored')
                 continue
 
             EC2Instance(

@@ -26,7 +26,7 @@ def fetchDomains() -> Generator[Tuple[str, str], None, None]:
     response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/', headers=genheader()).text
     jsondata = json.loads(response)['data']
     if "error" in response:
-        print('[ERROR][dnsme_domains.py] DNSMadeEasy authentication failed.')
+        raise RuntimeError('DNSMadeEasy authentication failed.')
     else:
         for record in jsondata:
             yield (record['id'], record['name'])

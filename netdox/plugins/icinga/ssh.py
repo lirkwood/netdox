@@ -5,11 +5,14 @@ SSH Functions
 Provides functions for executing commands on Icinga instances over SSH,
 and some convenience functions for creating/deleting generated monitors etc.
 """
+import logging
 from functools import wraps
 from textwrap import dedent
 
 from netdox import utils
 from netdox.plugins.ssh import exec
+
+logger = logging.getLogger(__name__)
 
 
 def setloc(func):
@@ -73,7 +76,7 @@ def set_host(address: str, icinga: str = '', location: str = '', template: str =
     }}' > /etc/icinga2/conf.d/hosts/generated/{address.replace('.','_')}.conf
     """)
 
-    print(f'[INFO][icinga] Setting template for {address} to {template} in {icinga}')
+    logger.info(f'Setting template for {address} to {template} in {icinga}')
     return exec(cmd, host=icinga)
 
 @setloc
@@ -90,7 +93,7 @@ def rm_host(address: str, icinga: str = '', location: str = '') -> str:
     """
     cmd = f'rm -f /etc/icinga2/conf.d/hosts/generated/{address.replace(".","_")}.conf'
 
-    print(f'[INFO][icinga] Removing monitor on {address} from {icinga}')
+    logger.info(f'Removing monitor on {address} from {icinga}')
     return exec(cmd, host=icinga)
 
 @setloc
@@ -105,5 +108,5 @@ def reload(icinga: str = '', location: str = '') -> str:
     """
     cmd = f'icinga2 daemon -C && systemctl reload icinga2'
 
-    print(f'[INFO][icinga] Reloading Icinga2 service on {icinga}')
+    logger.info(f'Reloading Icinga2 service on {icinga}')
     return exec(cmd, host=icinga)

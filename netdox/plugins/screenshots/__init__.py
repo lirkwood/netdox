@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import shutil
 from datetime import date
@@ -13,6 +14,8 @@ from pyppeteer.errors import PageError, TimeoutError
 
 from netdox import pageseeder, utils
 from netdox.objs import Domain, Network
+
+logger = logging.getLogger(__name__)
 
 
 class ScreenshotManager:
@@ -202,9 +205,9 @@ class ScreenshotManager:
             await page.screenshot(path = f'{self.workdir}/{domain.docid}.jpg')
             return (domain, True)
         except TimeoutError:
-            print(f'[WARNING][screenshots] Navigation to {domain.name} timed out.')
+            logger.warning(f'Navigation to {domain.name} timed out.')
         except Exception as e:
-            print(f'[WARNING][screenshots] Screenshot for {domain.name} failed: \n\t'+ str(e))
+            logger.warning(f'Screenshot for {domain.name} failed: \n\t'+ str(e))
 
         return (domain, False)
 

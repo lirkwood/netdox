@@ -8,11 +8,15 @@ This script is used during the refresh process to link DNS records to the VMs th
 """
 import asyncio
 import json
+import logging
 
 from netdox import iptools, utils
 from netdox.objs import IPv4Address, Network
 from netdox.objs.nwobjs import PlaceholderNode
 from netdox.plugins.xenorchestra import VirtualMachine, authenticate, call
+
+logger = logging.getLogger(__name__)
+
 
 #########################
 # Convenience functions #
@@ -141,9 +145,9 @@ async def makeNodes(network: Network) -> None:
                     )
 
                 else:
-                    print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
+                    logger.warning(f'VM {vm["name_label"]} has invalid IPv4 address {vm["mainIpAddress"]}')
             else:
-                print(f'[WARNING][xenorchestra] VM {vm["name_label"]} has no IP address')
+                logger.warning(f'VM {vm["name_label"]} has no IP address')
 
     return vms, \
         {hosts[hostid]['address']: vmlist for hostid, vmlist in hostVMs.items()}, \

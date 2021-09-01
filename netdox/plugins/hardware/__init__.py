@@ -3,6 +3,7 @@ This plugin is intended to support manual entry of Node objects describing physi
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
 import shutil
@@ -13,11 +14,13 @@ from traceback import print_exc
 from typing import Iterable
 
 import requests
-from bs4 import BeautifulSoup, Tag, SoupStrainer
+from bs4 import BeautifulSoup, SoupStrainer, Tag
 
-from netdox import utils, pageseeder
+from netdox import pageseeder, utils
 from netdox.objs import Network
 from netdox.objs.base import Node
+
+logger = logging.getLogger(__name__)
 
 INFO_SECTION = SoupStrainer('section', id = 'info')
 URI_PATTERN = re.compile(r'<uri\s+id="(?P<id>\d+)"')
@@ -155,10 +158,10 @@ def runner(network: Network) -> None:
                     )
                     
                 else:
-                    print(f'[DEBUG][hardware] Hardware document \'{filename}\' has no section \'info\'.')
+                    logger.debug(f'Hardware document \'{filename}\' has no section \'info\'.')
 
         except Exception:
-            print(f'[ERROR][hardware] Failed while processing document with filename \'{filename}\'')
+            logger.error(f'Failed while processing document with filename \'{filename}\'')
             print_exc()
 
 __stages__ = {

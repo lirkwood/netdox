@@ -5,12 +5,16 @@ This module contains any multi-purpose or generic code for use by both internal 
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
-from functools import wraps, cache
+from functools import cache, wraps
 from sys import argv
 from traceback import format_exc
+
 from cryptography.fernet import Fernet
+
+logger = logging.getLogger(__name__)
 
 ################
 # Cryptography #
@@ -114,7 +118,7 @@ def roles() -> dict:
         with open(APPDIR+ 'cfg/roles.json', 'r') as stream:
             return json.load(stream)
     except Exception:
-        print('[WARNING][utils] Failed to find or read domain roles configuration file')
+        logger.warning('Failed to find or read domain roles configuration file')
         return DEFAULT_DOMAIN_ROLES
 
 
@@ -139,7 +143,7 @@ def handle(func):
         try:
             returned = func(*args, **kwargs)
         except Exception:
-            print(f'[WARNING][utils] Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
+            logger.error(f'Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
             return None
         else:
             return returned

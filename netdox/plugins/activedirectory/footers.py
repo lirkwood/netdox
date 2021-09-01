@@ -1,10 +1,14 @@
+import logging
+
 from bs4 import BeautifulSoup
 from pypsrp.powershell import PowerShell, RunspacePool
 from pypsrp.wsman import WSMan
 
 from netdox import utils
-from netdox.objs import Network, Domain
+from netdox.objs import Domain, Network
 from netdox.objs.nwobjs import PlaceholderNode
+
+logger = logging.getLogger(__name__)
 
 def addFooters(network: Network) -> None:
     """
@@ -54,7 +58,7 @@ def addFooters(network: Network) -> None:
 
                 network.nodes[identity].psmlFooter.append(frag)
             except AssertionError:
-                print(f'[WARNING][activedirectory] Computer \'{properties["Name"]}\' has addresses that resolve to different nodes. ',
+                logger.warning(f'Computer \'{properties["Name"]}\' has addresses that resolve to different nodes.',
                             'This can be caused by ambiguous DNS records or misconfiguration in ActiveDirectory.')
 
 

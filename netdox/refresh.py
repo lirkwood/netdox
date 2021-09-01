@@ -7,6 +7,7 @@ then calls the final plugin stage and writes PSML. The upload is managed by the 
 """
 
 import json
+import logging
 import os
 import shutil
 from distutils.util import strtobool
@@ -15,6 +16,8 @@ from bs4 import BeautifulSoup
 
 from netdox import pageseeder, psml, utils
 from netdox.objs import NetworkManager
+
+logger = logging.getLogger(__name__)
 
 ##################
 # Initialisation #
@@ -69,7 +72,7 @@ def init():
                     "uri": roleUri
                 })
             except Exception:
-                print(f'[ERROR][refresh] Failed to load DNS role {xref["urititle"]}')
+                logger.error(f'Failed to load DNS role {xref["urititle"]}')
 
         # load exclusions
         exclusionSoup = BeautifulSoup(pageseeder.get_fragment('_nd_config', 'exclude'), features='xml')
@@ -77,7 +80,7 @@ def init():
             roles['exclusions'].append(para.string)
 
     else:
-        print('[WARNING][refresh] No DNS config found on PageSeeder')
+        logger.warning('No DNS config found on PageSeeder')
         # load default config and copy to upload context
         for file in os.scandir(utils.APPDIR+ 'src/defaults/psconf'):
             if file.name != 'config.psml':
@@ -160,7 +163,7 @@ def main():
 
     nwman.runStage('cleanup')
 
-    print('[INFO][refresh] Done.')
+    logger.info('Done.')
 
 
 if __name__ == '__main__':

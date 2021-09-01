@@ -6,6 +6,7 @@ The decorator ``@auth`` injects default values and authentication details to the
 """
 
 import json
+import logging
 from datetime import datetime, timedelta
 from functools import wraps
 from inspect import signature
@@ -15,6 +16,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from netdox import utils
+
+logger = logging.getLogger(__name__)
 
 #####################
 # Utility functions #
@@ -397,18 +400,18 @@ def clear_loading_zone(params={}, host='', group='', member='', header={}):
 @auth
 def zip_upload(path, uploadpath, host='', group='', header={}):
     loading_zone_upload(path, params={'file':'netdox-psml.zip'}, host='https://ps-netdox.allette.com.au', group=group, header=header)
-    print('[INFO][upload] File sent successfully.')
+    logger.info('File sent successfully.')
     thread = BeautifulSoup(unzip_loading_zone('netdox-psml.zip', params={'deleteoriginal':'true'}), features = 'xml').thread
     while thread['status'] != 'completed':
         sleep(2)
         try:
             thread = BeautifulSoup(get_thread_progress(thread['id']), features = 'xml').thread
         except TypeError:
-            print('[ERROR][upload] Upload failed. Clearing loading zone...')
+            logger.error('Upload failed. Clearing loading zone...')
             clear_loading_zone()
             return
 
-    print('[INFO][upload] File unzipped. Loading files into PageSeeder.')
+    logger.info('File unzipped. Loading files into PageSeeder.')
     return load_loading_zone(params={
         'folder': uploadpath,
         'overwrite': 'true',

@@ -2,11 +2,14 @@
 Used to retrieve NAT information from pfSense.
 """
 import asyncio
+import logging
 
 from pyppeteer import launch
 
 from netdox import utils
 from netdox.objs import IPv4Address, Network
+
+logger = logging.getLogger(__name__)
 
 def runner(network: Network) -> None:
     for ip, alias in asyncio.run(pfsenseScrapeNat()).items():
@@ -34,7 +37,7 @@ async def pfsenseScrapeNat() -> dict:
             nat[columns[3]] = columns[4]
             nat[columns[4]] = columns[3]
     else:
-        print('[DEBUG][pfsense] Failed to navigate to pfSense NAT page')
+        logging.debug('Failed to navigate to pfSense NAT page')
     
     await page.close()
     await browser.close()
