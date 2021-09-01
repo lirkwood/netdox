@@ -3,6 +3,7 @@
 **/*log.txt
 **/.venv/
 
+cfg
 dist
 .vscode
 .dockerignore
