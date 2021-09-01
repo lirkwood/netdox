@@ -1,16 +1,39 @@
 import argparse
+import logging
 import os
 import pathlib
 import shutil
+import sys
+from datetime import date
+from distutils.util import strtobool
 
 from cryptography.fernet import Fernet
-from distutils.util import strtobool
 
 from netdox import pageseeder
 from netdox.refresh import main as _refresh
-from netdox.utils import APPDIR, encrypt_file, decrypt_file
+from netdox.utils import APPDIR, decrypt_file, encrypt_file
 
-def _confirm(message: str, default = False):
+logging.basicConfig(format = '[%(asctime)s] %(name)s::%(levelname)s %(message)s', level = logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+stdoutHandler = logging.StreamHandler(sys.stdout)
+stdoutHandler.setLevel(logging.INFO)
+
+fileHandler = logging.FileHandler(APPDIR+ f'/logs/{date.today().isoformat()}.log')
+fileHandler.setLevel(logging.DEBUG)
+
+
+def _confirm(message: str, default = False) -> bool:
+    """
+    Prompts the user to confirm *message* and returns the boolean representation of their answer.
+
+    :param message: The message to display to the user.
+    :type message: str
+    :param default: The default value to take if the user simply presses return, defaults to False
+    :type default: bool, optional
+    :return: The user's answer
+    :rtype: bool
+    """
     resp = input(message)
     if not resp:
         return default
@@ -19,16 +42,17 @@ def _confirm(message: str, default = False):
 
 
 def init(args: argparse.Namespace):
-    if not os.path.exists(APPDIR+ 'src/config.bin') or \
+    """
+    Initialises a new config directory and generates a new cryptography key.
+
+    :param args: CLI args
+    :type args: argparse.Namespace
+    """
+    if (not os.path.exists(APPDIR+ 'src/config.bin')) or \
     _confirm('This action will destroy the existing cryptography key, and your current configuration will be lost. Continue? [y/n] '):
-        # setting up dirs
         for path in ('src', 'out', 'logs'):
             if not os.path.exists(APPDIR+ path):
                 os.mkdir(APPDIR+ path)
-                
-        for path in ('domains', 'ips', 'nodes', 'config'):
-            if not os.path.exists(APPDIR+ 'out/'+ path):
-                os.mkdir(APPDIR+ 'out/'+ path)
 
         with open(APPDIR+ 'src/.crpt', 'wb') as stream:
             stream.write(Fernet.generate_key())
@@ -39,7 +63,7 @@ def init(args: argparse.Namespace):
         if os.path.exists(APPDIR+ 'cfg'):
             os.remove(APPDIR+ 'cfg')
         os.symlink(os.path.abspath(args.path), APPDIR+ 'cfg', target_is_directory = True)
-        
+
         for file in os.scandir(APPDIR+ 'src/defaults/localconf'):
             shutil.copy(file.path, APPDIR+ 'cfg/'+ file.name)
             
@@ -48,6 +72,12 @@ def init(args: argparse.Namespace):
     else: exit(0)
 
 def config(args: argparse.Namespace):
+    """
+    Load a new config file or dump the current one.
+
+    :param args: CLI args
+    :type args: argparse.Namespace
+    """
     if args.action == 'load':
         if _confirm('This action will destroy your existing configuration if successful. Continue? [y/n] '):
             if os.path.exists(APPDIR+ 'src/config.bin'):
@@ -75,15 +105,33 @@ def config(args: argparse.Namespace):
         decrypt_file(APPDIR+ 'src/config.bin', args.path)
 
 def serve(_):
+    """
+    Begins serving the web server to listen for webhooks from PageSeeder.
+    """
     raise NotImplementedError('Webhooks are not currently usable')
 
 def refresh(_):
+    """
+    Generates a new set of documentation and uploads it to PageSeeder.
+    """
     _refresh()
 
 def encrypt(args: argparse.Namespace):
+    """
+    Encrypts a file.
+
+    :param args: CLI args
+    :type args: argparse.Namespace
+    """
     encrypt_file(str(args.inpath), str(args.outpath) if args.outpath else None)
 
 def decrypt(args: argparse.Namespace):
+    """
+    Decrypts a file.
+
+    :param args: CLI args
+    :type args: argparse.Namespace
+    """
     decrypt_file(str(args.inpath), str(args.outpath) if args.outpath else None)
 
 
@@ -96,7 +144,7 @@ def parse_args():
         dest = 'method'
     )
 
-    init_parser = subparsers.add_parser('init', help = 'Initialises the working directory and generates a new cryptography key.')
+    init_parser = subparsers.add_parser('init', help = 'Initialises a new config directory and generates a new cryptography key.')
     init_parser.set_defaults(func = init)
     init_parser.add_argument('path', type = pathlib.Path, help = 'path to directory to initialise as the config directory.')
 
