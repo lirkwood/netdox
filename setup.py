@@ -9,8 +9,11 @@ setup(
     description = 'Network documentation generator for use with PageSeeder.',
     long_description = readme(),
     long_description_content_type = 'text/markdown',
+    author = 'Linus Kirkwood',
+    author_email = 'linuskirkwood@gmail.com',
     version = '0.0.0',
-    url = 'https://gitlab.allette.com.au/allette/devops/network-documentation',
+    url = 'https://netdox.allette.com.au/',
+    download_url = 'https://gitlab.allette.com.au/allette/devops/network-documentation',
     packages = ['netdox', 'netdox.objs'] + [f'netdox.plugins.{pkg}' for pkg in find_packages(where = 'netdox/plugins')],
     package_data = {
         "": ["README.md"],
