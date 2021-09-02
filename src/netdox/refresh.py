@@ -106,7 +106,7 @@ def init():
                 else:
                     roles[role][attribute] = value
 
-    with open(utils.APPDIR+ 'src/roles.json', 'w') as stream:
+    with open(utils.APPDIR+ 'cfg/roles.json', 'w') as stream:
         stream.write(json.dumps(roles, indent=2))
 
 
