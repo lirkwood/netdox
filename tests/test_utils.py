@@ -143,6 +143,7 @@ def test_fileFetchRecursive(mock_dir):
     """
     Tests the ``fileFetchRecursive`` function.
     """
+    # relative to cwd
     assert utils.fileFetchRecursive('mockdir', '.') == [
         os.path.normpath(path) for path in [
         'mockdir/file.ext1',
@@ -151,6 +152,18 @@ def test_fileFetchRecursive(mock_dir):
         'mockdir/mock_subdir_2/file.ext1',
         'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
     ]]
+
+    # relative to APPDIR
+    assert utils.fileFetchRecursive('mockdir') == [
+        os.path.relpath(path, utils.APPDIR) for path in [
+        'mockdir/file.ext1',
+        'mockdir/mock_subdir_1/file.ext1',
+        'mockdir/mock_subdir_1/file.ext2',
+        'mockdir/mock_subdir_2/file.ext1',
+        'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
+    ]]
+
+    # restrict extension
     assert utils.fileFetchRecursive('mockdir', '.', 'ext1') == [
         os.path.normpath(path) for path in [
         'mockdir/file.ext1',
