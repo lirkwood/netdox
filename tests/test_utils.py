@@ -37,9 +37,12 @@ def setupenv(request):
     # backup files
     shutil.copytree(utils.APPDIR+ 'src/', 'srcbkp')
 
+    cfg_location = None
+    if os.path.exists(utils.APPDIR+ 'cfg'):
+        cfg_location = os.readlink(utils.APPDIR+ 'cfg')
+        os.remove(utils.APPDIR+ 'cfg')
+    
     os.mkdir('tmpcfg')
-    cfg_location = os.readlink(utils.APPDIR+ 'cfg')
-    os.remove(utils.APPDIR+ 'cfg')
     os.symlink(
         os.path.abspath('tmpcfg'), 
         utils.APPDIR+ 'cfg', 
@@ -57,16 +60,17 @@ def setupenv(request):
 
     shutil.rmtree(utils.APPDIR+ 'src')
     shutil.copytree('srcbkp', utils.APPDIR+ 'src')
-
-    os.remove(utils.APPDIR+ 'cfg')
-    os.symlink(
-        os.path.abspath(cfg_location), 
-        utils.APPDIR+ 'cfg', 
-        target_is_directory = True
-    )
-
     shutil.rmtree('srcbkp')
+    
     shutil.rmtree('tmpcfg')
+    os.remove(utils.APPDIR+ 'cfg')
+    if cfg_location:
+        os.symlink(
+            os.path.abspath(cfg_location), 
+            utils.APPDIR+ 'cfg', 
+            target_is_directory = True
+        )
+
     os.chdir(request.config.invocation_dir)
 
 
@@ -92,7 +96,7 @@ def mock_roles():
     """
     Writes *ROLES* to roles location.
     """
-    with open('tmpcfg/roles.json', 'w') as stream:
+    with open(utils.APPDIR+ 'cfg/roles.json', 'w') as stream:
         stream.write(json.dumps(ROLES))
 
 def test_roles(mock_roles):
@@ -100,7 +104,7 @@ def test_roles(mock_roles):
     Tests the output of ``utils.roles()``.
     """
     assert utils.roles() == ROLES
-    os.remove('tmpcfg/roles.json')
+    os.remove(utils.APPDIR+ 'cfg/roles.json')
     assert utils.roles() == utils.DEFAULT_DOMAIN_ROLES
 
 
