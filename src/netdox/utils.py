@@ -72,19 +72,6 @@ def decrypt_file(inpath: str, outpath: str = None) -> str:
 global APPDIR
 APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
 
-global DEFAULT_CONFIG
-DEFAULT_CONFIG = {
-    'pageseeder': {
-        'id': '',
-        'secret': '',
-        'username': '',
-        'password': '',
-        'host': '',
-        'group': ''
-    },
-    'plugins': {}
-}
-
 @cache
 def config(plugin: str = None) -> dict:
     """
