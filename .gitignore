@@ -15,6 +15,7 @@ netdox/logs
 
 **/src/*
 !netdox/src/defaults/
+!netdox/src/templates/
 !netdox/src/exclusions.txt
 !netdox/src/placeholder.jpg
 !netdox/src/pageseeder.properties

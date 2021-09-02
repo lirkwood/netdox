@@ -17,7 +17,10 @@ setup(
     packages = ['netdox', 'netdox.objs'] + [f'netdox.plugins.{pkg}' for pkg in find_packages(where = 'netdox/plugins')],
     package_data = {
         "": ["README.md"],
-        "netdox": ["src/defaults/*/*"]
+        "netdox": [
+            "src/defaults/*/*",
+            "src/templates/*/*"
+        ]
     },
     install_requires = [
         'beautifulsoup4',
