@@ -1,3 +1,4 @@
+from ntpath import realpath
 import os
 import sys
 import shutil
@@ -110,3 +111,54 @@ def test_handle():
     """
     assert utils.handle(lambda: 'return value')() == 'return value'
     assert utils.handle(lambda: 1 / 0)() == None
+
+
+@pytest.fixture
+def mock_dir():
+    """
+    Creates a mock directory structure to search.
+    """
+    for dir in [
+        'mockdir',
+        'mockdir/mock_subdir_1',
+        'mockdir/mock_subdir_2',
+        'mockdir/mock_subdir_2/mock_sub_subdir',
+    ]:
+        os.mkdir(dir)
+
+    for file in [
+        'mockdir/file.ext1',
+        'mockdir/mock_subdir_1/file.ext1',
+        'mockdir/mock_subdir_1/file.ext2',
+        'mockdir/mock_subdir_2/file.ext1',
+        'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
+    ]:
+        open(file, 'w').close()
+    
+    yield
+
+    shutil.rmtree('mockdir')
+
+def test_fileFetchRecursive(mock_dir):
+    """
+    Tests the ``fileFetchRecursive`` function.
+    """
+    assert utils.fileFetchRecursive('mockdir', '.') == [
+        os.path.normpath(path) for path in [
+        'mockdir/file.ext1',
+        'mockdir/mock_subdir_1/file.ext1',
+        'mockdir/mock_subdir_1/file.ext2',
+        'mockdir/mock_subdir_2/file.ext1',
+        'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
+    ]]
+    assert utils.fileFetchRecursive('mockdir', '.', 'ext1') == [
+        os.path.normpath(path) for path in [
+        'mockdir/file.ext1',
+        'mockdir/mock_subdir_1/file.ext1',
+        'mockdir/mock_subdir_2/file.ext1',
+    ]]
+    assert utils.fileFetchRecursive('mockdir', '.', 'ext2') == [
+        os.path.normpath(path) for path in [
+        'mockdir/mock_subdir_1/file.ext2',
+        'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
+    ]]
