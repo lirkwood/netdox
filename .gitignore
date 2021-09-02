@@ -9,20 +9,20 @@ dist
 .dockerignore
 *.code-workspace
 netdox.egg-info
-netdox/out
-netdox/node_modules
-netdox/logs
+src/netdox/out
+src/netdox/logs
 
 **/src/*
-!netdox/src/defaults/
-!netdox/src/templates/
-!netdox/src/exclusions.txt
-!netdox/src/placeholder.jpg
-!netdox/src/pageseeder.properties
-!netdox/src/nat.txt
+!src/netdox/
+!src/netdox/src/defaults/
+!src/netdox/src/templates/
+!src/netdox/src/exclusions.txt
+!src/netdox/src/placeholder.jpg
+!src/netdox/src/pageseeder.properties
+!src/netdox/src/nat.txt
 
-!netdox/plugins/k8s/src/templates/
-netdox/plugins/activedirectory/records/
-netdox/plugins/screenshots/base/
+!src/netdox/plugins/k8s/src/templates/
+src/netdox/plugins/activedirectory/records/
+src/netdox/plugins/screenshots/base/
 
 docs/_build/

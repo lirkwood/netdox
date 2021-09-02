@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, find_namespace_packages
 
 def readme() -> str:
     with open('README.md', 'r') as stream:
@@ -14,7 +14,8 @@ setup(
     version = '0.0.0',
     url = 'https://netdox.allette.com.au/',
     download_url = 'https://gitlab.allette.com.au/allette/devops/network-documentation',
-    packages = ['netdox', 'netdox.objs'] + [f'netdox.plugins.{pkg}' for pkg in find_packages(where = 'netdox/plugins')],
+    packages = find_namespace_packages(where = 'src'),
+    package_dir = {"": "src"},
     package_data = {
         "": ["README.md"],
         "netdox": [
@@ -22,6 +23,10 @@ setup(
             "src/templates/*/*"
         ]
     },
+    classifiers = [
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent"
+    ],
     install_requires = [
         'beautifulsoup4',
         'lxml',

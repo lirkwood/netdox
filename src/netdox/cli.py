@@ -22,13 +22,6 @@ streamHandler.setLevel(logging.INFO)
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
-fileHandler = logging.FileHandler(APPDIR+ f'/logs/{date.today().isoformat()}.log')
-fileHandler.setLevel(logging.DEBUG)
-fileHandler.setFormatter(formatter)
-logger.addHandler(fileHandler)
-
-logger.debug('CLI invoked')
-
 
 def _confirm(message: str, default = False) -> bool:
     """
@@ -121,6 +114,13 @@ def refresh(_):
     """
     Generates a new set of documentation and uploads it to PageSeeder.
     """
+    fileHandler = logging.FileHandler(APPDIR+ f'/logs/{date.today().isoformat()}.log')
+    fileHandler.setLevel(logging.DEBUG)
+    fileHandler.setFormatter(formatter)
+    logger.addHandler(fileHandler)
+
+    logger.debug('Refresh begins ----------')
+
     _refresh()
 
 def encrypt(args: argparse.Namespace):
