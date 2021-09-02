@@ -1,8 +1,7 @@
-from ntpath import realpath
-import os
-import sys
-import shutil
 import json
+import os
+import shutil
+import sys
 
 import pytest
 from cryptography.fernet import Fernet
