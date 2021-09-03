@@ -13,25 +13,25 @@ from netdox import utils
 from paramiko import AutoAddPolicy, client
 
 logger = logging.getLogger(__name__)
+logging.getLogger('paramiko').setLevel(logging.WARNING)
 
 def exec(cmd: str, host: str, port: int = 22, username: str = 'root', private_key: str = None) -> str:
     """
     Executes a single command on the host machine through SSH.
 
-    :Args:
-        cmd:
-            The command to execute on the remote machine
-        host:
-            The remote machine to execute the command on
-        port:
-            The port to use for the SSH connection
-        username:
-            The username to login with when starting the SSH session
-        private_key:
-            Path of the private key to use for authentication
-
-    :Returns:
-        The string(s) printed to stdout by this operation
+    :param cmd: Command to execute on *host*
+    :type cmd: str
+    :param host: FDQN or IPv4 address of the remote machine
+    :type host: str
+    :param port: Port to execute *cmd* over, defaults to 22
+    :type port: int, optional
+    :param username: Username to login as on the remote machine, defaults to 'root'
+    :type username: str, optional
+    :param private_key: Path to private key to use for authentication, defaults to None
+    :type private_key: str, optional
+    :raises RuntimeError: If *cmd* exits with non-zero code
+    :return: The output from stdout
+    :rtype: str
     """
     sshclient = client.SSHClient()
     sshclient.set_missing_host_key_policy(AutoAddPolicy())
