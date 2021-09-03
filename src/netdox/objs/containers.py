@@ -196,26 +196,26 @@ class NodeSet(base.NetworkObjectContainer):
     Container for a set of Nodes
     """
     objectType: str = 'nodes'
-    objectClass: Type[base.Node] = base.Node
+    objectClass: Type[nwobjs.Node] = nwobjs.Node
 
-    def __init__(self, network: Network, nodeSet: list[base.Node] = []) -> None:
+    def __init__(self, network: Network, nodeSet: list[nwobjs.Node] = []) -> None:
         self.objects = {node.identity: node for node in nodeSet}
         self.network = network
 
-    def __getitem__(self, key: str) -> base.Node:
+    def __getitem__(self, key: str) -> nwobjs.Node:
         return super().__getitem__(key)
 
-    def __iter__(self) -> Iterator[base.Node]:
+    def __iter__(self) -> Iterator[nwobjs.Node]:
         yield from super().__iter__()
 
-    def __contains__(self, key: Union[str, base.Node]) -> bool:
+    def __contains__(self, key: Union[str, nwobjs.Node]) -> bool:
         if isinstance(key, str):
             return super().__contains__(key)
         else:
             return super().__contains__(key.identity)
 
     @property
-    def nodes(self) -> dict[str, base.Node]:
+    def nodes(self) -> dict[str, nwobjs.Node]:
         """
         Returns the underlying objects dict
 
@@ -224,7 +224,7 @@ class NodeSet(base.NetworkObjectContainer):
         """
         return self.objects
 
-    def _add(self, node: base.Node) -> None:
+    def _add(self, node: nwobjs.Node) -> None:
         """
         Add a single Node to the set, merge if a Node with that identity is already present.
 
@@ -246,7 +246,7 @@ class NodeSet(base.NetworkObjectContainer):
                 nwobjs.IPv4Address(self.network, ip)
             cache |= self.network.createNoderefs(node.identity, ip, cache)
 
-    def consumePlaceholder(self, placeholder: nwobjs.PlaceholderNode, replacement: base.Node) -> None:
+    def consumePlaceholder(self, placeholder: nwobjs.PlaceholderNode, replacement: nwobjs.Node) -> None:
         """
         Merges *replacement* with *placeholder*, 
         then replaces all refs to *placeholder* to refs to *replacement*.
@@ -254,7 +254,7 @@ class NodeSet(base.NetworkObjectContainer):
         :param placeholder: The PlaceholderNode to consume.
         :type placeholder: nwobjs.PlaceholderNode
         :param replacement: The replacement Node, which will consume *placeholder*.
-        :type replacement: base.Node
+        :type replacement: nwobjs.Node
         """
         replacement.merge(placeholder)
         for domain in placeholder.domains:
@@ -324,7 +324,7 @@ class Network:
             self.domains._add(object)
         elif isinstance(object, nwobjs.IPv4Address):
             self.ips._add(object)
-        elif isinstance(object, base.Node):
+        elif isinstance(object, nwobjs.Node):
             self.nodes._add(object)
         else:
             raise TypeError(f'Cannot add object of type {type(object)} to a Network.')
@@ -366,7 +366,7 @@ class Network:
                 self.domains[ref] = object
             elif isinstance(object, nwobjs.IPv4Address):
                 self.ips[ref] = object
-            elif isinstance(object, base.Node):
+            elif isinstance(object, nwobjs.Node):
                 self.nodes[ref] = object
             else:
                 raise TypeError(f'Cannot add ref to object of type {type(object)}')

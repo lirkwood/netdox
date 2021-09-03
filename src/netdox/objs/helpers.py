@@ -112,7 +112,7 @@ class PSMLWriter:
         elif isinstance(nwobj, nwobjs.IPv4Address):
             self.ipBody(nwobj)
             ip_iter = [nwobj.name]
-        elif isinstance(nwobj, base.Node):
+        elif isinstance(nwobj, nwobjs.Node):
             self.nodeBody(nwobj)
             ip_iter = nwobj.ips
         else:
@@ -242,7 +242,7 @@ class PSMLWriter:
             ))
         self.body.append(impliedfrag)
 
-    def nodeBody(self, node: base.Node) -> None:
+    def nodeBody(self, node: nwobjs.Node) -> None:
         """
         Populates the *body* section of a Node's output PSML
 

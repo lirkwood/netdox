@@ -262,8 +262,102 @@ class IPv4Address(base.DNSObject):
         return f'{iptools.subn_floor(subnet)}/{mask}'
 
 
+class Node(base.NetworkObject):
+    """
+    A single physical or virtual machine.
+    """
+    identity: str
+    """A string unique to this Node that can always be used to find it."""
+    domains: set[str]
+    """A set of domains resolving to this Node."""
+    ips: set[str]
+    """A set of IPv4 addresses resolving to this Node."""
+    type: str = None
+    """A string unique to this implementation of Node."""
+    _location: str = None
+    """Optional manual location attribute to use instead of the network locator."""
 
-class DefaultNode(base.Node):
+    ## dunder methods
+
+    def __init__(self, 
+            network: Network, 
+            name: str, 
+            docid: str,
+            identity: str, 
+            domains: Iterable[str], 
+            ips: Iterable[str]
+        ) -> None:
+        self.identity = identity.lower()
+        self.type = self.__class__.type
+        super().__init__(network, name, docid)
+
+        self.domains = {d.lower() for d in domains} if domains else set()
+        self.ips = set(ips) if ips else set()
+
+    ## abstract properties
+
+    @property
+    def psmlBody(self) -> list[Tag]:
+        """
+        Returns a list of section tags to add to the body of this Node's output PSML.
+
+        :return: A list of ``<section />`` BeautifulSoup Tag objects.
+        :rtype: list[Tag]
+        """
+        return []
+
+    @property
+    def outpath(self) -> str:
+        return os.path.normpath(os.path.join(utils.APPDIR, f'out/nodes/{self.docid}.psml'))
+
+    ## abstract methods
+
+    def _enter(self) -> str:
+        if self.identity in self.network.nodes:
+            self.network.nodes[self.identity] = self.merge(self.network.nodes[self.identity])
+        else:
+            self.network.nodes[self.identity] = self
+
+        node = self.network.nodes[self.identity]
+        cache = set()
+        for domain in list(node.domains):
+            cache |= self.network.createNoderefs(node.identity, domain, cache)
+
+        for ip in list(node.ips):
+            if ip not in self.network.ips:
+                IPv4Address(self.network, ip)
+            cache |= self.network.createNoderefs(node.identity, ip, cache)
+
+
+    def merge(self, node: Node) -> Node:
+        super().merge(node)
+        self.domains |= node.domains
+        self.ips |= node.ips
+        self.location = self.network.locator.locate(self.ips)
+        return self
+
+    ## properties
+
+    @property
+    def location(self) -> str:
+        """
+        Returns a location code based on the IPs associated with this node, and the configuration in ``locations.json``.
+
+        :return: The location of this node
+        :rtype: str
+        """
+        return self._location or self.network.locator.locate(self.ips) or '—'
+
+    @location.setter
+    def location(self, value: str) -> None:
+        self._location = value
+
+    @location.deleter
+    def location(self) -> None:
+        self._location = None
+
+
+class DefaultNode(Node):
     """
     Default implementation of Node, with one private IPv4 address.
     """
@@ -308,12 +402,13 @@ class DefaultNode(base.Node):
         return []
 
 
-class PlaceholderNode(base.Node):
+class PlaceholderNode(Node):
     """
     A placeholder Node intended to be consumed by another Node.
     If one of it's domains / ips get the node attribute set, 
     this object will be consumed by the new node and replaced in all locations.
     """
+    type = 'placeholder'
 
     def __init__(self, 
             network: Network, 
@@ -387,5 +482,5 @@ class PlaceholderNode(base.Node):
 
     ## methods
 
-    def merge(self, node: base.Node) -> base.Node:
+    def merge(self, node: Node) -> Node:
         return node.merge(self)

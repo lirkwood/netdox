@@ -13,6 +13,7 @@ from netdox.utils import APPDIR
 
 if TYPE_CHECKING:
     from netdox.objs import Network, helpers
+    from netdox.objs.nwobjs import Node
 
 ###########
 # Objects #
@@ -37,6 +38,7 @@ class NetworkObjectMeta(ABCMeta):
         nwobj = super().__call__(*args, **kwargs)
         nwobj.network._add(nwobj)
         return nwobj
+
 
 class NetworkObject(metaclass=NetworkObjectMeta):
     """
@@ -169,84 +171,6 @@ class DNSObject(NetworkObject):
                 self.backrefs[recordType] |= object.backrefs[recordType]
 
         return self
-
-class Node(NetworkObject):
-    """
-    A single physical or virtual machine.
-    """
-    identity: str
-    """A string unique to this Node that can always be used to find it."""
-    domains: set[str]
-    """A set of domains resolving to this Node."""
-    ips: set[str]
-    """A set of IPv4 addresses resolving to this Node."""
-    type: str = None
-    """A string unique to this implementation of Node."""
-    _location: str = None
-    """Optional manual location attribute to use instead of the network locator."""
-
-    ## dunder methods
-
-    def __init__(self, 
-            network: Network, 
-            name: str, 
-            docid: str,
-            identity: str, 
-            domains: Iterable[str], 
-            ips: Iterable[str]
-        ) -> None:
-        self.identity = identity.lower()
-        self.type = self.__class__.type
-        super().__init__(network, name, docid)
-
-        self.domains = {d.lower() for d in domains} if domains else set()
-        self.ips = set(ips) if ips else set()
-
-    ## abstract properties
-
-    @property
-    @abstractmethod
-    def psmlBody(self) -> list[Tag]:
-        """
-        Returns a list of section tags to add to the body of this Node's output PSML.
-
-        :return: A list of ``<section />`` BeautifulSoup Tag objects.
-        :rtype: list[Tag]
-        """
-        pass
-
-    @property
-    def outpath(self) -> str:
-        return os.path.normpath(os.path.join(APPDIR, f'out/nodes/{self.docid}.psml'))
-
-    ## abstract methods
-
-    def merge(self, node: Node) -> Node:
-        super().merge(node)
-        self.domains |= node.domains
-        self.ips |= node.ips
-        self.location = self.network.locator.locate(self.ips)
-        return self
-
-    ## properties
-
-    @property
-    def location(self) -> str:
-        """
-        Returns a location code based on the IPs associated with this node, and the configuration in ``locations.json``.
-
-        :return: The location of this node
-        :rtype: str
-        """
-        return self._location or self.network.locator.locate(self.ips) or '—'
-
-    @location.setter
-    def location(self, value: str) -> None:
-        self._location = value
-
-    @location.deleter
-    def location(self) -> None:
-        self._location = None
 
 
 ##############
