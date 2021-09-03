@@ -16,7 +16,7 @@ from typing import Iterable
 import requests
 from bs4 import BeautifulSoup, SoupStrainer, Tag
 
-from netdox import pageseeder, utils
+from netdox import iptools, pageseeder, utils
 from netdox.objs import Network
 from netdox.objs.base import Node
 
@@ -48,11 +48,17 @@ class HardwareNode(Node):
         for property in psml('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
-                if domain: domains.append(domain)
+                if domain and re.fullmatch(utils.dns_name_pattern, domain): 
+                    domains.append(domain)
+                elif domain:
+                    logging.warn(f'Failed to add invalid domain \'{domain}\' to HardwareNode \'{filename}\'')
 
             elif property['name'] == 'ipv4':
                 ip = self._addrFromProperty(property)
-                if ip: ips.append(ip)
+                if ip and iptools.valid_ip(ip): 
+                    ips.append(ip)
+                elif ip:
+                    logging.warn(f'Failed to add invalid IPv4 \'{ip}\' to HardwareNode \'{filename}\'')
 
             elif property['name'] == 'name':
                 name = property['value']
@@ -82,12 +88,14 @@ class HardwareNode(Node):
 
     ## methods
 
-    def _addrFromProperty(self, property: Tag) -> None:
+    def _addrFromProperty(self, property: Tag) -> str:
         """
-        Extracts the name of the referenced DNS object from *property*.
+        Extracts the name of the referenced DNS object from some psml property (as a bs4 Tag).
 
         :param property: A PSML property
         :type property: Tag
+        :return: The name of the DNS object
+        :rtype: str
         """
         if 'value' in property.attrs:
             return property['value']
