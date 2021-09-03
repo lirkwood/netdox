@@ -10,9 +10,41 @@ from functools import wraps
 from textwrap import dedent
 
 from netdox import utils
-from netdox.plugins.ssh import exec
+from paramiko import AutoAddPolicy, client
 
 logger = logging.getLogger(__name__)
+
+def exec(cmd: str, host: str, port: int = 22, username: str = 'root', private_key: str = None) -> str:
+    """
+    Executes a single command on the host machine through SSH.
+
+    :Args:
+        cmd:
+            The command to execute on the remote machine
+        host:
+            The remote machine to execute the command on
+        port:
+            The port to use for the SSH connection
+        username:
+            The username to login with when starting the SSH session
+        private_key:
+            Path of the private key to use for authentication
+
+    :Returns:
+        The string(s) printed to stdout by this operation
+    """
+    sshclient = client.SSHClient()
+    sshclient.set_missing_host_key_policy(AutoAddPolicy())
+    sshclient.connect(host, port = port, username = username, key_filename = private_key)
+    stdin, stdout, stderr = sshclient.exec_command(cmd)
+    stdin.close()
+    stdout = str(stdout.read(), encoding='utf-8')
+    stderr = str(stderr.read(), encoding='utf-8')
+    sshclient.close()
+    if stderr:
+        raise RuntimeError(f'Command "{cmd}" failed over SSH on {host}: \n{stderr}')
+    else:
+        return stdout
 
 
 def setloc(func):
