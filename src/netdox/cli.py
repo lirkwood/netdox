@@ -48,8 +48,8 @@ def init(args: argparse.Namespace):
     :param args: CLI args
     :type args: argparse.Namespace
     """
-    if (not os.path.exists(APPDIR+ 'src/config.bin')) or \
-    _confirm('This action will destroy the existing cryptography key, and your current configuration will be lost. Continue? [y/n] '):
+    if ((not os.path.exists(APPDIR+ 'src/config.bin')) or
+    _confirm('This action will destroy the existing cryptography key, and your current configuration will be lost. Continue? [y/n] ')):
         for path in ('src', 'out', 'logs'):
             if not os.path.exists(APPDIR+ path):
                 os.mkdir(APPDIR+ path)
@@ -65,9 +65,10 @@ def init(args: argparse.Namespace):
         os.symlink(os.path.abspath(args.path), APPDIR+ 'cfg', target_is_directory = True)
 
         for file in os.scandir(APPDIR+ 'src/defaults/localconf'):
-            shutil.copy(file.path, APPDIR+ 'cfg/'+ file.name)
+            if not os.path.exists(APPDIR+ 'cfg/'+ file.name):
+                shutil.copy(file.path, APPDIR+ 'cfg/'+ file.name)
             
-        logger.info('Initialisation of directory successful. Please provide a config using \'netdox config\'.')
+        print('Initialisation of directory successful. Please provide a config using \'netdox config\'.')
     
     else: exit(0)
 
@@ -79,7 +80,8 @@ def config(args: argparse.Namespace):
     :type args: argparse.Namespace
     """
     if args.action == 'load':
-        if _confirm('This action will destroy your existing configuration if successful. Continue? [y/n] '):
+        if ((not os.path.exists(APPDIR+ 'src/config.bin')) or
+        _confirm('This action will destroy your existing configuration if successful. Continue? [y/n] ')):
             if os.path.exists(APPDIR+ 'src/config.bin'):
                 shutil.copyfile(APPDIR+ 'src/config.bin', APPDIR+ 'src/config.old')
             if os.path.exists(args.path):
@@ -92,7 +94,7 @@ def config(args: argparse.Namespace):
                     os.remove(args.path)
                     if os.path.exists(APPDIR+ 'src/config.old'):
                         os.remove(APPDIR+ 'src/config.old')
-                    logger.info('Success: configuration is valid.')
+                    print('Success: configuration is valid.')
             else:
                 logger.error(f'Unable to find or parse config file at: {args.path}. Reverting to previous config.')
                 os.remove(APPDIR+ 'src/config.bin')
