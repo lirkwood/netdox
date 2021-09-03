@@ -21,6 +21,9 @@ setup(
         "netdox": [
             "src/defaults/*/*",
             "src/templates/*/*"
+        ],
+        "netdox.plugins.screenshots": [
+            "placeholder.jpg"
         ]
     },
     classifiers = [

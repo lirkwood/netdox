@@ -21,8 +21,10 @@ src/netdox/logs
 !src/netdox/src/pageseeder.properties
 !src/netdox/src/nat.txt
 
-!src/netdox/plugins/k8s/src/templates/
 src/netdox/plugins/activedirectory/records/
 src/netdox/plugins/screenshots/base/
+
+!src/netdox/plugins/k8s/src/templates/
+!src/netdox/plugins/screenshots/src/placeholder.jpg
 
 docs/_build/

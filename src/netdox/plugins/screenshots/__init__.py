@@ -51,7 +51,16 @@ class ScreenshotManager:
         self.outdir = outdir
         self.placeholder = placeholder
 
-        self.existingScreens = pageseeder.get_files(pageseeder.urimap()['screenshots'])
+        try:
+            self.existingScreens = pageseeder.get_files(pageseeder.urimap()['screenshots'])
+        except KeyError:
+            self.existingScreens = []
+        
+        if os.path.basename(self.placeholder) not in self.existingScreens:
+            shutil.copyfile(
+                self.placeholder, 
+                self.outdir +'/screenshots/'+ os.path.basename(self.placeholder)
+            )
 
         self.roles = [role \
             for role, config in utils.roles().items() if (
@@ -75,14 +84,9 @@ class ScreenshotManager:
             filename = domain.docid + '.jpg'
             if not success:
                 self.stats['fail'].append(domain.docid)
-                self.copyPlaceholder(filename)
+                self.addPSMLFooter(domain)
             else:
-                domain.psmlFooter.append(BeautifulSoup(f'''
-                    <fragment id="screenshot">
-                        <para><image src="{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{domain.docid}.jpg"
-                    </fragment>
-                ''', features = 'xml'))
-
+                self.addPSMLFooter(domain, filename)
                 if os.path.exists(f'{self.basedir}/{filename}'):
 
                     if diffimg.diff(
@@ -130,19 +134,6 @@ class ScreenshotManager:
             f'{self.workdir}/{filename}',
             f'{self.basedir}/{filename}'
         )
-
-    def copyPlaceholder(self, filename: str) -> None:
-        """
-        Copies placeholder if no image on PS already.
-
-        :param filename: Filename of the screenshot in question.
-        :type filename: str
-        """
-        if filename not in self.existingScreens:
-            shutil.copyfile(
-                self.placeholder, 
-                f'{self.outdir}/screenshots/{filename}'
-            )
 
     ## Taking screenshots
 
@@ -212,6 +203,22 @@ class ScreenshotManager:
 
         return (domain, False)
 
+    def addPSMLFooter(self, domain: Domain, filename: str = None) -> None:
+        """
+        Appends a fragment containing an image named *filename* to the footer of *domain*.
+
+        :param domain: The domain to modify the footer of.
+        :type domain: Domain
+        :param filename: The filename of the image, relative to the ``screenshots`` directory on PageSeeder. defaults to the ``placeholder`` filename.
+        :type filename: str
+        """
+        filename = filename or os.path.basename(self.placeholder)
+        domain.psmlFooter.append(BeautifulSoup(f'''
+            <fragment id="screenshot">
+                <para><image src="/ps/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{filename}"
+            </fragment>
+        ''', features = 'xml'))
+
 
 def init() -> None:
     if not os.path.exists(utils.APPDIR+ 'plugins/screenshots/base'):
@@ -235,7 +242,7 @@ def runner(network: Network) -> None:
         workdir = utils.APPDIR+ 'plugins/screenshots/src',
         basedir = utils.APPDIR+ 'plugins/screenshots/base',
         outdir = utils.APPDIR+ 'out',
-        placeholder = utils.APPDIR+ 'src/placeholder.jpg'
+        placeholder = utils.APPDIR+ 'plugins/screenshots/placeholder.jpg'
     )
     mngr.start()
 
