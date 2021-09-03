@@ -87,6 +87,11 @@ def config(plugin: str = None) -> dict:
         with open(APPDIR+ 'src/config.bin', 'rb') as stream:
             conf = json.loads(str(Cryptor().decrypt(stream.read()), encoding='utf-8'))
             return conf['plugins'][plugin] if plugin else conf
+    except KeyError:
+        if plugin:
+            raise AttributeError('Missing key \'plugins\' in primary config file.')
+        else:
+            raise AttributeError(f'Missing key \'{plugin}\' in object \'plugins\' in primary config file.')
     except Exception:
         raise FileNotFoundError('Failed to find, decrypt, or read primary configuration file')
 
