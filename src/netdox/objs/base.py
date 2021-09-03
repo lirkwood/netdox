@@ -225,7 +225,7 @@ class Node(NetworkObject):
         super().merge(node)
         self.domains |= node.domains
         self.ips |= node.ips
-        self.location = self.network.locator.locate
+        self.location = self.network.locator.locate(self.ips)
         return self
 
     ## properties
