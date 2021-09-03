@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
 from netdox.objs import Network
-from netdox.objs.base import Node
+from netdox.objs.nwobjs import Node
 from netdox.utils import APPDIR
 
 
