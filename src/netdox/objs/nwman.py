@@ -58,6 +58,10 @@ class NetworkManager:
         
         self.loadPlugins(netdox.plugins)
 
+        for plugin in self.enabled:
+            if 'netdox.plugins.'+ plugin not in [module.__name__ for module in self.plugins]:
+                logger.warning(f'Plugin \'{plugin}\' is enabled but was not found.')
+
     ## Plugin methods
 
     @property
