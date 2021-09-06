@@ -105,6 +105,22 @@ class Domain(base.DNSObject):
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
 
+    def _enter(self) -> str:
+        """
+        Adds this Domain to the network's DomainSet.
+
+        :return: The name of this Domain.
+        :rtype: str
+        """
+        if self.name in self.network.ips:
+            self.network.domains[self.name] = self.merge(self.network.domains[self.name])
+        else:
+            self.network.domains[self.name] = self
+        for role, domains in self.network.domains.roles.items():
+            if self.name in domains:
+                self.role = role
+        return self
+
     def merge(self, domain: Domain) -> Domain:
         """
         In place merge of two Domain instances.
@@ -217,6 +233,21 @@ class IPv4Address(base.DNSObject):
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
 
+    def _enter(self) -> str:
+        """
+        Adds this IPv4Address to the network's IPv4AddressSet.
+
+        :return: The name of this IP.
+        :rtype: str
+        """
+        if self.name in self.network.ips:
+            self.network.ips[self.name] = self.merge(self.network.ips[self.name])
+        else:
+            self.network.ips[self.name] = self
+        if self.is_private:
+            self.network.ips.subnets.add(self.subnetFromMask())
+        return self
+
     def merge(self, ip: IPv4Address) -> IPv4Address:
         """
         In place merge of two IPv4Address instances.
@@ -313,20 +344,27 @@ class Node(base.NetworkObject):
     ## abstract methods
 
     def _enter(self) -> str:
+        """
+        Adds this Node to the network's NodeSet.
+
+        :return: The identity of this Node.
+        :rtype: str
+        """
         if self.identity in self.network.nodes:
             self.network.nodes[self.identity] = self.merge(self.network.nodes[self.identity])
         else:
             self.network.nodes[self.identity] = self
 
-        node = self.network.nodes[self.identity]
         cache = set()
-        for domain in list(node.domains):
-            cache |= self.network.createNoderefs(node.identity, domain, cache)
+        for domain in list(self.domains):
+            cache |= self.network.createNoderefs(self.identity, domain, cache)
 
-        for ip in list(node.ips):
+        for ip in list(self.ips):
             if ip not in self.network.ips:
                 IPv4Address(self.network, ip)
-            cache |= self.network.createNoderefs(node.identity, ip, cache)
+            cache |= self.network.createNoderefs(self.identity, ip, cache)
+
+        return self
 
 
     def merge(self, node: Node) -> Node:
@@ -481,6 +519,10 @@ class PlaceholderNode(Node):
         return {ref for ref, node in self.network.nodes.nodes.items() if node is self}
 
     ## methods
+
+    def _enter(self) -> str:
+        super()._enter()
+        return self.network.nodes[self.identity]
 
     def merge(self, node: Node) -> Node:
         return node.merge(self)

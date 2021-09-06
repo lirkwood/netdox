@@ -79,23 +79,7 @@ class DomainSet(base.DNSObjectContainer):
         :return: A list of FQDNs
         :rtype: list[str]
         """
-        return self._roles['exclusions']
-    
-    ## methods
-
-    def _add(self, domain: nwobjs.Domain) -> None:
-        """
-        Add a single domain to the set if it is not in the exclusions list.
-        Merge if an object with that name is already present.
-
-        :param domain: The Domain to add to the set.
-        :type domain: Domain
-        """
-        if domain.name not in self.exclusions:
-            super()._add(domain)
-        for role, domains in self.roles.items():
-            if domain.name in domains:
-                domain.role = role
+        return self._roles['exclusions']\
 
 
 class IPv4AddressSet(base.DNSObjectContainer):
@@ -116,18 +100,6 @@ class IPv4AddressSet(base.DNSObjectContainer):
 
     def __iter__(self) -> Iterator[nwobjs.IPv4Address]:
         yield from super().__iter__()
-
-    def _add(self, ip: nwobjs.IPv4Address) -> None:
-        """
-        Add a single IPv4Address to the set, merge if that IP is already in the set. 
-        Add the /24 bit subnet to the set of subnets.
-
-        :param ip: The IPv4Address to add to the set
-        :type ip: IPv4Address
-        """
-        super()._add(ip)
-        if ip.is_private:
-            self.subnets.add(ip.subnetFromMask())
 
     @property
     def ips(self) -> dict[str, nwobjs.IPv4Address]:
@@ -224,28 +196,6 @@ class NodeSet(base.NetworkObjectContainer):
         """
         return self.objects
 
-    def _add(self, node: nwobjs.Node) -> None:
-        """
-        Add a single Node to the set, merge if a Node with that identity is already present.
-
-        :param object: The Node to add to the set.
-        :type object: Node
-        """
-        if node.identity in self:
-            self[node.identity] = node.merge(self[node.identity])
-        else:
-            self[node.identity] = node
-
-        node = self[node.identity]
-        cache = set()
-        for domain in list(node.domains):
-            cache |= self.network.createNoderefs(node.identity, domain, cache)
-
-        for ip in list(node.ips):
-            if ip not in self.network.ips:
-                nwobjs.IPv4Address(self.network, ip)
-            cache |= self.network.createNoderefs(node.identity, ip, cache)
-
     def consumePlaceholder(self, placeholder: nwobjs.PlaceholderNode, replacement: nwobjs.Node) -> None:
         """
         Merges *replacement* with *placeholder*, 
@@ -310,43 +260,6 @@ class Network:
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
         self.cache = set()
-
-    ## Adding objects
-
-    def _add(self, object: base.NetworkObject) -> None:
-        """
-        Adds *object* to its correct NetworkObjectContainer.
-
-        :param object: An object to add to one of the three NetworkObjectContainers.
-        :type object: NetworkObject
-        """
-        if isinstance(object, nwobjs.Domain):
-            self.domains._add(object)
-        elif isinstance(object, nwobjs.IPv4Address):
-            self.ips._add(object)
-        elif isinstance(object, nwobjs.Node):
-            self.nodes._add(object)
-        else:
-            raise TypeError(f'Cannot add object of type {type(object)} to a Network.')
-
-    def addSet(self, object_set: base.NetworkObjectContainer) -> None:
-        """
-        Add a set of network objects to the network
-
-        2do: Implement merge in NetworkObjectContainer ABC
-
-        :param object_set: An NetworkObjectContainer to add to the network
-        :type object_set: NetworkObjectContainer
-        """
-        if isinstance(object_set, DomainSet):
-            object_set.network = self
-            self.domains = object_set
-        elif isinstance(object_set, IPv4AddressSet):
-            object_set.network = self
-            self.ips = object_set
-        elif isinstance(object_set, NodeSet):
-            object_set.network = self
-            self.nodes = object_set
 
     ## Adding refs
 

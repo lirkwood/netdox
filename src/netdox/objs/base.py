@@ -36,8 +36,7 @@ class NetworkObjectMeta(ABCMeta):
         :rtype: NetworkObject
         """
         nwobj = super().__call__(*args, **kwargs)
-        nwobj.network._add(nwobj)
-        return nwobj
+        return nwobj._enter()
 
 
 class NetworkObject(metaclass=NetworkObjectMeta):
@@ -86,6 +85,15 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         pass
     
     ## methods
+
+    @abstractmethod
+    def _enter(self) -> None:
+        """
+        Adds this object to the network and NetworkObjectContainer.
+        This function is called after instantiation, 
+        and its value is returned by ``NetworkObjectMeta.__call__``.
+        """
+        pass
 
     def merge(self, object: NetworkObject) -> NetworkObject:
         """
