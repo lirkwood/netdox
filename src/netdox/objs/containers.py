@@ -52,7 +52,10 @@ class DomainSet(base.DNSObjectContainer):
         :return: A dictionary of lists of FQDNs
         :rtype: dict
         """
-        return {k: v['domains'] for k, v in self._roles.items() if k != 'exclusions'}
+        try:
+            return {k: v['domains'] for k, v in self._roles.items() if k != 'exclusions'}
+        except KeyError:
+            raise AttributeError(f'One or more domain roles are missing the property \'domains\'.')
 
     @roles.setter
     def roles(self, value: dict) -> None:
