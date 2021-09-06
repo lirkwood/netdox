@@ -1,4 +1,4 @@
-<document type="dns_role" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+<document type="domain_role" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
   <metadata>
       <properties>
@@ -8,7 +8,7 @@
   
   <section id="title">
     <fragment id="1">
-      <heading level="1">DNS Role: &lt;role&gt;</heading>
+      <heading level="1" />
     </fragment>
   </section>
 
@@ -16,7 +16,6 @@
     <properties-fragment id="config">
       <property name="name" title="Name" value="" />
       <property name="desc" title="Description" value="" />
-      <property name="screenshot" title="Screenshot" value="yes|no" />
     </properties-fragment>
   </section>
 </document>
