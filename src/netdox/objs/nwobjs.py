@@ -16,6 +16,10 @@ from netdox.objs import base, helpers
 if TYPE_CHECKING:
     from netdox.objs import Network
 
+###########
+# DNSObjs #
+###########
+
 class Domain(base.DNSObject):
     """
     A domain defined in a managed DNS zone.
@@ -293,6 +297,10 @@ class IPv4Address(base.DNSObject):
         return f'{iptools.subn_floor(subnet)}/{mask}'
 
 
+#########
+# Nodes #
+#########
+
 class Node(base.NetworkObject):
     """
     A single physical or virtual machine.
@@ -366,12 +374,10 @@ class Node(base.NetworkObject):
 
         return self
 
-
     def merge(self, node: Node) -> Node:
         super().merge(node)
         self.domains |= node.domains
         self.ips |= node.ips
-        self.location = self.network.locator.locate(self.ips)
         return self
 
     ## properties
