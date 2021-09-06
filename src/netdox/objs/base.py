@@ -215,18 +215,6 @@ class NetworkObjectContainer(ABC):
     def __contains__(self, key: str) -> bool:
         return self.objects.__contains__(key.lower())
 
-    ## methods
-
-    @abstractmethod
-    def _add(self, object: NetworkObject) -> None:
-        """
-        Add a single NetworkObject to the set, merge if an object with that name is already present.
-
-        :param object: The NetworkObject to add to the set.
-        :type object: NetworkObject
-        """
-        pass
-
 class DNSObjectContainer(NetworkObjectContainer):
     """
     Container for a set of DNSObjects.
