@@ -14,7 +14,7 @@ from kubernetes.client import ApiClient
 
 from netdox import psml, utils
 from netdox.objs import Network, Domain
-from netdox.objs.base import Node
+from netdox.objs.nwobjs import Node
 
 ##  Plugin functions
 
@@ -29,7 +29,7 @@ def initContext(context: str = None) -> ApiClient:
     :Returns:
       An ApiClient object connected to the given context
     """
-    config.load_kube_config(utils.APPDIR+ 'plugins/kubernetes/src/kubeconfig', context=context)
+    config.load_kube_config(utils.APPDIR+ 'plugins/k8s/src/kubeconfig', context=context)
     return ApiClient()
 
 ## Node
@@ -47,7 +47,7 @@ class App(Node):
     """Labels applied to the pods"""
     template: dict
     """Template pods are started from"""
-    pods: dict
+    pods: dict[str, dict]
     """A dict of the pods running this app"""
     type: str = 'Kubernetes App'
 
@@ -66,7 +66,7 @@ class App(Node):
         domains = {p.split('/')[0] for p in sorted(paths, key = len)}
         for domain in list(domains):
             if domain in network.domains:
-                for proxy in utils.config('kubernetes')[cluster]['proxies']:
+                for proxy in utils.config('k8s')[cluster]['proxies']:
                     if not ( proxy in network.ips and network.resolvesTo(network.domains[domain], network.ips[proxy]) ):
                         domains.remove(domain)
 
@@ -142,7 +142,7 @@ class App(Node):
                     name = 'worker_node', title = 'Worker Node', 
                     ref = self.network.ips[pod["workerIp"]].node.docid
                 ))
-            link = psml.newprop(name = 'rancher', title="Pod on Rancher")
+            link = psml.newprop(name = 'rancher', title="Pod on Rancher", datatype = 'link')
             link.append(Tag(name='link', attrs={'href': pod['rancher']}))
             frag.append(link)
 
@@ -163,11 +163,11 @@ def init() -> None:
     """
     # Create output dir
     for dir in ('out', 'src'):
-        if not os.path.exists(utils.APPDIR+ f'plugins/kubernetes/{dir}'):
-            os.mkdir(utils.APPDIR+ f'plugins/kubernetes/{dir}')
+        if not os.path.exists(utils.APPDIR+ f'plugins/k8s/{dir}'):
+            os.mkdir(utils.APPDIR+ f'plugins/k8s/{dir}')
 
-    auth = utils.config('kubernetes')
-    with open(utils.APPDIR+ 'plugins/kubernetes/src/kubeconfig', 'w') as stream:
+    auth = utils.config('k8s')
+    with open(utils.APPDIR+ 'plugins/k8s/src/kubeconfig', 'w') as stream:
         clusters = []
         users = []
         contexts = []
@@ -224,34 +224,8 @@ def domainapps(network: Network) -> None:
             )
         )
 
-def publication(network: Network) -> None:
-    workerApps = defaultdict(lambda: defaultdict(list))
-    conf = utils.config('kubernetes')
-    # for node in network.nodes:
-    #     if node.type == 'Kubernetes App':
-    #         node: App
-    #         # set node attr on all domains
-    #         for domain in list(node.domains):
-    #             if domain in network.domains and network.domains[domain].node is not node:
-    #                 if set(network.domains[domain].node.ips) & set(conf[node.cluster]['proxies']):
-    #                     network.domains[domain].node.domains.remove(domain)
-    #                     network.domains[domain].node = node
-    #                 else:
-    #                     node.domains.remove(domain)
-    #         # gather all workers final docids
-    #         for pod in node.pods.values():
-    #             if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node is not None:
-    #                 pod['workerNode'] = network.ips[pod['workerIp']].node.docid
-    #                 workerApps[node.cluster][pod['workerNode']].append(node.docid)
-
-    for cluster in workerApps:
-        workerApps[cluster] = {k: workerApps[cluster][k] for k in sorted(workerApps[cluster])}
-
-    genpub(workerApps)
-
-
 __stages__ = {
     'nodes': runner,
     'footers': domainapps,
-    'write': publication
+    'write': genpub
 }

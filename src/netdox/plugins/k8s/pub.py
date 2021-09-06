@@ -1,12 +1,32 @@
-from bs4 import BeautifulSoup
-from netdox.utils import APPDIR
+from collections import defaultdict
 
-def genpub(pubdict: dict) -> None:
+from bs4 import BeautifulSoup
+from netdox.objs import Network
+from netdox.utils import APPDIR
+import logging
+
+logger = logging.getLogger(__name__)
+
+def genpub(network: Network) -> None:
+    workerApps = defaultdict(lambda: defaultdict(list))
+    for node in network.nodes:
+        if node.type == 'Kubernetes App':
+            for pod in node.pods.values():
+                if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node:
+                    pod['workerNode'] = network.ips[pod['workerIp']].node.docid
+                    workerApps[node.cluster][pod['workerNode']].append(node.docid)
+
+    for cluster in workerApps:
+        workerApps[cluster] = {k: workerApps[cluster][k] for k in sorted(workerApps[cluster])}
+
+    import json 
+    logger.debug(json.dumps(workerApps, indent=2))
+
     pub = BeautifulSoup(TEMPLATE, features='xml')
     section = pub.find('section', id = 'clusters')
 
     count = 0
-    for cluster, workers in pubdict.items():
+    for cluster, workers in workerApps.items():
         heading = pub.new_tag('heading', level = 1)
         heading.string = cluster
         section.append(heading)

@@ -16,6 +16,7 @@ from kubernetes import client
 
 from netdox import utils
 from netdox.objs import Network
+from netdox.objs.nwobjs import PlaceholderNode
 from netdox.plugins.k8s import App, initContext
 
 logger = logging.getLogger(__name__)
@@ -205,4 +206,12 @@ def runner(network: Network) -> None:
         location = auth[context]['location'] if 'location' in auth[context] else None
         
         for app in apps.values():
-            App(network, **app).location = location
+            node = App(network, **app)
+            node.location = location
+
+            for pod in node.pods.values():
+                PlaceholderNode(
+                    network = network,
+                    name = pod['workerName'],
+                    ips = [pod['workerIp']]
+                )
