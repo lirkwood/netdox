@@ -17,7 +17,8 @@ This combined with the XRef links between the documents results in a highly conn
 
 Using Netdox
 ------------
-Quick setup guide can be found **here**, and more detail on how to correctly configure Netdox is available here: :ref:`config`.
+Quick setup guide can be found here: :ref:`quickstart`.
+More detail on how to correctly configure Netdox is available here: :ref:`config`.
 
 Architecture
 ------------
