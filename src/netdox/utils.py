@@ -12,9 +12,14 @@ from functools import cache, wraps
 from sys import argv
 from traceback import format_exc
 
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 from cryptography.fernet import Fernet
+from netdox import psml
 
 logger = logging.getLogger(__name__)
+
+dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
 ################
 # Cryptography #
@@ -65,9 +70,9 @@ def decrypt_file(inpath: str, outpath: str = None) -> str:
         outstream.write(Cryptor().decrypt(instream.read()))
     return os.path.abspath(outpath)
 
-####################
-# Global constants #
-####################
+##################
+# Config loaders #
+##################
 
 global APPDIR
 APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
@@ -99,6 +104,7 @@ def config(plugin: str = None) -> dict:
 global DEFAULT_DOMAIN_ROLES
 DEFAULT_DOMAIN_ROLES = {'exclusions': []}
 
+@cache
 def roles() -> dict:
     """
     Loads the domain roles file if it exists
@@ -113,8 +119,6 @@ def roles() -> dict:
         logger.warning('Failed to find or read domain roles configuration file')
         return DEFAULT_DOMAIN_ROLES
 
-
-dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 
 ##############
 # Decorators #
@@ -168,3 +172,33 @@ def fileFetchRecursive(dir: str, relative: str = None, extension: str = None) ->
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
             fileset.append(os.path.relpath(file.path, relative))
     return fileset
+
+def roleToPSML(role: str) -> None:
+    """
+    Generates a document for a domain role, and places it in ``out/config``.
+
+    :param role: The name of the role to generate PSML for.
+    :type role: str
+    """
+    config = roles()[role]
+    with open(APPDIR+ 'src/templates/domain_role/document-template.psml', 'r') as stream:
+        soup = BeautifulSoup(stream.read(), features = 'xml')
+
+    docinf = soup.new_tag(name = 'documentinfo')
+    docinf.append(
+        soup.new_tag(name = 'uri', attrs = {'docid': '_nd_role_' + role})
+    )
+    soup.document.insert(0 , docinf)
+
+    frag = psml.PropertiesFragment('config', properties = [
+        psml.Property(name = key, title = key, value = str(value))
+        for key, value in config.items() if key != 'domains'
+    ])
+
+    if 'name' not in config:
+        frag.insert(0, psml.Property('name', 'Name', role))
+
+    soup.find(id = 'config').replace_with(frag)
+
+    with open(APPDIR+ f'out/config/{role}.psml', 'w') as stream:
+        stream.write(str(soup))
