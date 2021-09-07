@@ -531,4 +531,28 @@ class PlaceholderNode(Node):
         return self.network.nodes[self.identity]
 
     def merge(self, node: Node) -> Node:
-        return node.merge(self)
+        """
+        Copies any data in this object to the corresponding attributes in *node*.
+        Replaces *self* in all locations with *node*.
+
+        :param node: The Node to merge replace *self* with.
+        :type node: Node
+        :return: The *node* argument.
+        :rtype: Node
+        """
+        node.domains |= self.domains
+        node.ips |= self.ips
+        node.psmlFooter += self.psmlFooter
+
+        for domain in self.domains:
+            if self.network.domains[domain].node is self:
+                self.network.domains[domain].node = node
+
+        for ip in self.ips:
+            if self.network.ips[ip].node is self:
+                self.network.ips[ip].node = node
+
+        for alias in self.aliases:
+            self.network.nodes[alias] = node
+
+        return node
