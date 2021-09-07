@@ -3,6 +3,7 @@ Used to read and modify the deployments running on the configured clusters.
 """
 from __future__ import annotations
 
+import logging
 import os
 from collections import defaultdict
 from typing import Iterable
@@ -11,10 +12,11 @@ import yaml
 from bs4.element import Tag
 from kubernetes import config
 from kubernetes.client import ApiClient
-
 from netdox import psml, utils
-from netdox.objs import Network, Domain
+from netdox.objs import Domain, Network
 from netdox.objs.nwobjs import Node
+
+logging.getLogger('kubernetes').setLevel(logging.INFO)
 
 ##  Plugin functions
 
