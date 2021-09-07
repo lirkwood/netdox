@@ -91,14 +91,16 @@ def init():
 
             shutil.copyfile(file.path, utils.APPDIR+ f'out/config/{file.name}')
 
+    # load locally configured roles
+    local = utils.roles()
 
-    # load preconfigured roles
-    preconfigured = utils.roles()
-
-    # merge preconfigured and ps configured role sets
-    for role, roleConfig in preconfigured.items():
+    # merge local and ps configured role sets
+    for role, roleConfig in local.items():
         if role == 'exclusions':
-            roles[role] = sorted(set(roles[role] + preconfigured[role]))
+            roles[role] = sorted(set(roles[role] + local[role]))
+        elif role not in roles:
+            utils.roleToPSML(role)
+            roles[role] = local[role]
         else:
             for attribute, value in roleConfig.items():
                 if attribute == 'domains':
