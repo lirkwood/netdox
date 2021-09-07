@@ -295,8 +295,8 @@ class MonitorManager:
             self.reload()
         
         if invalid:
-            logger.warning(f'Unable to resolve invalid monitors for:\n\t', \
-                ",\n\t".join([r.name for r in invalid]))
+            logger.warning(f'Unable to resolve invalid monitors for:' +
+                ",\n\t".join([ domain.name for domain in invalid ]))
 
     def pruneGenerated(self) -> None:
         """
