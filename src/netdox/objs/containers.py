@@ -199,26 +199,6 @@ class NodeSet(base.NetworkObjectContainer):
         """
         return self.objects
 
-    def consumePlaceholder(self, placeholder: nwobjs.PlaceholderNode, replacement: nwobjs.Node) -> None:
-        """
-        Merges *replacement* with *placeholder*, 
-        then replaces all refs to *placeholder* to refs to *replacement*.
-
-        :param placeholder: The PlaceholderNode to consume.
-        :type placeholder: nwobjs.PlaceholderNode
-        :param replacement: The replacement Node, which will consume *placeholder*.
-        :type replacement: nwobjs.Node
-        """
-        replacement.merge(placeholder)
-        for domain in placeholder.domains:
-            self.network.domains[domain].node = replacement
-        for ip in placeholder.ips:
-            self.network.ips[ip].node = replacement
-
-        self[placeholder.identity] = replacement
-        for alias in placeholder.aliases:
-            self[alias] = replacement
-
 
 class Network:
     """
@@ -289,7 +269,7 @@ class Network:
         else:
             AttributeError('Cannot add ref to object when it is part of a different network.')
 
-    def createNoderefs(self, node_identity: str, dnsobj_name: str, cache: set[str] = None) -> None:
+    def createNoderefs(self, node_identity: str, dnsobj_name: str, cache: set[str] = None) -> set[str]:
         """
         Creates noderefs from the DNSObj at *dnsobj_name* (and DNSObjs which resolve to it) to the node with *node_identity*.
 
@@ -297,6 +277,10 @@ class Network:
         :type node_identity: str
         :param dnsobj_name: The name of the DNSObj to link from.
         :type dnsobj_name: str
+        :param cache: A set of DNSObject names to ignore, defaults to None
+        :type cache: set[str], optional
+        :return: The set of DNSObject names that have been tested, including cached names.
+        :rtype: set[str]
         """
         node = self.nodes[node_identity]
         if not cache:
@@ -315,14 +299,7 @@ class Network:
         
         else: return cache
 
-        if dnsobj.node:
-            if isinstance(dnsobj.node, nwobjs.PlaceholderNode):
-                assert dnsobj.node is not node, \
-                    'Trying to replace placeholder node with itself.'
-                self.nodes.consumePlaceholder(dnsobj.node, node)
-            return cache
-
-        elif dnsobj.node: return
+        if dnsobj.node: return cache
 
         dnsobj_set.add(dnsobj.name)
         dnsobj.node = node
