@@ -168,10 +168,7 @@ class PSMLWriter:
         if 'uri' in utils.roles()[domain.role]:
             self.doc.find(title='DNS Role').xref['uriid'] = utils.roles()[domain.role]['uri']
         else:
-            roleprop = self.doc.find(title='DNS Role')
-            roleprop.xref.decompose()
-            roleprop['datatype'] = 'string'
-            roleprop['value'] = '—'
+            self.doc.find(title='DNS Role').xref['docid'] = '_nd_role_'+ domain.role
 
         for frag in psml.recordset2pfrags(
             recordset = domain.records['A'],
