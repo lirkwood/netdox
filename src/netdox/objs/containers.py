@@ -399,7 +399,7 @@ class Network:
         Generates a report from the supplied sections in ``self.report``.
         """
         with open(APPDIR+ 'src/templates/report.psml', 'r') as stream:
-            report = BeautifulSoup(stream.read(), 'lxml')
+            report = BeautifulSoup(stream.read(), 'xml')
 
         for tag in self.report:
             report.document.append(tag)
