@@ -166,7 +166,7 @@ def sentence_uri(uri: str) -> date:
     labels = info['labels'] if 'labels' in info else []
     if 'stale' not in labels:
         labels.append(f'stale,expires-{plus_thirty}')
-        patch_uri(uri, {'labels':labels})
+        patch_uri(uri, {'labels':','.join(labels)})
         logger.info(f"File '{info['title']}' is stale and has been sentenced.")
         return plus_thirty
     else:
