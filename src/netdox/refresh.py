@@ -151,6 +151,9 @@ def main():
     nwman.network.dump()
     nwman.network.writePSML()
     nwman.runStage('write')
+    
+    nwman.staleReport()
+    nwman.network.writeReport()
 
     #-------------------------------------------------------------------#
     # Zip, upload, and cleanup                                          #
@@ -158,10 +161,6 @@ def main():
 
     zip = shutil.make_archive(utils.APPDIR+ 'src/netdox-psml', 'zip', utils.APPDIR + 'out')
     pageseeder.zip_upload(zip, 'website')
-
-    nwman.sentenceStale('domains')
-    nwman.sentenceStale('ips')
-    nwman.sentenceStale('nodes')
 
     nwman.runStage('cleanup')
 
