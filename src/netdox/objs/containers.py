@@ -4,6 +4,7 @@ This module contains any container classes.
 from __future__ import annotations
 
 from typing import Iterable, Iterator, Type, Union
+from bs4 import Tag, BeautifulSoup
 import pickle
 
 from netdox import iptools
@@ -214,6 +215,8 @@ class Network:
     """The currently loaded config."""
     cache: set
     """A set of cached names. Used when resolving long record chains."""
+    report: list[Tag]
+    """A dict of section tags to insert into the network report."""
 
     def __init__(self, 
             domains: DomainSet = None, 
@@ -243,6 +246,7 @@ class Network:
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
         self.cache = set()
+        self.report = []
 
     ## Adding refs
 
@@ -389,6 +393,19 @@ class Network:
         :type set: str
         """
         self.writer.serialiseSet(getattr(self, set))
+
+    def writeReport(self) -> None:
+        """
+        Generates a report from the supplied sections in ``self.report``.
+        """
+        with open(APPDIR+ 'src/templates/report.psml', 'r') as stream:
+            report = BeautifulSoup(stream.read(), 'lxml')
+
+        for tag in self.report:
+            report.document.append(tag)
+
+        with open(APPDIR+ 'out/report.psml', 'w') as stream:
+            stream.write(str(report))
 
     def writePSML(self) -> None:
         """

@@ -7,12 +7,16 @@ import importlib
 import json
 import logging
 import pkgutil
+from datetime import date, timedelta
 from traceback import format_exc
 from types import ModuleType
 from typing import Callable
 
+from bs4 import BeautifulSoup
+from bs4.element import Tag
+
 import netdox.plugins
-from netdox import utils
+from netdox import pageseeder, utils
 from netdox.objs.containers import Network
 
 logger = logging.getLogger(__name__)
@@ -27,6 +31,9 @@ class NetworkManager:
     """Dictionary of config values for communicating with PageSeeder etc."""
     pluginmap: dict[str, set[ModuleType]]
     """Dictionary of stages and their plugins"""
+    stale: dict[str, dict[date, str]]
+    """Dictionary containing information about stale URIs and their expiry date."""
+
     def __init__(self) -> None:
 
         self.network = Network(domainroles = utils.roles())
@@ -43,6 +50,8 @@ class NetworkManager:
         }
         self.nodemap = {}
         self.stages = self.pluginmap.keys()
+
+        self.stale = {}
 
         try:
             with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
@@ -142,3 +151,57 @@ class NetworkManager:
         :type encrypted: bool, optional
         """
         self.network = Network.fromDump(inpath, encrypted)
+
+    ## Sentencing
+
+    def staleReport(self) -> None:
+        """
+        Sentences stale network objects and adds a section on stale documents to the network report.
+        """
+        for folder in ('domains', 'ips', 'nodes'):
+            self.stale[folder] = pageseeder.sentenceStale(folder)
+
+        section = Tag(is_xml = True, 
+            name = 'section', 
+            attrs = {
+                'id': 'stale', 
+                'title': 'Stale Documents'
+        })
+
+        plus_thirty = date.today() + timedelta(days = 30)
+        combined = {expiry: uri for type in self.stale.values() for expiry, uri in type.items()}
+
+        todayFrag = Tag(is_xml = True, name = 'fragment', attrs = {'id': 'stale_today'})
+        heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '3'})
+        heading.string = 'Sentenced Today'
+        todayFrag.append(heading)
+
+        for expiry, uris in combined.items():
+            if expiry >= plus_thirty:
+                for uri in uris:
+                    todayFrag.append(Tag(is_xml = True,
+                        name = 'blockxref',
+                        attrs = {
+                            'frag': 'default',
+                            'uriid': uri
+                        }
+                    ))
+        section.insert(0, todayFrag)
+
+        for type, stale in self.stale.items():
+            frag = Tag(is_xml = True, name = 'fragment', attrs = {'id': 'stale_'+ type})
+            for expiry, uris in sorted(stale.items()):
+                heading = Tag(is_xml=True, name='heading', attrs={'level': '3'})
+                heading.string = expiry.isoformat()
+                frag.append(heading)
+                for uri in uris:
+                    if uri not in combined:
+                        frag.append(Tag(is_xml = True,
+                        name = 'blockxref',
+                        attrs = {
+                            'frag': 'default',
+                            'uriid': uri
+                        }
+                    ))
+            section.append(frag)
+        self.network.report.append(section)
