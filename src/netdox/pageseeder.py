@@ -7,14 +7,16 @@ The decorator ``@auth`` injects default values and authentication details to the
 
 import json
 import logging
-from datetime import datetime, timedelta
+import os
+import re
+from collections import defaultdict
+from datetime import date, datetime, timedelta
 from functools import wraps
 from inspect import signature
 from time import sleep
 
 import requests
 from bs4 import BeautifulSoup
-
 from netdox import utils
 
 logger = logging.getLogger(__name__)
@@ -108,31 +110,136 @@ def auth(func):
 
     return wrapper
 
-# global urimap
-global _urimap
-_urimap = {}
-
-def urimap():
+def urimap(path: str = 'website', type: str = 'folder') -> dict[str, str]:
     """
-    Returns value of default urimap if it has already been fetched. If not, it is fetched and returned.
+    Maps the names of the files in the folder *path* to their URIs.
 
-    :Returns:
-        Urimap of *website* directory at root of PageSeeder group
+    :param path: Path to the directory to map relative to group root directory, defaults to 'website'
+    :type path: str, optional
+    :param type: Type of files to map, defaults to 'folder'
+    :type type: str, optional
+    :raises FileNotFoundError: If the path is not present on PageSeeder.
+    :return: A dictionary mapping filenames to URIs.
+    :rtype: dict[str, str]
     """
-    global _urimap
-    if not _urimap:
-        group = utils.config()["pageseeder"]["group"]
-        websiteDirCheck = json.loads(search({
-            'filters': f'pstype:folder,psfilename:website,psfolder:/ps/{group.replace("-","/")}'
+    path = path.strip('/')
+    if '/' in path:
+        pathlist = path.split('/')
+        filename = pathlist[-1]
+        folder = '/' + '/'.join(pathlist[:-1])
+    else:
+        filename = path
+        folder = ''
+
+    group = utils.config()["pageseeder"]["group"]
+    dirCheck = json.loads(search({
+        'filters': f'pstype:folder,psfilename:{filename},psfolder:/ps/{group.replace("-","/")}{folder}'
+    }))
+    if dirCheck['results']['result']:
+        for field in dirCheck['results']['result'][0]['fields']:
+            if field['name'] == 'psid':
+                return {
+                    uri['displaytitle']: uri['id'] for uri in 
+                    json.loads(get_uris(field['value'], params={'type': type}))['uris']
+                }
+    else:
+        raise FileNotFoundError(f"Path '{path}' not present at root of group {group}.")
+
+
+##############
+# Sentencing #
+##############
+
+def sentence_uri(uri: str) -> date:
+    """
+    Adds two labels to the document on PageSeeder with the given URI,
+    which indicates that the object has been sentenced and when.
+    After 30 days of being sentenced the document will be archived.
+
+    :param uri: The URI of the document to sentence.
+    :type uri: str
+    :return: The date *uri* will expire.
+    :rtype: date
+    """
+    plus_thirty = date.today() + timedelta(days = 30)
+    info = json.loads(get_uri(uri))
+    labels = info['labels'] if 'labels' in info else []
+    if 'stale' not in labels:
+        labels.append(f'stale,expires-{plus_thirty}')
+        patch_uri(uri, {'labels':labels})
+        logger.info(f"File '{info['title']}' is stale and has been sentenced.")
+        return plus_thirty
+    else:
+        for label in labels:
+            match = re.fullmatch(utils.expiry_date_pattern, label)
+            if match:
+                return date.fromisoformat(match['date'])
+
+def clear_sentence(uri: str) -> None:
+    """
+    Remove the sentence from the document with the given URI.
+
+    :param uri: The URI of the document to clear the sentence of.
+    :type uri: str
+    """
+    try:
+        labels: list[str] = get_uri(uri)['labels']
+    except KeyError:
+        return
+    else:
+        for label in labels:
+            if label == 'stale' or re.fullmatch(utils.expiry_date_pattern, label):
+                labels.remove(label)
+        patch_uri(uri, {'labels':labels})
+
+
+def sentenceStale(dir: str) -> dict[date, str]:
+    """
+    Adds stale labels to any files present in *dir* on PageSeeder, but not locally.
+
+    :param dir: The directory, relative to ``website/`` on PS or ``out/`` locally.
+    :type dir: str
+    :return: A dict of date objects mapped to uris which expire on that date.
+    :rtype: dict[date, str]
+    """
+    stale = defaultdict(list)
+    today = date.today()
+    group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
+    
+    if dir in urimap():
+        local = utils.fileFetchRecursive(
+            os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)),
+            relative = utils.APPDIR + 'out'
+        )
+        remote = json.loads(get_uris(urimap()[dir], params={
+            'type': 'document',
+            'relationship': 'descendants'
         }))
-        if websiteDirCheck['results']['result']:
-            for field in websiteDirCheck['results']['result'][0]['fields']:
-                if field['name'] == 'psid':
-                    _urimap = get_urimap(field['value'])
-        else:
-            raise RuntimeError(f'Directory \'website\' not present at root of group {group}.')
-    return _urimap
 
+        for file in remote["uris"]:
+            uri = file["id"]
+            labels = file['labels'] if 'labels' in file else []
+            commonpath = os.path.normpath(file["decodedpath"].split(f"{group_path}/website/")[-1])
+
+            expiry = None
+            for label in labels:
+                match = re.fullmatch(utils.expiry_date_pattern, label)
+                if match:
+                    expiry = date.fromisoformat(match['date'])
+            
+            if commonpath in local and expiry is not None:
+                clear_sentence(uri)
+
+            elif commonpath not in local:
+                if expiry and expiry <= today:
+                    archive(uri)
+                    logger.info(f"Archiving document '{file['title']}' as it is >=30 days stale.")
+                elif expiry is not None:
+                    stale[expiry].append(uri)
+                else:
+                    stale[sentence_uri(uri)].append(uri)
+                    
+    return stale
 
 ##########################
 # PageSeeder API Actions #
@@ -328,18 +435,6 @@ def get_toc(uri, params={}, host='', group='', member='', header={}):
     service = f'/members/{member}/groups/{group}/uris/{uri}/toc'
     r = requests.get(host+service, params=params, headers=header)
     return r.text
-
-
-@auth
-def get_urimap(dir_uri):
-    """
-    Maps the directories in a URI to their URIs
-    """
-    urimap = {}
-    uris = json.loads(get_uris(dir_uri, params={'type': 'folder'}))
-    for uri in uris['uris']:
-        urimap[uri['displaytitle']] = uri['id']
-    return urimap
 
 
 @auth
