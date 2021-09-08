@@ -2,18 +2,18 @@ import asyncio
 import json
 import logging
 import os
+import re
 import shutil
 from datetime import date
 from typing import Iterable, Tuple
 
 import diffimg
 from bs4 import BeautifulSoup
+from netdox import pageseeder, utils
+from netdox.objs import Domain, Network
 from pyppeteer import launch
 from pyppeteer.browser import Page
 from pyppeteer.errors import TimeoutError
-
-from netdox import pageseeder, utils
-from netdox.objs import Domain, Network
 
 logger = logging.getLogger(__name__)
 logging.getLogger('pyppeteer').setLevel(logging.WARNING)
@@ -28,16 +28,12 @@ class ScreenshotManager:
     """Directory to save output images to."""
     placeholder: str
     """Path to a placeholder image."""
+    urimap: dict
+    """URI map of the screenshots on PageSeeder"""
     existingScreens: list[str]
     """List of filenames of screenshots on PageSeeder."""
     roles: list[str]
     """List of roles that have the ``screenshot`` property set."""
-    _failed: list[str]
-    """List of domain docids that failed to be screenshot"""
-    _diff: list[str]
-    """List of domain docids that had a screenshot >5% different to the base img"""
-    _noBase: list[str]
-    """List of domain docids that had no base img to diff against"""
 
     def __init__(self, domains: Iterable[Domain], workdir: str, basedir: str, outdir: str, placeholder: str) -> None:
         self.stats = {
@@ -52,8 +48,10 @@ class ScreenshotManager:
         self.placeholder = placeholder
 
         try:
-            self.existingScreens = pageseeder.get_files(pageseeder.urimap()['screenshots'])
-        except KeyError:
+            self.urimap = pageseeder.urimap('website/screenshots')
+            self.existingScreens = list(self.urimap.keys())
+        except FileNotFoundError:
+            self.urimap = {}
             self.existingScreens = []
         
         if os.path.basename(self.placeholder) not in self.existingScreens:
@@ -81,7 +79,7 @@ class ScreenshotManager:
         the base is copied to a dated archive directory and uploaded as well for human inspection.
         """
         for domain, success in self.takeScreens():
-            filename = domain.docid + '.jpg'
+            filename = domain.name.replace('.','_') + '.jpg'
             if not success:
                 self.stats['fail'].append(domain.docid)
                 self.addPSMLFooter(domain)
@@ -194,7 +192,7 @@ class ScreenshotManager:
         """
         try:
             await page.goto(f'https://{domain.name}/', timeout = 5000, waitUntil = 'networkidle0')  #@IgnoreException
-            await page.screenshot(path = f'{self.workdir}/{domain.docid}.jpg')
+            await page.screenshot(path = f'{self.workdir}/{domain.name.replace(".","_")}.jpg')
             return (domain, True)
         except TimeoutError:
             logger.warning(f'Navigation to {domain.name} timed out.')
@@ -219,6 +217,27 @@ class ScreenshotManager:
             </fragment>
         ''', features = 'xml'))
 
+    def sentenceStale(self) -> None:
+        """
+        Sentence any stale screenshots on PageSeeder.
+        Also clears the sentence of any screenshots wrongfully marked as stale.
+        """
+        for file in self.existingScreens:
+            if file.replace('_','.')[:-4] not in self.domains:
+                info = json.loads(pageseeder.get_uri(self.urimap[file]))
+                labels = info['labels'] if 'labels' in info else []
+                if 'stale' in labels:
+                    for label in labels:
+                        match = re.fullmatch(utils.expiry_date_pattern, label)
+                        if match and ( date.fromisoformat(match['date']) <= date.today() ):
+                            pageseeder.archive(self.urimap[file])
+                else:
+                    pageseeder.sentence_uri(self.urimap[file])
+            else:
+                pageseeder.clear_sentence(self.urimap[file])
+
+        if 'diffimg' in pageseeder.urimap():
+            pageseeder.archive(pageseeder.urimap()['diffimg'])
 
 def init() -> None:
     if not os.path.exists(utils.APPDIR+ 'plugins/screenshots/base'):
@@ -245,6 +264,7 @@ def runner(network: Network) -> None:
         placeholder = utils.APPDIR+ 'plugins/screenshots/placeholder.jpg'
     )
     mngr.start()
+    mngr.sentenceStale()
 
 
 __stages__ = {'footers': runner}
