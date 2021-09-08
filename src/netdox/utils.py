@@ -11,6 +11,7 @@ import re
 from functools import cache, wraps
 from sys import argv
 from traceback import format_exc
+import datetime
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -19,7 +20,10 @@ from netdox import psml
 
 logger = logging.getLogger(__name__)
 
+## Regex patterns
+
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
+expiry_date_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
 
 ################
 # Cryptography #
