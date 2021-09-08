@@ -11,7 +11,7 @@ import os
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from functools import wraps
+from functools import cache, wraps
 from inspect import signature
 from time import sleep
 
@@ -110,6 +110,7 @@ def auth(func):
 
     return wrapper
 
+@cache
 def urimap(path: str = 'website', type: str = 'folder') -> dict[str, str]:
     """
     Maps the names of the files in the folder *path* to their URIs.
