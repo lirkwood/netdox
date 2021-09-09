@@ -31,17 +31,17 @@ setup(
         "Operating System :: OS Independent"
     ],
     install_requires = [
-        'beautifulsoup4',
-        'lxml',
-        'requests',
-        'Pillow',
-        'websockets',
-        'boto3',
-        'kubernetes',
-        'pyppeteer',
-        'diffimg',
-        'pypsrp',
-        'fortiosapi'
+        'beautifulsoup4',   # core
+        'lxml',             # core
+        'requests',         # core
+        'Pillow',           # screenshots
+        'websockets',       # xenorchestra
+        'boto3',            # aws
+        'kubernetes',       # k8s
+        'pyppeteer',        # screenshots, pfSense
+        'diffimg',          # screenshots
+        'pypsrp',           # activedirectory
+        'fortiosapi'        # fortigate
     ],
     entry_points = {'console_scripts': ['netdox=netdox.cli:parse_args']}
 )
