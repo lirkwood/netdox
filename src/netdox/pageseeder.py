@@ -184,7 +184,7 @@ def clear_sentence(uri: str) -> None:
     :type uri: str
     """
     try:
-        labels: list[str] = get_uri(uri)['labels']
+        labels: list[str] = json.loads(get_uri(uri))['labels']
     except KeyError:
         return
     else:
