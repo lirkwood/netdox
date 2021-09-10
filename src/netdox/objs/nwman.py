@@ -11,8 +11,8 @@ from datetime import date, timedelta
 from traceback import format_exc
 from types import ModuleType
 from typing import Callable
+from collections import defaultdict
 
-from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 import netdox.plugins
@@ -169,7 +169,12 @@ class NetworkManager:
         })
 
         plus_thirty = date.today() + timedelta(days = 30)
-        combined = {expiry: uri for type in self.stale.values() for expiry, uri in type.items()}
+
+        combined = defaultdict(set)
+        for expiryMap in self.stale.values():
+            for expiry, uris in expiryMap.items():
+                for uri in uris:
+                    combined[expiry].add(uri)
 
         todayFrag = Tag(is_xml = True, name = 'fragment', attrs = {'id': 'stale_today'})
         heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '3'})
