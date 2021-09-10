@@ -119,6 +119,8 @@ class PSMLWriter:
             self.doc = None
             raise NotImplementedError
 
+        self.doc.find('labels').string = ','.join(nwobj.labels)
+
         self.footer = self.doc.find(id = 'footer')
         for tag in nwobj.psmlFooter:
             self.footer.append(tag)
@@ -129,11 +131,11 @@ class PSMLWriter:
             octets = ip.split('.')
             search_octets.append(octets[-1])
             search_octets.append('.'.join(octets[-2:]))
-        frag = Tag(is_xml=True, name='properties-fragment', attrs={'id':'for-search', 'labels':'s-hide-content'})
-        frag.append(psml.newprop(
+        octetFrag = Tag(is_xml=True, name='properties-fragment', attrs={'id':'for-search', 'labels':'s-hide-content'})
+        octetFrag.append(psml.newprop(
             name = 'octets', title = 'Octets for search', value = ', '.join(search_octets)
         ))
-        self.footer.append(frag)
+        self.footer.append(octetFrag)
 
         dir = os.path.dirname(nwobj.outpath)
         if not os.path.exists(dir):

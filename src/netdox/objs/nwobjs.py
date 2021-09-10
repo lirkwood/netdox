@@ -34,7 +34,12 @@ class Domain(base.DNSObject):
     
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, zone: str = None) -> None:
+    def __init__(self, 
+            network: Network, 
+            name: str, 
+            zone: str = None, 
+            labels: Iterable[str] = None
+        ) -> None:
         """
         Initialises a Domain and adds it to *network*.
 
@@ -48,6 +53,14 @@ class Domain(base.DNSObject):
         """
         if re.fullmatch(utils.dns_name_pattern, name):
             self.role = 'default'
+
+            super().__init__(
+                network = network, 
+                name = name, 
+                docid = f'_nd_domain_{name.replace(".","_")}', 
+                zone = zone, 
+                labels = labels
+            )
             
             self.records = {
                 'A': helpers.RecordSet(),
@@ -61,7 +74,6 @@ class Domain(base.DNSObject):
 
             self.subnets = set()
             
-            super().__init__(network, name, f'_nd_domain_{name.replace(".","_")}', zone)
         else:
             raise ValueError('Must provide a valid name for a Domain (some FQDN)')
     
@@ -170,16 +182,25 @@ class IPv4Address(base.DNSObject):
     
     ## dunder methods
 
-    def __init__(self, network: Network, address: object, unused: bool = False) -> None:
+    def __init__(self, 
+        network: Network, 
+        address: object, 
+        unused: bool = False, 
+        labels: Iterable[str] = None
+    ) -> None:
+
         if iptools.valid_ip(address):
             super().__init__(
                 network = network, 
                 name = address, 
                 docid = f'_nd_ip_{address.replace(".","_")}',
-                zone = '.'.join(address.split('.')[-2::-1])+ '.in-addr.arpa'
+                zone = '.'.join(address.split('.')[-2::-1])+ '.in-addr.arpa',
+                labels = labels
             )
 
             self.unused = unused
+            if self.unused: self.labels.add('unused')
+
             self.is_private = not iptools.public_ip(self.name)
 
             self.records = {
@@ -324,11 +345,12 @@ class Node(base.NetworkObject):
             docid: str,
             identity: str, 
             domains: Iterable[str], 
-            ips: Iterable[str]
+            ips: Iterable[str],
+            labels: Iterable[str] = None
         ) -> None:
         self.identity = identity.lower()
         self.type = self.__class__.type
-        super().__init__(network, name, docid)
+        super().__init__(network, name, docid, labels)
 
         self.domains = {d.lower() for d in domains} if domains else set()
         self.ips = set(ips) if ips else set()
@@ -416,7 +438,8 @@ class DefaultNode(Node):
             name: str, 
             private_ip: str,
             public_ips: Iterable[str] = [],
-            domains: Iterable[str] = []
+            domains: Iterable[str] = [],
+            labels: Iterable[str] = None
         ) -> None:
 
         if iptools.valid_ip(private_ip) and not iptools.public_ip(private_ip):
@@ -431,7 +454,8 @@ class DefaultNode(Node):
             identity = private_ip,
             domains = domains,
             ips = [*public_ips] + [private_ip],
-            )
+            labels = labels
+        )
 
     ## abstract properties
 
@@ -458,7 +482,8 @@ class PlaceholderNode(Node):
             network: Network, 
             name: str, 
             domains: Iterable[str] = [], 
-            ips: Iterable[str] = []
+            ips: Iterable[str] = [],
+            labels: Iterable[str] = None
         ) -> None:
         """
         Generates a random UUID to use for it's identity.
@@ -484,7 +509,8 @@ class PlaceholderNode(Node):
             docid = '_nd_node_placeholder_'+ self.uuid, 
             identity = self.uuid, 
             domains = domains, 
-            ips = ips
+            ips = ips,
+            labels = labels
         )
 
         nodes = set()

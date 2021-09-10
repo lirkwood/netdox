@@ -271,7 +271,7 @@ DOMAIN_TEMPLATE = '''
 
         <documentinfo>
             <uri docid="#!docid" title="#!name">
-                <labels>show-reversexrefs</labels>
+                <labels />
             </uri>
         </documentinfo>
 
@@ -312,7 +312,7 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <documentinfo>
             <uri docid="#!docid" title="#!name">
-                <labels>show-reversexrefs</labels>
+                <labels />
             </uri>
         </documentinfo>
 
@@ -350,7 +350,7 @@ NODE_TEMPLATE = '''
 
         <documentinfo>
             <uri docid="#!docid" title="#!name">
-                <labels>show-reversexrefs</labels>
+                <labels />
             </uri>
         </documentinfo>
 

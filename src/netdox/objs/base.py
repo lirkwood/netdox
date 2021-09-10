@@ -51,10 +51,12 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """The containing network."""
     psmlFooter: list[Tag] = None
     """A list of fragment tags to add to the *footer* section of this object's output PSML."""
+    labels: set[str]
+    """A set of labels to apply to this object's output document."""
 
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, docid: str) -> None:
+    def __init__(self, network: Network, name: str, docid: str, labels: Iterable[str] = None) -> None:
         """
         Sets the instances attributes to the values provided, and adds itself to *network*.
 
@@ -70,6 +72,9 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.docid = docid.lower()
 
         self.psmlFooter = []
+        
+        self.labels = set(labels) if labels else set()
+        self.labels.add('show-reversexrefs')
 
     ## properties
 
@@ -120,8 +125,8 @@ class DNSObject(NetworkObject):
 
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, docid: str, zone: str) -> None:
-        super().__init__(network, name, docid)
+    def __init__(self, network: Network, name: str, docid: str, zone: str, labels: Iterable[str] = None) -> None:
+        super().__init__(network, name, docid, labels)
         self.zone = zone.lower() if zone else zone
         self.node = None
 
