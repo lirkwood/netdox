@@ -60,6 +60,7 @@ class Property(Tag):
         xref_href: str = None,
         xref_docid: str = None,
         xref_uriid: str = None,
+        link_url: str = None,
         frag: str = 'default',
         namespace: str = None,
         prefix: str = None,
@@ -99,6 +100,8 @@ class Property(Tag):
         elif any(xref_params.values()):
             _attrs['datatype'] = 'xref'
             xref_attrs = {k: v for k, v in xref_params.items() if v is not None}
+        elif link_url:
+            _attrs['datatype'] = 'link'
         else:
             raise AttributeError('Property must have at least one of: value, xref_href, xref_docid, xref_uriid')
         
@@ -117,6 +120,13 @@ class Property(Tag):
                 can_be_empty_element = True, 
                 name = 'xref', 
                 attrs = {'frag': frag} | xref_attrs
+            ))
+        elif link_url:
+            self.append(Tag(
+                is_xml=True, 
+                can_be_empty_element = True, 
+                name = 'link', 
+                attrs = {'href': link_url}
             ))
 
 
