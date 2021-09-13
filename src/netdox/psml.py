@@ -356,7 +356,7 @@ NODE_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="1.0" />
+                <property name="template_version"     title="Template version"   value="1.1" />
             </properties>
         </metadata>
 
@@ -370,8 +370,8 @@ NODE_TEMPLATE = '''
         <section id="header">
 
             <properties-fragment id="header">
-                <property name="nodename" title="Name" value="#!name" />
-                <property name="nodetype" title="Node Type" value="#!type" />
+                <property name="name" title="Name" value="#!name" />
+                <property name="type" title="Node Type" value="#!type" />
                 <property name="location" title="Location" value="#!location" />
             </properties-fragment>
 
