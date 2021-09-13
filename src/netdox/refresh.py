@@ -42,6 +42,8 @@ def init():
                     shutil.rmtree(file)
         else:
             os.remove(folder)
+    
+    os.mkdir(utils.APPDIR+ 'out/config')
 
     roles = {"exclusions": []}
     # load dns config from pageseeder
