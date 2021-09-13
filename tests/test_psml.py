@@ -1,5 +1,6 @@
-import pytest
-from netdox import psml, objs
+from netdox import objs, psml
+from fixtures.objs import domain, ipv4, network, node
+
 
 # n.b. attrs are alphabetically ordered
 def test_Property_value():
@@ -67,32 +68,17 @@ def test_PropertiesFragment_withprop():
     )
 
 
-@pytest.fixture
-def network():
-    return objs.Network()
-    
-@pytest.fixture
-def domain(network: objs.Network):
-    return objs.Domain(network, 'sub.domain.com', 'domain.com')
-
-@pytest.fixture
-def ipv4(network: objs.Network):
-    return objs.IPv4Address(network, '192.168.0.0')
-
-@pytest.fixture
-def node(network: objs.DefaultNode):
-    return objs.DefaultNode(network, 'test_name', '192.168.0.0')
-
-
 def test_populate_domain(domain: objs.Domain):
     document = psml.populate(psml.DOMAIN_TEMPLATE, domain)
-    assert document.find('property', attrs={'name': 'name'})['value'] == 'sub.domain.com'
-    assert document.find('property', attrs={'name': 'zone'})['value'] == 'domain.com'
+    assert document.find('property', attrs={'name': 'name'})['value'] == domain.name
+    assert document.find('property', attrs={'name': 'zone'})['value'] == domain.zone
 
 def test_populate_ipv4(ipv4: objs.IPv4Address):
     document = psml.populate(psml.IPV4ADDRESS_TEMPLATE, ipv4)
-    assert document.find('property', attrs={'name': 'ipv4'})['value'] == '192.168.0.0'
-    assert document.find('property', attrs={'name': 'subnet'})['value'] == '192.168.0.0/24'
+    assert document.find('property', attrs={'name': 'ipv4'})['value'] == ipv4.name
+    assert document.find('property', attrs={'name': 'subnet'})['value'] == ipv4.subnet
 
 def test_populate_node(node: objs.DefaultNode):
-    assert False
+    document = psml.populate(psml.NODE_TEMPLATE, node)
+    assert document.find('property', attrs={'name': 'name'})['value'] == node.name
+    assert document.find('property', attrs={'name': 'type'})['value'] == node.type
