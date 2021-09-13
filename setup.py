@@ -19,8 +19,9 @@ setup(
     package_data = {
         "": ["README.md"],
         "netdox": [
-            "src/defaults/*/*",
-            "src/templates/*/*"
+            "src/templates/*",
+            "src/templates/*/*",
+            "src/defaults/*/*"
         ],
         "netdox.plugins.screenshots": [
             "placeholder.jpg"
