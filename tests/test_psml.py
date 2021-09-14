@@ -110,6 +110,9 @@ def test_populate_node(node: objs.DefaultNode):
 
 
 def test_recordset2pfrags():
+    """
+    Tests the recordset2pfrags function.
+    """
     # dict emulates ordered record set
     # as they both implement an ``items`` method
     records = {
@@ -135,11 +138,10 @@ def test_recordset2pfrags():
         ]),
     ]
 
-@fixture
-def pfrag():
-    return 
-
 def test_pfrag2dict():
+    """
+    Tests the pfrag2dict function
+    """
     pfrag = psml.PropertiesFragment(id='foo', properties = [
         psml.Property('valprop','', 'some value'),
         psml.Property('valpropmulti','', 'some value 1'),

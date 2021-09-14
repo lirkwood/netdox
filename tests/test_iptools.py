@@ -4,6 +4,9 @@ from pytest import raises
 ## Validation
 
 def test_valid_ip():
+    """
+    Tests if valid_ip correctly identifies valid / invalid CIDR IPv4s.
+    """
     assert iptools.valid_ip('0.0.0.0')
     assert iptools.valid_ip('255.255.255.255')
 
@@ -12,6 +15,9 @@ def test_valid_ip():
     assert not iptools.valid_ip('255.255.256.255')
 
 def test_valid_subnet():
+    """
+    Tests if valid_subnet correctly identifies valid / invalid CIDR IPv4 subnets.
+    """
     assert iptools.valid_subnet('0.0.0.0/0')
     assert iptools.valid_subnet('0.0.0.0/31')
     assert iptools.valid_subnet('255.255.255.255/0')
@@ -22,6 +28,9 @@ def test_valid_subnet():
     assert not iptools.valid_subnet('255.255.255.255/001')
 
 def test_valid_range():
+    """
+    Tests if valid_range correctly identifies valid / invalid CIDR IPv4 ranges.
+    """
     assert iptools.valid_range('0.0.0.0-0.0.0.1')
     assert iptools.valid_range('0.0.0.0-0.0.0.0')
     assert iptools.valid_range('0.0.0.0-255.255.255.255')
@@ -31,12 +40,18 @@ def test_valid_range():
 ## Subnet funcs
 
 def test_subn_floor():
+    """
+    Tests if subn_floor correctly finds the lowest IPv4 in a subnet.
+    """
     assert iptools.subn_floor('255.255.255.255/0') == '0.0.0.0'
     assert iptools.subn_floor('255.255.255.255/1') == '128.0.0.0'
     assert iptools.subn_floor('255.255.255.255/16') == '255.255.0.0'
     assert iptools.subn_floor('255.255.255.255/31') == '255.255.255.254'
 
 def test_subn_bounds():
+    """
+    Tests if subn_bounds correctly finds the bounds of a subnet.
+    """
     bounds = lambda lower, upper: {'lower':lower,'upper':upper}
 
     assert iptools.subn_bounds('0.0.0.0/0') == bounds('0.0.0.0','255.255.255.255')
@@ -52,6 +67,9 @@ def test_subn_bounds():
     )
 
 def test_subn_equiv():
+    """
+    Tests if subn_equiv correctly converts subnets between mask sizes.
+    """
     assert iptools.subn_equiv('0.0.0.0/24', 25) == [
         '0.0.0.0/25', '0.0.0.128/25'
     ]
@@ -72,6 +90,9 @@ def test_subn_equiv():
         iptools.subn_equiv('0.0.0.999/16', 17)
 
 def test_subn_contains():
+    """
+    Tests if subn_contains correctly detects if an object is in a subnet.
+    """
     assert iptools.subn_contains('0.0.0.0/0', '0.0.0.0')
     assert iptools.subn_contains('0.0.0.0/0', '255.255.255.255')
 
@@ -91,6 +112,9 @@ def test_subn_contains():
 ## Iteration
 
 def test_subn_iter():
+    """
+    Tests if subn_iter correctly iterates over the IPv4s in a subnet.
+    """
     assert [
         ip for ip in iptools.subn_iter('0.0.0.0/24')
     ] == [
@@ -105,6 +129,9 @@ def test_subn_iter():
     ]
 
 def test_range_iter():
+    """
+    Tests if range_iter correctly iterates over the IPv4s in a range.
+    """
     assert [
         ip for ip in iptools.range_iter('0.0.0.0','0.0.0.255')
     ] == [
@@ -122,11 +149,17 @@ def test_range_iter():
 ## Conversion
 
 def test_cidr2int():
+    """
+    Tests if cidr2int correctly converts IPv4s from CIDR format to integers.
+    """
     assert iptools.cidr2int('0.0.0.0') == 0
     assert iptools.cidr2int('255.255.255.255') == (256 ** 4) - 1
     assert iptools.cidr2int('123.45.67.89') == 89 + (67 * 256) + (45 * (256 ** 2)) + (123 * (256 ** 3))
 
 def test_int2cidr():
+    """
+    Tests if int2cidr correctly converts IPv4s from integers to CIDR format.
+    """
     assert iptools.int2cidr(0) == '0.0.0.0'
     assert iptools.int2cidr((256 ** 4) - 1) == '255.255.255.255'
     assert iptools.int2cidr(89 + (67 * 256) + (45 * (256 ** 2)) + (123 * (256 ** 3))) == '123.45.67.89'
@@ -135,6 +168,9 @@ def test_int2cidr():
 ## Other
 
 def test_public_ip():
+    """
+    Tests if public_ip correctly identifies IPv4s in reserved namespaces.
+    """
     assert iptools.public_ip('0.0.0.0')
     assert iptools.public_ip('255.255.255.255')
 
@@ -148,6 +184,9 @@ def test_public_ip():
     assert not iptools.public_ip('172.31.255.255')
 
 def test_search_string():
+    """
+    Tests if search_string correctly searches a string for objects.
+    """
     assert iptools.search_string('0.0.0.0\n255.255.255.255') == ['0.0.0.0','255.255.255.255']
     assert iptools.search_string('aaaaaaaa|0.0.0.0|aaaaaaaa', delimiter = '|') == ['0.0.0.0']
 
@@ -179,6 +218,9 @@ def test_search_string():
         iptools.search_string(threeranges, 'ipv6')
 
 def test_sort():
+    """
+    Tests if sort correctly sorts an IPv4 into a subnet.
+    """
     assert iptools.sort('0.0.0.0') == '0.0.0.0/24'
     assert iptools.sort('0.0.0.255') == '0.0.0.0/24'
 
@@ -190,6 +232,9 @@ def test_sort():
     assert iptools.sort('123.45.67.89', 16) == '123.45.0.0/16'
 
 def test_collapse_iplist():
+    """
+    Tests if collapse_iplist correctly collapses a list of IPv4s into a list of ranges / subnets.
+    """
     iplist = [
         'invalid.ip.address',
         '123.456.789.101',
