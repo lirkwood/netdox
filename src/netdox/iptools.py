@@ -281,7 +281,7 @@ def search_string(string: str, object: str = 'ipv4', delimiter: str = None) -> l
     :type object: str, optional
     :param delimiter: The delimiter to split *string* on, defaults to None
     :type delimiter: str, optional
-    :raises TypeError: If *output* takes a value that is not one of: 'ipv4', 'ipv4_subnet', 'ipv4_range'.
+    :raises ValueError: If *output* takes a value that is not one of: 'ipv4', 'ipv4_subnet', 'ipv4_range'.
     :return: A list of objects found within the string.
     :rtype: list[str]
     """
@@ -292,7 +292,7 @@ def search_string(string: str, object: str = 'ipv4', delimiter: str = None) -> l
     elif object == 'ipv4_range':
         validate = valid_range
     else:
-        raise TypeError(f'Search object must be one of: ipv4, ipv4_subnet; Not {object}')
+        raise ValueError(f'Search object must be one of: ipv4, ipv4_subnet; Not {object}')
 
     outlist = []
     for line in string.split(delimiter):
