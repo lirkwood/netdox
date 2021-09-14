@@ -129,18 +129,13 @@ def handle(func):
     """
     Catches any exceptions raised by the passed function, prints the traceback, and returns *None*.
     Useful for functions which perform non-essential operations.
-    """
-    funcname = func.__name__
-    funcmodule = func.__module__
-    if funcmodule == '__main__':
-        funcmodule = argv[0].replace('.py','')
-        
+    """ 
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             returned = func(*args, **kwargs)
         except Exception:
-            logger.error(f'Function {funcmodule}.{funcname} threw an exception:\n {format_exc()}')
+            logger.error(f'Function {func.__module__}.{func.__name__} threw an exception:\n {format_exc()}')
             return None
         else:
             return returned
