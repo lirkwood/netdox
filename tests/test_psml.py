@@ -1,5 +1,6 @@
 from netdox import objs, psml
 from fixtures.objs import domain, ipv4, network, node
+from pytest import raises, fixture
 
 
 # n.b. attrs are alphabetically ordered
@@ -56,6 +57,10 @@ def test_Property_url():
         +'</property>' 
     )
 
+def test_Property_none():
+    with raises(AttributeError):
+        psml.Property('test_name', 'Test Title')
+
 def test_PropertiesFragment():
     """
     Tests the PropertiesFragment class with no properties
@@ -104,18 +109,45 @@ def test_populate_node(node: objs.DefaultNode):
     assert document.find('property', attrs={'name': 'type'})['value'] == node.type
 
 
+def test_recordset2pfrags():
+    # dict emulates ordered record set
+    # as they both implement an ``items`` method
+    records = {
+        'record 1': 'source 1',
+        'record 2': 'source 1',
+        'record 3': 'source 2'
+     }
+
+    assert psml.recordset2pfrags(
+        records, 'pfrag_', 'docid_', 'propname', 'Prop Title'
+    ) == [
+        psml.PropertiesFragment('pfrag_0', properties=[
+            psml.Property('propname', 'Prop Title', xref_docid='docid_record 1'),
+            psml.Property('source', 'Source Plugin', 'source 1'),
+        ]),
+        psml.PropertiesFragment('pfrag_1', properties=[
+            psml.Property('propname', 'Prop Title', xref_docid='docid_record 2'),
+            psml.Property('source', 'Source Plugin', 'source 1'),
+        ]),
+        psml.PropertiesFragment('pfrag_2', properties=[
+            psml.Property('propname', 'Prop Title', xref_docid='docid_record 3'),
+            psml.Property('source', 'Source Plugin', 'source 2'),
+        ]),
+    ]
+
+@fixture
+def pfrag():
+    return 
+
 def test_pfrag2dict():
-    """
-    Tests the properties-fragment to dictionary conversion.
-    """
     pfrag = psml.PropertiesFragment(id='foo', properties = [
         psml.Property('valprop','', 'some value'),
         psml.Property('valpropmulti','', 'some value 1'),
         psml.Property('valpropmulti','', 'some value 2'),
-        psml.Property('xrefprop','', xref_uriid = 9999),
+        psml.Property('xrefprop','', xref_uriid = '9999'),
         psml.Property('linkprop','', link_url = 'https://some.domain.com/')
-    ])
-    assert psml.pfrag2dict(str(pfrag)) == {
+    ]) 
+    result = {
         'valprop': 'some value',
         'valpropmulti': [
             'some value 1',
@@ -124,3 +156,14 @@ def test_pfrag2dict():
         'xrefprop': '9999',
         'linkprop': 'https://some.domain.com/'
     }
+    class NotString:
+        """Some class that can be converted to a string."""
+        def __init__(self, string): 
+            self.string = str(string)
+        def __repr__(self): 
+            return self.string
+
+    assert psml.pfrag2dict(pfrag) == result
+    assert psml.pfrag2dict(str(pfrag)) == result
+    assert psml.pfrag2dict(NotString(pfrag)) == result
+    assert psml.pfrag2dict('') == {}
