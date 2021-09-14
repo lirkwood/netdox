@@ -122,8 +122,8 @@ def subn_bounds(subn: str, integer: bool = False) -> dict[str, Union[str, int]]:
 
     :param subn: An IPv4 subnet to find the bounds of, in CIDR form.
     :type subn: str
-    :param binary: Whether to return the bounds as an integer instead of a string in CIDR form, defaults to False
-    :type binary: bool, optional
+    :param integer: Whether to return the bounds as an integer instead of a string in CIDR form, defaults to False
+    :type integer: bool, optional
     :return: A dictionary with keys 'upper' and 'lower' of the bounds of *subn*.
     :rtype: dict[str, Union[str, int]]
     """
@@ -264,7 +264,7 @@ def range_iter(lower: Union[str, int], upper: Union[str, int]) -> Generator[str,
         lower = cidr2int(lower)
     if isinstance(upper, str):
         upper = cidr2int(upper)
-    
+    if lower > upper: lower, upper = upper, lower
     current = lower
     while current <= upper:
         yield int2cidr(current)
@@ -272,12 +272,12 @@ def range_iter(lower: Union[str, int], upper: Union[str, int]) -> Generator[str,
 
 def search_string(string: str, object: str = 'ipv4', delimiter: str = None) -> list[str]:
     """
-    Searches a string for all instances of an object: either an IPv4 address (ipv4) or an IPv4 subnet (ipv4_subnet).
+    Searches a string for all instances of type *object*.
     Searches in chunks delimited by the provided value (default = newline).
 
     :param string: The string to search within.
     :type string: str
-    :param object: The type of object to search for, defaults to 'ipv4'
+    :param object: The type of object to search for, one of ('ipv4' 'ipv4_subnet' 'ipv4_range'). Defaults to 'ipv4'
     :type object: str, optional
     :param delimiter: The delimiter to split *string* on, defaults to None
     :type delimiter: str, optional
@@ -338,14 +338,14 @@ def collapse_iplist(iplist: Iterable[str], output = 'ranges') -> list[str]:
     if output not in ('ranges', 'subnets'):
         raise ValueError(f'Unknown output mode: {output}. Must be one of: ranges, subnets.')
     # get unique, sorted deque of ips as integers
-    ipdeque = deque(sorted(set([cidr2int(ip) for ip in iplist])))
+    ipdeque = deque(sorted(set([cidr2int(ip) for ip in iplist if valid_ip(ip)])))
     minlist = []
     while ipdeque:
         ip = ipdeque.popleft()
         currentInt = ip
         currentSubn = [ip]
         for nextint in ipdeque:
-            if output == 'subnet':
+            if output == 'subnets':
                 nextmask = math.ceil(math.log2(len(currentSubn) + 1))
                 octet4 = int(int2cidr(ip).split('.')[-1])
                 if not octet4 % (2**nextmask) == 0:
@@ -360,7 +360,7 @@ def collapse_iplist(iplist: Iterable[str], output = 'ranges') -> list[str]:
             currentSubn.pop()
 
         if currentSubn:
-            if output == 'subnet':
+            if output == 'subnets':
                 while not math.log2(len(currentSubn)).is_integer():
                     currentSubn.pop()
                 mask = int(32 - math.log2(len(currentSubn)))
