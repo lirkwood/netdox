@@ -246,11 +246,8 @@ def pfrag2dict(fragment: str) -> dict:
     """
     if isinstance(fragment, str):
         fragment = BeautifulSoup(fragment, features='xml')
-    else:
-        try:
-            fragment = BeautifulSoup(str(fragment), features='xml')
-        except Exception:
-            raise TypeError(f'Fragment must be valid PSML')
+    elif not isinstance(fragment, Tag):
+        fragment = BeautifulSoup(str(fragment), features='xml')
     
     d = defaultdict(list)
     for property in fragment("property"):
@@ -264,10 +261,7 @@ def pfrag2dict(fragment: str) -> dict:
             else:
                 raise NotImplementedError('Unimplemented property type')
     
-    if d:
-        return {k: (v if len(v) > 1 else v[0]) for k, v in d.items()}
-    else:
-        raise RuntimeError('No properties found to add to dictionary')
+    return {k: (v if len(v) > 1 else v[0]) for k, v in d.items()}
 
 
 #############
