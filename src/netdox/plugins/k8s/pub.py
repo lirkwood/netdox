@@ -12,7 +12,7 @@ def genpub(network: Network) -> None:
     for node in network.nodes:
         if node.type == 'Kubernetes App':
             for pod in node.pods.values():
-                if pod['workerIp'] in network.ips and network.ips[pod['workerIp']].node:
+                if network.ips[pod['workerIp']].node:
                     pod['workerNode'] = network.ips[pod['workerIp']].node.docid
                     workerApps[node.cluster][pod['workerNode']].append(node.docid)
 

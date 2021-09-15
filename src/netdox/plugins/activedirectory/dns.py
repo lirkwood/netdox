@@ -23,8 +23,6 @@ def fetchDNS(network: Network) -> None:
             if fqdn is not None and fqdn not in network.domains.exclusions:
                 if fqdn.endswith('.in-addr.arpa'):
                     ip = '.'.join(fqdn.replace('.in-addr.arpa','').split('.')[::-1])
-                    if ip not in network.ips:
-                        dnsobj = IPv4Address(network, ip)
                     dnsobj = network.ips[ip]
                 else:
                     if fqdn not in network.domains:

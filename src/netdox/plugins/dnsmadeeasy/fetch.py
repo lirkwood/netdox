@@ -116,8 +116,6 @@ def add_PTR(network: Network, record: dict, root: str):
     fqdn = assemble_fqdn(value, root)
     
     if iptools.valid_ip(ip):
-        if ip not in network.ips:
-            IPv4Address(network, ip)
         network.ips[ip].link(fqdn, 'DNSMadeEasy')
 
 

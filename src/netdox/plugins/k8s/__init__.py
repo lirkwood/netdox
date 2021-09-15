@@ -69,7 +69,7 @@ class App(Node):
         for domain in list(domains):
             if domain in network.domains:
                 for proxy in utils.config('k8s')[cluster]['proxies']:
-                    if not ( proxy in network.ips and network.resolvesTo(network.domains[domain], network.ips[proxy]) ):
+                    if not network.resolvesTo(network.domains[domain], network.ips[proxy]):
                         domains.remove(domain)
 
             else:

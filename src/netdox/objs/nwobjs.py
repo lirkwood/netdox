@@ -110,8 +110,6 @@ class Domain(base.DNSObject):
             if not iptools.public_ip(value):
                 self.subnets.add(iptools.sort(value))
             if self.network:
-                if value not in self.network.ips:
-                    IPv4Address(self.network, value)
                 self.network.ips[value].backrefs['A'].add(self.name)
         elif re.fullmatch(utils.dns_name_pattern, value):
             self.records['CNAME'].add(value, source)
@@ -243,8 +241,6 @@ class IPv4Address(base.DNSObject):
         if iptools.valid_ip(value):
             self.records['CNAME'].add(value, source)
             if self.network:
-                if value not in self.network.ips:
-                    IPv4Address(self.network, value)
                 self.network.ips[value].backrefs['CNAME'].add(self.name)
         elif re.fullmatch(utils.dns_name_pattern, value):
             self.records['PTR'].add(value, source)
@@ -400,8 +396,6 @@ class Node(base.NetworkObject):
             cache |= self.network.createNoderefs(self.identity, domain, cache)
 
         for ip in list(self.ips):
-            if ip not in self.network.ips:
-                IPv4Address(self.network, ip)
             cache |= self.network.createNoderefs(self.identity, ip, cache)
 
         return self
