@@ -163,44 +163,54 @@ def test_fileFetchRecursive(mock_dir):
     ]]
 
 
-def add_role(name: str, config: dict):
+@pytest.fixture
+def register_role():
     """
-    Adds a role to the roles config file.
+    Returns a function that adds a role to the config and returns the generated PSML.
     """
-    utils.roles.cache_clear()
-    roles = utils.roles()
-    roles[name] = config
-    with open(utils.APPDIR+ 'cfg/roles.json', 'w') as stream:
-        stream.write(json.dumps(roles))
-    utils.roles.cache_clear()
+    if not os.path.exists(utils.APPDIR+ 'out/config'):
+        os.makedirs(utils.APPDIR+ 'out/config')
 
-def test_roleToPSML():
+    def register(name: str, config: dict) -> BeautifulSoup:
+        utils.roles.cache_clear()
+        roles = utils.roles()
+        roles[name] = config
+        with open(utils.APPDIR+ 'cfg/roles.json', 'w') as stream:
+            stream.write(json.dumps(roles))
+        utils.roles.cache_clear()
+        utils.roleToPSML(name)
+        with open(utils.APPDIR+ f'out/config/{name}.psml', 'r') as stream:
+            doc = BeautifulSoup(stream.read(), 'xml')
+        os.remove(utils.APPDIR+ f'out/config/{name}.psml')
+        return doc
+
+    return register
+
+def test_roleToPSML(register_role):
     """
     Tests the ``roleToPSML`` function.
     """
-    role_name = 'fake_role_name'
-    add_role(role_name, {
-        'property 1': 'value 1',
-        'property 2': 'value 2',
-        'property 3': 'value 3',
-    })
-    if not os.path.exists(utils.APPDIR+ 'out/config'):
-        os.makedirs(utils.APPDIR+ 'out/config')
-    utils.roleToPSML(role_name)
-
-    with open(utils.APPDIR+ f'out/config/{role_name}.psml', 'r') as stream:
-        roledoc = BeautifulSoup(stream.read(), 'lxml')
-    
-    assert roledoc.find(
-        'properties-fragment', id = 'config'
-    ) == psml.PropertiesFragment(
-        id = 'config',
-        properties = [
-            psml.Property('name', 'Name', role_name),
-            psml.Property('property 1', 'property 1', 'value 1'),
-            psml.Property('property 2', 'property 2', 'value 2'),
-            psml.Property('property 3', 'property 3', 'value 3'),
-        ]
-    )
-
-    os.remove(utils.APPDIR+ f'out/config/{role_name}.psml')
+    rolename = 'fake_role_name'
+    for config in (
+        {'property 1': 'value 1',
+         'property 2': 'value 2',
+         'property 3': 'value 3'},
+         
+        {'name': rolename,
+         'property 1': 'value 1',
+         'property 2': 'value 2',
+         'property 3': 'value 3'}
+        ):
+            doc = register_role(rolename, config)
+        
+            assert doc.find(
+                'properties-fragment', id = 'config'
+            ) == psml.PropertiesFragment(
+                id = 'config',
+                properties = [
+                    psml.Property('name', 'Name', rolename),
+                    psml.Property('property 1', 'property 1', 'value 1'),
+                    psml.Property('property 2', 'property 2', 'value 2'),
+                    psml.Property('property 3', 'property 3', 'value 3'),
+                ]
+            )
