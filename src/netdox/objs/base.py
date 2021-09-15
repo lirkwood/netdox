@@ -174,16 +174,19 @@ class DNSObject(NetworkObject):
         In place merge of two DNSObjects of the same type.
         This method should always be called on the object entering the set.
         """
-        super().merge(object)
-        for recordType in self.records:
-            if recordType in object.records:
-                self.records[recordType] |= object.records[recordType]
+        if object.name == self.name:
+            super().merge(object)
+            for recordType in self.records:
+                if recordType in object.records:
+                    self.records[recordType] |= object.records[recordType]
 
-        for recordType in self.backrefs:
-            if recordType in object.backrefs:
-                self.backrefs[recordType] |= object.backrefs[recordType]
+            for recordType in self.backrefs:
+                if recordType in object.backrefs:
+                    self.backrefs[recordType] |= object.backrefs[recordType]
 
-        return self
+            return self
+        else:
+            raise AttributeError('Cannot merge DNSObjects with different names.')
 
 
 ##############
