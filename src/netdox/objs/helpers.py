@@ -312,7 +312,8 @@ class RecordSet:
         yield from self.records
 
     def __ior__(self, recordset: RecordSet) -> RecordSet:
-        return self._records.__ior__(recordset._records)
+        self._records.__ior__(recordset._records)
+        return self
 
     ## properties
 
