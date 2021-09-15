@@ -108,6 +108,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         This method should always be called on the object entering the set.
         """
         self.psmlFooter += object.psmlFooter
+        self.labels |= object.labels
         return self
 
 class DNSObject(NetworkObject):
