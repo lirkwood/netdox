@@ -176,7 +176,9 @@ def roleToPSML(role: str) -> None:
     :param role: The name of the role to generate PSML for.
     :type role: str
     """
-    config = roles()[role]
+    config: dict = roles()[role]
+    if 'name' in config:
+        config.pop('name')
     with open(APPDIR+ 'src/templates/domain_role/document-template.psml', 'r') as stream:
         soup = BeautifulSoup(stream.read(), features = 'xml')
 
@@ -190,9 +192,7 @@ def roleToPSML(role: str) -> None:
         psml.Property(name = key, title = key, value = str(value))
         for key, value in config.items() if key != 'domains'
     ])
-
-    if 'name' not in config:
-        frag.insert(0, psml.Property('name', 'Name', role))
+    frag.insert(0, psml.Property('name', 'Name', role))
 
     soup.find(id = 'config').replace_with(frag)
 
