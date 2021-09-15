@@ -13,8 +13,6 @@ logger = logging.getLogger(__name__)
 
 def runner(network: Network) -> None:
     for ip, alias in asyncio.run(pfsenseScrapeNat()).items():
-        if ip not in network.ips:
-            IPv4Address(network, ip, True)
         network.ips[ip].nat = alias
 
 async def pfsenseScrapeNat() -> dict:

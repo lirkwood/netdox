@@ -224,6 +224,9 @@ class PSMLWriter:
                 value = '—'
             ))
 
+        if ip.unused:
+            ip.labels.add('unused')
+
         for frag in psml.recordset2pfrags(
             recordset = ip.records['PTR'],
             id_prefix = 'PTR_record_',

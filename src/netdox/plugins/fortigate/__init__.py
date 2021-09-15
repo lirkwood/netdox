@@ -24,8 +24,6 @@ def runner(network: Network) -> None:
                 raise NotImplementedError('Only 1:1 SNAT is currently implemented.')
 
     for ip in nat:
-        if ip not in network.ips:
-            IPv4Address(network, ip, True)
         network.ips[ip].nat = nat[ip]
 
 __stages__ = {'nat': runner}

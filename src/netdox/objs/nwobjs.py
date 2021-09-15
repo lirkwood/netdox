@@ -185,7 +185,6 @@ class IPv4Address(base.DNSObject):
     def __init__(self, 
         network: Network, 
         address: object, 
-        unused: bool = False, 
         labels: Iterable[str] = None
     ) -> None:
 
@@ -197,9 +196,6 @@ class IPv4Address(base.DNSObject):
                 zone = '.'.join(address.split('.')[-2::-1])+ '.in-addr.arpa',
                 labels = labels
             )
-
-            self.unused = unused
-            if self.unused: self.labels.add('unused')
 
             self.is_private = not iptools.public_ip(self.name)
 
@@ -302,6 +298,20 @@ class IPv4Address(base.DNSObject):
             return self
         else:
             raise ValueError('Cannot merge two IPv4Addresses with different addresses')
+
+    ## properties
+
+    @property
+    def unused(self) -> bool:
+        """
+        Returns False if this object is pointing to any other objects, or is being pointed at.
+        True otherwise.
+        """
+        return not bool(
+            any([rs.records for rs in self.records.values()])
+            or any(self.backrefs.values())
+            or self.node
+        )
 
     ## methods
 
