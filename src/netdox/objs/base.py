@@ -246,11 +246,3 @@ class DNSObjectContainer(NetworkObjectContainer):
             return super().__contains__(key)
         else:
             return super().__contains__(key.name)
-
-    ## abstract methods
-
-    def _add(self, object: DNSObject) -> None:
-        if object.name in self:
-            self[object.name] = object.merge(self[object.name])
-        else:
-            self[object.name] = object
