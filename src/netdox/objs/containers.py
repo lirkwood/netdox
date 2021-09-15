@@ -100,6 +100,8 @@ class IPv4AddressSet(base.DNSObjectContainer):
         self.subnets = set()
 
     def __getitem__(self, key: str) -> nwobjs.IPv4Address:
+        if key not in self.objects:
+            self.objects[key] = nwobjs.IPv4Address(self.network, key)
         return super().__getitem__(key)
 
     def __iter__(self) -> Iterator[nwobjs.IPv4Address]:
@@ -158,13 +160,11 @@ class IPv4AddressSet(base.DNSObjectContainer):
     def fillSubnets(self) -> None:
         """
         Iterates over each unique private subnet this set has IP addresses in, 
-        and generates IPv4Addresses for each IP in the subnet not already in the set (with the unused attribute set).
-        If the set has a Network, any IPs referenced by a domain/node not already present will be generated as well.
+        and generates IPv4Addresses for each IP in the subnet not already in the set.
         """
         for subnet in self.subnets:
             for ip in iptools.subn_iter(subnet):
-                if ip not in self:
-                    self[ip] = nwobjs.IPv4Address(self.network, ip, True)
+                self[ip]
 
 
 class NodeSet(base.NetworkObjectContainer):
