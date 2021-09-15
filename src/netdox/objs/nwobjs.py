@@ -107,15 +107,15 @@ class Domain(base.DNSObject):
         """
         if iptools.valid_ip(value):
             self.records['A'].add(value, source)
+            self.network.ips[value].backrefs['A'].add(self.name)
             if not iptools.public_ip(value):
                 self.subnets.add(iptools.sort(value))
-            if self.network:
-                self.network.ips[value].backrefs['A'].add(self.name)
+
         elif re.fullmatch(utils.dns_name_pattern, value):
             self.records['CNAME'].add(value, source)
-            if self.network:
-                if value in self.network.domains:
-                    self.network.domains[value].backrefs['CNAME'].add(self.name)
+            if value in self.network.domains:
+                self.network.domains[value].backrefs['CNAME'].add(self.name)
+
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
 
@@ -151,15 +151,12 @@ class Domain(base.DNSObject):
             self.subnets |= domain.subnets
 
             for type in self.records:
-                for dest, source in domain.records[type]._records:
+                for dest, source in domain.records[type].items():
                     self.link(dest, source)
 
             for type in self.backrefs:
                 for dest in domain.backrefs[type]:
                     self.backrefs[type].add(dest)
-
-            if domain.network:
-                self._network = domain.network
 
             return self
         else:
@@ -287,9 +284,6 @@ class IPv4Address(base.DNSObject):
             for type in self.backrefs:
                 for dest in ip.backrefs[type]:
                     self.backrefs[type].add(dest)
-
-            if ip.network:
-                self.network = ip.network
                 
             return self
         else:
