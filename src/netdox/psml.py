@@ -268,8 +268,6 @@ def pfrag2dict(fragment: str) -> dict:
 # Templates #
 #############
 
-MIN_DOC = '<document level="portable" type="" xmlns:t="http://pageseeder.com/psml/template" />'
-
 DOMAIN_TEMPLATE = '''
     <document type="domain" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
