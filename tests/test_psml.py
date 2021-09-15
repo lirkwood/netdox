@@ -1,5 +1,5 @@
 from netdox import objs, psml
-from fixtures.objs import domain, ipv4, network, node
+from test_objs import domain, ipv4, network, node
 from pytest import raises, fixture
 
 
