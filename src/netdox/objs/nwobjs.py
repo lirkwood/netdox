@@ -126,7 +126,7 @@ class Domain(base.DNSObject):
         :return: The name of this Domain.
         :rtype: str
         """
-        if self.name in self.network.ips:
+        if self.name in self.network.domains:
             self.network.domains[self.name] = self.merge(self.network.domains[self.name])
         else:
             self.network.domains[self.name] = self
