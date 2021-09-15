@@ -306,7 +306,7 @@ class Node(base.NetworkObject):
     """A set of domains resolving to this Node."""
     ips: set[str]
     """A set of IPv4 addresses resolving to this Node."""
-    type: str = None
+    type: str = 'base'
     """A string unique to this implementation of Node."""
     _location: str = None
     """Optional manual location attribute to use instead of the network locator."""
@@ -369,10 +369,13 @@ class Node(base.NetworkObject):
         return self
 
     def merge(self, node: Node) -> Node:
-        super().merge(node)
-        self.domains |= node.domains
-        self.ips |= node.ips
-        return self
+        if node.type == 'placeholder':
+            return node.merge(self)
+        else:
+            super().merge(node)
+            self.domains |= node.domains
+            self.ips |= node.ips
+            return self
 
     ## properties
 
@@ -428,18 +431,6 @@ class DefaultNode(Node):
             ips = [*public_ips] + [private_ip],
             labels = labels
         )
-
-    ## abstract properties
-
-    @property
-    def psmlBody(self) -> Iterable[Tag]:
-        """
-        Returns an Iterable containing section tags to add to the body of this Node's output PSML.
-
-        :return: A set of ``<section />`` BeautifulSoup tags.
-        :rtype: Iterable[Tag]
-        """
-        return []
 
 
 class PlaceholderNode(Node):
