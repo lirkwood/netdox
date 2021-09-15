@@ -13,7 +13,10 @@ skip_covered = true
 show_missing = true
 exclude_lines = [
     'if TYPE_CHECKING:',
-    'raise NotImplementedError'
+    'raise NotImplementedError',
+    'def _.*',
+    '@abstractmethod',
+    '@property',
 ]
 omit = [
     '*/netdox/cli.py',
