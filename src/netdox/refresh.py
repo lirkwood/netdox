@@ -35,15 +35,12 @@ def init():
     # remove old output files
     for folder in os.scandir(utils.APPDIR+ 'out'):
         if folder.is_dir():
-            for file in os.scandir(folder):
-                if file.is_file():
-                    os.remove(file)
-                else:
-                    shutil.rmtree(file)
+            shutil.rmtree(folder)
         else:
             os.remove(folder)
     
-    os.mkdir(utils.APPDIR+ 'out/config')
+    for outfolder in ('config', 'domains', 'ips', 'nodes'):
+        os.mkdir(utils.APPDIR+ 'out'+ os.sep+ outfolder)
 
     roles = {"exclusions": []}
     # load dns config from pageseeder
