@@ -71,8 +71,6 @@ def add_A(network: Network, record: dict, root: str):
     fqdn = assemble_fqdn(subdomain, root)
 
     if fqdn not in network.domains.exclusions:
-        if fqdn not in network.domains:
-            Domain(network, fqdn, root)
         network.domains[fqdn].link(ip, 'DNSMadeEasy')	
 
 @utils.handle
@@ -93,8 +91,6 @@ def add_CNAME(network: Network, record: dict, root: str):
     dest = assemble_fqdn(value, root)
 
     if fqdn not in network.domains.exclusions:
-        if fqdn not in network.domains:
-            Domain(network, fqdn, root)
         network.domains[fqdn].link(dest, 'DNSMadeEasy')
 
 @utils.handle

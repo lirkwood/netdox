@@ -25,8 +25,6 @@ def fetchDNS(network: Network) -> None:
                     ip = '.'.join(fqdn.replace('.in-addr.arpa','').split('.')[::-1])
                     dnsobj = network.ips[ip]
                 else:
-                    if fqdn not in network.domains:
-                        Domain(network, fqdn, zone = zoneName)
                     dnsobj = network.domains[fqdn]
 
                 if details['RecordType'] == 'A':

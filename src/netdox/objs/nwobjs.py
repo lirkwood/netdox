@@ -113,8 +113,7 @@ class Domain(base.DNSObject):
 
         elif re.fullmatch(utils.dns_name_pattern, value):
             self.records['CNAME'].add(value, source)
-            if value in self.network.domains:
-                self.network.domains[value].backrefs['CNAME'].add(self.name)
+            self.network.domains[value].backrefs['CNAME'].add(self.name)
 
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
@@ -225,13 +224,12 @@ class IPv4Address(base.DNSObject):
         """
         if iptools.valid_ip(value):
             self.records['CNAME'].add(value, source)
-            if self.network:
-                self.network.ips[value].backrefs['CNAME'].add(self.name)
+            self.network.ips[value].backrefs['CNAME'].add(self.name)
+
         elif re.fullmatch(utils.dns_name_pattern, value):
             self.records['PTR'].add(value, source)
-            if self.network:
-                if value in self.network.domains:
-                    self.network.domains[value].backrefs['PTR'].add(self.name)
+            self.network.domains[value].backrefs['PTR'].add(self.name)
+            
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
 

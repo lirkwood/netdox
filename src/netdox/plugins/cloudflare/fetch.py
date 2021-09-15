@@ -74,12 +74,9 @@ def add_A(network: Network, record: dict) -> None:
     :type record: dict
     """
     fqdn = record['name'].lower()
-    root = record['zone_name']
     ip = record['content']
 
     if fqdn not in network.domains.exclusions:
-        if fqdn not in network.domains:
-            Domain(network, fqdn, root)
         network.domains[fqdn].link(ip, 'Cloudflare')	
 
 @utils.handle
@@ -97,8 +94,6 @@ def add_CNAME(network: Network, record: dict) -> None:
     dest = record['content']
 
     if fqdn not in network.domains.exclusions:
-        if fqdn not in network.domains:
-            Domain(network, fqdn, root)
         network.domains[fqdn].link(dest, 'Cloudflare')
 
 @utils.handle
