@@ -100,8 +100,6 @@ class IPv4AddressSet(base.DNSObjectContainer):
         self.subnets = set()
 
     def __getitem__(self, key: str) -> nwobjs.IPv4Address:
-        if key not in self.objects:
-            self.objects[key] = nwobjs.IPv4Address(self.network, key)
         return super().__getitem__(key)
 
     def __iter__(self) -> Iterator[nwobjs.IPv4Address]:

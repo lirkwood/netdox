@@ -228,12 +228,18 @@ class DNSObjectContainer(NetworkObjectContainer):
     """
     Container for a set of DNSObjects.
     """
+    objectClass: Type[DNSObject]
 
     ## dunder methods
 
     def __init__(self, network: Network, objects: Iterable[DNSObject] = []) -> None:
         self.network = network
         self.objects = {object.name: object for object in objects}
+
+    def __getitem__(self, key: str) -> DNSObject:
+        if key not in self.objects:
+            self.objects[key] = self.objectClass(self.network, key)
+        return super().__getitem__(key)
 
     def __contains__(self, key: Union[str, DNSObject]) -> bool:
         if isinstance(key, str):
