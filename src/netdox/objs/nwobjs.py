@@ -146,21 +146,9 @@ class Domain(base.DNSObject):
         :return: This Domain object, which is now a superset of the two.
         :rtype: Domain
         """
-        if self.name == domain.name:
-            self.psmlFooter += domain.psmlFooter
-            self.subnets |= domain.subnets
-
-            for type in self.records:
-                for dest, source in domain.records[type].items():
-                    self.link(dest, source)
-
-            for type in self.backrefs:
-                for dest in domain.backrefs[type]:
-                    self.backrefs[type].add(dest)
-
-            return self
-        else:
-            raise ValueError('Cannot merge two Domains with different names')
+        super().merge(domain)
+        self.subnets |= domain.subnets
+        return self
 
 class IPv4Address(base.DNSObject):
     """
@@ -273,21 +261,9 @@ class IPv4Address(base.DNSObject):
         :return: This IPv4Address object, which is now a superset of the two.
         :rtype: IPv4Address
         """
-        if self.name == ip.name:
-            self.psmlFooter += ip.psmlFooter
-            self.nat = ip.nat or self.nat
-
-            for type in self.records:
-                for dest, source in ip.records[type]._records:
-                    self.link(dest, source)
-
-            for type in self.backrefs:
-                for dest in ip.backrefs[type]:
-                    self.backrefs[type].add(dest)
-                
-            return self
-        else:
-            raise ValueError('Cannot merge two IPv4Addresses with different addresses')
+        super().merge(ip)
+        self.nat = ip.nat or self.nat
+        return self
 
     ## properties
 
