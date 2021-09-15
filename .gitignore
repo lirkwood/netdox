@@ -5,6 +5,7 @@
 
 cfg
 dist
+.tox
 .vscode
 .dockerignore
 .coverage
