@@ -24,3 +24,13 @@ omit = [
     '*/netdox/serve.py',
     '*/netdox/pageseeder.py',
 ]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py39
+
+[testenv]
+deps = pytest
+commands = pytest
+"""
