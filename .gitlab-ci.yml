@@ -1,8 +1,3 @@
-image: python:3.9.7-slim
-
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
 before_script:
   - pip install virtualenv
   - virtualenv venv
