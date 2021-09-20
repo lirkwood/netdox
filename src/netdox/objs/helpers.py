@@ -129,9 +129,10 @@ class PSMLWriter:
             octets = ip.split('.')
             search_octets.append(octets[-1])
             search_octets.append('.'.join(octets[-2:]))
-        psml.PropertiesFragment(id = 'for-search', properties = [psml.Property(
-            name = 'octets', title = 'Octets for search', value = ', '.join(search_octets)
-        )], attrs = {'labels':'s-hide-content'})
+        psml.PropertiesFragment(id = 'for-search', properties = [
+            psml.Property(name = 'octets', title = 'Octets for search', 
+                value = ', '.join(search_octets) if search_octets else '')
+        ], attrs = {'labels':'s-hide-content'})
 
         dir = os.path.dirname(nwobj.outpath)
         if not os.path.exists(dir):
