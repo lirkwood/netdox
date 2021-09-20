@@ -19,6 +19,7 @@ setup(
     package_data = {
         "": ["README.md"],
         "netdox": [
+            "src/psml.xsd",
             "src/templates/*",
             "src/templates/*/*",
             "src/defaults/*/*"

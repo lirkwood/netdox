@@ -18,10 +18,7 @@ src/netdox/logs
 !src/netdox/
 !src/netdox/src/defaults/
 !src/netdox/src/templates/
-!src/netdox/src/exclusions.txt
-!src/netdox/src/placeholder.jpg
-!src/netdox/src/pageseeder.properties
-!src/netdox/src/nat.txt
+!src/netdox/src/psml.xsd
 
 src/netdox/plugins/activedirectory/records/
 src/netdox/plugins/screenshots/base/
