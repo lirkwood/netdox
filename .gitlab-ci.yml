@@ -1,25 +1,14 @@
-build:
-  stage: build
-  script:
-    - docker build -t ${CI_REGISTRY}/${CI_PROJECT_PATH} .
-  only:
-    - tags
-    - testdev
+image: python:3.9.7-slim
 
-tag-image:
-  stage: .post
-  script:
-    - docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY <<< $CI_REGISTRY_PASSWORD
-    - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH} ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_TAG}
-    - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_TAG}
-  only:
-    - tags
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-dev-image:
-  stage: .post
-  script:
-    - docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY <<< $CI_REGISTRY_PASSWORD
-    - docker tag ${CI_REGISTRY}/${CI_PROJECT_PATH} ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_BRANCH}
-    - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_BRANCH}
-  only:
-    - testdev
+before_script:
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+
+test:
+  script: 
+  - pip install tox
+  - tox
