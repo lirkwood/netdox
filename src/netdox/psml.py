@@ -181,7 +181,7 @@ def recordset2pfrags(
     frags = []
     count = 0
     for value, plugin in recordset.items():
-        PropertiesFragment(id = id_prefix + str(count), properties = [
+        frags.append(PropertiesFragment(id = id_prefix + str(count), properties = [
             Property(
                 name = p_name, 
                 title = p_title, 
@@ -191,7 +191,7 @@ def recordset2pfrags(
                 title = 'Source Plugin', 
                 value = plugin
             )
-        ])
+        ]))
         count += 1
     return frags
 
