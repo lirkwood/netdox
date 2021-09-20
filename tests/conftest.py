@@ -97,3 +97,18 @@ def setupenv():
         )
 
     os.chdir(startdir)
+
+
+@fixture
+def hide_file():
+    global _path
+    _path = ''
+    def hide(path: str):
+        global _path
+        _path = path
+        os.rename(path, path + '.bkp')
+
+    yield hide
+
+    if os.path.exists(_path + '.bkp'):
+        os.rename(_path + '.bkp', _path)
