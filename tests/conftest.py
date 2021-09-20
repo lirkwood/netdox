@@ -24,7 +24,15 @@ CONFIG = {
 }
 
 global ROLES
-ROLES = {'exclusions':['domainkey.com', '_some_random_site.tld']}
+ROLES = {
+    'exclusions':[
+        'domainkey.com', 
+        '_some_random_site.tld'
+    ],
+    'default': {
+        'desc': 'Default role.',
+        'uri': 999
+    }}
 
 global LOCATIONS
 LOCATIONS = {
