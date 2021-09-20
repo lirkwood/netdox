@@ -163,16 +163,18 @@ def test_fileFetchRecursive(mock_dir):
 
 
 @pytest.fixture
-def register_role():
+def register_role(hide_file):
     """
     Returns a function that adds a role to the config and returns the generated PSML.
     """
     if not os.path.exists(utils.APPDIR+ 'out/config'):
         os.makedirs(utils.APPDIR+ 'out/config')
 
+    utils.roles.cache_clear()
+    roles = utils.roles()
+    hide_file(utils.APPDIR + 'cfg/roles.json')
+
     def register(name: str, config: dict) -> BeautifulSoup:
-        utils.roles.cache_clear()
-        roles = utils.roles()
         roles[name] = config
         with open(utils.APPDIR+ 'cfg/roles.json', 'w') as stream:
             stream.write(json.dumps(roles))
@@ -181,9 +183,10 @@ def register_role():
         with open(utils.APPDIR+ f'out/config/{name}.psml', 'r') as stream:
             doc = BeautifulSoup(stream.read(), 'xml')
         os.remove(utils.APPDIR+ f'out/config/{name}.psml')
+        os.remove(utils.APPDIR+ 'cfg/roles.json')
         return doc
 
-    return register
+    yield register
 
 def test_roleToPSML(register_role):
     """
