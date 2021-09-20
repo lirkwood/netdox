@@ -7,7 +7,7 @@ from sys import getdefaultencoding
 from bs4 import BeautifulSoup
 
 import pytest
-from conftest import CONFIG, ROLES
+from conftest import CONFIG, ROLES, hide_file
 from netdox import utils, psml
 
 
@@ -67,7 +67,7 @@ def test_decrypt_file(mock_encrypted_file):
     os.remove('plaintext')
 
 
-def test_config():
+def test_config(hide_file):
     """
     Tests the output of ``utils.config()``.
     """
@@ -76,18 +76,17 @@ def test_config():
     with pytest.raises(AttributeError):
         utils.config('fake plugin')
 
-    shutil.move(utils.APPDIR+ 'src/config.bin', 'cfg.bkp')
+    hide_file(utils.APPDIR + 'src/config.bin')
     utils.config.cache_clear()
     with pytest.raises(FileNotFoundError):
         utils.config()
-    shutil.move('cfg.bkp', utils.APPDIR+ 'src/config.bin')
 
-def test_roles():
+def test_roles(hide_file):
     """
     Tests the output of ``utils.roles()``.
     """
     assert utils.roles() == ROLES
-    os.remove(utils.APPDIR+ 'cfg/roles.json')
+    hide_file(utils.APPDIR+ 'cfg/roles.json')
     utils.roles.cache_clear()
     assert utils.roles() == utils.DEFAULT_DOMAIN_ROLES
 
