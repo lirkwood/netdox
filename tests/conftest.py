@@ -110,5 +110,5 @@ def hide_file():
 
     yield hide
 
-    if os.path.exists(_path + '.bkp'):
+    if _path and os.path.exists(_path + '.bkp'):
         os.rename(_path + '.bkp', _path)
