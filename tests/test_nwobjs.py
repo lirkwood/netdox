@@ -69,8 +69,8 @@ class TestDomain:
         domain.link('192.168.0.1', 'source 1')
         domain.link('test.domain.com', 'source 2')
 
-        assert domain.records['A']._records == {('192.168.0.1', 'source 1')}
-        assert domain.records['CNAME']._records == {('test.domain.com', 'source 2')}
+        assert domain.records['A'].records == {('192.168.0.1', 'source 1')}
+        assert domain.records['CNAME'].records == {('test.domain.com', 'source 2')}
 
         assert domain.network.ips['192.168.0.1'].backrefs['A'] == set([domain.name])
         assert domain.network.domains['test.domain.com'].backrefs['CNAME'] == set([domain.name])
@@ -94,8 +94,8 @@ class TestDomain:
         new.link('nonexistent.domain.com', 'source 2')
         new.psmlFooter.append('another test item')
 
-        assert new.records['A']._records == {('10.0.0.0', 'source 1'), ('10.255.255.255', 'source 2')}
-        assert new.records['CNAME']._records == {('nonexistent.domain.com', 'source 2')}
+        assert new.records['A'].records == {('10.0.0.0', 'source 1'), ('10.255.255.255', 'source 2')}
+        assert new.records['CNAME'].records == {('nonexistent.domain.com', 'source 2')}
 
         assert new.backrefs['PTR'] == set(['10.0.0.0'])
         assert new.backrefs['CNAME'] == set()
@@ -139,8 +139,8 @@ class TestIPv4Address:
         ipv4.link('test.domain.com', 'source 2')
         ipv4.link('0.0.0.0', 'source 1')
 
-        assert ipv4.records['PTR']._records == {('test.domain.com', 'source 2')}
-        assert ipv4.records['CNAME']._records == {('0.0.0.0', 'source 1')}
+        assert ipv4.records['PTR'].records == {('test.domain.com', 'source 2')}
+        assert ipv4.records['CNAME'].records == {('0.0.0.0', 'source 1')}
 
         assert ipv4.network.domains['test.domain.com'].backrefs['PTR'] == set([ipv4.name])
         assert ipv4.network.ips['0.0.0.0'].backrefs['CNAME'] == set([ipv4.name])
@@ -166,8 +166,8 @@ class TestIPv4Address:
         new.link('10.255.255.255', 'source 2')
         new.psmlFooter.append('another test item')
 
-        assert new.records['PTR']._records == {('test.domain.com', 'source 1'),('nonexistent.domain.com', 'source 2')}
-        assert new.records['CNAME']._records == {('10.255.255.255', 'source 2')}
+        assert new.records['PTR'].records == {('test.domain.com', 'source 1'),('nonexistent.domain.com', 'source 2')}
+        assert new.records['CNAME'].records == {('10.255.255.255', 'source 2')}
 
         assert new.backrefs['A'] == set(['test.domain.com'])
         assert new.backrefs['CNAME'] == set()
