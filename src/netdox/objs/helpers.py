@@ -108,13 +108,10 @@ class PSMLWriter:
         """
         if isinstance(nwobj, nwobjs.Domain):
             self.domainBody(nwobj)
-            ip_iter = nwobj.records['A']
         elif isinstance(nwobj, nwobjs.IPv4Address):
             self.ipBody(nwobj)
-            ip_iter = [nwobj.name]
         elif isinstance(nwobj, nwobjs.Node):
             self.nodeBody(nwobj)
-            ip_iter = nwobj.ips
         else:
             self.doc = None
             raise NotImplementedError
@@ -127,7 +124,7 @@ class PSMLWriter:
 
         # Add search octet fragment to doc footer but not nwobj
         search_octets = []
-        for ip in ip_iter:
+        for ip in nwobj.ips:
             octets = ip.split('.')
             search_octets.append(octets[-1])
             search_octets.append('.'.join(octets[-2:]))
