@@ -129,11 +129,9 @@ class PSMLWriter:
             octets = ip.split('.')
             search_octets.append(octets[-1])
             search_octets.append('.'.join(octets[-2:]))
-        octetFrag = Tag(is_xml=True, name='properties-fragment', attrs={'id':'for-search', 'labels':'s-hide-content'})
-        octetFrag.append(psml.newprop(
+        psml.PropertiesFragment(id = 'for-search', properties = [psml.Property(
             name = 'octets', title = 'Octets for search', value = ', '.join(search_octets)
-        ))
-        self.footer.append(octetFrag)
+        )], attrs = {'labels':'s-hide-content'})
 
         dir = os.path.dirname(nwobj.outpath)
         if not os.path.exists(dir):
@@ -153,13 +151,13 @@ class PSMLWriter:
         self.body = self.doc.find(id = 'records')
 
         if domain.node:
-            self.doc.find('properties-fragment', id = 'header').append(psml.newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'node',
                 title = 'Node',
-                ref = domain.node.docid
+                xref_docid = domain.node.docid
             ))
         else:
-            self.doc.find('properties-fragment', id = 'header').append(psml.newprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'node',
                 title = 'Node',
                 value = '—'
@@ -197,26 +195,26 @@ class PSMLWriter:
         self.body = self.doc.find(id = 'records')
 
         if ip.nat:
-            self.doc.find('properties-fragment', id = 'header').append(psml.newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'nat',
                 title = 'NAT Destination',
-                ref = f'_nd_ip_{ip.nat.replace(".","_")}'
+                xref_docid = f'_nd_ip_{ip.nat.replace(".","_")}'
             ))
         else:
-            self.doc.find('properties-fragment', id = 'header').append(psml.newprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'nat',
                 title = 'NAT Destination',
                 value = '—'
             ))
 
         if ip.node:
-            self.doc.find('properties-fragment', id = 'header').append(psml.newxrefprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'node',
                 title = 'Node',
-                ref = ip.node.docid
+                xref_docid = ip.node.docid
             ))
         else:
-            self.doc.find('properties-fragment', id = 'header').append(psml.newprop(
+            self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'node',
                 title = 'Node',
                 value = '—'
@@ -233,14 +231,14 @@ class PSMLWriter:
             p_title = 'PTR Record'
         ):  self.body.append(frag)
 
-        impliedfrag = self.doc.new_tag('properties-fragment', id = 'implied_ptr')
-        for domain in ip.backrefs['A']:
-            impliedfrag.append(psml.newxrefprop(
-                name = 'domain',
-                title = 'Implied PTR Record',
-                ref = f'_nd_domain_{domain.replace(".","_")}'
-            ))
-        self.body.append(impliedfrag)
+        psml.PropertiesFragment(id = 'implied_ptr', properties = [
+            psml.Property(
+                    name = 'domain',
+                    title = 'Implied PTR Record',
+                    xref_docid = f'_nd_domain_{domain.replace(".","_")}'
+                )
+            for domain in ip.backrefs['A']
+        ])
 
     def nodeBody(self, node: nwobjs.Node) -> None:
         """
@@ -261,13 +259,13 @@ class PSMLWriter:
         domains = self.doc.new_tag('properties-fragment', id = 'domains')
         for domain in node.domains:
             if domain in node.network.domains:
-                domains.append(psml.newxrefprop(
+                domains.append(psml.Property(
                     name = 'domain',
                     title = 'Domain',
-                    ref = f'_nd_domain_{domain.replace(".","_")}'
+                    xref_docid = f'_nd_domain_{domain.replace(".","_")}'
                 ))
             else:
-                domains.append(psml.newprop(
+                domains.append(psml.Property(
                     name = 'domain',
                     title = 'Domain',
                     value = domain
@@ -276,13 +274,13 @@ class PSMLWriter:
         ips = self.doc.new_tag('properties-fragment', id = 'ips')
         for ip in node.ips:
             if ip in node.network.ips:
-                ips.append(psml.newxrefprop(
+                ips.append(psml.Property(
                     name = 'ipv4',
                     title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
-                    ref = f'_nd_ip_{ip.replace(".","_")}'
+                    xref_docid = f'_nd_ip_{ip.replace(".","_")}'
                 ))
             else:
-                ips.append(psml.newprop(
+                ips.append(psml.Property(
                     name = 'ipv4',
                     title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
                     value = ip

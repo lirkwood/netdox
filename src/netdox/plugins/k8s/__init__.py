@@ -105,22 +105,25 @@ class App(Node):
         section = Tag(is_xml=True, name='section', attrs={'id':'template', 'title':'Pod Template'})
         count = 0
         for container, template in self.template.items():
-            frag = Tag(is_xml=True, name='properties-fragment', attrs={'id': f'container_{str(count)}'})
-            frag.append(psml.newprop(
-                name = 'container', title = 'Container Name', value = container
-            ))
-            frag.append(psml.newprop(
-                name = 'image', title = 'Image ID', value = template['image']
-            ))
+            frag = psml.PropertiesFragment(id = 'container_' + str(count), properties = [
+                    psml.Property(name = 'container', title = 'Container Name', value = container),
+                    psml.Property(name = 'image', title = 'Image ID', value = template['image'])
+            ])
             for volume, paths in self.template[container]['volumes'].items():
-                frag.append(psml.newprop(
-                    name = 'pvc', title = 'Persistent Volume Claim', value = volume
+                frag.append(psml.Property(
+                    name = 'pvc', 
+                    title = 'Persistent Volume Claim', 
+                    value = volume
                 ))
-                frag.append(psml.newprop(
-                    name = 'mount_path', title = 'Path in Container', value = paths['mount_path']
+                frag.append(psml.Property(
+                    name = 'mount_path', 
+                    title = 'Path in Container', 
+                    value = paths['mount_path']
                 ))
-                frag.append(psml.newprop(
-                    name = 'sub_path', title = 'Path in PVC', value = paths['sub_path']
+                frag.append(psml.Property(
+                    name = 'sub_path', 
+                    title = 'Path in PVC', 
+                    value = paths['sub_path']
                 ))
 
             section.append(frag)
@@ -132,23 +135,18 @@ class App(Node):
         section = Tag(is_xml=True, name='section', attrs={'id':'pods', 'title':'Running Pods'})
         count = 0
         for pod in self.pods.values():
-            frag = Tag(is_xml=True, name='properties-fragment', attrs={'id': f'pod_{str(count)}'})
-            frag.append(psml.newprop(
-                name = 'pod', title = 'Pod', value = pod['name']
-            ))
-            frag.append(psml.newxrefprop(
-                name = 'ipv4', title = 'Worker IP', ref = f'_nd_ip_{pod["workerIp"].replace(".","_")}'
-            ))
-            if self.network.ips[pod["workerIp"]].node:
-                frag.append(psml.newxrefprop(
-                    name = 'worker_node', title = 'Worker Node', 
-                    ref = self.network.ips[pod["workerIp"]].node.docid
-                ))
-            link = psml.newprop(name = 'rancher', title="Pod on Rancher", datatype = 'link')
-            link.append(Tag(name='link', attrs={'href': pod['rancher']}))
-            frag.append(link)
+            section.append(psml.PropertiesFragment(id = 'pod_' + str(count), properties = [
+                psml.Property(name = 'pod', title = 'Pod', value = pod['name']),
 
-            section.append(frag)
+                psml.Property(name = 'ipv4', title = 'Worker IP', 
+                    xref_docid = f'_nd_ip_{pod["workerIp"].replace(".","_")}'),
+
+                psml.Property(name = 'rancher', title="Pod on Rancher", 
+                    link_url = pod['rancher']),
+
+                psml.Property(name = 'worker_node', title = 'Worker Node', 
+                    xref_docid = self.network.ips[pod["workerIp"]].node.docid)
+            ]))
             count += 1
         return section
 

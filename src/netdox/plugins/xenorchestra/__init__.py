@@ -147,25 +147,13 @@ class VirtualMachine(DefaultNode):
         :return: A *properties-fragment* bs4 tag
         :rtype: Tag
         """
-        frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'core'})
-        frag.append(psml.newprop(
-            name='description', title='Description', value=self.desc
-        ))
-        frag.append(psml.newprop(
-            name='uuid', title='UUID', value=self.uuid
-        ))
-        frag.append(psml.newxrefprop(
-            name='ipv4', title='Host IP', ref = '_nd_ip_'+ self.hostIp.name.replace('.','_')
-        ))
-        if self.hostIp.node:
-            frag.append(psml.newxrefprop(
-                name='host', title='Host Node', ref=self.hostIp.node.docid
-            ))
-        else:
-            frag.append(psml.newprop(
-                name='host', title='Host Node', value = '—'
-            ))
-        return frag
+        return psml.PropertiesFragment('core', properties = [
+            psml.Property(name='description', title='Description', value=self.desc),
+            psml.Property(name='uuid', title='UUID', value=self.uuid),
+            psml.Property(name='ipv4', title='Host IP', 
+                xref_docid = '_nd_ip_'+ self.hostIp.name.replace('.','_')),
+            psml.Property(name='host', title='Host Node', ref=self.hostIp.node.docid)
+        ])
     
     @property
     def psmlOS(self) -> Tag:
@@ -175,23 +163,22 @@ class VirtualMachine(DefaultNode):
         :return: A *properties-fragment* bs4 tag
         :rtype: Tag
         """
-        frag = Tag(is_xml = True, name = 'properties-fragment', attrs={'id':'os_version'})
-        frag.append(psml.newprop(
-            name='os-name', title='OS name', value=self.os['name'] if 'name' in self.os else ''
-        ))
-        frag.append(psml.newprop(
-            name='os-uname', title='OS uname', value=self.os['uname'] if 'uname' in self.os else ''
-        ))
-        frag.append(psml.newprop(
-            name='os-distro', title='Distro', value=self.os['distro'] if 'distro' in self.os else ''
-        ))
-        frag.append(psml.newprop(
-            name='os-major', title='Major version', value=self.os['major'] if 'major' in self.os else ''
-        ))
-        frag.append(psml.newprop(
-            name='os-minor', title='Minor version', value=self.os['minor'] if 'minor' in self.os else ''
-        ))
-        return frag
+        return psml.PropertiesFragment('os_version', properties = [
+            psml.Property(name='os-name', title='OS name', 
+                value = self.os['name'] if 'name' in self.os else ''),
+
+            psml.Property(name='os-uname', title='OS uname', 
+                value = self.os['uname'] if 'uname' in self.os else ''),
+
+            psml.Property(name='os-distro', title='Distro', 
+                value = self.os['distro'] if 'distro' in self.os else ''),
+                
+            psml.Property(name='os-major', title='Major version', 
+                value = self.os['major'] if 'major' in self.os else ''),
+
+            psml.Property(name='os-minor', title='Minor version', 
+                value = self.os['minor'] if 'minor' in self.os else '')
+        ])
 
     @property
     def psmlBody(self) -> Iterable[Tag]:

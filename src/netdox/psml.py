@@ -153,43 +153,6 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
     soup = BeautifulSoup(template, features = 'xml')
     return soup
 
-def newprop(**kwattrs) -> Tag:
-    """
-    Returns a bs4 Tag containing a PSML property with the specified attributes.
-
-    :return: A bs4 tag of an empty *property* element.
-    :rtype: Tag
-    """
-    return Tag(is_xml = True, name = 'property', attrs = kwattrs)
-
-def newxrefprop(
-        name: str, 
-        title: str, 
-        ref: str,
-        reftype: str = 'docid' ,
-        frag: str = 'default',
-        **kwattrs
-    ) -> Tag:
-    """
-    Return a property with a child xref.
-
-    :param name: The name attribute for the property.
-    :type name: str
-    :param title: The title attribute for the property.
-    :type title: str
-    :param docid: The docid for the xref.
-    :type docid: str
-    :param frag: The fragment for the xref, defaults to 'default'.
-    :type frag: str, optional
-    :param kwattrs: Some keyword attributes to pass to the property constructor.
-    :return: A bs4 Tag containing a property and its child xref.
-    :rtype: Tag
-    """
-    prop = newprop(name = name, title = title, **(kwattrs | {'datatype':'xref'}))
-    prop.append(Tag(is_xml=True, name = 'xref', attrs = {'frag': frag, reftype: ref}))
-    return prop
-
-
 def recordset2pfrags(
         recordset: RecordSet, 
         id_prefix: str, 
@@ -218,14 +181,17 @@ def recordset2pfrags(
     frags = []
     count = 0
     for value, plugin in recordset.items():
-        frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id': id_prefix + str(count)})
-        frag.append(newxrefprop(
-            name = p_name, title = p_title, ref = docid_prefix + value.replace(".","_")
-        ))
-        frag.append(newprop(
-            name = 'source', title = 'Source Plugin', value = plugin
-        ))
-        frags.append(frag)
+        PropertiesFragment(id = id_prefix + str(count), properties = [
+            Property(
+                name = p_name, 
+                title = p_title, 
+                xref_docid = docid_prefix + value.replace(".","_")),
+            Property(
+                name = 'source', 
+                title = 'Source Plugin', 
+                value = plugin
+            )
+        ])
         count += 1
     return frags
 
@@ -286,7 +252,9 @@ DOMAIN_TEMPLATE = '''
         <section id="title">
             <fragment id="title">
                 <heading level="2">Domain name</heading>
-                <heading level="1">#!name</heading>                    
+                <heading level="1">
+                    <link href="https://#!name">#!name</link>
+                </heading>                    
             </fragment>
         </section>
         
