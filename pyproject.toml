@@ -7,6 +7,12 @@ testpaths = ['tests']
 
 [tool.coverage.run]
 source = ['netdox']
+omit = [
+    '*/netdox/cli.py',
+    '*/netdox/refresh.py',
+    '*/netdox/serve.py',
+    '*/netdox/pageseeder.py',
+]
 
 [tool.coverage.report]
 skip_covered = true
@@ -17,12 +23,6 @@ exclude_lines = [
     'def _.*',
     '@abstractmethod',
     '@property',
-]
-omit = [
-    '*/netdox/cli.py',
-    '*/netdox/refresh.py',
-    '*/netdox/serve.py',
-    '*/netdox/pageseeder.py',
 ]
 
 [tool.tox]
