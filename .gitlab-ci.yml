@@ -1,7 +1,11 @@
 before_script:
-  - pip install virtualenv
-  - virtualenv venv
+  - python3 -m virtualenv venv
   - source venv/bin/activate
+
+build:
+  script:
+  - python3 setup.py bdist_wheel
+  - pip install dist/*.whl
 
 test:
   script: 
