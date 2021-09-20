@@ -95,7 +95,7 @@ class Property(Tag):
         xref_params = {'href': xref_href, 'docid': xref_docid, 'uriid': xref_uriid}
         xref_attrs = {}
 
-        if value:
+        if value is not None:
             _attrs['value'] = value
         elif any(xref_params.values()):
             _attrs['datatype'] = 'xref'
