@@ -63,8 +63,8 @@ class Domain(base.DNSObject):
             )
             
             self.records = {
-                'A': helpers.RecordSet(),
-                'CNAME': helpers.RecordSet()
+                'A': helpers.RecordSet('A'),
+                'CNAME': helpers.RecordSet('CNAME')
             }
 
             self.backrefs = {
@@ -85,11 +85,11 @@ class Domain(base.DNSObject):
 
     @property
     def domains(self) -> set[str]:
-        return set(self.records['CNAME'].records + [self.name]).union(self.backrefs['CNAME'])
+        return set(self.records['CNAME'].names + [self.name]).union(self.backrefs['CNAME'])
 
     @property
     def ips(self) -> set[str]:
-        return set(self.records['A'].records).union(self.backrefs['PTR'])
+        return set(self.records['A'].names).union(self.backrefs['PTR'])
     
     ## abstract methods
 
@@ -182,8 +182,8 @@ class IPv4Address(base.DNSObject):
             self.is_private = not iptools.public_ip(self.name)
 
             self.records = {
-                'PTR': helpers.RecordSet(),
-                'CNAME': helpers.RecordSet()
+                'PTR': helpers.RecordSet('PTR'),
+                'CNAME': helpers.RecordSet('CNAME')
             }
 
             self.backrefs = {
@@ -204,11 +204,11 @@ class IPv4Address(base.DNSObject):
 
     @property
     def domains(self) -> set[str]:
-        return set(self.records['PTR'].records).union(self.backrefs['A'])
+        return set(self.records['PTR'].names).union(self.backrefs['A'])
 
     @property
     def ips(self) -> set[str]:
-        return set(self.records['CNAME'].records + [self.name]).union(self.backrefs['CNAME'])
+        return set(self.records['CNAME'].names + [self.name]).union(self.backrefs['CNAME'])
     
     ## abstract methods
 
@@ -272,7 +272,7 @@ class IPv4Address(base.DNSObject):
         True otherwise.
         """
         return not bool(
-            any([rs.records for rs in self.records.values()])
+            any([rs.names for rs in self.records.values()])
             or any(self.backrefs.values())
             or self.node
         )

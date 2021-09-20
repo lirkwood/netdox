@@ -7,6 +7,7 @@ import json
 import os
 from datetime import datetime
 from typing import Iterable, Iterator
+from enum import Enum
 
 from bs4 import BeautifulSoup, Tag
 
@@ -295,42 +296,51 @@ class PSMLWriter:
 # RecordSet Helper #
 ####################
 
+class RecordType(Enum):
+    A = 0
+    PTR = 1
+    CNAME = 2
+    NAT = 3
+
 class RecordSet:
-    """Container for DNS records"""
-    _records: set
+    """Container for DNS records of a specific type."""
+    record_type: RecordType
+    """Enum containing the resource record type this object holds."""
+    records: set
     """Set of 2-tuples containing a record value and the plugin name that provided it."""
 
     ## dunder methods
 
-    def __init__(self) -> None:
-        self._records = set()
+    def __init__(self, type: str) -> None:
+        self.record_type = RecordType[type]
+        self.records = set()
 
     def __iter__(self) -> Iterator[str]:
-        yield from self.records
+        yield from self.names
 
     def __ior__(self, recordset: RecordSet) -> RecordSet:
-        self._records.__ior__(recordset._records)
+        self.records.__ior__(recordset.records)
         return self
 
     ## properties
 
     @property
-    def records(self) -> list[str]:
+    def names(self) -> list[str]:
         """
         Returns a list of the record values in this set
 
         :return: A list record values as strings
         :rtype: list[str]
         """
-        return [value for value, _ in self._records]
+        return [value for value, _ in self.records]
     
     ## methods
 
     def add(self, value: str, source: str) -> None:
-        self._records.add((value.lower().strip(), source))
+        self.records.add((value.lower().strip(), source))
 
     def items(self) -> Iterator[tuple[str, str]]:
-        yield from self._records
+        yield from self.records
 
 
 ######################
@@ -350,6 +360,6 @@ class JSONEncoder(json.JSONEncoder):
         elif isinstance(obj, datetime):
             return obj.isoformat()
         elif isinstance(obj, RecordSet):
-            return obj._records
+            return obj.records
         else:
             return super().default(obj)
