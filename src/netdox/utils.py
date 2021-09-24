@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 expiry_date_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
+docid_invalid_patten = re.compile(r'[^a-zA-Z0-9_-]')
 
 ################
 # Cryptography #
