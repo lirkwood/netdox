@@ -45,8 +45,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """
     name: str
     """The name to give this object."""
-    docid: str
-    """A unique, predictable identifier to be used for docid and filename in PageSeeder."""
+    identity: str
+    """A unique, predictable identifier to be used for retrieving objects from NWObjContainers"""
     network: Network
     """The containing network."""
     psmlFooter: list[Tag] = None
@@ -56,7 +56,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, docid: str, labels: Iterable[str] = None) -> None:
+    def __init__(self, network: Network, name: str, identity: str, labels: Iterable[str] = None) -> None:
         """
         Sets the instances attributes to the values provided, and adds itself to *network*.
 
@@ -69,7 +69,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         self.network = network
         self.name = name.lower().strip()
-        self.docid = docid.lower()
+        self.identity = identity.lower()
 
         self.psmlFooter = []
         
@@ -80,9 +80,22 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
     @property
     @abstractmethod
+    def docid(self) -> str:
+        """
+        Should return the identity of this object, 
+        with some additional consistent name mangling to reduce collisions.
+
+        :return: A string that is valid as a PageSeeder docid.
+        :rtype: str
+        """
+        pass
+
+    @property
+    @abstractmethod
     def outpath(self) -> str:
         """
         The absolute filepath to write this NetworkObject document to.
+        Filename be composed of the docid + file extension.
 
         :return: An absolute filepath.
         :rtype: str
@@ -126,8 +139,8 @@ class DNSObject(NetworkObject):
 
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, docid: str, zone: str, labels: Iterable[str] = None) -> None:
-        super().__init__(network, name, docid, labels)
+    def __init__(self, network: Network, name: str, zone: str, labels: Iterable[str] = None) -> None:
+        super().__init__(network, name, name, labels)
         self.zone = zone.lower() if zone else zone
         self.node = None
 

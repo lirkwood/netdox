@@ -57,7 +57,6 @@ class Domain(base.DNSObject):
             super().__init__(
                 network = network, 
                 name = name, 
-                docid = f'_nd_domain_{name.replace(".","_")}', 
                 zone = zone, 
                 labels = labels
             )
@@ -78,6 +77,10 @@ class Domain(base.DNSObject):
             raise ValueError('Must provide a valid name for a Domain (some FQDN)')
     
     ## abstract properties
+
+    @property
+    def docid(self) -> str:
+        return '_nd_domain_' + self.identity.replace('.','_')
 
     @property
     def outpath(self) -> str:
@@ -174,7 +177,6 @@ class IPv4Address(base.DNSObject):
             super().__init__(
                 network = network, 
                 name = address, 
-                docid = f'_nd_ip_{address.replace(".","_")}',
                 zone = '.'.join(address.split('.')[-2::-1])+ '.in-addr.arpa',
                 labels = labels
             )
@@ -197,6 +199,10 @@ class IPv4Address(base.DNSObject):
             raise ValueError('Must provide a valid name for an IPv4Address (some IPv4, in CIDR form)')
 
     ## abstract properties
+
+    @property
+    def docid(self) -> str:
+        return '_nd_ip_' + self.identity.replace('.','_')
 
     @property
     def outpath(self) -> str:
@@ -316,7 +322,6 @@ class Node(base.NetworkObject):
     def __init__(self, 
             network: Network, 
             name: str, 
-            docid: str,
             identity: str, 
             domains: Iterable[str], 
             ips: Iterable[str],
@@ -324,7 +329,7 @@ class Node(base.NetworkObject):
         ) -> None:
         self.identity = identity.lower()
         self.type = self.__class__.type
-        super().__init__(network, name, docid, labels)
+        super().__init__(network, name, identity, labels)
 
         self.domains = {d.lower() for d in domains} if domains else set()
         self.ips = set(ips) if ips else set()
@@ -340,6 +345,10 @@ class Node(base.NetworkObject):
         :rtype: list[Tag]
         """
         return []
+
+    @property
+    def docid(self) -> str:
+        return f'_nd_node_{self.__class__.type}_{self.identity}'
 
     @property
     def outpath(self) -> str:
@@ -424,8 +433,7 @@ class DefaultNode(Node):
 
         super().__init__(
             network = network, 
-            name = name, 
-            docid = f'_nd_node_{private_ip.replace(".","_")}',
+            name = name,
             identity = private_ip,
             domains = domains,
             ips = [*public_ips] + [private_ip],
@@ -461,7 +469,7 @@ class PlaceholderNode(Node):
         :type name: str
         :param domains: A set of domains this node will listen on, defaults to []
         :type domains: Iterable[str], optional
-        :param ips: [description], defaults to []
+        :param ips: A set of ips this node will listen on, defaults to []
         :type ips: Iterable[str], optional
         """
 
@@ -469,7 +477,6 @@ class PlaceholderNode(Node):
         super().__init__(
             network = network, 
             name = name, 
-            docid = '_nd_node_placeholder_'+ self.uuid, 
             identity = self.uuid, 
             domains = domains, 
             ips = ips,
