@@ -215,7 +215,6 @@ class TestNode:
         node = nwobjs.Node(
             network, 
             name = 'node', 
-            docid = '_node_docid_', 
             identity = '_node_iDenTity_', 
             domains = ['test.domain.com'], 
             ips = ['192.168.0.1', '10.0.0.0'],
@@ -238,7 +237,6 @@ class TestNode:
         new = nwobjs.Node(
             network = node.network,
             name = 'nodename',
-            docid = '_node_docid_',
             identity = node.identity,
             domains = ['nonexistent.domain.com'],
             ips = ['10.1.1.1'],
