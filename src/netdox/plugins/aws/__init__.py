@@ -28,7 +28,7 @@ class EC2Instance(DefaultNode):
     """The region this instance belongs to."""
     tags: dict[str, str]
     """Dictionary of tags applied to this instance."""
-    type: str = 'AWS EC2 Instance'
+    type: str = 'ec2'
 
     def __init__(self, 
             network: Network,

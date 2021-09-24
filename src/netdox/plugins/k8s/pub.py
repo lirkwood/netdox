@@ -19,9 +19,6 @@ def genpub(network: Network) -> None:
     for cluster in workerApps:
         workerApps[cluster] = {k: workerApps[cluster][k] for k in sorted(workerApps[cluster])}
 
-    import json 
-    logger.debug(json.dumps(workerApps, indent=2))
-
     pub = BeautifulSoup(TEMPLATE, features='xml')
     section = pub.find('section', id = 'clusters')
 

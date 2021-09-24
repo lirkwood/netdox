@@ -34,7 +34,7 @@ class HardwareNode(Node):
     """The URI of the document this Node was created from."""
     filename: str
     """The filename to give this Node."""
-    type: str = 'Hardware Node'
+    type: str = 'hardware'
 
     def __init__(self, 
             network: Network,
@@ -66,8 +66,7 @@ class HardwareNode(Node):
         super().__init__(
             network = network, 
             name = name if name else filename, 
-            docid = f'_nd_node_{os.path.splitext(filename)[0]}',
-            identity = filename,
+            identity = os.path.splitext(filename)[0],
             domains = domains,
             ips = ips
         )

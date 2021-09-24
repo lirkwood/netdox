@@ -51,7 +51,7 @@ class App(Node):
     """Template pods are started from"""
     pods: dict[str, dict]
     """A dict of the pods running this app"""
-    type: str = 'Kubernetes App'
+    type: str = 'k8sapp'
 
     ## dunder methods
 
@@ -80,8 +80,7 @@ class App(Node):
         super().__init__(
             network = network, 
             name = name,
-            docid = f'_nd_node_k8sapp_{cluster}_{name.replace(".","_")}',
-            identity = f'k8s_{cluster}_{name}',
+            identity = cluster +'_'+ name,
             domains = [],
             ips = []
         )
@@ -145,7 +144,7 @@ class App(Node):
                     link_url = pod['rancher']),
 
                 psml.Property(name = 'worker_node', title = 'Worker Node', 
-                    xref_docid = self.network.ips[pod["workerIp"]].node.docid)
+                    xref_docid = self.network.ips[pod["workerIp"]].node.identity)
             ]))
             count += 1
         return section

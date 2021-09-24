@@ -112,7 +112,7 @@ class VirtualMachine(DefaultNode):
     """The name of the pool the VM's Host belongs to."""
     hostIp: IPv4Address
     """The IPv4 address of the node this VM is hosted on."""
-    type: str = 'XenOrchestra VM'
+    type: str = 'xovm'
 
     def __init__(self, 
             network: Network,
