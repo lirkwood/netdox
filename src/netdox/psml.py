@@ -145,6 +145,7 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
     :return: A /BeautifulSoup object containing the populated and parsed template.
     :rtype: BeautifulSoup
     """
+    template = re.sub(f'#!docid', nwobj.docid, template)
     for attribute, value in nwobj.__dict__.items():
         if isinstance(value, str):
             template = re.sub(f'#!{attribute}', value, template)
