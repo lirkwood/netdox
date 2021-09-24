@@ -348,7 +348,10 @@ class Node(base.NetworkObject):
 
     @property
     def docid(self) -> str:
-        return f'_nd_node_{self.__class__.type}_{self.identity}'
+        return (
+            f'_nd_node_{self.__class__.type}_' +
+            re.sub(utils.docid_invalid_patten, "_", self.identity)
+        )
 
     @property
     def outpath(self) -> str:
