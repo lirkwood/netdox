@@ -381,13 +381,10 @@ class Node(base.NetworkObject):
         return self
 
     def merge(self, node: Node) -> Node:
-        if node.type == 'placeholder':
-            return node.merge(self)
-        else:
-            super().merge(node)
-            self.domains |= node.domains
-            self.ips |= node.ips
-            return self
+        super().merge(node)
+        self.domains |= node.domains
+        self.ips |= node.ips
+        return self
 
     ## properties
 

@@ -245,7 +245,10 @@ class NodeSet(base.NetworkObjectContainer):
         
         else: return cache
 
-        if dnsobj.node: return cache
+        if dnsobj.node: 
+            if dnsobj.node.type == 'placeholder':
+                dnsobj.node.merge(node)
+            return cache
 
         dnsobj_set.add(dnsobj.name)
         dnsobj.node = node
