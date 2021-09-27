@@ -137,7 +137,7 @@ class VirtualMachine(DefaultNode):
         self.hostIp = self.network.ips[host]
         self.pool = pool.strip().lower()
         
-        self.network.addRef(self, self.uuid)
+        self.network.nodes.addRef(self, self.uuid)
     
     @property
     def psmlCore(self) -> Tag:

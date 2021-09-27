@@ -373,10 +373,10 @@ class Node(base.NetworkObject):
 
         cache = set()
         for domain in list(self.domains):
-            cache |= self.network.createNoderefs(self.identity, domain, cache)
+            cache |= self.network.nodes.resolveRefs(self.identity, domain, cache)
 
         for ip in list(self.ips):
-            cache |= self.network.createNoderefs(self.identity, ip, cache)
+            cache |= self.network.nodes.resolveRefs(self.identity, ip, cache)
 
         return self
 
@@ -496,7 +496,7 @@ class PlaceholderNode(Node):
             
         assert len(nodes) <= 1, 'Placeholder cannot be consumed by more than one node.'
         if nodes:
-            self.network.addRef(nodes.pop(), self.identity)
+            self.network.nodes.addRef(nodes.pop(), self.identity)
 
     ## abstract properties
 

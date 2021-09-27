@@ -300,8 +300,8 @@ class TestPlaceholderNode:
         placeholder = nwobjs.PlaceholderNode(network, 'name', ['test.domain.com'], ['10.0.0.0'])
 
         placeholder.psmlFooter.append('footer value')
-        network.addRef(placeholder, 'alias')
-        network.addRef(placeholder, '10.0.0.0') # defaultnode identity will be '10.0.0.0' => trigger merge
+        network.nodes.addRef(placeholder, 'alias')
+        network.nodes.addRef(placeholder, '10.0.0.0') # defaultnode identity will be '10.0.0.0' => trigger merge
 
         node = objs.DefaultNode(network, 'name', '10.0.0.0')
         
@@ -320,7 +320,7 @@ class TestPlaceholderNode:
         Tests that the aliases property correctly returns all names the node is referenced as in the NodeSet.
         """
         node = nwobjs.PlaceholderNode(network, 'name')
-        network.addRef(node, 'test_alias_1')
+        network.nodes.addRef(node, 'test_alias_1')
         network.nodes.objects['test_alias_2'] = node
         assert node.aliases == {node.uuid, 'test_alias_1', 'test_alias_2'}
 

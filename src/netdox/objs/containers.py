@@ -198,6 +198,67 @@ class NodeSet(base.NetworkObjectContainer):
         """
         return self.objects
 
+    ## ref handling
+
+    def addRef(self, node: nwobjs.Node, ref: str) -> None:
+        """
+        Adds a pointer from *ref* to *node* as long as it is present in the network.
+
+        :param node: The node to point *ref* to.
+        :type node: nwobjs.Node
+        :param ref: The identifier which can now be used to find *node*.
+        :type ref: str
+        :raises RuntimeError: If the node is not in the same network.
+        """
+        if node.network is self.network:
+            self.objects[ref] = node
+        else:
+            raise RuntimeError('Cannot add ref to a node in a different network.')
+
+    def resolveRefs(self, node_identity: str, dnsobj_name: str, cache: set[str] = None) -> set[str]:
+        """
+        Creates noderefs from the DNSObj at *dnsobj_name* (and DNSObjs which resolve to it) to the node with *node_identity*.
+
+        :param node_identity: The identity of the target node.
+        :type node_identity: str
+        :param dnsobj_name: The name of the DNSObj to link from.
+        :type dnsobj_name: str
+        :param cache: A set of DNSObject names to ignore, defaults to None
+        :type cache: set[str], optional
+        :return: The set of DNSObject names that have been tested, including cached names.
+        :rtype: set[str]
+        """
+        node = self[node_identity]
+        if not cache:
+            cache = set()
+        elif dnsobj_name in cache:
+            return cache
+        cache.add(dnsobj_name)
+
+        if dnsobj_name in self.network.ips:
+            dnsobj = self.network.ips[dnsobj_name]
+            dnsobj_set = node.ips
+
+        elif dnsobj_name in self.network.domains:
+            dnsobj = self.network.domains[dnsobj_name]
+            dnsobj_set = node.domains
+        
+        else: return cache
+
+        if dnsobj.node: return cache
+
+        dnsobj_set.add(dnsobj.name)
+        dnsobj.node = node
+        
+        for backrefs in dnsobj.backrefs.values():
+            for backref in backrefs:
+                cache |= self.resolveRefs(node_identity, backref, cache)
+
+        if hasattr(dnsobj, 'nat') and dnsobj.nat:
+            cache |= self.resolveRefs(node_identity, dnsobj.nat, cache)
+
+        return cache
+
 
 class Network:
     """
@@ -245,75 +306,6 @@ class Network:
         self.writer = helpers.PSMLWriter()
         self.cache = set()
         self.report = []
-
-    ## Adding refs
-
-    def addRef(self, object: base.NetworkObject, ref: str) -> None:
-        """
-        Adds a pointer from *ref* to *object* as long as it is present in the network.
-
-        :param object: The object to point *ref* to.
-        :type object: base.NetworkObject
-        :param ref: The identifier which can now be used to find *object*.
-        :type ref: str
-        :raises TypeError: If *object* is of an incompatible type.
-        :raises AttributeError: If *object*'s ``network`` attribute is not this network.
-        """
-        if object.network is self:
-            if isinstance(object, nwobjs.Domain):
-                self.domains[ref] = object
-            elif isinstance(object, nwobjs.IPv4Address):
-                self.ips[ref] = object
-            elif isinstance(object, nwobjs.Node):
-                self.nodes[ref] = object
-            else:
-                raise TypeError(f'Cannot add ref to object of type {type(object)}')
-        else:
-            AttributeError('Cannot add ref to object when it is part of a different network.')
-
-    def createNoderefs(self, node_identity: str, dnsobj_name: str, cache: set[str] = None) -> set[str]:
-        """
-        Creates noderefs from the DNSObj at *dnsobj_name* (and DNSObjs which resolve to it) to the node with *node_identity*.
-
-        :param node_identity: The identity of the target node.
-        :type node_identity: str
-        :param dnsobj_name: The name of the DNSObj to link from.
-        :type dnsobj_name: str
-        :param cache: A set of DNSObject names to ignore, defaults to None
-        :type cache: set[str], optional
-        :return: The set of DNSObject names that have been tested, including cached names.
-        :rtype: set[str]
-        """
-        node = self.nodes[node_identity]
-        if not cache:
-            cache = set()
-        elif dnsobj_name in cache:
-            return cache
-        cache.add(dnsobj_name)
-
-        if dnsobj_name in self.ips:
-            dnsobj = self.ips[dnsobj_name]
-            dnsobj_set = node.ips
-
-        elif dnsobj_name in self.domains:
-            dnsobj = self.domains[dnsobj_name]
-            dnsobj_set = node.domains
-        
-        else: return cache
-
-        if dnsobj.node: return cache
-
-        dnsobj_set.add(dnsobj.name)
-        dnsobj.node = node
-        
-        for backrefs in dnsobj.backrefs.values():
-            for backref in backrefs:
-                cache |= self.createNoderefs(node_identity, backref, cache)
-
-        if hasattr(dnsobj, 'nat') and dnsobj.nat:
-            cache |= self.createNoderefs(node_identity, dnsobj.nat, cache)
-
-        return cache
 
     ## resolving refs
 
