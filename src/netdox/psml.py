@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Iterable, Mapping, Any
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Union
 
 from bs4 import BeautifulSoup, Tag
 
@@ -55,79 +55,136 @@ class Property(Tag):
 
     def __init__(self, 
         name: str,
-        title: str,
-        value: str = None,
-        xref_href: str = None,
-        xref_docid: str = None,
-        xref_uriid: str = None,
-        link_url: str = None,
-        frag: str = 'default',
-        namespace: str = None,
-        prefix: str = None,
+        value: Union[PSMLLink, str],
+        title: str = None,
         attrs: Mapping[str, Any] = {}
     ) -> None:
         """
-        Basic constructor.
+        Constructor.
 
-        :param name: Value for the required name attribute.
+        :param name: Value for the name attribute.
         :type name: str
-        :param title: Value for the required title attribute.
-        :type title: str
-        :param value: Value for the value attribute, defaults to None
+        :param value: Value for the value attribute, can be a string or a Link tag.
         :type value: str, optional
-        :param xref_href: Path to the xref destination. Ignored if value is present. Defaults to None
-        :type xref_href: str, optional
-        :param xref_docid: Docid of the xref destination. Ignored if value is present. Defaults to None
-        :type xref_docid: str, optional
-        :param xref_uriid: URIID of the xref destination. Ignored if value is present. Defaults to None
-        :type xref_uriid: str, optional
-        :param frag: Value for the required frag attribute on the child xref element, defaults to 'default'
-        :type frag: str, optional
-        :param namespace: Namespace for the tag, defaults to None
-        :type namespace: str, optional
-        :param prefix: Prefix for the tag, defaults to None
-        :type prefix: str, optional
-        :param attrs: Any attributes to set on the property tag, defaults to None
-        :type attrs: Mapping[str, Any], optional
-        :raises AttributeError: If value AND all the xref_* parameters are unset.
+        :param title: Value for the title attribute. Defaults to name.
+        :type title: str
         """
-        _attrs = {'name': name, 'title': title}
-        xref_params = {'href': xref_href, 'docid': xref_docid, 'uriid': xref_uriid}
-        xref_attrs = {}
-
-        if value is not None:
-            _attrs['value'] = value
-        elif any(xref_params.values()):
-            _attrs['datatype'] = 'xref'
-            xref_attrs = {k: v for k, v in xref_params.items() if v is not None}
-        elif link_url:
-            _attrs['datatype'] = 'link'
-        else:
-            raise AttributeError('Property must have at least one of: value, xref_href, xref_docid, xref_uriid')
+        _attrs = {'name': name, 'title': title or name}
         
         super().__init__(
             name = 'property', 
             is_xml = True, 
             can_be_empty_element = True, 
-            namespace = namespace, 
-            prefix = prefix, 
             attrs = _attrs | attrs
         )
+        
+        if isinstance(value, str):
+            self.attrs['value'] = value
+        else:
+            self.attrs['datatype'] = value.name
+            self.append(value)
 
-        if xref_attrs:
-            self.append(Tag(
-                is_xml=True, 
-                can_be_empty_element = True, 
-                name = 'xref', 
-                attrs = {'frag': frag} | xref_attrs
-            ))
-        elif link_url:
-            self.append(Tag(
-                is_xml=True, 
-                can_be_empty_element = True, 
-                name = 'link', 
-                attrs = {'href': link_url}
-            ))
+
+class PSMLLink(Tag):
+    """
+    Represents a link tag in PSML.
+    These elements will always have a separate closing tag due to the string content logic.
+    """
+
+    def __init__(self, name: str, value: str, attrs: dict, string: str = None):
+        """
+        Constructor.
+
+        :param name: The name of the element / datatype.
+        :type name: str
+        :param value: Value for the link.
+        :type value: str
+        :param attrs: Additional attributes to set.
+        :type attrs: dict
+        :param string: String content for the element, defaults to the link value.
+        :type string: str, optional
+        """
+        super().__init__(
+            name = name,
+            is_xml = True, 
+            can_be_empty_element = True,
+            attrs = attrs
+        )
+        self.string = string if string is not None else value
+
+class XRef(PSMLLink):
+    """
+    Represents an XRef element.
+    """
+
+    def __init__(self, 
+        uriid: str = None, 
+        docid: str = None, 
+        href: str = None, 
+        frag = 'default',
+        attrs: Mapping[str, Any] = None,
+        string: str = None
+    ) -> None:
+        """
+        Constructor.
+        Provide one or more of URIID, docid, or href.
+        The first one that is set will be used.
+
+        :param uriid: URIID of the document to link to, defaults to None
+        :type uriid: str, optional
+        :param docid: docid of the document to link to, defaults to None
+        :type docid: str, optional
+        :param href: path to the document to link to, defaults to None
+        :type href: str, optional
+        :param frag: Fragment to link to, defaults to 'default'
+        :type frag: str, optional
+        :param attrs: Additional attributes to set.
+        :type attrs: Mapping[str, Any], optional
+        :param string: String content for the element, defaults to nothing 
+        (will be populated by PageSeeder if not set).
+        :type string: str, optional
+        """
+        super().__init__(
+            name = 'xref',
+            value = uriid or docid or href,
+            attrs = (attrs or {}) | {'frag': frag},
+            string = string or ''
+        )
+        if uriid:
+            self.attrs['uriid'] = uriid
+        elif docid:
+            self.attrs['docid'] = docid
+        elif href:
+            self.attrs['href'] = href
+        else:
+            raise AttributeError("One of 'uriid', 'docid', or 'href' must be set.")
+
+class Link(PSMLLink):
+    """
+    Represents a Link element.
+    """
+
+    def __init__(self, 
+        url: str, 
+        attrs: Mapping[str, Any] = None, 
+        string: str = None
+    ) -> None:
+        """
+        Constructor.
+
+        :param url: URL to link to.
+        :type url: str
+        :param attrs: Additional attributes to set.
+        :type attrs: Mapping[str, Any]
+        :param string: String content for the element, defaults to the link value.
+        :type string: str, optional
+        """
+        super().__init__(
+            name = 'link', 
+            value = url, 
+            attrs = (attrs or {}) | {'href': url}, 
+            string = string
+        )
 
 
 #############
@@ -145,7 +202,7 @@ def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
     :return: A /BeautifulSoup object containing the populated and parsed template.
     :rtype: BeautifulSoup
     """
-    template = re.sub(f'#!docid', nwobj.docid, template)
+    template = re.sub('#!docid', nwobj.docid, template)
     for attribute, value in nwobj.__dict__.items():
         if isinstance(value, str):
             template = re.sub(f'#!{attribute}', value, template)
@@ -186,7 +243,8 @@ def recordset2pfrags(
             Property(
                 name = p_name, 
                 title = p_title, 
-                xref_docid = docid_prefix + value.replace(".","_")),
+                value = XRef(docid = docid_prefix + value.replace(".","_"))
+            ),
             Property(
                 name = 'source', 
                 title = 'Source Plugin', 
