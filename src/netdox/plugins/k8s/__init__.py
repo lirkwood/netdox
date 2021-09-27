@@ -144,7 +144,7 @@ class App(Node):
                     link_url = pod['rancher']),
 
                 psml.Property(name = 'worker_node', title = 'Worker Node', 
-                    xref_docid = self.network.ips[pod["workerIp"]].node.identity)
+                    xref_docid = self.network.ips[pod["workerIp"]].node.docid)
             ]))
             count += 1
         return section
