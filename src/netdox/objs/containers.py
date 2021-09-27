@@ -211,7 +211,7 @@ class NodeSet(base.NetworkObjectContainer):
         :raises RuntimeError: If the node is not in the same network.
         """
         if node.network is self.network:
-            self.objects[ref] = node
+            self[ref] = node
         else:
             raise RuntimeError('Cannot add ref to a node in a different network.')
 
@@ -323,7 +323,12 @@ class Network:
         :return: A boolean value.
         :rtype: bool
         """
+        if isinstance(startObj, str):
+            startObj = self.ips[startObj] if startObj in self.ips else self.domains[startObj]
+        if isinstance(target, str):
+            target = self.ips[target] if target in self.ips else self.domains[target]
         self.cache.add(startObj.name)
+
         for set in ('ips', 'domains'):
             networkSet = getattr(self, set)
             objSet = getattr(startObj, set)
