@@ -21,15 +21,10 @@ def node(network: objs.Network):
     return nwobjs.Node(
         network = network,
         name = 'node_name',
-        docid = '_node_docid_',
         identity = '_node_identity_',
         domains = ['test.domain.com'],
         ips = ['0.0.0.0']
     )
-
-@fixture
-def node(network: objs.DefaultNode):
-    return objs.DefaultNode(network, 'test_name', '192.168.0.0', labels = ['test_label'])
 
 
 class TestDomain:
@@ -301,7 +296,6 @@ class TestPlaceholderNode:
 
         placeholder.psmlFooter.append('footer value')
         network.nodes.addRef(placeholder, 'alias')
-        network.nodes.addRef(placeholder, '10.0.0.0') # defaultnode identity will be '10.0.0.0' => trigger merge
 
         node = objs.DefaultNode(network, 'name', '10.0.0.0')
         
