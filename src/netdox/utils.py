@@ -193,7 +193,7 @@ def roleToPSML(role: str) -> None:
         psml.Property(name = key, title = key, value = str(value))
         for key, value in config.items() if key != 'domains'
     ])
-    frag.insert(0, psml.Property('name', 'Name', role))
+    frag.insert(0, psml.Property('name', role, 'Name'))
 
     soup.find(id = 'config').replace_with(frag)
 

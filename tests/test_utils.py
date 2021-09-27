@@ -210,9 +210,9 @@ def test_roleToPSML(register_role):
             ) == psml.PropertiesFragment(
                 id = 'config',
                 properties = [
-                    psml.Property('name', 'Name', rolename),
-                    psml.Property('property 1', 'property 1', 'value 1'),
-                    psml.Property('property 2', 'property 2', 'value 2'),
-                    psml.Property('property 3', 'property 3', 'value 3'),
+                    psml.Property('name', rolename, 'Name'),
+                    psml.Property('property 1', 'value 1'),
+                    psml.Property('property 2', 'value 2'),
+                    psml.Property('property 3', 'value 3'),
                 ]
             )

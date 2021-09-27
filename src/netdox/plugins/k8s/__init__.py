@@ -138,13 +138,13 @@ class App(Node):
                 psml.Property(name = 'pod', title = 'Pod', value = pod['name']),
 
                 psml.Property(name = 'ipv4', title = 'Worker IP', 
-                    xref_docid = f'_nd_ip_{pod["workerIp"].replace(".","_")}'),
+                    value = psml.XRef(docid = f'_nd_ip_{pod["workerIp"].replace(".","_")}')),
 
                 psml.Property(name = 'rancher', title="Pod on Rancher", 
-                    link_url = pod['rancher']),
+                    value = psml.Link(pod['rancher'])),
 
                 psml.Property(name = 'worker_node', title = 'Worker Node', 
-                    xref_docid = self.network.ips[pod["workerIp"]].node.docid)
+                    value = psml.XRef(docid = self.network.ips[pod["workerIp"]].node.docid))
             ]))
             count += 1
         return section
@@ -217,7 +217,7 @@ def domainapps(network: Network) -> None:
                     psml.Property(
                         name = 'app', 
                         title = 'Path: ' + path[len(domain):], 
-                        xref_docid = pathnodes[path].docid
+                        value = psml.XRef(docid = pathnodes[path].docid)
                     ) for path in paths
                 ]
             )

@@ -155,7 +155,7 @@ class PSMLWriter:
             self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'node',
                 title = 'Node',
-                xref_docid = domain.node.docid
+                value = psml.XRef(docid = domain.node.docid)
             ))
         else:
             self.doc.find('properties-fragment', id = 'header').append(psml.Property(
@@ -199,7 +199,7 @@ class PSMLWriter:
             self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'nat',
                 title = 'NAT Destination',
-                xref_docid = f'_nd_ip_{ip.nat.replace(".","_")}'
+                value = psml.XRef(docid = f'_nd_ip_{ip.nat.replace(".","_")}')
             ))
         else:
             self.doc.find('properties-fragment', id = 'header').append(psml.Property(
@@ -212,7 +212,7 @@ class PSMLWriter:
             self.doc.find('properties-fragment', id = 'header').append(psml.Property(
                 name = 'node',
                 title = 'Node',
-                xref_docid = ip.node.docid
+                value = psml.XRef(docid = ip.node.docid)
             ))
         else:
             self.doc.find('properties-fragment', id = 'header').append(psml.Property(
@@ -236,7 +236,7 @@ class PSMLWriter:
             psml.Property(
                     name = 'domain',
                     title = 'Implied PTR Record',
-                    xref_docid = f'_nd_domain_{domain.replace(".","_")}'
+                    value = psml.XRef(docid = f'_nd_domain_{domain.replace(".","_")}')
                 )
             for domain in ip.backrefs['A']
         ])
@@ -263,7 +263,7 @@ class PSMLWriter:
                 domains.append(psml.Property(
                     name = 'domain',
                     title = 'Domain',
-                    xref_docid = f'_nd_domain_{domain.replace(".","_")}'
+                    value = psml.XRef(docid = f'_nd_domain_{domain.replace(".","_")}')
                 ))
             else:
                 domains.append(psml.Property(
@@ -278,7 +278,7 @@ class PSMLWriter:
                 ips.append(psml.Property(
                     name = 'ipv4',
                     title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
-                    xref_docid = f'_nd_ip_{ip.replace(".","_")}'
+                    value = psml.XRef(docid = f'_nd_ip_{ip.replace(".","_")}')
                 ))
             else:
                 ips.append(psml.Property(

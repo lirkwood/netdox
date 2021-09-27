@@ -2,86 +2,122 @@ from netdox import objs, psml
 from test_nwobjs import domain, ipv4, network, node
 from pytest import raises, fixture
 
+class TestXRef:
 
-# n.b. attrs are alphabetically ordered
-def test_Property_value():
-    """
-    Tests the Property class with the value attribute.
-    """
-    assert (
-        str(psml.Property('test_name', 'Test Title', 'test_value')) ==
-        '<property name="test_name" title="Test Title" value="test_value"/>' 
-    )
+    def test_uriid(self):
+        assert (
+            str(psml.XRef(uriid = '7357')) == 
+            '<xref frag="default" uriid="7357"></xref>'
+        )
 
-def test_Property_href():
-    """
-    Tests the Property class with the xref_href attribute.
-    """
-    assert (
-        str(psml.Property('test_name', 'Test Title', xref_href = '/test/path')) ==
-        '<property datatype="xref" name="test_name" title="Test Title">'
-        +'<xref frag="default" href="/test/path"/>'
-        +'</property>' 
-    )
+    def test_docid(self):
+        assert (
+            str(psml.XRef(docid='_test_docid_')) == 
+            '<xref docid="_test_docid_" frag="default"></xref>'
+        )
 
-def test_Property_docid():
-    """
-    Tests the Property class with the xref_docid attribute.
-    """
-    assert (
-        str(psml.Property('test_name', 'Test Title', xref_docid = '_test_docid_')) ==
-        '<property datatype="xref" name="test_name" title="Test Title">'
-        +'<xref docid="_test_docid_" frag="default"/>'
-        +'</property>' 
-    )
+    def test_href(self):
+        assert (
+            str(psml.XRef(href = '/test/path')) == 
+            '<xref frag="default" href="/test/path"></xref>'
+        )
 
-def test_Property_uriid():
-    """
-    Tests the Property class with the xref_uriid attribute.
-    """
-    assert (
-        str(psml.Property('test_name', 'Test Title', xref_uriid = 7357)) ==
-        '<property datatype="xref" name="test_name" title="Test Title">'
-        +'<xref frag="default" uriid="7357"/>'
-        +'</property>' 
-    )
+    def test_fragment(self):
+        assert (
+            str(psml.XRef('7357', frag = 'test_frag')) == 
+            '<xref frag="test_frag" uriid="7357"></xref>'
+        )
 
-def test_Property_url():
-    """
-    Tests the Property class with the link_url attribute.
-    """
-    assert (
-        str(psml.Property('test_name', 'Test Title', link_url = 'https://sub.domain.com/uri')) ==
-        '<property datatype="link" name="test_name" title="Test Title">'
-        +'<link href="https://sub.domain.com/uri"/>'
-        +'</property>' 
-    )
+    def test_attrs(self):
+        assert (
+            str(psml.XRef('7357', attrs = {'key': 'value'})) == 
+            '<xref frag="default" key="value" uriid="7357"></xref>'
+        )
 
-def test_Property_none():
-    with raises(AttributeError):
-        psml.Property('test_name', 'Test Title')
+    def test_string(self):
+        assert (
+            str(psml.XRef('7357', string = 'test_string')) == 
+            '<xref frag="default" uriid="7357">test_string</xref>'
+        )
 
-def test_PropertiesFragment():
-    """
-    Tests the PropertiesFragment class with no properties
-    """
-    assert (
-        str(psml.PropertiesFragment(id = 'test_id')) == 
-        '<properties-fragment id="test_id"/>'
-    )
+class TestLink:
+    
+    def test_constructor(self):
+        assert (
+            str(psml.Link('https://website.domain.com/')) ==
+            '<link href="https://website.domain.com/">https://website.domain.com/</link>'
+        )
+    
+    def test_attrs(self):
+        assert (
+            str(psml.Link('https://website.domain.com/', {'key': 'value'})) ==
+            '<link href="https://website.domain.com/" key="value">'
+            +'https://website.domain.com/</link>'
+        )
+    
+    def test_string(self):
+        assert (
+            str(psml.Link('https://website.domain.com/', string = 'test_string')) ==
+            '<link href="https://website.domain.com/">test_string</link>'
+        )
 
-def test_PropertiesFragment_withprop():
-    """
-    Tests the PropertiesFragment class with a property in it's constructor.
-    """
-    assert (
-        str(psml.PropertiesFragment(id = 'test_id', properties = [
-            psml.Property('test_name', 'Test Title', 'test_value')
-        ])) ==
-        '<properties-fragment id="test_id">'
-        +'<property name="test_name" title="Test Title" value="test_value"/>'
-        +'</properties-fragment>'
-    )
+class TestProperty:
+
+    # n.b. attrs are alphabetically ordered
+    def test_Property_string(self):
+        """
+        Tests the Property class with the value attribute.
+        """
+        assert (
+            str(psml.Property('test_name', 'test_value', 'Test Title')) ==
+            '<property name="test_name" title="Test Title" value="test_value"/>' 
+        )
+
+    def test_Property_XRef(self):
+        """
+        Tests the Property class with the xref_href attribute.
+        """
+        assert (
+            str(psml.Property('test_name', psml.XRef('7357'), 'Test Title')) ==
+            '<property datatype="xref" name="test_name" title="Test Title">'
+            +'<xref frag="default" uriid="7357"></xref>'
+            +'</property>' 
+        )
+
+    def test_Property_Link(self):
+        """
+        Tests the Property class with the link_url attribute.
+        """
+        assert (
+            str(psml.Property('test_name', psml.Link('https://sub.domain.com/uri'), 'Test Title')) ==
+            '<property datatype="link" name="test_name" title="Test Title">'
+            +'<link href="https://sub.domain.com/uri">https://sub.domain.com/uri</link>'
+            +'</property>' 
+        )
+
+class TestPropertiesFragment:
+
+    def test_PropertiesFragment(self):
+        """
+        Tests the PropertiesFragment class with no properties
+        """
+        assert (
+            str(psml.PropertiesFragment(id = 'test_id')) == 
+            '<properties-fragment id="test_id"/>'
+        )
+
+    def test_PropertiesFragment_withprop(self):
+        """
+        Tests the PropertiesFragment class with a property in it's constructor.
+        """
+        assert (
+            str(psml.PropertiesFragment(id = 'test_id', properties = [
+                psml.Property('test_name', 'test_value', 'Test Title')
+            ])) ==
+            '<properties-fragment id="test_id">'
+            +'<property name="test_name" title="Test Title" value="test_value"/>'
+            +'</properties-fragment>'
+        )
 
 
 def test_populate_domain(domain: objs.Domain):
