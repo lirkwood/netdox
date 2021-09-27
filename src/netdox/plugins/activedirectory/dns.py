@@ -41,7 +41,7 @@ def fetchDNS(network: Network) -> None:
                         value = value +'.'+ zoneName
 
                     if zones[zoneName].adapted_properties['IsReverseLookupZone']:
-                        logger.debug('[DEBUG][activedirectory] Ignoring CNAME in reverse lookup zone')
+                        logger.debug('Ignoring CNAME in reverse lookup zone')
                     else:
                         dnsobj.link(value, 'ActiveDirectory')
 
@@ -115,4 +115,5 @@ def parseDN(distinguished_name: str) -> tuple[str, str]:
                 else:
                     return '.'.join(name).lower(), '.'.join(name[1:]).lower()
             else:
+                logger.debug('No hostname parsed from ' + distinguished_name)
                 return None, None
