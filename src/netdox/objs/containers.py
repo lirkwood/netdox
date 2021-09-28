@@ -278,7 +278,7 @@ class Network:
     cache: set
     """A set of cached names. Used when resolving long record chains."""
     report: list[Tag]
-    """A dict of section tags to insert into the network report."""
+    """A list of section tags to insert into the network report."""
 
     def __init__(self, 
             domains: DomainSet = None, 

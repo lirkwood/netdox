@@ -194,14 +194,14 @@ def clear_sentence(uri: str) -> None:
         patch_uri(uri, {'labels':labels})
 
 
-def sentenceStale(dir: str) -> dict[date, str]:
+def sentenceStale(dir: str) -> dict[date, list[str]]:
     """
     Adds stale labels to any files present in *dir* on PageSeeder, but not locally.
 
     :param dir: The directory, relative to ``website/`` on PS or ``out/`` locally.
     :type dir: str
     :return: A dict of date objects mapped to uris which expire on that date.
-    :rtype: dict[date, str]
+    :rtype: dict[date, list[str]]
     """
     stale = defaultdict(list)
     today = date.today()
