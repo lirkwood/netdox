@@ -13,7 +13,8 @@ import logging
 from netdox import iptools, utils
 from netdox.objs import IPv4Address, Network
 from netdox.objs.nwobjs import PlaceholderNode
-from netdox.plugins.xenorchestra import VirtualMachine, authenticate, call
+from netdox.plugins.xenorchestra import authenticate, call
+from netdox.plugins.xenorchestra.vm import VirtualMachine
 
 logger = logging.getLogger(__name__)
 
