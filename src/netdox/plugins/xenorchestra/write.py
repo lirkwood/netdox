@@ -1,7 +1,10 @@
-from bs4 import BeautifulSoup
+import json
 
+from bs4 import BeautifulSoup
+from netdox import pageseeder
 from netdox.objs import Network
 from netdox.objs.nwobjs import Node
+from netdox.plugins.xenorchestra.vm import VirtualMachine
 from netdox.utils import APPDIR
 
 
@@ -36,6 +39,28 @@ def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
 
     with open(APPDIR+ 'out/xopub.psml', 'w') as stream:
         stream.write(pub.prettify())
+
+
+def genreport(network: Network) -> None:
+    try:
+        search = json.loads(pageseeder.search({
+            'filters': ','.join([
+                'pstype:document',
+                'psdocumenttype:node',
+                'psproperty-type:'+ VirtualMachine.type
+            ])}))
+        with open(APPDIR + 'src/vms.json', 'w') as stream:
+            stream.write(json.dumps(search, indent = 2))
+    except Exception as exc:
+        raise exc
+    else:
+        psvms = set()
+        for result in search['results']['result']:
+            for field in result['fields']:
+                if field['name'] == 'psproperty-uuid':
+                    psvms.add(field['value'])
+                    break
+        
 
 
 TEMPLATE = '''
