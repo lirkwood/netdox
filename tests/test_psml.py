@@ -97,7 +97,7 @@ class TestProperty:
 
 class TestPropertiesFragment:
 
-    def test_PropertiesFragment(self):
+    def test_constructor(self):
         """
         Tests the PropertiesFragment class with no properties
         """
@@ -106,7 +106,7 @@ class TestPropertiesFragment:
             '<properties-fragment id="test_id"/>'
         )
 
-    def test_PropertiesFragment_withprop(self):
+    def test_constructor_withprop(self):
         """
         Tests the PropertiesFragment class with a property in it's constructor.
         """
@@ -118,6 +118,38 @@ class TestPropertiesFragment:
             +'<property name="test_name" title="Test Title" value="test_value"/>'
             +'</properties-fragment>'
         )
+
+    def test_to_dict(self):
+        assert (
+            psml.PropertiesFragment('id', [
+                psml.Property('name1', 'value1'),
+                psml.Property('name1', 'value2'),
+                psml.Property('name2', 'value3'),
+                psml.Property('name3', 'value4')
+            ]).to_dict() == {
+                'name1': [
+                    'value1', 
+                    'value2'
+                ],
+                'name2': 'value3',
+                'name3': 'value4'
+            }
+        )
+
+    def test_from_dict(self):
+        assert str(psml.PropertiesFragment.from_dict('id', {
+                'name1': [
+                    'value1', 
+                    'value2'
+                ],
+                'name2': 'value3',
+                'name3': 'value4'
+            })) == str(psml.PropertiesFragment('id', [
+                psml.Property('name1', 'value1'),
+                psml.Property('name1', 'value2'),
+                psml.Property('name2', 'value3'),
+                psml.Property('name3', 'value4')
+            ]))
 
 
 def test_populate_domain(domain: objs.Domain):
@@ -161,16 +193,19 @@ def test_recordset2pfrags():
         records, 'pfrag_', 'docid_', 'propname', 'Prop Title'
     ) == [
         psml.PropertiesFragment('pfrag_0', properties=[
-            psml.Property('propname', 'Prop Title', xref_docid='docid_record 1'),
-            psml.Property('source', 'Source Plugin', 'source 1'),
+            psml.Property('propname', title = 'Prop Title', 
+                value = psml.XRef(docid='docid_record 1')),
+            psml.Property('source', title = 'Source Plugin', value = 'source 1'),
         ]),
         psml.PropertiesFragment('pfrag_1', properties=[
-            psml.Property('propname', 'Prop Title', xref_docid='docid_record 2'),
-            psml.Property('source', 'Source Plugin', 'source 1'),
+            psml.Property('propname', title = 'Prop Title', 
+                value = psml.XRef(docid='docid_record 2')),
+            psml.Property('source', title = 'Source Plugin', value = 'source 1'),
         ]),
         psml.PropertiesFragment('pfrag_2', properties=[
-            psml.Property('propname', 'Prop Title', xref_docid='docid_record 3'),
-            psml.Property('source', 'Source Plugin', 'source 2'),
+            psml.Property('propname', title = 'Prop Title', 
+                value = psml.XRef(docid='docid_record 3')),
+            psml.Property('source', title = 'Source Plugin', value = 'source 2'),
         ]),
     ]
 
@@ -179,11 +214,11 @@ def test_pfrag2dict():
     Tests the pfrag2dict function
     """
     pfrag = psml.PropertiesFragment(id='foo', properties = [
-        psml.Property('valprop','', 'some value'),
-        psml.Property('valpropmulti','', 'some value 1'),
-        psml.Property('valpropmulti','', 'some value 2'),
-        psml.Property('xrefprop','', xref_uriid = '9999'),
-        psml.Property('linkprop','', link_url = 'https://some.domain.com/')
+        psml.Property('valprop', 'some value'),
+        psml.Property('valpropmulti', 'some value 1'),
+        psml.Property('valpropmulti', 'some value 2'),
+        psml.Property('xrefprop', psml.XRef('9999')),
+        psml.Property('linkprop', psml.Link('https://some.domain.com/'))
     ]) 
     result = {
         'valprop': 'some value',
