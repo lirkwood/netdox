@@ -31,8 +31,8 @@ class NetworkManager:
     """Dictionary of config values for communicating with PageSeeder etc."""
     pluginmap: dict[str, set[ModuleType]]
     """Dictionary of stages and their plugins"""
-    stale: dict[str, dict[date, str]]
-    """Dictionary containing information about stale URIs and their expiry date."""
+    stale: dict[date, set[str]]
+    """Dictionary mapping stale URIs to their expiry date."""
 
     def __init__(self) -> None:
 
@@ -51,7 +51,7 @@ class NetworkManager:
         self.nodemap = {}
         self.stages = self.pluginmap.keys()
 
-        self.stale = {}
+        self.stale = defaultdict(set)
 
         try:
             with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
@@ -159,7 +159,8 @@ class NetworkManager:
         Sentences stale network objects and adds a section on stale documents to the network report.
         """
         for folder in ('domains', 'ips', 'nodes'):
-            self.stale[folder] = pageseeder.sentenceStale(folder)
+            for expiry, uris in pageseeder.sentenceStale(folder).items():
+                self.stale[expiry] |= set(uris)
 
         section = Tag(is_xml = True, 
             name = 'section', 
@@ -170,43 +171,34 @@ class NetworkManager:
 
         plus_thirty = date.today() + timedelta(days = 30)
 
-        combined = defaultdict(set)
-        for expiryMap in self.stale.values():
-            for expiry, uris in expiryMap.items():
-                for uri in uris:
-                    combined[expiry].add(uri)
+        if plus_thirty in self.stale:
+            todayFrag = Tag(is_xml = True, name = 'fragment', attrs = {'id': plus_thirty.isoformat()})
+            heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '3'})
+            heading.string = 'Sentenced Today'
+            todayFrag.append(heading)
 
-        todayFrag = Tag(is_xml = True, name = 'fragment', attrs = {'id': 'stale_today'})
-        heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '3'})
-        heading.string = 'Sentenced Today'
-        todayFrag.append(heading)
+            for uri in self.stale.pop(plus_thirty):
+                todayFrag.append(Tag(is_xml = True,
+                    name = 'blockxref',
+                    attrs = {
+                        'frag': 'default',
+                        'uriid': uri
+                    }
+                ))
+            section.insert(0, todayFrag)
 
-        for expiry, uris in combined.items():
-            if expiry >= plus_thirty:
-                for uri in uris:
-                    todayFrag.append(Tag(is_xml = True,
-                        name = 'blockxref',
-                        attrs = {
-                            'frag': 'default',
-                            'uriid': uri
-                        }
-                    ))
-        section.insert(0, todayFrag)
-
-        for type, stale in self.stale.items():
-            frag = Tag(is_xml = True, name = 'fragment', attrs = {'id': 'stale_'+ type})
-            for expiry, uris in sorted(stale.items()):
-                heading = Tag(is_xml=True, name='heading', attrs={'level': '3'})
-                heading.string = expiry.isoformat()
-                frag.append(heading)
-                for uri in uris:
-                    if uri not in combined:
-                        frag.append(Tag(is_xml = True,
-                        name = 'blockxref',
-                        attrs = {
-                            'frag': 'default',
-                            'uriid': uri
-                        }
-                    ))
+        for expiry, uris in sorted(self.stale.items(), reverse = True):
+            frag = Tag(is_xml = True, name = 'fragment', attrs = {'id': expiry.isoformat()})
+            heading = Tag(is_xml=True, name='heading', attrs={'level': '2'})
+            heading.string = 'Expiring on: '+ expiry.isoformat()
+            frag.append(heading)
+            for uri in uris:
+                frag.append(Tag(is_xml = True,
+                    name = 'blockxref',
+                    attrs = {
+                        'frag': 'default',
+                        'uriid': uri
+                    }
+                ))
             section.append(frag)
         self.network.report.append(section)
