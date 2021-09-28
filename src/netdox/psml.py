@@ -29,10 +29,8 @@ class PropertiesFragment(Tag):
 
     def __init__(self, 
             id: str, 
-            namespace: str = None, 
-            prefix: str = None, 
+            properties: Iterable[Property] = [],
             attrs: Mapping[str, Any] = {},
-            properties: Iterable[Property] = []
         ) -> None:
 
         self.id = id
@@ -40,13 +38,49 @@ class PropertiesFragment(Tag):
             name = 'properties-fragment', 
             is_xml = True, 
             can_be_empty_element = True, 
-            namespace = namespace, 
-            prefix = prefix, 
             attrs = {'id': id} | attrs
         )
 
         for property in properties:
             self.append(property)
+
+    def to_dict(self) -> dict:
+        """
+        Returns a dictionary of child properties names mapped to values.
+
+        :return: A dictionary of strings mapped to strings, Links, or lists of either.
+        :rtype: dict
+        """
+        outdict = defaultdict(list)
+        for property in self.children:
+            outdict[property.attrs['name']].append(property.value)
+        return {key: val[0] if len(val) == 1 else val for key, val in outdict.items()}
+
+    @classmethod
+    def from_dict(cls, id: str, constructor: dict) -> PropertiesFragment:
+        """
+        Constructs a PropertiesFragment from a dictionary of property names,
+        mapped to strings, Links, or lists of either.
+
+        :param constructor: Constructor dict.
+        :type constructor: dict
+        :raises TypeError: If the value is of an unrecognised type.
+        :return: A PropertiesFragment instance.
+        :rtype: PropertiesFragment
+        """
+        pfrag = cls(id)
+        for key, value in constructor.items():
+            if isinstance(value, str) or not isinstance(value, Iterable):
+                pfrag.append(Property(key, value))
+
+            elif isinstance(value, Iterable):
+                for _value in value:
+                    pfrag.append(Property(key, _value))
+            
+            else:
+                raise TypeError(
+                    'Could not instantiate a Property from a value of: '+ str(value))
+        return pfrag
 
 class Property(Tag):
     """
@@ -78,6 +112,7 @@ class Property(Tag):
             attrs = _attrs | attrs
         )
         
+        self.value = value
         if isinstance(value, str):
             self.attrs['value'] = value
         else:
