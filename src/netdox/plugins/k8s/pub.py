@@ -3,6 +3,7 @@ from collections import defaultdict
 from bs4 import BeautifulSoup
 from netdox.objs import Network
 from netdox.utils import APPDIR
+from netdox.plugins.k8s.app import App
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 def genpub(network: Network) -> None:
     workerApps = defaultdict(lambda: defaultdict(list))
     for node in network.nodes:
-        if node.type == 'Kubernetes App':
+        if node.type == App.type:
             for pod in node.pods.values():
                 if network.ips[pod['workerIp']].node:
                     pod['workerNode'] = network.ips[pod['workerIp']].node.docid

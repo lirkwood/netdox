@@ -17,7 +17,8 @@ from kubernetes import client
 from netdox import utils
 from netdox.objs import Network
 from netdox.objs.nwobjs import PlaceholderNode
-from netdox.plugins.k8s import App, initContext
+from netdox.plugins.k8s import initContext
+from netdox.plugins.k8s.app import App
 
 logger = logging.getLogger(__name__)
 
