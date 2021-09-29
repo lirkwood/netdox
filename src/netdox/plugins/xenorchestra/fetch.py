@@ -143,6 +143,7 @@ async def makeNodes(network: Network) -> None:
                         host = hosts[vm['$container']]['address'],
                         pool = poolNames[vm['$pool']],
                         private_ip = vm['mainIpAddress'],
+                        tags = vm['tags']
                     )
 
                 else:
