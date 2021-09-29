@@ -1,11 +1,17 @@
 import json
+import logging
+import shutil
+from datetime import date, timedelta
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
+from lxml import etree
 from netdox import pageseeder
 from netdox.objs import Network
 from netdox.objs.nwobjs import Node
 from netdox.plugins.xenorchestra.vm import VirtualMachine
 from netdox.utils import APPDIR
+
+logger = logging.getLogger(__name__)
 
 
 def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
@@ -17,7 +23,7 @@ def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
     :param pubdict: A dictionary of node docids
     :type pubdict: dict[str, dict[str, list[Node]]]
     """
-    pub = BeautifulSoup(TEMPLATE, features='xml')
+    pub = BeautifulSoup(PUB, 'xml')
     section = pub.find('section', id = 'pools')
     count = 0
     for pool, hosts in pubdict.items():
@@ -37,33 +43,75 @@ def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
         section.append(xfrag)
         count += 1
 
-    with open(APPDIR+ 'out/xopub.psml', 'w') as stream:
+    with open(APPDIR+ 'plugins/xenorchestra/src/xopub.psml', 'w') as stream:
         stream.write(pub.prettify())
+
+    try:
+        etree.XMLSchema(file = APPDIR + 'src/psml.xsd').assertValid(
+            etree.parse(APPDIR+ 'plugins/xenorchestra/src/xopub.psml'))
+
+    except etree.DocumentInvalid:
+        logger.error('Publication validation failed.')
+
+    else:
+        shutil.copyfile(APPDIR + 'plugins/xenorchestra/src/xopub.psml',
+            APPDIR + 'out/xopub.psml')
 
 
 def genreport(network: Network) -> None:
-    try:
-        search = json.loads(pageseeder.search({
-            'filters': ','.join([
-                'pstype:document',
-                'psdocumenttype:node',
-                'psproperty-type:'+ VirtualMachine.type
-            ])}))
-        with open(APPDIR + 'src/vms.json', 'w') as stream:
-            stream.write(json.dumps(search, indent = 2))
-    except Exception as exc:
-        raise exc
-    else:
-        psvms = set()
-        for result in search['results']['result']:
-            for field in result['fields']:
-                if field['name'] == 'psproperty-uuid':
-                    psvms.add(field['value'])
-                    break
+    """
+    Generates a section to add to the Daily Report,
+    containing information about VMs that were started / stopped today.
+
+    :param network: The network
+    :type network: Network
+    """
+    search = json.loads(pageseeder.search({
+        'filters': ','.join([
+            'pstype:document',
+            'psdocumenttype:node',
+            'psproperty-type:'+ VirtualMachine.type,
+            '-label:stale'
+        ])}))
         
+    psvms = {}
+    for result in search['results']['result']:
+        for field in result['fields']:
+            if field['name'] == 'psproperty-uuid':
+                # first field is always uriid
+                psvms[field['value']] = result['fields'][0]['value']
+                break
+    
+    netvms = {}
+    for node in network.nodes:
+        if node.type == VirtualMachine.type:
+            netvms[node.uuid] = node.docid
 
+    if psvms or netvms:
+        report = BeautifulSoup(REPORT, 'xml')
 
-TEMPLATE = '''
+        newfrag = report.find('fragment', id='xovms_new')
+        for newvm in (set(psvms) - set(netvms)):
+            newfrag.append(Tag(is_xml = True,
+                name = 'blockxref', attrs = {
+                    'frag': 'default',
+                    'uriid': psvms[newvm]
+            }))
+            
+        oldfrag = report.find('fragment', id='xovms_old')
+        for oldvm in (set(netvms) - set(psvms)):
+            oldfrag.append(Tag(is_xml = True,
+                name = 'blockxref', attrs = {
+                    'frag': 'default',
+                    'docid': netvms[oldvm]
+            }))
+
+        network.addReport(report)
+
+    else:
+        logger.debug('No VMs on local or PageSeeder')
+
+PUB = '''
 <document level="portable" type="references">
 
     <documentinfo>
@@ -80,4 +128,15 @@ TEMPLATE = '''
     <section id="pools" />
     
 </document>
+'''
+
+REPORT = '''
+<section id="xovms">
+    <fragment id="xovms_new">
+        <heading level="3">VMs Started Today</heading>
+    </fragment>
+    <fragment id="xovms_old">
+        <heading level="3">VMs Stopped Today</heading>
+    </fragment>
+</section>
 '''
