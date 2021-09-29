@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import Iterable, Iterator, Type, Union
 from bs4 import Tag, BeautifulSoup
+from lxml import etree
 import pickle
 
 from netdox import iptools
@@ -346,6 +347,33 @@ class Network:
                         return True
         return False
 
+    ## Report
+
+    def addReport(self, section: Tag) -> None:
+        """
+        Adds a psml *section* tag to the report, if it is valid.
+
+        :param section: The section tag to add.
+        :type section: Tag
+        """
+        if etree.XMLSchema(file = APPDIR + 'src/psml.xsd').validate(
+            bytes(str(section), 'utf-8')
+        ):
+            self.report.append(section)
+
+    def writeReport(self) -> None:
+        """
+        Generates a report from the supplied sections in ``self.report``.
+        """
+        with open(APPDIR+ 'src/templates/report.psml', 'r') as stream:
+            report = BeautifulSoup(stream.read(), 'xml')
+
+        for tag in self.report:
+            report.document.append(tag)
+
+        with open(APPDIR+ 'out/report.psml', 'w') as stream:
+            stream.write(str(report))
+
     ## Serialisation
 
     def dump(self, outpath: str = APPDIR + 'src/network.bin', encrypt = True) -> None:
@@ -391,19 +419,6 @@ class Network:
         :type set: str
         """
         self.writer.serialiseSet(getattr(self, set))
-
-    def writeReport(self) -> None:
-        """
-        Generates a report from the supplied sections in ``self.report``.
-        """
-        with open(APPDIR+ 'src/templates/report.psml', 'r') as stream:
-            report = BeautifulSoup(stream.read(), 'xml')
-
-        for tag in self.report:
-            report.document.append(tag)
-
-        with open(APPDIR+ 'out/report.psml', 'w') as stream:
-            stream.write(str(report))
 
     def writePSML(self) -> None:
         """
