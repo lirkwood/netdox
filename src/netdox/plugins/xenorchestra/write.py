@@ -104,7 +104,7 @@ def genreport(network: Network) -> None:
             newfrag.append(Tag(is_xml = True,
                 name = 'blockxref', attrs = {
                     'frag': 'default',
-                    'uriid': netvms[newvm]
+                    'docid': netvms[newvm]
             }))
             
         oldfrag = report.find('fragment', id='xovms_old')
@@ -113,7 +113,7 @@ def genreport(network: Network) -> None:
             oldfrag.append(Tag(is_xml = True,
                 name = 'blockxref', attrs = {
                     'frag': 'default',
-                    'docid': psvms[oldvm]
+                    'uriid': psvms[oldvm]
             }))
 
         network.addReport(report)
@@ -143,10 +143,10 @@ PUB = '''
 REPORT = '''
 <section id="xovms">
     <fragment id="xovms_new">
-        <heading level="3">VMs Started Today</heading>
+        <heading level="2">VMs Started Today</heading>
     </fragment>
     <fragment id="xovms_old">
-        <heading level="3">VMs Stopped Today</heading>
+        <heading level="2">VMs Stopped Today</heading>
     </fragment>
 </section>
 '''

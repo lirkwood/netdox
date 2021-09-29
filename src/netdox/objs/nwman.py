@@ -173,7 +173,7 @@ class NetworkManager:
 
         if plus_thirty in self.stale:
             todayFrag = Tag(is_xml = True, name = 'fragment', attrs = {'id': plus_thirty.isoformat()})
-            heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '3'})
+            heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '2'})
             heading.string = 'Sentenced Today'
             todayFrag.append(heading)
 
