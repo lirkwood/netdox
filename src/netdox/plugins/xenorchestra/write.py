@@ -73,15 +73,23 @@ def genreport(network: Network) -> None:
             'psproperty-type:'+ VirtualMachine.type,
             '-label:stale'
         ])}))
+
+    sentencedToday = json.loads(pageseeder.search({
+        'filters': ','.join([
+            'pstype:document',
+            'psdocumenttype:node',
+            'psproperty-type:'+ VirtualMachine.type,
+            'label:expires-' + (date.today() + timedelta(days = 30)).isoformat()
+        ])}))
         
     psvms = {}
-    for result in search['results']['result']:
+    for result in (search['results']['result'] + sentencedToday['results']['result']):
         for field in result['fields']:
             if field['name'] == 'psproperty-uuid':
                 # first field is always uriid
                 psvms[field['value']] = result['fields'][0]['value']
                 break
-    
+
     netvms = {}
     for node in network.nodes:
         if node.type == VirtualMachine.type:
@@ -91,19 +99,21 @@ def genreport(network: Network) -> None:
         report = BeautifulSoup(REPORT, 'xml')
 
         newfrag = report.find('fragment', id='xovms_new')
-        for newvm in (set(psvms) - set(netvms)):
+        for newvm in (set(netvms) - set(psvms)):
+            logger.debug('Started VM; URIID ' + netvms[newvm])
             newfrag.append(Tag(is_xml = True,
                 name = 'blockxref', attrs = {
                     'frag': 'default',
-                    'uriid': psvms[newvm]
+                    'uriid': netvms[newvm]
             }))
             
         oldfrag = report.find('fragment', id='xovms_old')
-        for oldvm in (set(netvms) - set(psvms)):
+        for oldvm in (set(psvms) - set(netvms)):
+            logger.debug('Stopped VM; URIID ' + psvms[oldvm])
             oldfrag.append(Tag(is_xml = True,
                 name = 'blockxref', attrs = {
                     'frag': 'default',
-                    'docid': netvms[oldvm]
+                    'docid': psvms[oldvm]
             }))
 
         network.addReport(report)
@@ -140,3 +150,10 @@ REPORT = '''
     </fragment>
 </section>
 '''
+
+if __name__ == '__main__':
+    from sys import stdout
+    logger.addHandler(logging.StreamHandler(stdout))
+    logger.setLevel(logging.DEBUG)
+    logger.debug('foo')
+    genreport(Network.fromDump())
