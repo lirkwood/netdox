@@ -4,19 +4,14 @@ Used to read and modify the VMs managed by Xen Orchestra
 from __future__ import annotations
 
 import json
-from json.decoder import JSONDecodeError
 import logging
 import os
 import random
 from functools import wraps
-from typing import Iterable
 
 import websockets
-from bs4 import Tag
-
-from netdox import pageseeder, psml, utils
-from netdox.objs import DefaultNode, Network
-from netdox.objs.nwobjs import IPv4Address
+from netdox import utils
+from netdox.objs import Network
 
 logging.getLogger('websockets').setLevel(logging.INFO)
 
@@ -95,8 +90,8 @@ async def reciever(id: int) -> dict:
 # Plugin stuff #
 ################
 
-from netdox.plugins.xenorchestra.vm import VirtualMachine
 from netdox.plugins.xenorchestra.fetch import runner
+from netdox.plugins.xenorchestra.vm import VirtualMachine
 from netdox.plugins.xenorchestra.write import genpub, genreport
 
 
@@ -129,3 +124,5 @@ __stages__ = {
     'nodes': nodes,
     'write': write
 }
+
+__nodes__ = [VirtualMachine]
