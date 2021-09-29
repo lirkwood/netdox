@@ -97,7 +97,7 @@ async def reciever(id: int) -> dict:
 
 from netdox.plugins.xenorchestra.vm import VirtualMachine
 from netdox.plugins.xenorchestra.fetch import runner
-from netdox.plugins.xenorchestra.write import genpub
+from netdox.plugins.xenorchestra.write import genpub, genreport
 
 
 def init() -> None:
@@ -121,6 +121,7 @@ def nodes(network: Network) -> None:
 
 def write(network: Network) -> None:
     genpub(network, pubdict)
+    genreport(network)
 
 
 
