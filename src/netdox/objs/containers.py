@@ -357,7 +357,7 @@ class Network:
         :type section: Tag
         """
         if etree.XMLSchema(file = APPDIR + 'src/psml.xsd').validate(
-            bytes(str(section), 'utf-8')
+            etree.fromstring(bytes(str(section), 'utf-8'))
         ):
             self.report.append(section)
 
