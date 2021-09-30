@@ -141,7 +141,7 @@ PUB = '''
 '''
 
 REPORT = '''
-<section id="xovms">
+<section id="xovms" title="XenOrchestra VMs">
     <fragment id="xovms_new">
         <heading level="2">VMs Started Today</heading>
     </fragment>
