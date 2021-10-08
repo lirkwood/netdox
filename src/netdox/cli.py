@@ -60,7 +60,7 @@ def init(args: argparse.Namespace):
         if os.path.exists(APPDIR+ 'src/config.bin'):
             os.remove(APPDIR+ 'src/config.bin')
 
-        if os.path.exists(APPDIR+ 'cfg'):
+        if os.path.lexists(APPDIR+ 'cfg'):
             os.remove(APPDIR+ 'cfg')
         os.symlink(os.path.abspath(args.path), APPDIR+ 'cfg', target_is_directory = True)
 
