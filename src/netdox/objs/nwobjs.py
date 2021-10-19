@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 import re
 from typing import TYPE_CHECKING, Iterable
-from uuid import uuid4
+from hashlib import sha256
 
 from bs4 import Tag
 
@@ -473,11 +473,15 @@ class PlaceholderNode(Node):
         :type ips: Iterable[str], optional
         """
 
-        self.uuid = str(uuid4())
+        hash = sha256(usedforsecurity = False)
+        hash.update(bytes(name, 'utf-8'))
+        hash.update(bytes(str(sorted(set(domains))), 'utf-8'))
+        hash.update(bytes(str(sorted(set(ips))), 'utf-8'))
+
         super().__init__(
             network = network, 
             name = name, 
-            identity = self.uuid, 
+            identity = hash.hexdigest(), 
             domains = domains, 
             ips = ips,
             labels = labels
