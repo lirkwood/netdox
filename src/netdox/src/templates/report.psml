@@ -8,6 +8,7 @@
   <section id="title">
     <fragment id="1">
       <heading level="1">Daily Report</heading>
+      <para>This document contains noteworthy events that occurred during the last refresh.</para>
     </fragment>
   </section>
   <toc/>
