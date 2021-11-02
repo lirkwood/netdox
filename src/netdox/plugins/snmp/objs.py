@@ -105,11 +105,10 @@ class SNMPExplorer:
         :rtype: int
         """
         if txiface in self.jobs:
-            job = self.jobs[txiface]
+            job = self.jobs.pop(txiface)
             if job.callback:
                 job.callback(txiface)
             self.dispatcher.jobFinished(job.id)
-            self.jobs.pop(txiface)
             return job.id
 
     def send(self, 

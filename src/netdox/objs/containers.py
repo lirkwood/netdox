@@ -17,6 +17,7 @@ class DomainSet(base.DNSObjectContainer):
     """
     Container for a set of Domains
     """
+    objects: dict[str, nwobjs.Domain]
     objectType: str = 'domains'
     objectClass: Type[nwobjs.Domain] = nwobjs.Domain
     _roles: dict
@@ -91,6 +92,7 @@ class IPv4AddressSet(base.DNSObjectContainer):
     """
     Container for a set of IPv4Address
     """
+    objects: dict[str, nwobjs.IPv4Address]
     objectType: str = 'ips'
     objectClass: Type[nwobjs.IPv4Address] = nwobjs.IPv4Address
     subnets: set
@@ -170,6 +172,7 @@ class NodeSet(base.NetworkObjectContainer):
     """
     Container for a set of Nodes
     """
+    objects: dict[str, nwobjs.Node]
     objectType: str = 'nodes'
     objectClass: Type[nwobjs.Node] = nwobjs.Node
 
