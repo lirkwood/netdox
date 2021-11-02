@@ -1,4 +1,3 @@
-from collections import defaultdict
 import logging
 from pysnmp.proto.api import v2c
 

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SNMPExplorer:
     """
-    Sends an SNMP message over UDP to the an address,
+    Sends an SNMP message over UDP to an address,
     and logs the responses.
     """
     rxiface: tuple[str, int]
