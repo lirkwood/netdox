@@ -1,6 +1,8 @@
 from collections import defaultdict
 import logging
 from pysnmp.proto.api import v2c
+
+from netdox.objs.containers import Network
 from .objs import SNMPExplorer
 from netdox.objs.nwobjs import PlaceholderNode
 from netdox.psml import PropertiesFragment, Property
@@ -21,15 +23,17 @@ def runner(network) -> None:
     explorer = SNMPExplorer()
 
     resps = explorer.broadcast(reqMsg)
-    for iface, varbinds in resps.values():
-        ip, port = iface
+    for iface, varbinds in resps.items():
+        ip, _ = iface
         node = PlaceholderNode(network,
             ip, ips = [ip]
         )
         node.psmlFooter.append(PropertiesFragment('snmp', [
             Property('oid', f'{oid} = {val}', 'SNMP OID')
-            for oid, val in varbinds.values()
+            for oid, val in varbinds.items() if val
         ]))
 
 if __name__ == '__main__':
-    runner(None)
+    net = Network()
+    runner(net)
+    print([ node.psmlFooter for node in net.nodes ])
