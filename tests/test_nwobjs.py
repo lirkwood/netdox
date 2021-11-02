@@ -316,7 +316,7 @@ class TestPlaceholderNode:
         node = nwobjs.PlaceholderNode(network, 'name')
         network.nodes.addRef(node, 'test_alias_1')
         network.nodes.objects['test_alias_2'] = node
-        assert node.aliases == {node.uuid, 'test_alias_1', 'test_alias_2'}
+        assert node.aliases == {node.identity, 'test_alias_1', 'test_alias_2'}
 
         for alias in node.aliases:
             del network.nodes[alias]
