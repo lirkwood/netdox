@@ -97,6 +97,15 @@ class TestProperty:
 
 class TestPropertiesFragment:
 
+    @fixture
+    def mock_PropertiesFragment(self):
+        return psml.PropertiesFragment('id', [
+                psml.Property('name1', 'value1'),
+                psml.Property('name1', 'value2'),
+                psml.Property('name2', 'value3'),
+                psml.Property('name3', 'value4')
+            ])
+
     def test_constructor(self):
         """
         Tests the PropertiesFragment class with no properties
@@ -119,37 +128,27 @@ class TestPropertiesFragment:
             +'</properties-fragment>'
         )
 
-    def test_to_dict(self):
+    def test_to_dict(self, mock_PropertiesFragment):
         assert (
-            psml.PropertiesFragment('id', [
-                psml.Property('name1', 'value1'),
-                psml.Property('name1', 'value2'),
-                psml.Property('name2', 'value3'),
-                psml.Property('name3', 'value4')
-            ]).to_dict() == {
+            {
                 'name1': [
                     'value1', 
                     'value2'
                 ],
                 'name2': 'value3',
                 'name3': 'value4'
-            }
+            } == mock_PropertiesFragment.to_dict()
         )
 
-    def test_from_dict(self):
-        assert str(psml.PropertiesFragment.from_dict('id', {
-                'name1': [
-                    'value1', 
-                    'value2'
-                ],
-                'name2': 'value3',
-                'name3': 'value4'
-            })) == str(psml.PropertiesFragment('id', [
-                psml.Property('name1', 'value1'),
-                psml.Property('name1', 'value2'),
-                psml.Property('name2', 'value3'),
-                psml.Property('name3', 'value4')
-            ]))
+    def test_from_dict(self, mock_PropertiesFragment):
+        assert mock_PropertiesFragment == psml.PropertiesFragment.from_dict(
+            mock_PropertiesFragment['id'],
+            mock_PropertiesFragment.to_dict())
+
+
+    def test_from_tag(self, mock_PropertiesFragment):
+        assert mock_PropertiesFragment == psml.PropertiesFragment.from_tag(
+            mock_PropertiesFragment)
 
 
 def test_populate_domain(domain: objs.Domain):
