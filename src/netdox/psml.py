@@ -22,18 +22,23 @@ class PropertiesFragment(Tag):
     """
     PSML PropertiesFragment element.
     """
-    id: str
-    """ID unique within the document"""
-    properties: Iterable[Property]
-    """Some properties to immediately append to this element."""
 
     def __init__(self, 
             id: str, 
             properties: Iterable[Property] = [],
             attrs: Mapping[str, Any] = {},
         ) -> None:
+        """
+        Default constructor.
 
-        self.id = id
+        :param id: ID unique within the document
+        :type id: str
+        :param properties: Some properties to immediately append to this element, defaults to []
+        :type properties: Iterable[Property], optional
+        :param attrs: A map of attributes, defaults to {}
+        :type attrs: Mapping[str, Any], optional
+        """
+
         super().__init__(
             name = 'properties-fragment', 
             is_xml = True, 
@@ -43,6 +48,14 @@ class PropertiesFragment(Tag):
 
         for property in properties:
             self.append(property)
+
+    @property
+    def id(self) -> str:
+        return self['id']
+
+    @property
+    def properties(self) -> Iterable[Property]:
+        return self('property')
 
     def to_dict(self) -> dict:
         """
