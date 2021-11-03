@@ -5,12 +5,12 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, Iterator
 from enum import Enum
+from typing import Iterable, Iterator
 
 from bs4 import BeautifulSoup, Tag
-
 from netdox import iptools, psml, utils
 from netdox.objs import base, nwobjs
 
@@ -362,3 +362,78 @@ class JSONEncoder(json.JSONEncoder):
             return obj.records
         else:
             return super().default(obj)
+
+
+#################
+# Config Helper #
+#################
+
+@dataclass
+class NetworkConfig:
+    """
+    Object for holding config values specific to the network.
+    """
+    EXCLUSION_FRAG_ID = 'exclude'
+    """ID of the exclusions fragment in PSML."""
+    LABEL_SECTION_ID = 'labels'
+    """ID of the labels section in PSML."""
+    exclusions: set[str]
+    """Set of FQDNs to exclude from the network."""
+    labels: dict[str, dict]
+    """A dictionary mapping document label names to a map of attributes."""
+
+    def __init__(self, exclusions: Iterable[str], labels: dict[str, dict]) -> None:
+        self.exclusions = set(exclusions)
+        self.labels = labels
+
+    @classmethod
+    def from_psml(cls, document: str) -> NetworkConfig:
+        """
+        Instantiates this class from a PSML document.
+
+        :param document: The document to build the config from.
+        :type document: str
+        :return: An instance of this class.
+        :rtype: NetworkConfig
+        """
+        soup = BeautifulSoup(document, 'xml')
+
+        exclusions = set()
+        exclusionFrag = soup.find('fragment', id = cls.EXCLUSION_FRAG_ID)
+        for para in exclusionFrag('para'):
+            exclusions.add(str(para.string))
+
+        labels = {}
+        labelSection = soup.find('section', id = cls.LABEL_SECTION_ID)
+        for label in labelSection('properties-fragment'):
+            attrs = psml.PropertiesFragment.from_tag(label).to_dict()
+            labelName = attrs.pop('label')
+            labels[labelName] = attrs
+
+        return cls(exclusions, labels)
+
+
+    def to_psml(self) -> str:
+        """
+        Serialises this object to PSML.
+
+        :return: This object as a PSML document.
+        :rtype: str
+        """
+        with open(utils.APPDIR+ 'src/templates/config.psml', 'r') as stream:
+            soup = BeautifulSoup(stream.read(), 'xml')
+
+        exclusionFrag = soup.find('fragment', id = self.__class__.EXCLUSION_FRAG_ID)
+        for domain in self.exclusions:
+            para = soup.new_tag('para')
+            para.string = domain
+            exclusionFrag.append(para)
+
+        labelSection = soup.find('section', id = self.__class__.LABEL_SECTION_ID)
+        for label, properties in self.labels.items():
+            labelSection.append(psml.PropertiesFragment.from_dict(
+                id = f'label_{label}', 
+                constructor = properties | {'label': label}
+            ))
+
+        return str(soup)
