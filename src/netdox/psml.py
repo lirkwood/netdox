@@ -3,12 +3,14 @@ Provides some useful functions and constants for generating and manipulating PSM
 """
 
 from __future__ import annotations
+from abc import ABC, abstractmethod
 
 import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, Union
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 if TYPE_CHECKING:
     from objs.base import NetworkObject
@@ -95,6 +97,14 @@ class PropertiesFragment(Tag):
                     'Could not instantiate a Property from a value of: '+ str(value))
         return pfrag
 
+    @classmethod
+    def from_tag(cls, fragment: Tag) -> PropertiesFragment:
+        properties = []
+        for property in fragment('property'):
+            properties.append(Property.from_tag(property))
+        return cls(fragment['id'], properties)
+
+
 class Property(Tag):
     """
     PSML Property element.
@@ -132,8 +142,28 @@ class Property(Tag):
             self.attrs['datatype'] = value.name
             self.append(value)
 
+    @classmethod
+    def from_tag(cls, property: Tag):
+        if property.has_attr('value'):
+            return cls(
+                property['name'], 
+                property['value'], 
+                property['title'], 
+                property.attrs
+            )
+        
+        elif property.children:
+            return cls(
+                property['name'], 
+                PROPERTY_DATATYPES[property['datatype']].from_tag(
+                    property.findChild()
+                ),
+                property['title'],
+                property.attrs
+            )
 
-class PSMLLink(Tag):
+
+class PSMLLink(Tag, ABC):
     """
     Represents a link tag in PSML.
     These elements will always have a separate closing tag due to the string content logic.
@@ -159,6 +189,11 @@ class PSMLLink(Tag):
             attrs = attrs
         )
         self.string = string if string is not None else value
+
+    @classmethod
+    @abstractmethod
+    def from_tag(cls, tag: Tag) -> PSMLLink:
+        ...
 
 class XRef(PSMLLink):
     """
@@ -207,6 +242,16 @@ class XRef(PSMLLink):
         else:
             raise AttributeError("One of 'uriid', 'docid', or 'href' must be set.")
 
+    @classmethod
+    def from_tag(cls, tag: Tag) -> XRef:
+        return cls(
+            tag['uriid'] if tag.hasattr('uriid') else None,
+            tag['docid'] if tag.hasattr('docid') else None,
+            tag['href'] if tag.hasattr('href') else None,
+            attrs = tag.attrs, 
+            string = tag.string
+        )
+
 class Link(PSMLLink):
     """
     Represents a Link element.
@@ -234,6 +279,17 @@ class Link(PSMLLink):
             string = string
         )
 
+    @classmethod
+    def from_tag(cls, tag: Tag) -> Link:
+        return cls(
+            tag['url'],
+            attrs = tag.attrs,
+            string = tag.string
+        )
+
+PROPERTY_DATATYPES: dict[str, PSMLLink] = {
+    'xref': XRef, 'link': Link
+}
 
 #############
 # Functions #
