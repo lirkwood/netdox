@@ -18,6 +18,7 @@ from bs4.element import Tag
 import netdox.plugins
 from netdox import pageseeder, utils
 from netdox.objs.containers import Network
+from netdox.objs.config import NetworkConfig, update_template
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +28,17 @@ class NetworkManager:
     """
     network: Network
     """The network object this class should manage."""
-    config: dict
-    """Dictionary of config values for communicating with PageSeeder etc."""
+    namespace: ModuleType
+    """The namespace package to load plugins from."""
     pluginmap: dict[str, set[ModuleType]]
-    """Dictionary of stages and their plugins"""
+    """Dictionary of stages and their plugins."""
+    enabled: list[str]
+    """List of plugins enabled by the user."""
     stale: dict[date, set[str]]
     """Dictionary mapping stale URIs to their expiry date."""
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: ModuleType = None) -> None:
 
-        self.network = Network(domainroles = utils.roles())
-        self.config = utils.config()
-        
         self.pluginmap = {
             'any': set(),
             'dns': set(),
@@ -60,11 +60,14 @@ class NetworkManager:
             logger.warning('Unable to load plugin configuration file. No plugins will run.')
             self.enabled = []
         
-        self.loadPlugins(netdox.plugins)
+        self.namespace = namespace or netdox.plugins
+        self.loadPlugins()
 
         for plugin in self.enabled:
-            if 'netdox.plugins.'+ plugin not in [module.__name__ for module in self.plugins]:
-                logger.warning(f'Plugin \'{plugin}\' is enabled but was not found.')
+            if '.'.join((self.namespace.__name__, plugin)) not in [module.__name__ for module in self.plugins]:
+                logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
+
+        self.network = Network(config = self.validConfig())
 
     ## Plugin methods
 
@@ -84,14 +87,14 @@ class NetworkManager:
         """
         self.plugins.add(plugin)
 
-        if hasattr(plugin, 'node_types'):
+        if hasattr(plugin, '__nodes__'):
             for node_type in plugin.__nodes__:
                 self.nodemap[node_type] = plugin
 
         for stage in plugin.__stages__:
             self.pluginmap[stage].add(plugin)
 
-    def loadPlugins(self, namespace: ModuleType) -> None:
+    def loadPlugins(self) -> None:
         """
         Scans a namespace for valid python modules and imports them.
 
@@ -99,12 +102,12 @@ class NetworkManager:
         :type dir: str
         :raises ImportError: If an Exception is raised during the call to ``importlib.import_module``
         """
-        for plugin in pkgutil.iter_modules(namespace.__path__):
+        for plugin in pkgutil.iter_modules(self.namespace.__path__):
             if plugin.name in self.enabled:
                 try:
-                    self.add(importlib.import_module(namespace.__name__ +'.'+ plugin.name))
+                    self.add(importlib.import_module(self.namespace.__name__ +'.'+ plugin.name))
                 except Exception:
-                    raise ImportError(f'[ERROR][nwman] Failed to import {plugin}: \n{format_exc()}')
+                    raise ImportError(f'Failed to import {plugin}: \n{format_exc()}')
 
     def initPlugins(self) -> None:
         """
@@ -138,6 +141,51 @@ class NetworkManager:
         logger.info(f'Starting stage: {stage}')
         for plugin in self.pluginmap[stage]:
             self.runPlugin(plugin, stage)
+
+    @property
+    def pluginAttrs(self) -> set[str]:
+        """
+        Returns a set of label-configurable attributes provided by plugins.
+
+        :return: A set of strings to be used as property names in the config.
+        :rtype: set[str]
+        """
+        return {
+            attr for plugin in {
+                plugin for plugin in self.plugins if hasattr(plugin, '__attrs__')
+            } for attr in plugin.__attrs__
+        }
+
+    def validConfig(self) -> NetworkConfig:
+        """
+        Fetches the config from PageSeeder, but performs some validation
+        before returning it.
+
+        If the config has incorrect attributes specified for a label,
+        the template will be updated, and a valid config created.
+        This config will be serialised for the upload.
+        """
+        #TODO factor out update_template + serialise into method
+        try:
+            cfg = NetworkConfig.from_pageseeder()
+
+        except Exception as exc:
+            logger.warning('Retrieving config from PageSeeder failed.')
+            logger.exception(exc)
+            cfg = NetworkConfig()
+            update_template(self.pluginAttrs)
+            with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
+                stream.write(cfg.to_psml())
+            return cfg
+
+        else:
+            if self.pluginAttrs != cfg.attrs:
+                logger.warning('Updating config template on PageSeeder.')
+                update_template(self.pluginAttrs)
+                cfg.update_attrs(self.pluginAttrs)
+                with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
+                    stream.write(cfg.to_psml())
+            return cfg
 
     ## Serialisation
 
