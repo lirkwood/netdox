@@ -144,11 +144,12 @@ class Property(Tag):
 
     @classmethod
     def from_tag(cls, property: Tag):
+        title = property['title'] if 'title' in property.attrs else None
         if property.has_attr('value'):
             return cls(
                 property['name'], 
                 property['value'], 
-                property['title'], 
+                title, 
                 property.attrs
             )
         
@@ -158,7 +159,7 @@ class Property(Tag):
                 PROPERTY_DATATYPES[property['datatype']].from_tag(
                     property.findChild()
                 ),
-                property['title'],
+                title,
                 property.attrs
             )
 
@@ -426,9 +427,6 @@ DOMAIN_TEMPLATE = '''
             <properties-fragment id="header">
                 <property name="name"       title="Name"        value="#!name" />
                 <property name="zone"       title="DNS Zone"    value="#!zone" />
-                <property name="role"       title="DNS Role"    datatype="xref" >
-                    <xref frag="default" uriid="" />
-                </property>
             </properties-fragment>
 
         </section>
@@ -504,6 +502,7 @@ NODE_TEMPLATE = '''
 
             <properties-fragment id="header">
                 <property name="name" title="Name" value="#!name" />
+                <property name="identity" title="Identity" value="#!identity" />
                 <property name="type" title="Node Type" value="#!type" />
                 <property name="location" title="Location" value="#!location" />
             </properties-fragment>
