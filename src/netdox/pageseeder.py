@@ -243,8 +243,21 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
     return stale
 
 ##########################
-# PageSeeder API Actions #
+# PageSeeder API Servlet #
 ##########################
+
+@auth
+def get_default_docid(docid, params={}, header={}):
+    """
+    Returns the content of a document, from it's docid.
+    """
+    url = f'https://{utils.config()["pageseeder"]["host"]}/ps/docid/{docid}'
+    return requests.get(url, headers=header, params=params)
+
+
+###########################
+# PageSeeder API Services #
+###########################
 
 @auth
 def get_uri(locator, params={}, forurl=False, host='', group='', header={}):
@@ -305,6 +318,22 @@ def export(params={}, directory = False, host='', member='', header={}):
     service = f'/members/~{member}/export' if directory else f'/members/~{member}/uris/{params["uri"]}/export'
     r = requests.get(host+service, headers=header, params=params)
     return r.text
+
+
+@auth
+def member_resource(zip, host='', group='', header='') -> requests.Response:
+    """
+    Returns a streamed response object containing a ZIP file found on PageSeeder.
+    """
+    service = f'/member-resource/~{group}/{zip}'
+    return requests.get(host+service, headers=header, stream=True)
+
+
+@auth
+def put_group_resource(location: str, content: str, overwrite: bool, host='', group='', header=''):
+    service = f'/groups/{"-".join(group.split("-")[:-1])}/resources'
+    params = {'location': location, 'overwrite': str(overwrite).lower()}
+    return requests.put(host+service, data=content, headers=header, params=params)
 
 
 @auth
