@@ -10,6 +10,7 @@ import pickle
 
 from netdox import iptools
 from netdox.objs import base, helpers, nwobjs
+from netdox.objs.config import NetworkConfig
 from netdox.utils import DEFAULT_DOMAIN_ROLES, APPDIR, Cryptor
 
 
@@ -46,46 +47,6 @@ class DomainSet(base.DNSObjectContainer):
         :rtype: dict
         """
         return self.objects
-    
-    @property
-    def roles(self) -> dict[str, list[str]]:
-        """
-        Returns dictionary of roles and their domains (except the *exclusions* role)
-
-        :return: A dictionary of lists of FQDNs
-        :rtype: dict
-        """
-        try:
-            return {k: v['domains'] for k, v in self._roles.items() if k != 'exclusions'}
-        except KeyError:
-            raise AttributeError(f'One or more domain roles are missing the property \'domains\'.')
-
-    @roles.setter
-    def roles(self, value: dict) -> None:
-        """
-        Sets the _roles attribute
-
-        :param value: The new value for the _role attribute
-        :type value: dict
-        """
-        self._roles = value
-
-    @roles.deleter
-    def roles(self) -> None:
-        """
-        Deletes the _roles attribute
-        """
-        del self._roles
-
-    @property
-    def exclusions(self) -> list[str]:
-        """
-        Returns a list of excluded domains
-
-        :return: A list of FQDNs
-        :rtype: list[str]
-        """
-        return self._roles['exclusions']\
 
 
 class IPv4AddressSet(base.DNSObjectContainer):
@@ -277,8 +238,8 @@ class Network:
     """A NetworkObjectContainer for the IPv4Addresses in the network."""
     nodes: NodeSet
     """A NetworkObjectContainer for the Nodes in the network."""
-    config: dict
-    """The currently loaded config."""
+    config: NetworkConfig
+    """The network specific config."""
     cache: set
     """A set of cached names. Used when resolving long record chains."""
     report: list[Tag]
@@ -288,7 +249,7 @@ class Network:
             domains: DomainSet = None, 
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
-            domainroles: dict = None
+            config: NetworkConfig = None
         ) -> None:
         """
         Instantiate a Network object.
@@ -305,14 +266,25 @@ class Network:
         :type roles: dict, optional
         """
 
-        self.domains = domains or DomainSet(network = self, roles = domainroles or DEFAULT_DOMAIN_ROLES)
+        self.domains = domains or DomainSet(network = self)
         self.ips = ips or IPv4AddressSet(network = self)
         self.nodes = nodes or NodeSet(network = self)
+
+        self.config = config or NetworkConfig.from_pageseeder()
         
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
         self.cache = set()
         self.report = []
+
+    ## Config
+
+    @property
+    def exclusions(self) -> set[str]:
+        """
+        Returns a set of identities to be excluded from the Network.
+        """
+        return self.config.exclusions
 
     ## resolving refs
 
