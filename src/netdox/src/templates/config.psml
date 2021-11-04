@@ -1,27 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?>
-<document level="portable">
-    <documentinfo>
-        <uri docid="_nd_config" title="DNS Config">
-            <displaytitle>DNS Config</displaytitle>
-        </uri>
-    </documentinfo>
-    <metadata/>
-    <section id="title">
-        <fragment id="title">
-            <heading level="1">DNS Config</heading>
-            <para>In this document you may configure the DNS roles that Netdox recognises.</para>
+<document type="netdox" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+
+    <t:fragment type="label" title="New label">
+      <properties-fragment>
+        <property name="label" title="Label Name" value="" />
+      </properties-fragment>
+    </t:fragment>
+
+    <section id="title" fragmenttype="title">
+        <fragment id="title" type="title">
+            <heading level="1">Config</heading>
+            <para>In this document you may configure attributes associated with a document label.
+In order to apply those attributes to a document, simply label it with the specified label.</para>
         </fragment>
     </section>
-    <section id="labels">
-        <fragment id="labels_title">
+  
+    <section id="labels" fragmenttype="label">
+        <fragment id="labels_title" type="label">
             <heading level="2">Labels</heading>
             <preformat>Each label may have an arbitrary map associated with it, which will be inherited by NetworkObjects bearing the label.</preformat>
         </fragment>
     </section>
-    <section id="exclusions">
-        <fragment id="exclude">
+  
+    <section id="exclusions" fragmenttype="exclusions">
+        <fragment id="exclude" type="exclusions">
             <heading level="2">Exclusions</heading>
             <preformat>These domains will be excluded from the network entirely. Netdox will behave as if records involving these domains do not exist.</preformat>
         </fragment>
     </section>
+
 </document>
