@@ -132,9 +132,6 @@ class Domain(base.DNSObject):
             self.network.domains[self.name] = self.merge(self.network.domains[self.name])
         else:
             self.network.domains[self.name] = self
-        for role, domains in self.network.domains.roles.items():
-            if self.name in domains:
-                self.role = role
         return self
 
     def merge(self, domain: Domain) -> Domain:

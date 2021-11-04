@@ -73,8 +73,9 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
         self.psmlFooter = []
         
-        self.labels = set(labels) if labels else set()
+        self.labels = self.network.config.getLabels(self.identity)
         self.labels.add('show-reversexrefs')
+        if labels: self.labels |= labels
 
     ## properties
 
