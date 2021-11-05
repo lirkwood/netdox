@@ -76,7 +76,7 @@ def add_A(network: Network, record: dict) -> None:
     fqdn = record['name'].lower()
     ip = record['content']
 
-    if fqdn not in network.exclusions:
+    if fqdn not in network.config.exclusions:
         network.domains[fqdn].link(ip, 'Cloudflare')	
 
 @utils.handle
@@ -93,7 +93,7 @@ def add_CNAME(network: Network, record: dict) -> None:
     root = record['zone_name']
     dest = record['content']
 
-    if fqdn not in network.exclusions:
+    if fqdn not in network.config.exclusions:
         network.domains[fqdn].link(dest, 'Cloudflare')
 
 @utils.handle

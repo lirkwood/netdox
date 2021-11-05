@@ -20,7 +20,7 @@ def fetchDNS(network: Network) -> None:
         for record in records:
             details = record.adapted_properties
             fqdn, zoneName = parseDN(details['DistinguishedName'])
-            if fqdn is not None and fqdn not in network.exclusions:
+            if fqdn is not None and fqdn not in network.config.exclusions:
                 if fqdn.endswith('.in-addr.arpa'):
                     ip = '.'.join(fqdn.replace('.in-addr.arpa','').split('.')[::-1])
                     dnsobj = network.ips[ip]
