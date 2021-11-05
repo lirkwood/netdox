@@ -18,6 +18,9 @@ from pyppeteer.errors import TimeoutError
 logger = logging.getLogger(__name__)
 logging.getLogger('pyppeteer').setLevel(logging.WARNING)
 
+SCREENSHOT_ATTR = 'screenshot'
+__attrs__ = {SCREENSHOT_ATTR}
+
 
 class ScreenshotManager:
     workdir: str
@@ -32,8 +35,6 @@ class ScreenshotManager:
     """URI map of the screenshots on PageSeeder"""
     existingScreens: list[str]
     """List of filenames of screenshots on PageSeeder."""
-    roles: list[str]
-    """List of roles that have the ``screenshot`` property set."""
 
     def __init__(self, domains: Iterable[Domain], workdir: str, basedir: str, outdir: str, placeholder: str) -> None:
         self.stats = {
@@ -60,18 +61,13 @@ class ScreenshotManager:
                 self.outdir +'/screenshots/'+ os.path.basename(self.placeholder)
             )
 
-        self.roles = [role \
-            for role, config in utils.roles().items() if (
-                'screenshot' in config and config['screenshot']
-        )]
-
-        self.domains = [domain \
-            for domain in domains if domain.role in self.roles
+        self.domains = [
+            domain for domain in domains if domain.getAttr(SCREENSHOT_ATTR)
         ]
 
     def start(self) -> None:
         """
-        Screenshots all domains with the ``screenshot`` property set in the domain's role, 
+        Screenshots all domains with the ``screenshot`` attribute set, 
         and then diffs them to against a base image (previous screenshot).
 
         If screenshot fails, and there is not a screenshot on PageSeeder already, a placeholder is generated.
