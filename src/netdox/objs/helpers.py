@@ -409,7 +409,17 @@ class Report:
 ################
 
 class LabelDict(defaultdict):
-    """Container for the labels applied to documents on PageSeeder."""
+    """
+    Container for the labels applied to documents on PageSeeder.
+    Behaves like a defaultdict with a default_factory of *set*.
+    """
+    default_factory = set
+
+    def __init__(self, *args, **kwargs) -> None:
+        """
+        Dictionary constructor.
+        """
+        super().__init__(set, *args, **kwargs)
 
     @classmethod
     def from_pageseeder(cls) -> LabelDict:
@@ -433,7 +443,7 @@ class LabelDict(defaultdict):
             logger.error('Failed to retrieve URI labels from PageSeeder.')
             all_uris = {'uris':[]}
         finally:
-            return cls(set, { 
+            return cls({ 
                 uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
                 for uri in all_uris['uris'] if 'docid' in uri
             })
