@@ -116,7 +116,7 @@ def genreport(network: Network) -> None:
                     'uriid': psvms[oldvm]
             }))
 
-        network.addReport(report)
+        network.report.addSection(str(report))
 
     else:
         logger.debug('No VMs on local or PageSeeder')
