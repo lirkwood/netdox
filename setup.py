@@ -20,9 +20,9 @@ setup(
         "": ["README.md"],
         "netdox": [
             "src/psml.xsd",
+            "src/defaults/*",
             "src/templates/*",
             "src/templates/*/*",
-            "src/defaults/*/*"
         ],
         "netdox.plugins.screenshots": [
             "placeholder.jpg"
