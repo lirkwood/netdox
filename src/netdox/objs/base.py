@@ -52,6 +52,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A list of fragment tags to add to the *footer* section of this object's output PSML."""
     labels: set[str]
     """A set of labels to apply to this object's output document."""
+    DEFAULT_LABELS = ['show-reversexrefs', 'netdox-default']
 
     ## dunder methods
 
@@ -73,7 +74,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.psmlFooter = []
         
         self.labels = self.network.labels[self.docid]
-        self.labels.add('show-reversexrefs')
+        self.labels.update(self.DEFAULT_LABELS)
         if labels: self.labels |= set(labels)
 
     ## properties
