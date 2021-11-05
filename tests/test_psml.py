@@ -1,4 +1,4 @@
-from netdox import objs, psml
+from netdox import psml, nwobjs
 from test_nwobjs import domain, ipv4, network, node
 from pytest import raises, fixture
 
@@ -151,7 +151,7 @@ class TestPropertiesFragment:
             mock_PropertiesFragment)
 
 
-def test_populate_domain(domain: objs.Domain):
+def test_populate_domain(domain: nwobjs.Domain):
     """
     Tests the populate function output for a Domain.
     """
@@ -159,7 +159,7 @@ def test_populate_domain(domain: objs.Domain):
     assert document.find('property', attrs={'name': 'name'})['value'] == domain.name
     assert document.find('property', attrs={'name': 'zone'})['value'] == domain.zone
 
-def test_populate_ipv4(ipv4: objs.IPv4Address):
+def test_populate_ipv4(ipv4: nwobjs.IPv4Address):
     """
     Tests the populate function output for an IPv4Address.
     """
@@ -167,7 +167,7 @@ def test_populate_ipv4(ipv4: objs.IPv4Address):
     assert document.find('property', attrs={'name': 'ipv4'})['value'] == ipv4.name
     assert document.find('property', attrs={'name': 'subnet'})['value'] == ipv4.subnet
 
-def test_populate_node(node: objs.DefaultNode):
+def test_populate_node(node: nwobjs.DefaultNode):
     """
     Tests the populate function output for a Node.
     """
