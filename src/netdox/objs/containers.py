@@ -4,9 +4,6 @@ This module contains any container classes.
 from __future__ import annotations
 
 from typing import Iterable, Iterator, Type, Union
-from bs4 import BeautifulSoup
-from bs4.element import Tag
-from lxml import etree
 import pickle
 
 from netdox import iptools
@@ -229,10 +226,8 @@ class NodeSet(base.NetworkObjectContainer):
 
 class Network:
     """
-    A container for NetworkObject containers.
-    Also 
-
-    It also provides a convenience method for resolving record chains between DNS objects.
+    A container for NetworkObjectContainers.
+    Also contains helper classes and other data that pertains to NetworkObjects.
     """
     domains: DomainSet
     """A NetworkObjectContainer for the Domains in the network."""
@@ -242,6 +237,8 @@ class Network:
     """A NetworkObjectContainer for the Nodes in the network."""
     config: NetworkConfig
     """The network specific config."""
+    labels: dict[str, set[str]]
+    """A dictionary mapping document docids to their applied labels."""
     locator: helpers.Locator
     """A helper class to provide location data to Nodes."""
     writer: helpers.PSMLWriter
@@ -255,7 +252,8 @@ class Network:
             domains: DomainSet = None, 
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
-            config: NetworkConfig = None
+            config: NetworkConfig = None,
+            labels: helpers.LabelManager = None
         ) -> None:
         """
         Instantiate a Network object.
@@ -275,6 +273,7 @@ class Network:
         self.nodes = nodes or NodeSet(network = self)
 
         self.config = config or NetworkConfig.from_pageseeder()
+        self.labels = labels or helpers.LabelManager.from_pageseeder()
         
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
