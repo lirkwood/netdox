@@ -4,8 +4,8 @@ Module containing functions to append certificate information to the footer of N
 from ssl import get_server_certificate
 
 from cryptography import x509
-from netdox.objs import Network
-from netdox.objs.nwobjs import Domain
+from netdox import Network
+from netdox.nwobjs import Domain
 from netdox.psml import PropertiesFragment, Property
 
 

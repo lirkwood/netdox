@@ -7,7 +7,7 @@ import logging
 from pyppeteer import launch
 
 from netdox import utils
-from netdox.objs import IPv4Address, Network
+from netdox import IPv4Address, Network
 
 logger = logging.getLogger(__name__)
 logging.getLogger('pyppeteer').setLevel(logging.WARNING)

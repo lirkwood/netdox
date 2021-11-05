@@ -1,7 +1,7 @@
 """
 Plugin for adding certificate information to NetworkObjects.
 """
-from netdox.objs.containers import Network
+from netdox.containers import Network
 from netdox.plugins.certificates.footers import analyze
 import logging
 

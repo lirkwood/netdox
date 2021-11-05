@@ -17,8 +17,8 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer, Tag
 
 from netdox import iptools, pageseeder, utils
-from netdox.objs import Network
-from netdox.objs.nwobjs import Node
+from netdox import Network
+from netdox.nwobjs import Node
 
 logger = logging.getLogger(__name__)
 

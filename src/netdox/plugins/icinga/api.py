@@ -13,7 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from netdox import utils
-from netdox.objs import Domain, Network
+from netdox import Domain, Network
 from netdox.plugins.icinga.ssh import reload, rm_host, set_host
 
 logger = logging.getLogger(__name__)

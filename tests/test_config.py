@@ -1,4 +1,4 @@
-from netdox.objs import config
+from netdox import config
 import pytest
 
 class TestNetworkConfig:

@@ -7,7 +7,7 @@ import boto3
 from bs4.element import Tag
 
 from netdox import psml, utils
-from netdox.objs import DefaultNode, IPv4Address, Network
+from netdox import DefaultNode, IPv4Address, Network
 
 logger = logging.getLogger(__name__)
 logging.getLogger('botocore').setLevel(logging.WARNING)

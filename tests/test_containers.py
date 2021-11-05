@@ -1,8 +1,8 @@
 from random import choices
 from string import ascii_letters
 from pytest import raises
-from netdox.objs import Network, IPv4Address
-from netdox.objs.nwobjs import Node
+from netdox import Network, IPv4Address
+from netdox.nwobjs import Node
 from netdox.iptools import subn_iter
 from test_nwobjs import network, node
 

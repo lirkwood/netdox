@@ -7,8 +7,8 @@ from typing import DefaultDict, Iterable, Iterator, Type, Union
 import pickle
 
 from netdox import iptools
-from netdox.objs import base, helpers, nwobjs
-from netdox.objs.config import NetworkConfig
+from netdox import base, helpers, nwobjs
+from netdox.config import NetworkConfig
 from netdox.utils import APPDIR, Cryptor
 
 

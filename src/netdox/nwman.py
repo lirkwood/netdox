@@ -17,9 +17,9 @@ from bs4.element import Tag
 
 import netdox.plugins
 from netdox import pageseeder, utils
-from netdox.objs.containers import Network
-from netdox.objs.config import NetworkConfig, update_template
-from netdox.objs.helpers import LabelDict
+from netdox.containers import Network
+from netdox.config import NetworkConfig, update_template
+from netdox.helpers import LabelDict
 
 logger = logging.getLogger(__name__)
 

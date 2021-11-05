@@ -11,7 +11,7 @@ import os
 import shutil
 
 from netdox import pageseeder, utils
-from netdox.objs import NetworkManager
+from netdox import NetworkManager
 
 logger = logging.getLogger(__name__)
 

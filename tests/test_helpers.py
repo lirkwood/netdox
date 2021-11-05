@@ -1,7 +1,7 @@
 import pytest
 from conftest import LOCATIONS, hide_file
 from netdox import utils
-from netdox.objs import helpers, nwobjs
+from netdox import helpers, nwobjs
 from test_nwobjs import network, domain, ipv4, node
 from lxml import etree
 

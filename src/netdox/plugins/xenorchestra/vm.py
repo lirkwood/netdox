@@ -2,7 +2,7 @@ from typing import Iterable
 
 from bs4 import Tag
 from netdox import psml
-from netdox.objs import DefaultNode, IPv4Address, Network
+from netdox import DefaultNode, IPv4Address, Network
 
 
 class VirtualMachine(DefaultNode):

@@ -1,9 +1,9 @@
 import logging
 from pysnmp.proto.api import v2c
 
-from netdox.objs.containers import Network
+from netdox.containers import Network
 from .objs import SNMPExplorer
-from netdox.objs.nwobjs import PlaceholderNode
+from netdox.nwobjs import PlaceholderNode
 from netdox.psml import PropertiesFragment, Property
 
 logger = logging.getLogger(__name__)

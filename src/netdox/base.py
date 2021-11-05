@@ -11,8 +11,8 @@ from bs4 import Tag
 
 
 if TYPE_CHECKING:
-    from netdox.objs import Network, helpers
-    from netdox.objs.nwobjs import Node
+    from netdox import Network, helpers
+    from netdox.nwobjs import Node
 
 ###########
 # Objects #

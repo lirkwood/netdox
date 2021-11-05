@@ -12,7 +12,7 @@ from typing import Generator, Tuple
 import requests
 
 from netdox import iptools, utils
-from netdox.objs import Domain, IPv4Address, Network
+from netdox import Domain, IPv4Address, Network
 from netdox.plugins.dnsmadeeasy import genheader
 
 

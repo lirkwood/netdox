@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from bs4 import BeautifulSoup
-from netdox.objs import Network
+from netdox import Network
 from netdox.utils import APPDIR
 from netdox.plugins.k8s.app import App
 import logging

@@ -10,7 +10,7 @@ from typing import Iterable, Tuple
 import diffimg
 from bs4 import BeautifulSoup
 from netdox import pageseeder, utils
-from netdox.objs import Domain, Network
+from netdox import Domain, Network
 from pyppeteer import launch
 from pyppeteer.browser import Page
 from pyppeteer.errors import TimeoutError

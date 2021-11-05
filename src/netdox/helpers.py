@@ -14,7 +14,7 @@ from collections import defaultdict
 
 from bs4 import BeautifulSoup, Tag
 from netdox import iptools, pageseeder, psml, utils
-from netdox.objs import base, nwobjs
+from netdox import base, nwobjs
 
 logger = logging.getLogger(__name__)
 

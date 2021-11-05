@@ -11,10 +11,10 @@ from hashlib import sha256
 from bs4 import Tag
 
 from netdox import iptools, utils
-from netdox.objs import base, helpers
+from netdox import base, helpers
 
 if TYPE_CHECKING:
-    from netdox.objs import Network
+    from netdox import Network
 
 ###########
 # DNSObjs #

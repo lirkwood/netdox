@@ -1,6 +1,6 @@
 from pytest import fixture
 from netdox.plugins.certificates import analyze
-from netdox.objs import Domain, Network
+from netdox import Domain, Network
 from netdox.psml import PropertiesFragment
 from test_nwobjs import network
 

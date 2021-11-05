@@ -6,8 +6,8 @@ from datetime import date, timedelta
 from bs4 import BeautifulSoup, Tag
 from lxml import etree
 from netdox import pageseeder
-from netdox.objs import Network
-from netdox.objs.nwobjs import Node
+from netdox import Network
+from netdox.nwobjs import Node
 from netdox.plugins.xenorchestra.vm import VirtualMachine
 from netdox.utils import APPDIR
 

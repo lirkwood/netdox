@@ -2,8 +2,8 @@ from typing import Iterable
 
 from bs4 import Tag
 from netdox import psml, utils
-from netdox.objs import Domain, Network
-from netdox.objs.nwobjs import Node
+from netdox import Domain, Network
+from netdox.nwobjs import Node
 
 
 class App(Node):

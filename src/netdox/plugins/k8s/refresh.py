@@ -15,8 +15,8 @@ from collections import defaultdict
 from kubernetes import client
 
 from netdox import utils
-from netdox.objs import Network
-from netdox.objs.nwobjs import PlaceholderNode
+from netdox import Network
+from netdox.nwobjs import PlaceholderNode
 from netdox.plugins.k8s import initContext
 from netdox.plugins.k8s.app import App
 

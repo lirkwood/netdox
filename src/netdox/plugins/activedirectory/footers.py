@@ -5,8 +5,8 @@ from pypsrp.powershell import PowerShell, RunspacePool
 from pypsrp.wsman import WSMan
 
 from netdox import utils
-from netdox.objs import Domain, Network
-from netdox.objs.nwobjs import PlaceholderNode
+from netdox import Domain, Network
+from netdox.nwobjs import PlaceholderNode
 
 logger = logging.getLogger(__name__)
 

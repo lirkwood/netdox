@@ -13,8 +13,8 @@ from bs4.element import Tag
 from kubernetes import config
 from kubernetes.client import ApiClient
 from netdox import psml, utils
-from netdox.objs import Domain, Network
-from netdox.objs.nwobjs import Node
+from netdox import Domain, Network
+from netdox.nwobjs import Node
 
 logging.getLogger('kubernetes').setLevel(logging.INFO)
 

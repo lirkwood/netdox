@@ -11,7 +11,7 @@ from functools import wraps
 
 import websockets
 from netdox import utils
-from netdox.objs import Network
+from netdox import Network
 
 logging.getLogger('websockets').setLevel(logging.INFO)
 
