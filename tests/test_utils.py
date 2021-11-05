@@ -7,7 +7,7 @@ from sys import getdefaultencoding
 from bs4 import BeautifulSoup
 
 import pytest
-from conftest import CONFIG, ROLES, hide_file
+from conftest import CONFIG, hide_file
 from netdox import utils, psml
 
 
@@ -81,15 +81,6 @@ def test_config(hide_file):
     with pytest.raises(FileNotFoundError):
         utils.config()
 
-def test_roles(hide_file):
-    """
-    Tests the output of ``utils.roles()``.
-    """
-    assert utils.roles() == ROLES
-    hide_file(utils.APPDIR+ 'cfg/roles.json')
-    utils.roles.cache_clear()
-    assert utils.roles() == utils.DEFAULT_DOMAIN_ROLES
-
 def test_handle():
     """
     Tests the ``handle`` decorator.
@@ -160,59 +151,3 @@ def test_fileFetchRecursive(mock_dir):
         'mockdir/mock_subdir_1/file.ext2',
         'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
     ]}
-
-
-@pytest.fixture
-def register_role(hide_file):
-    """
-    Returns a function that adds a role to the config and returns the generated PSML.
-    """
-    if not os.path.exists(utils.APPDIR+ 'out/config'):
-        os.makedirs(utils.APPDIR+ 'out/config')
-
-    utils.roles.cache_clear()
-    roles = utils.roles()
-    hide_file(utils.APPDIR + 'cfg/roles.json')
-
-    def register(name: str, config: dict) -> BeautifulSoup:
-        roles[name] = config
-        with open(utils.APPDIR+ 'cfg/roles.json', 'w') as stream:
-            stream.write(json.dumps(roles))
-        utils.roles.cache_clear()
-        utils.roleToPSML(name)
-        with open(utils.APPDIR+ f'out/config/{name}.psml', 'r') as stream:
-            doc = BeautifulSoup(stream.read(), 'xml')
-        os.remove(utils.APPDIR+ f'out/config/{name}.psml')
-        os.remove(utils.APPDIR+ 'cfg/roles.json')
-        return doc
-
-    yield register
-
-def test_roleToPSML(register_role):
-    """
-    Tests the ``roleToPSML`` function.
-    """
-    rolename = 'fake_role_name'
-    for config in (
-        {'property 1': 'value 1',
-         'property 2': 'value 2',
-         'property 3': 'value 3'},
-         
-        {'name': rolename,
-         'property 1': 'value 1',
-         'property 2': 'value 2',
-         'property 3': 'value 3'}
-        ):
-            doc = register_role(rolename, config)
-        
-            assert doc.find(
-                'properties-fragment', id = 'config'
-            ) == psml.PropertiesFragment(
-                id = 'config',
-                properties = [
-                    psml.Property('name', rolename, 'Name'),
-                    psml.Property('property 1', 'value 1'),
-                    psml.Property('property 2', 'value 2'),
-                    psml.Property('property 3', 'value 3'),
-                ]
-            )

@@ -33,24 +33,15 @@ class TestDomain:
         """
         Tests that the Domain constructor correctly adds it to the network and sets its attributes.
         """
-        role = {
-            'name': 'test_role',
-            'domains':['subdom1.zone.tld']
-        }
-        network.domains._roles[role['name']] = role
+        has_label = objs.Domain(network, 'subdom1.zone.tld', 'zone.tld', ['has_label'])
+        no_label = objs.Domain(network, 'subdom2.zone.tld', 'zone.tld', ['no_label'])
 
-        has_role = objs.Domain(network, 'subdom1.zone.tld', 'zone.tld', ['has_role'])
-        no_role = objs.Domain(network, 'subdom2.zone.tld', 'zone.tld', ['no_role'])
-
-        assert network.domains.objects == {has_role.name: has_role, no_role.name: no_role}
-        assert has_role.network is network
-        assert no_role.network is network
+        assert network.domains.objects == {has_label.name: has_label, no_label.name: no_label}
+        assert has_label.network is network
+        assert no_label.network is network
         
-        assert has_role.role == role['name']
-        assert has_role.labels == set(['has_role', 'show-reversexrefs'])
-
-        assert no_role.role == 'default'
-        assert no_role.labels == set(['no_role', 'show-reversexrefs'])
+        assert has_label.labels == set(['has_label', 'show-reversexrefs'])
+        assert no_label.labels == set(['no_label', 'show-reversexrefs'])
 
         with raises(ValueError):
             objs.Domain(network, '!& invalid name &!')

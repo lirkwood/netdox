@@ -27,8 +27,6 @@ class Domain(base.DNSObject):
 
     Subclasses DNSObject
     """
-    role: str
-    """The DNS role this domain has been assigned."""
     subnets: set[str]
     """A set of the 24 bit CIDR subnets this domain resolves to."""
     
@@ -47,13 +45,9 @@ class Domain(base.DNSObject):
         :type name: str
         :param zone: The parent DNS zone, defaults to None
         :type zone: str, optional
-        :param role: The DNS role to apply to this domain, defaults to 'default'
-        :type role: str, optional
         :raises ValueError: If *name* is not a valid FQDN
         """
         if re.fullmatch(utils.dns_name_pattern, name):
-            self.role = 'default'
-
             super().__init__(
                 network = network, 
                 name = name, 

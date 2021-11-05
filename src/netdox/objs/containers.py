@@ -11,7 +11,7 @@ import pickle
 from netdox import iptools
 from netdox.objs import base, helpers, nwobjs
 from netdox.objs.config import NetworkConfig
-from netdox.utils import DEFAULT_DOMAIN_ROLES, APPDIR, Cryptor
+from netdox.utils import APPDIR, Cryptor
 
 
 class DomainSet(base.DNSObjectContainer):
@@ -21,13 +21,11 @@ class DomainSet(base.DNSObjectContainer):
     objects: dict[str, nwobjs.Domain]
     objectType: str = 'domains'
     objectClass: Type[nwobjs.Domain] = nwobjs.Domain
-    _roles: dict
 
     ## dunder methods
 
-    def __init__(self, network: Network, domains: Iterable[nwobjs.Domain] = [], roles: dict = None) -> None:
+    def __init__(self, network: Network, domains: Iterable[nwobjs.Domain] = []) -> None:
         super().__init__(network, domains)
-        self._roles = roles or DEFAULT_DOMAIN_ROLES
 
     def __getitem__(self, key: str) -> nwobjs.Domain:
         return super().__getitem__(key)
@@ -262,8 +260,6 @@ class Network:
         :type nodes: NodeSet, optional
         :param config: A dictionary of config values like that returned by ``utils.config()``, defaults to None
         :type config: dict, optional
-        :param roles: A dictionary of role configuration values to pass to the DomainSet of the network, defaults to None
-        :type roles: dict, optional
         """
 
         self.domains = domains or DomainSet(network = self)

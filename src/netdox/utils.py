@@ -103,25 +103,6 @@ def config(plugin: str = None) -> dict:
         raise FileNotFoundError('Failed to find, decrypt, or read primary configuration file')
 
 
-global DEFAULT_DOMAIN_ROLES
-DEFAULT_DOMAIN_ROLES = {'exclusions': []}
-
-@cache
-def roles() -> dict:
-    """
-    Loads the domain roles file if it exists
-
-    :return: A dictionary of configuration values.
-    :rtype: dict
-    """
-    try:
-        with open(APPDIR+ 'cfg/roles.json', 'r') as stream:
-            return json.load(stream)
-    except Exception:
-        logger.warning('Failed to find or read domain roles configuration file')
-        return DEFAULT_DOMAIN_ROLES
-
-
 ##############
 # Decorators #
 ##############
@@ -169,33 +150,3 @@ def fileFetchRecursive(dir: str, relative: str = None, extension: str = None) ->
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
             fileset.append(os.path.relpath(file.path, relative))
     return fileset
-
-def roleToPSML(role: str) -> None:
-    """
-    Generates a document for a domain role, and places it in ``out/config``.
-
-    :param role: The name of the role to generate PSML for.
-    :type role: str
-    """
-    config: dict = roles()[role]
-    if 'name' in config:
-        config.pop('name')
-    with open(APPDIR+ 'src/templates/domain_role/document-template.psml', 'r') as stream:
-        soup = BeautifulSoup(stream.read(), features = 'xml')
-
-    docinf = soup.new_tag(name = 'documentinfo')
-    docinf.append(
-        soup.new_tag(name = 'uri', attrs = {'docid': '_nd_role_' + role})
-    )
-    soup.document.insert(0 , docinf)
-
-    frag = psml.PropertiesFragment('config', properties = [
-        psml.Property(name = key, title = key, value = str(value))
-        for key, value in config.items() if key != 'domains'
-    ])
-    frag.insert(0, psml.Property('name', role, 'Name'))
-
-    soup.find(id = 'config').replace_with(frag)
-
-    with open(APPDIR+ f'out/config/{role}.psml', 'w') as stream:
-        stream.write(str(soup))

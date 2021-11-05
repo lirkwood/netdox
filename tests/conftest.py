@@ -23,17 +23,6 @@ CONFIG = {
     'plugins': {}
 }
 
-global ROLES
-ROLES = {
-    'exclusions':[
-        'domainkey.com', 
-        '_some_random_site.tld'
-    ],
-    'default': {
-        'desc': 'Default role.',
-        'uri': 999
-    }}
-
 global LOCATIONS
 LOCATIONS = {
     'Subnet0': ['192.168.0.0/24'],
@@ -80,9 +69,6 @@ def setupenv():
         stream.write(utils.Cryptor().encrypt(
             bytes(json.dumps(CONFIG), encoding = sys.getdefaultencoding())
         ))
-        
-    with open(utils.APPDIR+ 'cfg/roles.json', 'w') as stream:
-        stream.write(json.dumps(ROLES))
         
     with open(utils.APPDIR+ 'cfg/locations.json', 'w') as stream:
         stream.write(json.dumps(LOCATIONS))
