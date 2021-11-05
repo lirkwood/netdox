@@ -3,13 +3,12 @@ This module contains the abstract base classes for most of the other classes in 
 """
 from __future__ import annotations
 
-import os
 from abc import ABC, ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Iterable, Iterator, Type, Union
+from functools import cache
 
 from bs4 import Tag
 
-from netdox.utils import APPDIR
 
 if TYPE_CHECKING:
     from netdox.objs import Network, helpers
@@ -125,6 +124,25 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.labels |= object.labels
         return self
 
+    @cache
+    def getAttr(self, attr: str) -> Union[str, None]:
+        """
+        Returns the configured value for an attribute of this objects labels.
+
+        :param attr: Attribute value to return.
+        :type attr: str
+        :return: The single unique value, or None.
+        :rtype: Union[str, None]
+        :raises AssertionError: When there is multiple unique values to return.
+        """
+        values = set()
+        for label in self.labels:
+            if label in self.network.config.labels:
+                values.add(self.network.config.labels[label][attr])
+        assert len(values) <= 1, 'Cannot have multiple unique values for a label attribute.'
+        return values.pop() if values else None
+        
+
 class DNSObject(NetworkObject):
     """
     A NetworkObject representing an object in a managed DNS zone.
@@ -202,6 +220,8 @@ class DNSObject(NetworkObject):
             return self
         else:
             raise AttributeError('Cannot merge DNSObjects with different names.')
+
+    #TODO add exclusion validation at this level: _enter?
 
 
 ##############
