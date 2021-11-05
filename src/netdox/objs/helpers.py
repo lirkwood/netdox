@@ -10,10 +10,10 @@ from enum import Enum
 from typing import Iterable, Iterator
 import logging
 from xml import etree
-from utils import APPDIR
+from dataclasses import dataclass
 
 from bs4 import BeautifulSoup, Tag
-from netdox import iptools, psml, utils
+from netdox import iptools, pageseeder, psml, utils
 from netdox.objs import base, nwobjs
 
 logger = logging.getLogger(__name__)
@@ -385,7 +385,7 @@ class Report:
         :param section: The section tag to add.
         :type section: Tag
         """
-        if etree.XMLSchema(file = APPDIR + 'src/psml.xsd').validate(
+        if etree.XMLSchema(file = utils.APPDIR + 'src/psml.xsd').validate(
             etree.fromstring(bytes(section, 'utf-8'))
         ):
             self.sections.append(section)
@@ -394,11 +394,41 @@ class Report:
         """
         Generates a report from the supplied sections in ``self.report``.
         """
-        with open(APPDIR+ 'src/templates/report.psml', 'r') as stream:
+        with open(utils.APPDIR+ 'src/templates/report.psml', 'r') as stream:
             report = BeautifulSoup(stream.read(), 'xml')
 
         for tag in self.sections:
             report.document.append(tag)
 
-        with open(APPDIR+ 'out/report.psml', 'w') as stream:
+        with open(utils.APPDIR+ 'out/report.psml', 'w') as stream:
             stream.write(str(report))
+
+
+################
+# Label Helper #
+################
+
+class LabelManager(dict):
+    """Container for the labels applied to documents on PageSeeder."""
+
+    @classmethod
+    def from_pageseeder(cls) -> LabelManager:
+        """
+        Instantiates a LabelManager from the labels on PageSeeder.
+
+        :return: An instance of this class.
+        :rtype: LabelManager
+        """
+        all_uris = json.loads(
+            pageseeder.get_uris(
+                pageseeder.uri_from_path('website'), 
+                {
+                    'relationship': 'descendants',
+                    'type': 'file'
+                }
+            )
+        )
+        return cls({ 
+            uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
+            for uri in all_uris['uris'] if 'docid' in uri
+        })
