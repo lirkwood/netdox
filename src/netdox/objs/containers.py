@@ -272,8 +272,8 @@ class Network:
         self.ips = ips or IPv4AddressSet(network = self)
         self.nodes = nodes or NodeSet(network = self)
 
-        self.config = config or NetworkConfig.from_pageseeder()
-        self.labels = labels or helpers.LabelDict.from_pageseeder()
+        self.config = config or NetworkConfig()
+        self.labels = labels or helpers.LabelDict()
         
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
