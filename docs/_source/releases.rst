@@ -3,6 +3,11 @@
 Releases
 ########
 
+v1.0.0
+======
+Replaced the roles system with configurable label attributes.
+Moved content of objs package into root package.
+
 v0.1.0
 ======
 Added certificates, snmp, daily report, and psml helper classes.

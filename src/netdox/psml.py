@@ -1,5 +1,5 @@
 """
-Provides some useful functions and constants for generating and manipulating PSML using BeautifulSoup4.
+Provides some useful classes, functions and constants for generating and manipulating PSML using BeautifulSoup4.
 """
 
 from __future__ import annotations
@@ -13,8 +13,8 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 if TYPE_CHECKING:
-    from objs.base import NetworkObject
-    from objs.helpers import RecordSet
+    from netdox.base import NetworkObject
+    from netdox.helpers import RecordSet
 
 ###########
 # Classes #

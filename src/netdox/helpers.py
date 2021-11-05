@@ -1,5 +1,5 @@
 """
-This module contains some helper classes that are essential to the other classes in the objs package.
+This module contains some essential helper classes.
 """
 from __future__ import annotations
 

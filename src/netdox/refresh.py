@@ -2,8 +2,8 @@
 The main script in Netdox. Manages almost every step of the refresh process from data gathering to writing PSML.
 
 This script is used to provide a central flow for the data refresh.
-It runs some initialisation first, then calls the *dns* plugins, the *resource* plugins, does some additional processing,
-then calls the final plugin stage and writes PSML. The upload is managed by the caller executable Netdox (see :ref:`file_netdox`)
+It runs some initialisation first, then calls the plugins, does some additional processing,
+and finally writes and uploads PSML to PageSeeder.
 """
 
 import logging

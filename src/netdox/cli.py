@@ -1,3 +1,6 @@
+"""
+Contains the logic for the command-line interface.
+"""
 import argparse
 import logging
 import os

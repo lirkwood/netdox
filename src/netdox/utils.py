@@ -1,5 +1,5 @@
 """
-This module contains any multi-purpose or generic code for use by both internal processes and plugins.
+This module contains some utility functions / useful constants.
 """
 
 from __future__ import annotations
@@ -9,14 +9,9 @@ import logging
 import os
 import re
 from functools import cache, wraps
-from sys import argv
 from traceback import format_exc
-import datetime
 
-from bs4 import BeautifulSoup
-from bs4.element import Tag
 from cryptography.fernet import Fernet
-from netdox import psml
 
 logger = logging.getLogger(__name__)
 

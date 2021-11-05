@@ -1,3 +1,6 @@
+"""
+This module contains functions / classes for fetching, reading, and updating the 
+"""
 from __future__ import annotations
 
 import logging
@@ -14,7 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class NetworkConfig:
     """
-    Holds the config values.
+    Holds the configuration values found in the main config document on PageSeeder.
     """
     DOCID = '_nd_config'
     """Docid for the config file."""

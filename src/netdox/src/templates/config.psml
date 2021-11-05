@@ -17,7 +17,8 @@ In order to apply those attributes to a document, simply label it with the speci
     <section id="labels" fragmenttype="label">
         <fragment id="labels_title" type="label">
             <heading level="2">Labels</heading>
-            <preformat>Each label may have an arbitrary map associated with it, which will be inherited by NetworkObjects bearing the label.</preformat>
+            <preformat>Each label may have an arbitrary map of attributes associated with it, which will be inherited by NetworkObjects bearing the label.
+To configure a label, create a new fragment in this section and populate the properties.</preformat>
         </fragment>
     </section>
   

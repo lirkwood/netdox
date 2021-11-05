@@ -14,12 +14,15 @@ After initialising a configuration directory using ``netdox init <path>``,
 a collection of templates for config files will be copied there for you to populate.
 Most of the configuration for Netdox lives in one file; It's template will be named ``config.json``.
 It should, when populated, contain all the configuration values for connecting to your PageSeeder instance.
-In addition, this file should contain any values required by your enabled plugins, 
-in an object in the *plugins* dictionary (with the plugin name in lower case as the key). 
+In addition, this file should contain any values required by your enabled plugins. 
+Place them in an object in the *plugins* dictionary (with the plugin name in lower case as the key).
 Each plugin should document the JSON object it expects, usually in the ``README.md``.
 
 This file will be encrypted when you load it into Netdox, and the unencrypted original deleted automatically. 
 For more information about loading the config, use the CLI help (``netdox -h``, ``netdox config -h``).
+
+There is additional configuration available on a per-NetworkObject basis, using document labels in PageSeeder.
+For more, see below.
 
 .. _locations:
 
@@ -32,26 +35,6 @@ The key of the array will be the canonical name for that location, and will appe
 The smallest defined subnet an IP is part of will be used to select that IP's location, 
 so that you don't have to define a location for every possible subnet in your network.
 
-.. _roles:
-
-Domain roles
-------------
-
-Domain roles, like location data (see above), are optional. 
-Their purpose is to provide a native interface to specify settings to plugins, on a domain-by-domain basis.
-Each role defines an arbitrary number or properties to propagate to any domain which has been assigned the role.
-For example, the screenshot property tells the *screenshots* plugin whether or not to attempt to take a screenshot of domains with that role.
-
-In the ``roles.json`` template, you will see just two roles defined: *exclusions* and *default*.
-Default is simply an empty role, and you may modify it as you please. 
-However be aware, any domains with no assigned role will be assigned this role instead.
-The exclusions role is baked in, and any domains assigned to it will be immediately discarded. 
-These domains will not appear anywhere in the generated documentation, 
-and will not be added to the Network object in the code.
-
-You may create as many roles as you like, as long as they have unique names.
-Each role should at least have a ``domains`` property, which must be an array of FQDNs to apply the role to.
-
 .. _enabled_plugins:
 
 Enabled Plugins
@@ -59,3 +42,20 @@ Enabled Plugins
 
 Plugins are disabled by default and will not run automatically just because they're installed.
 In order to enable a plugin, add its name to the array in ``plugins.json``.
+
+
+.. _labels:
+
+Document Label Attributes
+-------------------------
+
+Netdox allows you to leverage the batch application/removal of document labels to easily configure plugin-level attributes
+on a document-by-document basis. To do this, create a document of type 'netdox' with the docid '_nd_config'.
+Each fragment you create in the labels section can be used to configure the attributes of a document label. Try it out!
+This document also has a section titled 'Exclusions'. Domains in this section will be completely ignored by Netdox.
+
+Plugins can register attributes using an iterable of strings named ``__attrs__``, defined at the module level.
+During a refresh, the template for the config file on PageSeeder will be updated, so that each new 'label' fragment created
+contains a property for each attribute registered by a plugin. 
+*Note*: There's no need to recreate your config file if the registered attributes have changed —
+a new config file will be uploaded with the correct structure, and all your old configuration will be preserved. 
