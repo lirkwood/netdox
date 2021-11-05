@@ -9,6 +9,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Iterable, Iterator
 import logging
+from xml import etree
+from utils import APPDIR
 
 from bs4 import BeautifulSoup, Tag
 from netdox import iptools, psml, utils
@@ -359,3 +361,44 @@ class JSONEncoder(json.JSONEncoder):
             return obj.records
         else:
             return super().default(obj)
+
+
+#################
+# Report Helper #
+#################
+
+class Report:
+    """
+    A report on the changes in the network relative to the last refresh.
+    Can be serialised to PSML.
+    """
+    sections: list[str]
+    """A list of section elements to display in the report."""
+
+    def __init__(self) -> None:
+        pass
+
+    def addSection(self, section: str) -> None:
+        """
+        Adds a psml *section* tag to the report, if it is valid.
+
+        :param section: The section tag to add.
+        :type section: Tag
+        """
+        if etree.XMLSchema(file = APPDIR + 'src/psml.xsd').validate(
+            etree.fromstring(bytes(section, 'utf-8'))
+        ):
+            self.sections.append(section)
+
+    def writeReport(self) -> None:
+        """
+        Generates a report from the supplied sections in ``self.report``.
+        """
+        with open(APPDIR+ 'src/templates/report.psml', 'r') as stream:
+            report = BeautifulSoup(stream.read(), 'xml')
+
+        for tag in self.sections:
+            report.document.append(tag)
+
+        with open(APPDIR+ 'out/report.psml', 'w') as stream:
+            stream.write(str(report))

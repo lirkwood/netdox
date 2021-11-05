@@ -4,7 +4,8 @@ This module contains any container classes.
 from __future__ import annotations
 
 from typing import Iterable, Iterator, Type, Union
-from bs4 import Tag, BeautifulSoup
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 from lxml import etree
 import pickle
 
@@ -228,7 +229,10 @@ class NodeSet(base.NetworkObjectContainer):
 
 class Network:
     """
-    Container for sets of network objects.
+    A container for NetworkObject containers.
+    Also 
+
+    It also provides a convenience method for resolving record chains between DNS objects.
     """
     domains: DomainSet
     """A NetworkObjectContainer for the Domains in the network."""
@@ -238,10 +242,14 @@ class Network:
     """A NetworkObjectContainer for the Nodes in the network."""
     config: NetworkConfig
     """The network specific config."""
+    locator: helpers.Locator
+    """A helper class to provide location data to Nodes."""
+    writer: helpers.PSMLWriter
+    """A helper class to serialise NetworkObjects."""
+    report: helpers.Report
+    """A helper class to report network changes."""
     cache: set
     """A set of cached names. Used when resolving long record chains."""
-    report: list[Tag]
-    """A list of section tags to insert into the network report."""
 
     def __init__(self, 
             domains: DomainSet = None, 
@@ -258,7 +266,7 @@ class Network:
         :type ips: IPv4AddressSet, optional
         :param nodes: A NodeSet to include in the network, defaults to None
         :type nodes: NodeSet, optional
-        :param config: A dictionary of config values like that returned by ``utils.config()``, defaults to None
+        :param config: A NetworkConfig object.
         :type config: dict, optional
         """
 
@@ -270,17 +278,8 @@ class Network:
         
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()
+        self.report = helpers.Report()
         self.cache = set()
-        self.report = []
-
-    ## Config
-
-    @property
-    def exclusions(self) -> set[str]:
-        """
-        Returns a set of identities to be excluded from the Network.
-        """
-        return self.config.exclusions
 
     ## resolving refs
 
@@ -317,33 +316,6 @@ class Network:
                     elif name in networkSet and self.resolvesTo(networkSet[name], target):
                         return True
         return False
-
-    ## Report
-
-    def addReport(self, section: Tag) -> None:
-        """
-        Adds a psml *section* tag to the report, if it is valid.
-
-        :param section: The section tag to add.
-        :type section: Tag
-        """
-        if etree.XMLSchema(file = APPDIR + 'src/psml.xsd').validate(
-            etree.fromstring(bytes(str(section), 'utf-8'))
-        ):
-            self.report.append(section)
-
-    def writeReport(self) -> None:
-        """
-        Generates a report from the supplied sections in ``self.report``.
-        """
-        with open(APPDIR+ 'src/templates/report.psml', 'r') as stream:
-            report = BeautifulSoup(stream.read(), 'xml')
-
-        for tag in self.report:
-            report.document.append(tag)
-
-        with open(APPDIR+ 'out/report.psml', 'w') as stream:
-            stream.write(str(report))
 
     ## Serialisation
 
