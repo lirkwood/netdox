@@ -32,12 +32,17 @@ class NetworkConfig:
         self.labels = labels or {}
 
     @property
+    def is_empty(self) -> bool:
+        """
+        Returns True if this object has no labels or exclusions.
+        False otherwise.
+        """
+        return not (self.labels or self.exclusions)
+
+    @property
     def attrs(self) -> set[str]:
         """
         Returns all attributes that may be set on a label.
-
-        :return: A set of attribute names.
-        :rtype: set[str]
         """
         return {attr for attrs in self.labels.values() for attr in attrs}
 
@@ -109,8 +114,12 @@ class NetworkConfig:
         """
         Fetches the NetworkConfig from PageSeeder.
         """
-        return cls.from_psml(
-            pageseeder.get_default_docid('_nd_config').text)
+        try:
+            return cls.from_psml(
+                pageseeder.get_default_docid('_nd_config').text)
+        except Exception:
+            logger.error('Failed to retrieve config from PageSeeder')
+            return cls()
     
 
 def generate_template(attrs: set[str]) -> str:
