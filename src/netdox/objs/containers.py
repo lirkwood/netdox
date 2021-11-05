@@ -3,7 +3,7 @@ This module contains any container classes.
 """
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Type, Union
+from typing import DefaultDict, Iterable, Iterator, Type, Union
 import pickle
 
 from netdox import iptools
@@ -237,8 +237,8 @@ class Network:
     """A NetworkObjectContainer for the Nodes in the network."""
     config: NetworkConfig
     """The network specific config."""
-    labels: dict[str, set[str]]
-    """A dictionary mapping document docids to their applied labels."""
+    labels: helpers.LabelDict
+    """A defaultdict mapping document docids to their applied labels."""
     locator: helpers.Locator
     """A helper class to provide location data to Nodes."""
     writer: helpers.PSMLWriter
@@ -253,7 +253,7 @@ class Network:
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
             config: NetworkConfig = None,
-            labels: helpers.LabelManager = None
+            labels: helpers.LabelDict = None
         ) -> None:
         """
         Instantiate a Network object.
@@ -273,7 +273,7 @@ class Network:
         self.nodes = nodes or NodeSet(network = self)
 
         self.config = config or NetworkConfig.from_pageseeder()
-        self.labels = labels or helpers.LabelManager.from_pageseeder()
+        self.labels = labels or helpers.LabelDict.from_pageseeder()
         
         self.locator = helpers.Locator()
         self.writer = helpers.PSMLWriter()

@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Iterable, Iterator
 import logging
 from xml import etree
-from dataclasses import dataclass
+from collections import defaultdict
 
 from bs4 import BeautifulSoup, Tag
 from netdox import iptools, pageseeder, psml, utils
@@ -408,11 +408,11 @@ class Report:
 # Label Helper #
 ################
 
-class LabelManager(dict):
+class LabelDict(defaultdict):
     """Container for the labels applied to documents on PageSeeder."""
 
     @classmethod
-    def from_pageseeder(cls) -> LabelManager:
+    def from_pageseeder(cls) -> LabelDict:
         """
         Instantiates a LabelManager from the labels on PageSeeder.
 
@@ -428,7 +428,7 @@ class LabelManager(dict):
                 }
             )
         )
-        return cls({ 
+        return cls(set, { 
             uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
             for uri in all_uris['uris'] if 'docid' in uri
         })
