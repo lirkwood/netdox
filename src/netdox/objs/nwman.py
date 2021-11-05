@@ -19,6 +19,7 @@ import netdox.plugins
 from netdox import pageseeder, utils
 from netdox.objs.containers import Network
 from netdox.objs.config import NetworkConfig, update_template
+from netdox.objs.helpers import LabelDict
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,10 @@ class NetworkManager:
             if '.'.join((self.namespace.__name__, plugin)) not in [module.__name__ for module in self.plugins]:
                 logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
 
-        self.network = Network(config = self.validConfig())
+        self.network = Network(
+            config = self.validConfig(), 
+            labels = LabelDict.from_pageseeder()
+        )
 
     ## Plugin methods
 
