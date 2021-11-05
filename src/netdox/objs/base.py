@@ -74,7 +74,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         
         self.labels = self.network.labels[self.docid]
         self.labels.add('show-reversexrefs')
-        if labels: self.labels |= labels
+        if labels: self.labels |= set(labels)
 
     ## properties
 
