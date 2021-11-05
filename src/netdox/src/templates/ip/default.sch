@@ -16,6 +16,10 @@
       <sch:assert test="*//xref or documentinfo/reversexrefs" >Orphan</sch:assert>
     </sch:rule>
     
+    <sch:rule context="//*[@unresolved]">
+      <sch:assert test="@unresolved = 'false'">Unresolved link</sch:assert>
+    </sch:rule>
+    
   </sch:pattern>
 
 </sch:schema>

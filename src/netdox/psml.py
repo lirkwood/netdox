@@ -409,7 +409,7 @@ DOMAIN_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="6.1" />
+                <property name="template_version"     title="Template version"   value="6.2" />
             </properties>
         </metadata>
 
@@ -431,7 +431,7 @@ DOMAIN_TEMPLATE = '''
 
         </section>
 
-        <section id="records" title="DNS Records" />
+        <section id="records" title="DNS Records" fragmenttype="record" />
 
         <section id="footer" />
 
@@ -449,7 +449,7 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="3.1" />
+                <property name="template_version"     title="Template version"   value="3.2" />
             </properties>
         </metadata>
 
@@ -469,7 +469,7 @@ IPV4ADDRESS_TEMPLATE = '''
 
         </section>
         
-        <section id="records" title="PTR Records" />
+        <section id="records" title="DNS Records" fragmenttype="record" />
         
         <section id="footer" />
 

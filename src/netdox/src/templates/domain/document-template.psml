@@ -2,25 +2,25 @@
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="6.1" />
+            <property name="template_version"     title="Template version"   value="6.2" />
         </properties>
     </metadata>
   
-    <t:fragment type="destination" title="Private IP">
+    <t:fragment type="record" title="Private IP">
       <properties-fragment>
        <property name="ipv4" title="Private IP" datatype="xref"/>
        <property name="source" title="Source Plugin" value=""/>
      </properties-fragment>
     </t:fragment>
   
-    <t:fragment type="destination" title="Public IP">
+    <t:fragment type="record" title="Public IP">
       <properties-fragment>
        <property name="ipv4" title="Public IP" datatype="xref"/>
        <property name="source" title="Source Plugin" value=""/>
      </properties-fragment>
     </t:fragment>
   
-    <t:fragment type="destination" title="CNAME">
+    <t:fragment type="record" title="CNAME">
       <properties-fragment>
        <property name="cname" title="CNAME" datatype="xref"/>
        <property name="source" title="Source Plugin" value=""/>
@@ -33,31 +33,16 @@
          <heading level="1"/>
       </fragment>
    </section>
-  
+      
    <section id="header">
       <properties-fragment id="header">
-         <property name="name" title="Name" value=""/>
-         <property name="root" title="Root Domain" value=""/>
-         <property name="role"   title="DNS Role"    datatype="xref">
-           <xref frag="default" docid="_nd_role_default" />
-        </property>
-        <property name="location" title="Location" value="" />
+         <property name="name"       title="Name"        value="#!name" />
+         <property name="zone"       title="DNS Zone"    value="#!zone" />
       </properties-fragment>
    </section>
-  
-   <section id="dest" title="Destinations">
-     
-      <properties-fragment id="subnets">
-         <property name="subnet" title="Subnet" value=""/>
-      </properties-fragment>
-     
-      <fragment id="screenshot" labels="text-align-center">
-         <block label="border-2"/>
-      </fragment>
-     
-      <properties-fragment id="for-search" labels="s-hide-content">
-         <property name="octets" title="Octets for search" value=""/>
-      </properties-fragment>
-     
-   </section>
+
+   <section id="records" title="DNS Records" fragmenttype="record" />
+
+   <section id="footer" />
+
 </document>
