@@ -18,6 +18,8 @@ from netdox.plugins.icinga.ssh import reload, rm_host, set_host
 
 logger = logging.getLogger(__name__)
 
+TEMPLATE_ATTR = 'icinga_template'
+
 ####################################
 # Generic resource fetch functions #
 ####################################
@@ -227,14 +229,11 @@ class MonitorManager:
         :return: True if the Domain's monitor was already valid. False if it needed to be modified.
         :rtype: bool
         """
-        if (self.hasManualMonitor(domain) or
-            'template' not in utils.roles()[domain.role] or
-            utils.roles()[domain.role]['template'] == 'None'):
-            
-            # if manual and generated monitor
-            if domain.name in self.generated:
-                self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
-                return False
+        if (
+            self.hasManualMonitor(domain) or not domain.getAttr(TEMPLATE_ATTR)
+        ) and domain.name in self.generated:
+            self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
+            return False
 
         else:
             location = self.locateDomain(domain.name)
@@ -244,15 +243,15 @@ class MonitorManager:
                     # if location wrong
                     if self.generated[domain.name]['icinga'] != icinga:
                         self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
-                        self.makeMonitor(domain.name, icinga, utils.roles()[domain.role]['template'])
+                        self.makeMonitor(domain.name, icinga, domain.getAttr(TEMPLATE_ATTR))
                         return False
                     # if template wrong
-                    elif self.generated[domain.name]['templates'][0] != utils.roles()[domain.role]['template']:
-                        self.makeMonitor(domain.name, icinga, utils.roles()[domain.role]['template'])
+                    elif self.generated[domain.name]['templates'][0] != domain.getAttr(TEMPLATE_ATTR):
+                        self.makeMonitor(domain.name, icinga, domain.getAttr(TEMPLATE_ATTR))
                         return False
                 # if no monitor
                 else:
-                    self.makeMonitor(domain.name, icinga, utils.roles()[domain.role]['template'])
+                    self.makeMonitor(domain.name, icinga, domain.getAttr(TEMPLATE_ATTR))
                     return False
 
         return True
@@ -354,10 +353,11 @@ class MonitorManager:
 ## Plugin runner
 def runner(network: Network):
     """
-    Adds Icinga monitor information to the DNS records in some set.
-    If the monitor does not match that of the configured DNS role, this function will attempt to modify it.
+    Adds Icinga monitor information to the Domains in the network.
+    If the monitor template does not match the configured value, it will be updated.
     If the monitor continues to appear invalid after 3 attempts it will be abandoned.
-    This function will also remove any Netdox-generated monitors on domains which are not in the passed DNS set.
+    This function will also remove any Netdox-generated monitors on domains which are 
+    not present in the network.
 
     :param network: The network.
     :type network: Network
