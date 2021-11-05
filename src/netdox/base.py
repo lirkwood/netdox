@@ -128,20 +128,21 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     @cache
     def getAttr(self, attr: str) -> Union[str, None]:
         """
-        Returns the configured value for an attribute of this objects labels.
+        Returns the value of *attr* for the first label on this object that it is configured on.
+
+        **Note:** Attributes from labels that are configured higher in the config file take 
+        precedence over those underneath.
 
         :param attr: Attribute value to return.
         :type attr: str
         :return: The single unique value, or None.
         :rtype: Union[str, None]
-        :raises AssertionError: When there is multiple unique values to return.
         """
-        values = set()
         for label in self.labels:
             if label in self.network.config.labels:
-                values.add(self.network.config.labels[label][attr])
-        assert len(values) <= 1, 'Cannot have multiple unique values for a label attribute.'
-        return values.pop() if values else None
+                val = self.network.config.labels[label][attr]
+                if val: return val
+        return None
         
 
 class DNSObject(NetworkObject):
