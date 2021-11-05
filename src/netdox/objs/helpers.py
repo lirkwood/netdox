@@ -411,9 +411,14 @@ class Report:
 class LabelDict(defaultdict):
     """
     Container for the labels applied to documents on PageSeeder.
-    Behaves like a defaultdict with a default_factory of *set*.
+    Behaves like a defaultdict with a 'default_factory' of *set*.
+
+    Maps document docids to a set of labels.
     """
     default_factory = set
+
+    def __getitem__(self, key: str) -> set[str]:
+        return super().__getitem__(key)
 
     def __init__(self, *args, **kwargs) -> None:
         """
