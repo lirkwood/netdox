@@ -110,18 +110,14 @@ def auth(func):
 
     return wrapper
 
-@cache
-def urimap(path: str = 'website', type: str = 'folder') -> dict[str, str]:
+def uri_from_path(path: str) -> int:
     """
-    Maps the names of the files in the folder *path* to their URIs.
+    Returns the URI of a PageSeeder object, from it's filepath.
 
-    :param path: Path to the directory to map relative to group root directory, defaults to 'website'
-    :type path: str, optional
-    :param type: Type of files to map, defaults to 'folder'
-    :type type: str, optional
-    :raises FileNotFoundError: If the path is not present on PageSeeder.
-    :return: A dictionary mapping filenames to URIs.
-    :rtype: dict[str, str]
+    :param path: Path to object, relative to group root directory.
+    :type path: str
+    :return: The URI of the specified object,
+    :rtype: int
     """
     path = path.strip('/')
     if '/' in path:
@@ -134,17 +130,44 @@ def urimap(path: str = 'website', type: str = 'folder') -> dict[str, str]:
 
     group = utils.config()["pageseeder"]["group"]
     dirCheck = json.loads(search({
-        'filters': f'pstype:folder,psfilename:{filename},psfolder:/ps/{group.replace("-","/")}{folder}'
+        'filters': f'pstype:folder,psfilename:{filename},' +
+                    f'psfolder:/ps/{group.replace("-","/")}{folder}'
     }))
     if dirCheck['results']['result']:
         for field in dirCheck['results']['result'][0]['fields']:
             if field['name'] == 'psid':
-                return {
-                    uri['displaytitle']: uri['id'] for uri in 
-                    json.loads(get_uris(field['value'], params={'type': type}))['uris']
-                }
-    else:
-        raise FileNotFoundError(f"Path '{path}' not present at root of group {group}.")
+                return int(field['value'])
+
+    raise FileNotFoundError(f"Failed to find object at path: '{path}'")
+
+@cache
+def urimap(
+        path: str = 'website', 
+        type: str = 'folder', 
+        relationship: str = 'children'
+    ) -> dict[str, str]:
+    """
+    Maps the names of the uris of type *type* in the folder *path* to their URIs.
+
+    :param path: Path to the directory to map relative to group root directory, defaults to 'website'
+    :type path: str, optional
+    :param type: Type of files to map, defaults to 'folder'
+    :type type: str, optional
+    :param relationship: Relationship to *path* of URIs to return. One of: 
+    'children', 'descendants', 'ancestors', 'ancestors-siblings', 'siblings'.
+    :type relationship: str
+    :raises FileNotFoundError: If the path is not present on PageSeeder.
+    :return: A dictionary mapping filenames to URIs.
+    :rtype: dict[str, str]
+    """
+    uris = get_uris(uri_from_path(path), params={
+        'type': type,
+        'relationship': relationship
+    })
+    return {
+        uri['displaytitle']: uri['id'] for uri in 
+        json.loads(uris)['uris']
+    }
 
 
 ##############
