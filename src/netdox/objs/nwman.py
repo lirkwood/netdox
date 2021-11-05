@@ -165,27 +165,14 @@ class NetworkManager:
         the template will be updated, and a valid config created.
         This config will be serialised for the upload.
         """
-        #TODO factor out update_template + serialise into method
-        try:
-            cfg = NetworkConfig.from_pageseeder()
-
-        except Exception as exc:
-            logger.warning('Retrieving config from PageSeeder failed.')
-            logger.exception(exc)
-            cfg = NetworkConfig()
+        cfg = NetworkConfig.from_pageseeder()
+        if cfg.is_empty or self.pluginAttrs != cfg.attrs:
+            logger.warning('Updating config template on PageSeeder.')
             update_template(self.pluginAttrs)
+            cfg.update_attrs(self.pluginAttrs)
             with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
                 stream.write(cfg.to_psml())
-            return cfg
-
-        else:
-            if self.pluginAttrs != cfg.attrs:
-                logger.warning('Updating config template on PageSeeder.')
-                update_template(self.pluginAttrs)
-                cfg.update_attrs(self.pluginAttrs)
-                with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
-                    stream.write(cfg.to_psml())
-            return cfg
+        return cfg
 
     ## Serialisation
 
