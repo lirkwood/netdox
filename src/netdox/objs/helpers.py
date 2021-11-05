@@ -419,16 +419,21 @@ class LabelDict(defaultdict):
         :return: An instance of this class.
         :rtype: LabelManager
         """
-        all_uris = json.loads(
-            pageseeder.get_uris(
-                pageseeder.uri_from_path('website'), 
-                {
-                    'relationship': 'descendants',
-                    'type': 'file'
-                }
+        try:
+            all_uris = json.loads(
+                pageseeder.get_uris(
+                    pageseeder.uri_from_path('website'), 
+                    {
+                        'relationship': 'descendants',
+                        'type': 'file'
+                    }
+                )
             )
-        )
-        return cls(set, { 
-            uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
-            for uri in all_uris['uris'] if 'docid' in uri
-        })
+        except Exception:
+            logger.error('Failed to retrieve URI labels from PageSeeder.')
+            all_uris = {'uris':[]}
+        finally:
+            return cls(set, { 
+                uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
+                for uri in all_uris['uris'] if 'docid' in uri
+            })
