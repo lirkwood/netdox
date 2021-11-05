@@ -64,7 +64,7 @@ def init(args: argparse.Namespace):
             os.remove(APPDIR+ 'cfg')
         os.symlink(os.path.abspath(args.path), APPDIR+ 'cfg', target_is_directory = True)
 
-        for file in os.scandir(APPDIR+ 'src/defaults/localconf'):
+        for file in os.scandir(APPDIR+ 'src/defaults'):
             if not os.path.exists(APPDIR+ 'cfg/'+ file.name):
                 shutil.copy(file.path, APPDIR+ 'cfg/'+ file.name)
             
