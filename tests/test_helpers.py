@@ -66,16 +66,3 @@ class TestRecordSet:
         recordset = helpers.RecordSet('CNAME')
         recordset.add('SomE.DomaiN.com   ', 'source')
         assert recordset.names == ['some.domain.com']
-
-
-class TestNetworkConfig:
-
-    @pytest.fixture
-    def mock_NetworkConfig(self):
-        return helpers.NetworkConfig(['domain.one', 'domain.two'], {
-            'label': {'key1': 'value1', 'key2': 'value2'}
-        })
-
-    def test_psml_roundtrip(self, mock_NetworkConfig):
-        assert mock_NetworkConfig == helpers.NetworkConfig.from_psml(
-            mock_NetworkConfig.to_psml())
