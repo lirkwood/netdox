@@ -231,6 +231,7 @@ class MonitorManager:
         """
         if (
             self.hasManualMonitor(domain) or not domain.getAttr(TEMPLATE_ATTR)
+            or domain.getAttr(TEMPLATE_ATTR) == 'None'
         ) and domain.name in self.generated:
             self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
             return False
