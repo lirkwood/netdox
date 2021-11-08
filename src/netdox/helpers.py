@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Iterable, Iterator
 import logging
-from xml import etree
+from lxml import etree
 from collections import defaultdict
 
 from bs4 import BeautifulSoup, Tag
