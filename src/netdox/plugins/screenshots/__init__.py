@@ -62,7 +62,8 @@ class ScreenshotManager:
             )
 
         self.domains = [
-            domain for domain in domains if domain.getAttr(SCREENSHOT_ATTR)
+            domain for domain in domains if 
+            domain.getAttr(SCREENSHOT_ATTR).strip().lower() in ('true','yes')
         ]
 
     def start(self) -> None:
