@@ -146,6 +146,7 @@ class MonitorManager:
     def requestsMonitor(self, domain: Domain) -> bool:
         return bool(
             domain.getAttr(TEMPLATE_ATTR) and domain.getAttr(TEMPLATE_ATTR) != 'None'
+            and domain.name not in self.icingas
         )
 
     def validateDomain(self, domain: Domain) -> bool:
