@@ -49,6 +49,18 @@ class NetworkConfig:
         """
         return {attr for attrs in self.labels.values() for attr in attrs}
 
+    @property
+    def normal_attrs(self) -> bool:
+        """
+        Returns True if all of the labels in config have the correct attributes set.
+        False otherwise.
+        """
+        return all([
+            bool(attr in attrs) 
+            for attrs in self.labels.values() 
+            for attr in self.attrs
+        ])
+
     def update_attrs(self, attrs: Iterable[str]) -> None:
         """
         Updates the keys in each label map to *attrs*.
