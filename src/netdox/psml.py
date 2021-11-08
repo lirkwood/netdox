@@ -136,11 +136,14 @@ class Property(Tag):
         )
         
         self.value = value
-        if isinstance(value, str):
-            self.attrs['value'] = value
+        if value:
+            if isinstance(value, str):
+                self.attrs['value'] = value
+            else:
+                self.attrs['datatype'] = value.name
+                self.append(value)
         else:
-            self.attrs['datatype'] = value.name
-            self.append(value)
+            self.attrs['value'] = ''
 
     @classmethod
     def from_tag(cls, property: Tag):
