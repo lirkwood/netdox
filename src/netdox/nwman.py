@@ -240,4 +240,4 @@ class NetworkManager:
                     }
                 ))
             section.append(frag)
-        self.network.report.append(section)
+        self.network.report.addSection(str(section))
