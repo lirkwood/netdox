@@ -376,7 +376,7 @@ class Report:
     """A list of section elements to display in the report."""
 
     def __init__(self) -> None:
-        pass
+        self.sections = []
 
     def addSection(self, section: str) -> None:
         """
