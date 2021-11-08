@@ -170,7 +170,7 @@ class NetworkManager:
         This config will be serialised for the upload.
         """
         cfg = NetworkConfig.from_pageseeder()
-        if cfg.is_empty or self.pluginAttrs != cfg.attrs:
+        if cfg.is_empty or not cfg.normal_attrs or self.pluginAttrs != cfg.attrs:
             logger.warning('Updating config template on PageSeeder.')
             update_template(self.pluginAttrs)
             cfg.update_attrs(self.pluginAttrs)
