@@ -124,7 +124,7 @@ def refresh(_):
     fileHandler.setFormatter(formatter)
     logger.addHandler(fileHandler)
 
-    logger.debug('Refresh begins ----------')
+    logger.debug('Refresh begins')
 
     _refresh()
 
@@ -155,6 +155,7 @@ def parse_args():
         metavar = '<method> [args...]',
         dest = 'method'
     )
+    parser.add_argument('-d', '--debug', action = 'store_true', help = 'Log DEBUG level messages to stdout.')
 
     init_parser = subparsers.add_parser('init', help = 'Initialises a new config directory and generates a new cryptography key.')
     init_parser.set_defaults(func = init)
@@ -187,6 +188,10 @@ def parse_args():
 
 
     args = parser.parse_args()
+    if args.debug:
+        for handler in logger.handlers:
+            handler.setLevel(logging.DEBUG)
+
     args.func(args)
 
 if __name__ == '__main__':
