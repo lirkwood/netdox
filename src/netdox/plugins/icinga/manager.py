@@ -4,7 +4,9 @@ from typing import Iterable
 
 from bs4 import BeautifulSoup
 from netdox import Domain, Network, utils
-from netdox.plugins.icinga.api import TEMPLATE_ATTR, fetchMonitors
+from netdox.plugins.icinga.api import (TEMPLATE_ATTR, createHost,
+                                       fetchMonitors, removeHost,
+                                       updateHostTemplate)
 from netdox.plugins.icinga.ssh import reload, rm_host, set_host
 
 logger = logging.getLogger(__name__)
@@ -25,8 +27,6 @@ class MonitorManager:
     """Dictionary of the generated monitors."""
     overflow: defaultdict[str, list[dict]]
     """Dictionary to hold extra generated monitors for a given domain."""
-    reloadQueue: set[str]
-    """A set of Icinga instances that have had their configuration modified."""
 
     def __init__(self, network: Network) -> None:
         self.network = network
@@ -38,9 +38,7 @@ class MonitorManager:
             for location in icingaLocations:
                 self.locationIcingas[location] = icinga
 
-        self.reloadQueue = set()
-
-        self.refreshMonitorInfo()
+        self.manual, self.generated = {}, {}
 
     ## Interacting with Icinga instances
 
@@ -114,15 +112,14 @@ class MonitorManager:
 
             for monitor in monitors:
                 if monitor['icinga'] != icinga:
-                    self.removeMonitor(domain, icinga = monitor['icinga'])
+                    removeHost(icinga, domain)
                     monitors.remove(monitor)
             
             if monitors:
                 assert len(monitors) == 1
                 self.generated[domain] = monitors[0]
             else:
-                self.makeMonitor(domain, icinga)
-        self.reload()
+                createHost(icinga, domain)
 
     ## Monitor validation
 
@@ -158,29 +155,30 @@ class MonitorManager:
         :return: True if the Domain's monitor was already valid. False if it needed to be modified.
         :rtype: bool
         """
-        if (
-            self.hasManualMonitor(domain) or not self.requestsMonitor(domain)
-        ) and domain.name in self.generated:
-            self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
+        manual_monitor = self.hasManualMonitor(domain)
+        requests_monitor = self.requestsMonitor(domain)
+        
+        if (manual_monitor or not requests_monitor) and domain.name in self.generated:
+            removeHost(self.generated[domain.name]['icinga'], domain.name)
             return False
 
-        elif self.requestsMonitor(domain):
+        elif requests_monitor and not manual_monitor:
             location = self.locateDomain(domain.name)
             icinga = self.locationIcingas[location] if location in self.locationIcingas else None
             if icinga:
                 if domain.name in self.generated:
                     # if location wrong
                     if self.generated[domain.name]['icinga'] != icinga:
-                        self.removeMonitor(domain.name, icinga = self.generated[domain.name]['icinga'])
-                        self.makeMonitor(domain.name, icinga, domain.getAttr(TEMPLATE_ATTR))
+                        removeHost(self.generated[domain.name]['icinga'], domain.name)
+                        createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR))
                         return False
                     # if template wrong
                     elif self.generated[domain.name]['templates'][0] != domain.getAttr(TEMPLATE_ATTR):
-                        self.makeMonitor(domain.name, icinga, domain.getAttr(TEMPLATE_ATTR))
+                        updateHostTemplate(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR))
                         return False
                 # if no monitor
                 else:
-                    self.makeMonitor(domain.name, icinga, domain.getAttr(TEMPLATE_ATTR))
+                    createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR))
                     return False
 
         return True
@@ -213,15 +211,13 @@ class MonitorManager:
         """
         Validates the Icinga monitors of every Domain in the network, and modifies them to be valid if necessary.
         """
-        tries = 0
-        invalid = list(self.network.domains)
-        while tries < 2:
-            if tries:
-                self.refreshMonitorInfo()
-            tries += 1
+        self.refreshMonitorInfo()
+        invalid = self.validateDomainSet(self.network.domains)
+
+        if invalid:
+            self.refreshMonitorInfo()
             invalid = self.validateDomainSet(invalid)
-            self.reload()
-        
+
         if invalid:
             logger.warning("Unable to resolve invalid monitors for: '" +
                 "', '".join([ domain.name for domain in invalid ]) + "'")
@@ -232,8 +228,7 @@ class MonitorManager:
         """
         for address, details in self.generated.items():
             if address not in self.network.domains:
-                self.removeMonitor(address, icinga = details['icinga'])
-        self.reload()
+                removeHost(details['icinga'], address)
 
     ## Miscellaneous
 
