@@ -64,6 +64,10 @@ class NetworkManager:
         self.namespace = namespace or netdox.plugins
         self.loadPlugins()
 
+        if self.plugins:
+            logger.info(f"NetworkManager discovered the following plugins in '{self.namespace.__name__}': "
+                + json.dumps([plugin.__name__.split('.')[-1] for plugin in self.plugins], indent = 2)
+            )
         for plugin in self.enabled:
             if '.'.join((self.namespace.__name__, plugin)) not in [module.__name__ for module in self.plugins]:
                 logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
