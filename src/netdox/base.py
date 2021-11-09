@@ -138,8 +138,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         :return: The single unique value, or None.
         :rtype: Union[str, None]
         """
-        for label in self.labels:
-            if label in self.network.config.labels:
+        for label in self.network.config.labels:
+            if label in self.labels:
                 val = self.network.config.labels[label][attr]
                 if val: return val
         return None
