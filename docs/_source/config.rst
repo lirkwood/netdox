@@ -50,12 +50,19 @@ Document Label Attributes
 -------------------------
 
 Netdox allows you to leverage the batch application/removal of document labels to easily configure plugin-level attributes
-on a document-by-document basis. To do this, create a document of type 'netdox' with the docid '_nd_config'.
-Each fragment you create in the labels section can be used to configure the attributes of a document label. Try it out!
+on a document-by-document basis. For each label on a document, Netdox will look up the label name in the PageSeeder config file 
+(file of type ``netdox`` with docid ``_nd_config``) and apply any attributes defined there to the object the document represents.
+
+To use the config, create a document matching the stipulations above.
+Each fragment you create in the labels section can be used to configure the attributes of a single document label.
+Each property in the fragment is an attribute key/value pair.
+If multiple labels on the same document provide conflicting values for an attribute, 
+the value from the label that was defined first in the file will take precedence.
+
 This document also has a section titled 'Exclusions'. Domains in this section will be completely ignored by Netdox.
 
 Plugins can register attributes using an iterable of strings named ``__attrs__``, defined at the module level.
 During a refresh, the template for the config file on PageSeeder will be updated, so that each new 'label' fragment created
 contains a property for each attribute registered by a plugin. 
 *Note*: There's no need to recreate your config file if the registered attributes have changed —
-a new config file will be uploaded with the correct structure, and all your old configuration will be preserved. 
+a new config file will be uploaded with the correct structure, and all your old configuration will be preserved.
