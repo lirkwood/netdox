@@ -6,7 +6,10 @@ Releases
 v1.0.0
 ======
 Replaced the roles system with configurable label attributes.
-Moved content of objs package into root package.
+- Replaced roles system with a new config architecture based on document labels.
+- Moved content of objs package into root package.
+- Updated Icinga plugin to use the API instead of SSH.
+- Made PSML classes more robust / flexible.
 
 v0.1.0
 ======
