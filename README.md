@@ -1,4 +1,5 @@
 # Netdox
+[![pipeline status](https://gitlab.allette.com.au/allette/devops/network-documentation/badges/master/pipeline.svg)](https://gitlab.allette.com.au/allette/devops/network-documentation/-/commits/master)  [![coverage report](https://gitlab.allette.com.au/allette/devops/network-documentation/badges/master/coverage.svg)](https://gitlab.allette.com.au/allette/devops/network-documentation/-/commits/master)
 
 Full documentation is available [here](https://netdox.allette.com.au/index.html).
 
