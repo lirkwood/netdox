@@ -13,6 +13,7 @@ build
 *.code-workspace
 netdox.egg-info
 update.ps1
+coverage.xml
 src/netdox/out
 src/netdox/logs
 
