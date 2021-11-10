@@ -1,24 +1,22 @@
-workflow:
-  rules:
-    - if: tags
-
 before_script:
   - python3 -m virtualenv venv
   - source venv/bin/activate
 
+test:
+  script: 
+  - python3 -m pip install tox
+  - tox -- --cov --cov-report xml
+
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
 build:
+  only: 
+    - tags
   script:
   - python3 setup.py bdist_wheel
 
   artifacts:
     paths:
     - dist/*.whl
-
-test:
-  script: 
-  - pip install tox
-  - tox -- --cov --cov-report xml
-
-  artifacts:
-    reports:
-      cobertura: coverage.xml
