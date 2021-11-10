@@ -147,7 +147,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     serviceDomains = getServicePaths(namespace)
 
     contextDetails = utils.config('k8s')[context]
-    podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workload/deployment:{namespace}:'
+    podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workloads/{namespace}:'
 
     # map domains to their destination pods
     podPaths = defaultdict(set)
