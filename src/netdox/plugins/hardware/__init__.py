@@ -23,7 +23,7 @@ from netdox.nwobjs import Node
 logger = logging.getLogger(__name__)
 
 INFO_SECTION = SoupStrainer('section', id = 'info')
-URI_PATTERN = re.compile(r'<uri\s+id="(?P<id>\d+)"')
+URI_PATTERN: re.Pattern = re.compile(r'<uri\s+id="(?P<id>\d+)"')
 
 
 class HardwareNode(Node):
@@ -82,7 +82,7 @@ class HardwareNode(Node):
         return os.path.normpath(os.path.abspath(utils.APPDIR+ f'out/hardware/{self.filename}'))
 
     @property
-    def psmlBody(self) -> Iterable[Tag]:
+    def psmlBody(self) -> list[Tag]:
         return [self.psml]
 
     ## methods
@@ -106,6 +106,7 @@ class HardwareNode(Node):
             'unresolved' not in property.xref.attrs
         ):
             return property.xref['urititle']
+        return None
 
 
 global thread
@@ -129,28 +130,33 @@ def init() -> None:
 
 def runner(network: Network) -> None:
     global thread
-    ## Downloading and unzipping the archive exported in init
-    psconf = utils.config()["pageseeder"]
-
-    with requests.get(
-        f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{thread.zip.string}',
-        headers = {'authorization': f'Bearer {pageseeder.token(psconf)}'},
-        stream = True
-    ) as zipResponse:
-        zipResponse.raise_for_status()
-        with open(utils.APPDIR+ 'plugins/hardware/src/hardware.zip', 'wb') as stream:
-            for chunk in zipResponse.iter_content(8192):
-                stream.write(chunk)
-            
-    zip = zipfile.ZipFile(utils.APPDIR+ 'plugins/hardware/src/hardware.zip')
-    zip.extractall(utils.APPDIR+ 'plugins/hardware/src')
-    shutil.rmtree(utils.APPDIR+ 'plugins/hardware/src/META-INF')
+    zip_location = getattr(thread, 'zip', None)
+    if not zip_location or not zip_location.string:
+        raise RuntimeError(
+            'Failed to retrieve exported file location from PageSeeder.')
+    
+    else:
+        ## Downloading and unzipping the archive exported in init
+        psconf = utils.config()["pageseeder"]
+        with requests.get(
+            f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{zip_location.string}',
+            headers = {'authorization': f'Bearer {pageseeder.token(psconf)}'},
+            stream = True
+        ) as zipResponse:
+            zipResponse.raise_for_status()
+            with open(utils.APPDIR+ 'plugins/hardware/src/hardware.zip', 'wb') as stream:
+                for chunk in zipResponse.iter_content(8192):
+                    stream.write(chunk)
+                
+        zip = zipfile.ZipFile(utils.APPDIR+ 'plugins/hardware/src/hardware.zip')
+        zip.extractall(utils.APPDIR+ 'plugins/hardware/src')
+        shutil.rmtree(utils.APPDIR+ 'plugins/hardware/src/META-INF')
 
     for file in utils.fileFetchRecursive(utils.APPDIR+ 'plugins/hardware/src'):
         filename = os.path.basename(file)
         try:
             if file.endswith('.psml'):
-                with open(utils.APPDIR+ file, 'r', encoding = 'utf-8') as stream:
+                with open(utils.APPDIR+ file, 'r', encoding = 'utf-8') as stream: # type: ignore # ???
                     content = stream.read()
                 soup = BeautifulSoup(content, features = 'xml', parse_only = INFO_SECTION)
                 uri = re.search(URI_PATTERN, content)
