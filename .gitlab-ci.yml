@@ -16,7 +16,7 @@ mypy:
   stage: test
   allow_failure: true
   script:
-    - mypy --namespace-packages src/netdox
+    - mypy --install-types --non-interactive --namespace-packages src/netdox
 
 build:
   stage: build
