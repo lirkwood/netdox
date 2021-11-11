@@ -1,22 +1,29 @@
-before_script:
-  - python3 -m virtualenv venv
-  - source venv/bin/activate
+stages:
+  - test
+  - build
 
-test:
+tox:
+  stage: test
   script: 
-  - python3 -m pip install tox
-  - tox -- --cov --cov-report xml
+    - tox -- --cov --cov-report xml
 
   artifacts:
     reports:
       cobertura: coverage.xml
 
+mypy:
+  stage: test
+  allow_failure: true
+  script:
+    - 'mypy --namespace-packages src/netdox'
+
 build:
+  stage: build
   only: 
     - tags
   script:
-  - python3 setup.py bdist_wheel
+    - python3 setup.py bdist_wheel
 
   artifacts:
     paths:
-    - dist/*.whl
+      - dist/*.whl
