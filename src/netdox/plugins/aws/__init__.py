@@ -43,7 +43,13 @@ class EC2Instance(DefaultNode):
             public_ips: Iterable[str] = None,
             domains: Iterable[str] = None
         ) -> None:
-        super().__init__(network, name, private_ip, public_ips, domains)
+        super().__init__(
+            network, 
+            name, 
+            private_ip, 
+            public_ips if public_ips else [], 
+            domains if domains else []
+        )
 
         self.id = id.strip().lower()
         self.mac = mac.strip().lower()
@@ -98,7 +104,7 @@ class EC2Instance(DefaultNode):
         return frag
 
     @property
-    def psmlBody(self) -> Iterable[Tag]:
+    def psmlBody(self) -> list[Tag]:
         section = Tag(is_xml=True, name='section', attrs={'id':'body'})
         section.append(self.psmlInstanceinf)
         section.append(self.psmlTags)
