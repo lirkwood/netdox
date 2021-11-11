@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Iterable
+from typing import Iterable, Optional
 
 from pypsrp.complex_objects import GenericComplexObject
 from pypsrp.powershell import PowerShell, RunspacePool
@@ -8,6 +8,7 @@ from pypsrp.wsman import WSMan
 
 from netdox import utils
 from netdox import Domain, IPv4Address, Network
+from netdox.base import DNSObject
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ def fetchDNS(network: Network) -> None:
             details = record.adapted_properties
             fqdn, zoneName = parseDN(details['DistinguishedName'])
             if fqdn is not None and fqdn not in network.config.exclusions:
+                dnsobj: DNSObject
                 if fqdn.endswith('.in-addr.arpa'):
                     ip = '.'.join(fqdn.replace('.in-addr.arpa','').split('.')[::-1])
                     dnsobj = network.ips[ip]
@@ -40,7 +42,7 @@ def fetchDNS(network: Network) -> None:
                     else:
                         value = value +'.'+ zoneName
 
-                    if zones[zoneName].adapted_properties['IsReverseLookupZone']:
+                    if zoneName and zones[zoneName].adapted_properties['IsReverseLookupZone']:
                         logger.debug('Ignoring CNAME in reverse lookup zone')
                     else:
                         dnsobj.link(value, 'ActiveDirectory')
@@ -90,7 +92,7 @@ def fetchRecords(pool: RunspacePool, zones: Iterable[GenericComplexObject]) -> l
 
 dc_pattern = re.compile(r'DC\s*=\s*(?P<dc>.*)$', re.IGNORECASE)
 
-def parseDN(distinguished_name: str) -> tuple[str, str]:
+def parseDN(distinguished_name: str) -> tuple[Optional[str], Optional[str]]:
     """
     Parses a DistinguishedName as they appear in ActiveDirectory.
 
@@ -117,3 +119,4 @@ def parseDN(distinguished_name: str) -> tuple[str, str]:
             else:
                 logger.debug('No hostname parsed from ' + distinguished_name)
                 return None, None
+    return None, None
