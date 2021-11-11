@@ -2,6 +2,7 @@ import json
 import logging
 import shutil
 from datetime import date, timedelta
+from typing import cast
 
 from bs4 import BeautifulSoup, Tag
 from lxml import etree
@@ -14,7 +15,7 @@ from netdox.utils import APPDIR
 logger = logging.getLogger(__name__)
 
 
-def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
+def genpub(network: Network, pubdict: dict[str, dict[str, list[str]]]) -> None:
     """
     Generates a publication linking pools to hosts to vms
 
@@ -34,11 +35,16 @@ def genpub(network: Network, pubdict: dict[str, dict[str, list[Node]]]) -> None:
 
         xfrag = pub.new_tag(name = 'xref-fragment', id = f'pool_{count}')
         for hostip, vms in hosts.items():
-            xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = network.ips[hostip].node.docid))
+            node = network.ips[hostip].node
+            if node:
+                xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = node.docid))
+            else:
+                placeholder = pub.new_tag('para')
+                placeholder.string = hostip
+                xfrag.append(placeholder)
 
-            for vm in vms:
-                finalref = network.nodes[vm].docid
-                xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = finalref, level = 1))
+            for vm_docid in vms:
+                xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = vm_docid, level = 1))
                 
         section.append(xfrag)
         count += 1
@@ -93,7 +99,8 @@ def genreport(network: Network) -> None:
     netvms = {}
     for node in network.nodes:
         if node.type == VirtualMachine.type:
-            netvms[node.uuid] = node.docid
+            vm = cast(VirtualMachine, node)
+            netvms[vm.uuid] = node.docid
 
     if psvms or netvms:
         report = BeautifulSoup(REPORT, 'xml')

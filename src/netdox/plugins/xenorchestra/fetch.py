@@ -13,57 +13,9 @@ import logging
 from netdox import iptools, utils
 from netdox import IPv4Address, Network
 from netdox.nwobjs import PlaceholderNode
-from netdox.plugins.xenorchestra import authenticate, call
-from netdox.plugins.xenorchestra.vm import VirtualMachine
+from netdox.plugins.xenorchestra.objs import XOServer, VirtualMachine
 
 logger = logging.getLogger(__name__)
-
-
-#########################
-# Convenience functions #
-#########################
-
-async def fetchType(type: str) -> dict:
-    """
-    Fetches all objects of a given type
-
-    :param type: The type of object to search for
-    :type type: str
-    :return: The response sent by the server
-    :rtype: dict
-    """
-    return (await call('xo.getAllObjects', {
-    'filter': {
-        'type': type
-    }}))['result']
-    
-    
-async def fetchObj(uuid: str) -> dict:
-    """
-    Fetches an object by UUID
-
-    :param uuid: The UUID to search for
-    :type uuid: str
-    :return: The response sent by the server
-    :rtype: dict
-    """
-    return (await call('xo.getAllObjects', {
-    'filter': {
-        'uuid': uuid
-    }}))['result']
-
-
-async def fetchObjByFields(fieldmap: dict[str, str]) -> dict:
-    """
-    Returns an object which matches the fieldmap dictionary
-
-    :param fieldmap: A dictionary of key/value pairs to pass to the request
-    :type fieldmap: dict[str, str]
-    :return: The response sent by the server
-    :rtype: dict
-    """
-    return (await call('xo.getAllObjects', {
-    'filter': fieldmap}))['result']
 
 ##################
 # User functions #
@@ -94,28 +46,29 @@ def runner(network: Network) -> dict[str, dict[str, list[str]]]:
     
     return pubdict
 
-@authenticate
-async def makeNodes(network: Network) -> None:
+async def makeNodes(network: Network) -> tuple[dict, dict[str, list[str]], dict[str, list[str]]]:
     """
     Fetches info about pools, hosts, and VMs
 
     :param network: The network
     :type network: Network
     """
-    pools = await fetchType('pool')
-    hosts = await fetchType('host')
-    vms = await fetchType('VM')
-    
+    # TODO rework this whole module to take advantage of XOServer
+    async with XOServer(**utils.config('xenorchestra')) as xo:
+        pools = await xo.fetchObjs({'type': 'pool'})
+        hosts = await xo.fetchObjs({'type': 'host'})
+        vms = await xo.fetchObjs({'type': 'VM'})
+        
     # Pools
-    poolNames = {}
-    poolHosts = {}
+    poolNames: dict[str, str] = {}
+    poolHosts: dict[str, list[str]] = {}
     for uuid, pool in pools.items():
         poolNames[uuid] = pool['name_label']
         poolHosts[pool['name_label']] = []
 
 
     # Hosts
-    hostVMs = {}
+    hostVMs: dict[str, list[str]] = {}
     for host in hosts.values():
         hostVMs[host['uuid']] = []
         poolHosts[poolNames[host['$pool']]].append(host['address'])
@@ -157,7 +110,6 @@ async def makeNodes(network: Network) -> None:
 
 
 @utils.handle
-@authenticate
 async def template_map(vms: dict):
     """
     Generates a PSML file of all objects that can be used to create a VM with ``createVM``
@@ -165,13 +117,14 @@ async def template_map(vms: dict):
     :param vms: A dictionary of all the VMs, as returned by fetchType
     :type vms: dict
     """
-    vmSource = {
+    vmSource: dict[str, dict[str, str]] = {
         'vms': {},
         'snapshots': {},
         'templates': {}
     }
-    templates = await fetchType('VM-template')
-    snapshots = await fetchType('VM-snapshot')
+    async with XOServer(**utils.config('xenorchestra')) as xo:
+        templates = await xo.fetchObjs({'type': 'VM-template'})
+        snapshots = await xo.fetchObjs({'type': 'VM-snapshot'})
 
     for vm in vms:
         if vms[vm]['power_state'] == 'Running':
