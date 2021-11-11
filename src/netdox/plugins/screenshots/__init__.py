@@ -37,7 +37,7 @@ class ScreenshotManager:
     """List of filenames of screenshots on PageSeeder."""
 
     def __init__(self, domains: Iterable[Domain], workdir: str, basedir: str, outdir: str, placeholder: str) -> None:
-        self.stats = {
+        self.stats: dict[str, list[str]] = {
             'fail': [],
             'diff': [],
             'base': []
@@ -61,10 +61,11 @@ class ScreenshotManager:
                 self.outdir +'/screenshots/'+ os.path.basename(self.placeholder)
             )
 
-        self.domains = [
-            domain for domain in domains if 
-            domain.getAttr(SCREENSHOT_ATTR).strip().lower() in ('true','yes')
-        ]
+        self.domains = []
+        for domain in domains:
+            screenshot = domain.getAttr(SCREENSHOT_ATTR)
+            if screenshot and screenshot.strip().lower() in ('true','yes'):
+                self.domains.append(domain)
 
     def start(self) -> None:
         """
@@ -176,7 +177,7 @@ class ScreenshotManager:
         await browser.close()
         return values
 
-    async def screenshot(self, page: Page, domain: Domain) -> bool:
+    async def screenshot(self, page: Page, domain: Domain) -> tuple[Domain, bool]:
         """
         Takes a screenshot of a domain
 
