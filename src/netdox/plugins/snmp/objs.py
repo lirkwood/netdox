@@ -5,7 +5,7 @@ import socket
 from collections import defaultdict
 from dataclasses import dataclass
 from time import time
-from typing import Callable
+from typing import Callable, DefaultDict, Optional
 
 from pyasn1.codec.ber import decoder, encoder
 from pysnmp.carrier.asyncore.dgram import udp
@@ -38,6 +38,7 @@ class SNMPExplorer:
     """Dictionary of active jobs. Interfaces mapped to job IDs."""
     requests: set
     """Set of IDs of requests sent by this object."""
+    responses: DefaultDict[tuple[str, int], dict]
     broadcastID: int
     """ID of initial broadcast packet."""
 
@@ -79,7 +80,7 @@ class SNMPExplorer:
         self.socket.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.dispatcher.registerTransport(udp.domainName, self.socket)
 
-    def _addJob(self, txiface: tuple[str, int], cbfun: Callable) -> int:
+    def _addJob(self, txiface: tuple[str, int], cbfun: Optional[Callable]) -> int:
         """
         Adds a job to the dispatcher, with an optional callback function
         for when the job ends.
@@ -95,7 +96,7 @@ class SNMPExplorer:
         self.dispatcher.jobStarted(job.id)
         return job.id
 
-    def _rmJob(self, txiface: tuple[str, int]) -> int:
+    def _rmJob(self, txiface: tuple[str, int]) -> Optional[int]:
         """
         Removes a job from the dispatcher and executes its callback if present.
 
@@ -110,6 +111,7 @@ class SNMPExplorer:
                 job.callback(txiface)
             self.dispatcher.jobFinished(job.id)
             return job.id
+        return None
 
     def send(self, 
             message: v2c.Message, 
@@ -217,7 +219,7 @@ class SNMPExplorer:
 @dataclass
 class Job:
     id: int
-    callback: Callable
+    callback: Optional[Callable]
 
     def __init__(self, id: int, callback: Callable = None) -> None:
         self.id = id
