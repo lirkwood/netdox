@@ -1,13 +1,15 @@
+from bs4 import BeautifulSoup
 from netdox import psml, nwobjs
 from test_nwobjs import domain, ipv4, network, node
 from pytest import raises, fixture
 
 class TestXRef:
+    URIID = '7357'
 
     def test_uriid(self):
         assert (
-            str(psml.XRef(uriid = '7357')) == 
-            '<xref frag="default" uriid="7357"></xref>'
+            str(psml.XRef(uriid = self.URIID)) == 
+            f'<xref frag="default" uriid="{self.URIID}"></xref>'
         )
 
     def test_docid(self):
@@ -24,76 +26,104 @@ class TestXRef:
 
     def test_fragment(self):
         assert (
-            str(psml.XRef('7357', frag = 'test_frag')) == 
-            '<xref frag="test_frag" uriid="7357"></xref>'
+            str(psml.XRef(self.URIID, frag = 'test_frag')) == 
+            f'<xref frag="test_frag" uriid="{self.URIID}"></xref>'
         )
 
     def test_attrs(self):
         assert (
-            str(psml.XRef('7357', attrs = {'key': 'value'})) == 
-            '<xref frag="default" key="value" uriid="7357"></xref>'
+            str(psml.XRef(self.URIID, attrs = {'key': 'value'})) == 
+            f'<xref frag="default" key="value" uriid="{self.URIID}"></xref>'
         )
 
     def test_string(self):
         assert (
-            str(psml.XRef('7357', string = 'test_string')) == 
-            '<xref frag="default" uriid="7357">test_string</xref>'
+            str(psml.XRef(self.URIID, string = 'test_string')) == 
+            f'<xref frag="default" uriid="{self.URIID}">test_string</xref>'
         )
 
 class TestLink:
+    URL = 'https://website.domain.com/'
     
     def test_constructor(self):
         assert (
-            str(psml.Link('https://website.domain.com/')) ==
-            '<link href="https://website.domain.com/">https://website.domain.com/</link>'
+            str(psml.Link(self.URL)) ==
+            f'<link href="{self.URL}">{self.URL}</link>'
         )
     
     def test_attrs(self):
         assert (
-            str(psml.Link('https://website.domain.com/', {'key': 'value'})) ==
-            '<link href="https://website.domain.com/" key="value">'
-            +'https://website.domain.com/</link>'
+            str(psml.Link(self.URL, {'key': 'value'})) ==
+            f'<link href="{self.URL}" key="value">'
+            + self.URL + '</link>'
         )
     
     def test_string(self):
+        STRING = 'test_string'
         assert (
-            str(psml.Link('https://website.domain.com/', string = 'test_string')) ==
-            '<link href="https://website.domain.com/">test_string</link>'
+            str(psml.Link(self.URL, string = STRING)) ==
+            f'<link href="{self.URL}">{STRING}</link>'
         )
 
 class TestProperty:
+    NAME = 'property_name'
+    VALUE = 'property_value!'
+    TITLE = 'Property Title'
+
+    @fixture
+    def property(self):
+        return psml.Property(self.NAME, self.VALUE, self.TITLE)
+
+    @fixture
+    def property_XRef(self):
+        return psml.Property(self.NAME, psml.XRef(TestXRef.URIID), self.TITLE)
+
+    @fixture
+    def property_Link(self):
+        return psml.Property(self.NAME, psml.Link(TestLink.URL), self.TITLE)
 
     # n.b. attrs are alphabetically ordered
-    def test_Property_string(self):
+    def test_to_string(self, property):
         """
         Tests the Property class with the value attribute.
         """
         assert (
-            str(psml.Property('test_name', 'test_value', 'Test Title')) ==
-            '<property name="test_name" title="Test Title" value="test_value"/>' 
+            str(property) ==
+            f'<property name="{self.NAME}" title="{self.TITLE}" value="{self.VALUE}"/>' 
         )
 
-    def test_Property_XRef(self):
+    def test_XRef_string(self, property_XRef):
         """
         Tests the Property class with the xref_href attribute.
         """
         assert (
-            str(psml.Property('test_name', psml.XRef('7357'), 'Test Title')) ==
-            '<property datatype="xref" name="test_name" title="Test Title">'
-            +'<xref frag="default" uriid="7357"></xref>'
-            +'</property>' 
+            str(property_XRef) ==
+            f'<property datatype="xref" name="{self.NAME}" title="{self.TITLE}">'
+            f'<xref frag="default" uriid="{TestXRef.URIID}"></xref></property>' 
         )
 
-    def test_Property_Link(self):
+    def test_Link_string(self, property_Link):
         """
         Tests the Property class with the link_url attribute.
         """
         assert (
-            str(psml.Property('test_name', psml.Link('https://sub.domain.com/uri'), 'Test Title')) ==
-            '<property datatype="link" name="test_name" title="Test Title">'
-            +'<link href="https://sub.domain.com/uri">https://sub.domain.com/uri</link>'
-            +'</property>' 
+            str(property_Link) ==
+            f'<property datatype="link" name="{self.NAME}" title="{self.TITLE}">'
+            f'<link href="{TestLink.URL}">{TestLink.URL}</link></property>' 
         )
+
+    def test_roundtrip_tag(self, property):
+        assert psml.Property.from_tag(property) == property
+
+    def test_XRef_tag(self, property_XRef):
+        from_tag = psml.Property.from_tag(property_XRef)
+        assert from_tag == property_XRef
+        assert isinstance(from_tag.findChild(), psml.XRef)
+
+    def test_Link_tag(self, property_Link):
+        from_tag = psml.Property.from_tag(property_Link)
+        assert from_tag == property_Link
+        assert isinstance(from_tag.findChild(), psml.Link)
 
 class TestPropertiesFragment:
 
@@ -207,35 +237,3 @@ def test_recordset2pfrags():
             psml.Property('source', title = 'Source Plugin', value = 'source 2'),
         ]),
     ]
-
-def test_pfrag2dict():
-    """
-    Tests the pfrag2dict function
-    """
-    pfrag = psml.PropertiesFragment(id='foo', properties = [
-        psml.Property('valprop', 'some value'),
-        psml.Property('valpropmulti', 'some value 1'),
-        psml.Property('valpropmulti', 'some value 2'),
-        psml.Property('xrefprop', psml.XRef('9999')),
-        psml.Property('linkprop', psml.Link('https://some.domain.com/'))
-    ]) 
-    result = {
-        'valprop': 'some value',
-        'valpropmulti': [
-            'some value 1',
-            'some value 2'
-        ],
-        'xrefprop': '9999',
-        'linkprop': 'https://some.domain.com/'
-    }
-    class NotString:
-        """Some class that can be converted to a string."""
-        def __init__(self, string): 
-            self.string = str(string)
-        def __repr__(self): 
-            return self.string
-
-    assert psml.pfrag2dict(pfrag) == result
-    assert psml.pfrag2dict(str(pfrag)) == result
-    assert psml.pfrag2dict(NotString(pfrag)) == result
-    assert psml.pfrag2dict('') == {}
