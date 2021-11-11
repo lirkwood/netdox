@@ -15,8 +15,8 @@ from collections import defaultdict
 
 from bs4.element import Tag
 
-import netdox.plugins
 from netdox import pageseeder, utils
+from netdox.nwobjs import Node
 from netdox.containers import Network
 from netdox.config import NetworkConfig, update_template
 from netdox.helpers import LabelDict
@@ -31,8 +31,12 @@ class NetworkManager:
     """The network object this class should manage."""
     namespace: ModuleType
     """The namespace package to load plugins from."""
+    DEFAULT_NAMESPACE = 'netdox.plugins'
+    """Name of the namespace package to load by default."""
     pluginmap: dict[str, set[ModuleType]]
     """Dictionary of stages and their plugins."""
+    nodemap: dict[type[Node], ModuleType]
+    """Maps the subclasses of Node that a plugin exports to the module object."""
     enabled: list[str]
     """List of plugins enabled by the user."""
     stale: dict[date, set[str]]
@@ -61,13 +65,16 @@ class NetworkManager:
             logger.warning('Unable to load plugin configuration file. No plugins will run.')
             self.enabled = []
         
-        self.namespace = namespace or netdox.plugins
+        self.namespace = namespace or importlib.import_module(self.DEFAULT_NAMESPACE)
         self.loadPlugins()
 
         if self.plugins:
             logger.info(f"NetworkManager discovered the following plugins in '{self.namespace.__name__}': "
                 + json.dumps([plugin.__name__.split('.')[-1] for plugin in self.plugins], indent = 2)
             )
+        else:
+            logger.warning(f"Failed to discover any plugins in '{self.namespace.__name__}'")
+
         for plugin in self.enabled:
             if '.'.join((self.namespace.__name__, plugin)) not in [module.__name__ for module in self.plugins]:
                 logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
@@ -95,11 +102,10 @@ class NetworkManager:
         """
         self.plugins.add(plugin)
 
-        if hasattr(plugin, '__nodes__'):
-            for node_type in plugin.__nodes__:
-                self.nodemap[node_type] = plugin
+        for node_type in getattr(plugin, '__nodes__', []):
+            self.nodemap[node_type] = plugin
 
-        for stage in plugin.__stages__:
+        for stage in getattr(plugin, '__stages__', []):
             self.pluginmap[stage].add(plugin)
 
     def loadPlugins(self) -> None:
@@ -110,7 +116,7 @@ class NetworkManager:
         :type dir: str
         :raises ImportError: If an Exception is raised during the call to ``importlib.import_module``
         """
-        for plugin in pkgutil.iter_modules(self.namespace.__path__):
+        for plugin in pkgutil.iter_modules(getattr(self.namespace, '__path__', ())):
             if plugin.name in self.enabled:
                 try:
                     self.add(importlib.import_module(self.namespace.__name__ +'.'+ plugin.name))
@@ -122,8 +128,9 @@ class NetworkManager:
         Initialises all plugins in the pluginmap.
         """
         for plugin in self.plugins:
-            if hasattr(plugin, 'init') and isinstance(plugin.init, Callable):
-                plugin.init()
+            init = getattr(plugin, 'init', None)
+            if callable(init):
+                init()
 
     def runPlugin(self, plugin: ModuleType, stage: str = 'none') -> None:
         """
@@ -134,8 +141,9 @@ class NetworkManager:
         :param stage: The stage to run
         :type stage: str, optional
         """
+        stages = getattr(plugin, '__stages__', {stage: lambda _: ...})
         try:
-            plugin.__stages__[stage](self.network)
+            stages[stage](self.network)
         except Exception:
             logger.error(f'{plugin.__name__} threw an exception during stage {stage}: \n{format_exc()}')
 
@@ -161,7 +169,7 @@ class NetworkManager:
         return {
             attr for plugin in {
                 plugin for plugin in self.plugins if hasattr(plugin, '__attrs__')
-            } for attr in plugin.__attrs__
+            } for attr in getattr(plugin, '__attrs__', ())
         }
 
     def validConfig(self) -> NetworkConfig:
@@ -202,8 +210,8 @@ class NetworkManager:
         Sentences stale network objects and adds a section on stale documents to the network report.
         """
         for folder in ('domains', 'ips', 'nodes'):
-            for expiry, uris in pageseeder.sentenceStale(folder).items():
-                self.stale[expiry] |= set(uris)
+            for expiry, uri_list in pageseeder.sentenceStale(folder).items():
+                self.stale[expiry] |= set(uri_list)
 
         section = Tag(is_xml = True, 
             name = 'section', 

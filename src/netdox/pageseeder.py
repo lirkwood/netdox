@@ -198,6 +198,7 @@ def sentence_uri(uri: str) -> date:
             match = re.fullmatch(utils.expiry_date_pattern, label)
             if match:
                 return date.fromisoformat(match['date'])
+        raise RuntimeError(f'URI {uri} is marked stale but has no expiry date.')
 
 def clear_sentence(uri: str) -> None:
     """

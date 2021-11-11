@@ -139,7 +139,7 @@ class Property(Tag):
         if value:
             if isinstance(value, str):
                 self.attrs['value'] = value
-            else:
+            elif isinstance(value, PSMLLink):
                 self.attrs['datatype'] = value.name
                 self.append(value)
         else:
@@ -165,6 +165,13 @@ class Property(Tag):
                 title,
                 property.attrs
             )
+
+        elif property.has_attr('name'):
+            return cls(property['name'], '')
+
+        else:
+            raise AttributeError(
+                'Cannot create Property from tag with no value, children, or name.')
 
 
 class PSMLLink(Tag, ABC):
@@ -231,27 +238,28 @@ class XRef(PSMLLink):
         (will be populated by PageSeeder if not set).
         :type string: str, optional
         """
-        super().__init__(
-            name = 'xref',
-            value = uriid or docid or href,
-            attrs = (attrs or {}) | {'frag': frag},
-            string = string or ''
-        )
-        if uriid:
-            self.attrs['uriid'] = uriid
-        elif docid:
-            self.attrs['docid'] = docid
-        elif href:
-            self.attrs['href'] = href
+        if uriid or docid or href:
+            super().__init__(
+                name = 'xref',
+                value = uriid or docid or href, # type: ignore
+                attrs = (attrs or {}) | {'frag': frag},
+                string = string or ''
+            )
+            if uriid:
+                self.attrs['uriid'] = uriid
+            if docid:
+                self.attrs['docid'] = docid
+            if href:
+                self.attrs['href'] = href
         else:
             raise AttributeError("One of 'uriid', 'docid', or 'href' must be set.")
 
     @classmethod
     def from_tag(cls, tag: Tag) -> XRef:
         return cls(
-            tag['uriid'] if tag.hasattr('uriid') else None,
-            tag['docid'] if tag.hasattr('docid') else None,
-            tag['href'] if tag.hasattr('href') else None,
+            tag['uriid'] if tag.has_attr('uriid') else None,
+            tag['docid'] if tag.has_attr('docid') else None,
+            tag['href'] if tag.has_attr('href') else None,
             attrs = tag.attrs, 
             string = tag.string
         )
@@ -286,12 +294,12 @@ class Link(PSMLLink):
     @classmethod
     def from_tag(cls, tag: Tag) -> Link:
         return cls(
-            tag['url'],
+            tag['href'],
             attrs = tag.attrs,
             string = tag.string
         )
 
-PROPERTY_DATATYPES: dict[str, PSMLLink] = {
+PROPERTY_DATATYPES: dict[str, type[PSMLLink]] = {
     'xref': XRef, 'link': Link
 }
 
@@ -361,40 +369,6 @@ def recordset2pfrags(
         ]))
         count += 1
     return frags
-
-
-def pfrag2dict(fragment: str) -> dict:
-    """
-    Converts a PSML *properties-fragment* to a dictionary mapping property names to values / xref uriid / link hrefs.
-    
-    Multiple properties with the same name will produce an array of values in the output dictionary.
-
-    :param fragment: A valid properties-fragment
-    :type fragment: str
-    :raises TypeError: If the fragment cannot be parsed as xml.
-    :raises NotImplementedError: If the property datatype attribute is present and is not one of; xref, link.
-    :raises RuntimeError: If the fragment contains no properties.
-    :return: A dictionary mapping property names to their values.
-    :rtype: dict
-    """
-    if isinstance(fragment, str):
-        fragment = BeautifulSoup(fragment, features='xml')
-    elif not isinstance(fragment, Tag):
-        fragment = BeautifulSoup(str(fragment), features='xml')
-    
-    d = defaultdict(list)
-    for property in fragment("property"):
-        if 'value' in property.attrs:
-            d[property['name']].append(property['value'])
-        elif 'datatype' in property.attrs:
-            if property['datatype'] == 'xref':
-                d[property['name']].append(property.xref['uriid'])
-            elif property['datatype'] == 'link':
-                d[property['name']].append(property.link['href'])
-            else:
-                raise NotImplementedError('Unimplemented property type')
-    
-    return {k: (v if len(v) > 1 else v[0]) for k, v in d.items()}
 
 
 #############

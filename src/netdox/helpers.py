@@ -4,17 +4,16 @@ This module contains some essential helper classes.
 from __future__ import annotations
 
 import json
+import logging
 import os
+from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Iterable, Iterator
-import logging
-from lxml import etree
-from collections import defaultdict
+from typing import Iterable, Iterator, Optional
 
 from bs4 import BeautifulSoup, Tag
-from netdox import iptools, pageseeder, psml, utils
-from netdox import base, nwobjs
+from lxml import etree
+from netdox import base, iptools, nwobjs, pageseeder, psml, utils
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,7 @@ class Locator:
     def __iter__(self) -> Iterator[str]:
         yield from self.location_map.keys()
 
-    def locate(self, ip_set: Iterable) -> str:
+    def locate(self, ip_set: Iterable) -> Optional[str]:
         """
         Returns a location for an ip or set of ips, or None if there is no determinable location.
         Locations are decided based on the content of the ``locations.json`` config file (for more see :ref:`config`)
@@ -56,7 +55,7 @@ class Locator:
         :rtype: str
         """
         # sort every declared subnet that matches one of ips by mask size
-        matches = {}
+        matches: dict[int, list[str]] = {}
         for subnet in ip_set:
             for match in self.location_pivot:
                 if iptools.subn_contains(match, subnet):

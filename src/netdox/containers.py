@@ -3,7 +3,7 @@ This module contains any container classes.
 """
 from __future__ import annotations
 
-from typing import DefaultDict, Iterable, Iterator, Type, Union
+from typing import Iterable, Iterator, Type, Union
 import pickle
 
 from netdox import iptools
@@ -12,7 +12,7 @@ from netdox.config import NetworkConfig
 from netdox.utils import APPDIR, Cryptor
 
 
-class DomainSet(base.DNSObjectContainer):
+class DomainSet(base.DNSObjectContainer[nwobjs.Domain]):
     """
     Container for a set of Domains
     """
@@ -45,7 +45,7 @@ class DomainSet(base.DNSObjectContainer):
         return self.objects
 
 
-class IPv4AddressSet(base.DNSObjectContainer):
+class IPv4AddressSet(base.DNSObjectContainer[nwobjs.IPv4Address]):
     """
     Container for a set of IPv4Address
     """
@@ -125,7 +125,7 @@ class IPv4AddressSet(base.DNSObjectContainer):
                 self[ip]
 
 
-class NodeSet(base.NetworkObjectContainer):
+class NodeSet(base.NetworkObjectContainer[nwobjs.Node]):
     """
     Container for a set of Nodes
     """
@@ -196,6 +196,7 @@ class NodeSet(base.NetworkObjectContainer):
             return cache
         cache.add(dnsobj_name)
 
+        dnsobj: base.DNSObject
         if dnsobj_name in self.network.ips:
             dnsobj = self.network.ips[dnsobj_name]
             dnsobj_set = node.ips
@@ -218,7 +219,7 @@ class NodeSet(base.NetworkObjectContainer):
             for backref in backrefs:
                 cache |= self.resolveRefs(node_identity, backref, cache)
 
-        if hasattr(dnsobj, 'nat') and dnsobj.nat:
+        if isinstance(dnsobj, nwobjs.IPv4Address) and dnsobj.nat:
             cache |= self.resolveRefs(node_identity, dnsobj.nat, cache)
 
         return cache

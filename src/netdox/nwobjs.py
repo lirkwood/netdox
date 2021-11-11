@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, Optional
 from hashlib import sha256
 
 from bs4 import Tag
@@ -115,7 +115,7 @@ class Domain(base.DNSObject):
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
 
-    def _enter(self) -> str:
+    def _enter(self) -> Domain:
         """
         Adds this Domain to the network's DomainSet.
 
@@ -128,7 +128,7 @@ class Domain(base.DNSObject):
             self.network.domains[self.name] = self
         return self
 
-    def merge(self, domain: Domain) -> Domain:
+    def merge(self, domain: Domain) -> Domain: # type: ignore
         """
         In place merge of two Domain instances.
         This method should always be called on the object entering the set.
@@ -147,10 +147,8 @@ class IPv4Address(base.DNSObject):
     """
     A single IP address found in the network
     """
-    nat: str
+    nat: Optional[str]
     """The IP this address resolves to through the NAT."""
-    unused: bool
-    """Whether or not a Domain in the network resolves to this IP."""
     subnet: str
     """The 24 bit CIDR subnet this IP is in."""
     is_private: bool
@@ -160,7 +158,7 @@ class IPv4Address(base.DNSObject):
 
     def __init__(self, 
         network: Network, 
-        address: object, 
+        address: str,
         labels: Iterable[str] = None
     ) -> None:
 
@@ -230,7 +228,7 @@ class IPv4Address(base.DNSObject):
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
 
-    def _enter(self) -> str:
+    def _enter(self) -> IPv4Address:
         """
         Adds this IPv4Address to the network's IPv4AddressSet.
 
@@ -245,7 +243,7 @@ class IPv4Address(base.DNSObject):
             self.network.ips.subnets.add(self.subnetFromMask())
         return self
 
-    def merge(self, ip: IPv4Address) -> IPv4Address:
+    def merge(self, ip: IPv4Address) -> IPv4Address: # type: ignore
         """
         In place merge of two IPv4Address instances.
         This method should always be called on the object entering the set.
@@ -299,13 +297,13 @@ class Node(base.NetworkObject):
     """
     identity: str
     """A string unique to this Node that can always be used to find it."""
-    domains: set[str]
+    _domains: set[str]
     """A set of domains resolving to this Node."""
-    ips: set[str]
+    _ips: set[str]
     """A set of IPv4 addresses resolving to this Node."""
     type: str = 'base'
     """A string unique to this implementation of Node."""
-    _location: str = None
+    _location: Optional[str]
     """Optional manual location attribute to use instead of the network locator."""
 
     ## dunder methods
@@ -320,10 +318,11 @@ class Node(base.NetworkObject):
         ) -> None:
         self.identity = identity.lower()
         self.type = self.__class__.type
+        self._location = None
         super().__init__(network, name, identity, labels)
 
-        self.domains = {d.lower() for d in domains} if domains else set()
-        self.ips = set(ips) if ips else set()
+        self._domains = {d.lower() for d in domains} if domains else set()
+        self._ips = set(ips) if ips else set()
 
     ## abstract properties
 
@@ -348,9 +347,25 @@ class Node(base.NetworkObject):
     def outpath(self) -> str:
         return os.path.normpath(os.path.join(utils.APPDIR, f'out/nodes/{self.docid}.psml'))
 
+    @property
+    def domains(self) -> set[str]:
+        return self._domains
+
+    @domains.setter
+    def domains(self, val: set[str]) -> None:
+        self._domains = val
+
+    @property
+    def ips(self) -> set[str]:
+        return self._ips
+
+    @ips.setter
+    def ips(self, val: set[str]) -> None:
+        self._ips = val
+
     ## abstract methods
 
-    def _enter(self) -> str:
+    def _enter(self) -> Node:
         """
         Adds this Node to the network's NodeSet.
 
@@ -362,7 +377,7 @@ class Node(base.NetworkObject):
         else:
             self.network.nodes[self.identity] = self
 
-        cache = set()
+        cache: set[str] = set()
         for domain in list(self.domains):
             cache |= self.network.nodes.resolveRefs(self.identity, domain, cache)
 
@@ -371,7 +386,7 @@ class Node(base.NetworkObject):
 
         return self
 
-    def merge(self, node: Node) -> Node:
+    def merge(self, node: Node) -> Node: # type: ignore
         super().merge(node)
         self.domains |= node.domains
         self.ips |= node.ips
@@ -478,13 +493,13 @@ class PlaceholderNode(Node):
             labels = labels
         )
 
-        nodes = set()
+        nodes: set[Node] = set()
         for domain in self.domains:
-            if self.network.domains[domain].node:
-                nodes.add(self.network.domains[domain].node)
+            node = self.network.domains[domain].node
+            if node: nodes.add(node)
         for ip in self.ips:
-            if self.network.ips[ip].node:
-                nodes.add(self.network.ips[ip].node)
+            node = self.network.ips[ip].node
+            if node: nodes.add(node)
             
         assert len(nodes) <= 1, 'Placeholder cannot be consumed by more than one node.'
         if nodes:
@@ -493,7 +508,7 @@ class PlaceholderNode(Node):
     ## abstract properties
 
     @property
-    def psmlBody(self) -> Iterable[Tag]:
+    def psmlBody(self) -> list[Tag]:
         """
         Returns an Iterable containing section tags to add to the body of this Node's output PSML.
 
@@ -517,11 +532,11 @@ class PlaceholderNode(Node):
 
     ## methods
 
-    def _enter(self) -> str:
+    def _enter(self) -> Node:
         super()._enter()
         return self.network.nodes[self.identity]
 
-    def merge(self, node: Node) -> Node:
+    def merge(self, node: Node) -> Node: # type: ignore
         """
         Copies any data in this object to the corresponding attributes in *node*.
         Replaces *self* in all locations with *node*.

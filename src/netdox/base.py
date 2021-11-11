@@ -4,11 +4,11 @@ This module contains the abstract base classes for most of the other classes in 
 from __future__ import annotations
 
 from abc import ABC, ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Iterable, Iterator, Type, Union
 from functools import cache
+from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type,
+                    TypeVar, Union)
 
-from bs4 import Tag
-
+from bs4.element import Tag
 
 if TYPE_CHECKING:
     from netdox import Network, helpers
@@ -48,7 +48,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A unique, predictable identifier to be used for retrieving objects from NWObjContainers"""
     network: Network
     """The containing network."""
-    psmlFooter: list[Tag] = None
+    psmlFooter: list[Tag]
     """A list of fragment tags to add to the *footer* section of this object's output PSML."""
     labels: set[str]
     """A set of labels to apply to this object's output document."""
@@ -102,11 +102,33 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         :rtype: str
         """ 
         pass
+
+    @property
+    @abstractmethod
+    def domains(self) -> set[str]:
+        """
+        Returns a set of all the domains this NetworkObject has resolves to/from.
+
+        :return: A set of FQDNs.
+        :rtype: set[str]
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def ips(self) -> set[str]:
+        """
+        Returns a set of all the ips this NetworkObject has resolves to/from.
+
+        :return: A set of IPv4Addresses.
+        :rtype: set[str]
+        """
+        ...
     
     ## methods
 
     @abstractmethod
-    def _enter(self) -> None:
+    def _enter(self) -> NetworkObject:
         """
         Adds this object to the network and NetworkObjectContainer.
         This function is called after instantiation, 
@@ -143,51 +165,28 @@ class NetworkObject(metaclass=NetworkObjectMeta):
                 val = self.network.config.labels[label][attr]
                 if val: return val
         return None
-        
+
+NWObjT = TypeVar('NWObjT', bound = NetworkObject)
 
 class DNSObject(NetworkObject):
     """
     A NetworkObject representing an object in a managed DNS zone.
     """
-    zone: str
+    zone: Optional[str]
     """The DNS zone this object is from."""
     records: dict[str, helpers.RecordSet]
     """A dictionary mapping record type to a RecordSet."""
     backrefs: dict[str, set]
     """Like records but stores reverse references from DNSObjects linking to this one."""
-    node: Node
+    node: Optional[Node]
     """The node this DNSObject resolves to"""
 
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, zone: str, labels: Iterable[str] = None) -> None:
+    def __init__(self, network: Network, name: str, zone: str = None, labels: Iterable[str] = None) -> None:
         super().__init__(network, name, name, labels)
         self.zone = zone.lower() if zone else zone
         self.node = None
-
-    ## properties
-
-    @property
-    @abstractmethod
-    def domains(self) -> set[str]:
-        """
-        Returns a set of all the domains this DNSObject has a record / backref to.
-
-        :return: A set of domains relevant to this object, as strings.
-        :rtype: set[str]
-        """
-        ...
-
-    @property
-    @abstractmethod
-    def ips(self) -> set[str]:
-        """
-        Returns a set of all the ips this DNSObject has a record / backref to.
-
-        :return: A set of ips relevant to this object, as strings.
-        :rtype: set[str]
-        """
-        ...
 
     ## methods
 
@@ -204,7 +203,7 @@ class DNSObject(NetworkObject):
         """
         pass
 
-    def merge(self, object: DNSObject) -> DNSObject:
+    def merge(self, object: DNSObject) -> DNSObject: # type: ignore
         """
         In place merge of two DNSObjects of the same type.
         This method should always be called on the object entering the set.
@@ -225,59 +224,59 @@ class DNSObject(NetworkObject):
 
     #TODO add exclusion validation at this level: _enter?
 
+DNSObjT = TypeVar('DNSObjT', bound = DNSObject)
 
 ##############
 # Containers #
 ##############
 
-class NetworkObjectContainer(ABC):
+class NetworkObjectContainer(ABC, Generic[NWObjT]):
     """
     Container for a set of network objects
     """
     objectType: str
     """The type of NetworkObject this object can contain."""
-    objectClass: Type[NetworkObject]
+    objectClass: Type[NWObjT]
     """The class of objectType."""
-    objects: dict
+    objects: dict[str, NWObjT]
     """A dictionary of the NetworkObjects in this container."""
     network: Network
     """The network this container is in, if any."""
 
     ## dunder methods
 
-    def __getitem__(self, key: str) -> NetworkObject:
+    def __getitem__(self, key: str) -> NWObjT:
         return self.objects[key.lower()]
 
-    def __setitem__(self, key: str, value: NetworkObject) -> None:
+    def __setitem__(self, key: str, value: NWObjT) -> None:
         self.objects[key.lower()] = value
 
     def __delitem__(self, key: str) -> None:
         del self.objects[key.lower()]
 
-    def __iter__(self) -> Iterator[NetworkObject]:
+    def __iter__(self) -> Iterator[NWObjT]:
         yield from set(self.objects.values())
 
     def __contains__(self, key: str) -> bool:
         return self.objects.__contains__(key.lower())
 
-class DNSObjectContainer(NetworkObjectContainer):
+class DNSObjectContainer(NetworkObjectContainer[DNSObjT], Generic[DNSObjT]):
     """
     Container for a set of DNSObjects.
     """
-    objectClass: Type[DNSObject]
 
     ## dunder methods
 
-    def __init__(self, network: Network, objects: Iterable[DNSObject] = []) -> None:
+    def __init__(self, network: Network, objects: Iterable[DNSObjT] = []) -> None:
         self.network = network
         self.objects = {object.name: object for object in objects}
 
-    def __getitem__(self, key: str) -> DNSObject:
+    def __getitem__(self, key: str) -> DNSObjT:
         if key not in self.objects:
             self.objects[key] = self.objectClass(self.network, key)
         return super().__getitem__(key)
 
-    def __contains__(self, key: Union[str, DNSObject]) -> bool:
+    def __contains__(self, key: Union[str, DNSObjT]) -> bool:
         if isinstance(key, str):
             return super().__contains__(key)
         else:
