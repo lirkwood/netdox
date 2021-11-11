@@ -36,3 +36,17 @@ deps =
     pytest-cov
 commands = pytest {posargs}
 """
+
+[tool.mypy]
+python_version = 3.9
+ignore_missing_imports = true
+
+# Ignore all errors
+[[tool.mypy.overrides]]
+module = [
+    'netdox.iptools',
+    'netdox.plugins.k8s.webhooks',
+    'netdox.plugins.dnsmadeeasy.create',
+    'netdox.plugins.activedirectory.create'
+]
+ignore_errors = true
