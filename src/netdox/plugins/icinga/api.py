@@ -7,6 +7,7 @@ Provides functions for interacting with the Icinga API.
 import json
 import logging
 from collections import defaultdict
+from typing import DefaultDict
 import warnings
 
 import requests
@@ -185,19 +186,21 @@ def fetchMonitors(icinga_host: str) -> tuple[dict[str, list[dict]], dict[str, li
     hosts = json.loads(fetch(icinga_host, 'hosts').text)
     services = json.loads(fetch(icinga_host, 'services').text)
 
-    hostServices = defaultdict(list)
+    hostServices: DefaultDict[str, list[str]] = defaultdict(list)
     for service in services['results']:
         host = service['attrs']['host_name']
         if host not in hostServices:
             hostServices[host] = []
         hostServices[host].append(service['name'].split('!')[-1])
 
-    generated, manual = defaultdict(list), defaultdict(list)
+    generated: DefaultDict[str, list[dict]] = defaultdict(list)
+    manual: DefaultDict[str, list[dict]] = defaultdict(list)
     for host in hosts['results']:
         # first template is just host name
         host['attrs']['templates'].pop(0)
         services = [host['attrs']['check_command']] + hostServices[host['attrs']['address']]
 
+        # TODO make generated group configurable
         if host['attrs']['groups'] == ['generated']:
             container = generated
         else:

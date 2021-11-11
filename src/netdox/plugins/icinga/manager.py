@@ -1,13 +1,12 @@
 import logging
 from collections import defaultdict
-from typing import Iterable
+from typing import Iterable, Optional
 
 from bs4 import BeautifulSoup
 from netdox import Domain, Network, utils
 from netdox.plugins.icinga.api import (TEMPLATE_ATTR, createHost,
                                        fetchMonitors, removeHost,
                                        updateHostTemplate)
-from netdox.plugins.icinga.ssh import reload, rm_host, set_host
 
 logger = logging.getLogger(__name__)
 
@@ -30,51 +29,16 @@ class MonitorManager:
 
     def __init__(self, network: Network) -> None:
         self.network = network
-        self.icingas = dict(utils.config('icinga'))
+        icinga_details = dict(utils.config('icinga'))
 
-        self.locationIcingas = {location: None for location in self.network.locator}
-        for icinga, details in self.icingas.items():
+        self.icingas = list(icinga_details)
+        self.locationIcingas = dict.fromkeys(self.network.locator)
+        for icinga, details in icinga_details.items():
             icingaLocations = details['locations']
             for location in icingaLocations:
                 self.locationIcingas[location] = icinga
 
         self.manual, self.generated = {}, {}
-
-    ## Interacting with Icinga instances
-
-    def makeMonitor(self, domain: str, icinga: str, template = 'generic-host') -> None:
-        """
-        Creates a generated monitor for *domain* in *icinga*.
-        Also adds *icinga* to the reload queue.
-
-        :param domain: Address used by the monitor
-        :type domain: str
-        :param icinga: FQDN of the Icinga instance to create the monitor in.
-        :type icinga: str
-        """
-        set_host(domain, icinga = icinga, template = template)
-        self.reloadQueue.add(icinga)
-
-    def removeMonitor(self, domain: str, icinga: str) -> None:
-        """
-        Removes the generated monitor for *domain* in *icinga*.
-        Also adds *icinga* to the reload queue.
-
-        :param domain: Address used by the monitor
-        :type domain: str
-        :param icinga: FQDN of the Icinga instance to remove the monitor from.
-        :type icinga: str
-        """
-        rm_host(domain, icinga = icinga)
-        self.reloadQueue.add(icinga)
-
-    def reload(self) -> None:
-        """
-        Reloads any Icinga instances that have had their configurations modified.
-        """
-        for icinga in self.reloadQueue:
-            reload(icinga = icinga)
-        self.reloadQueue = set()
 
     ## Data gathering and normalisation
 
@@ -170,15 +134,15 @@ class MonitorManager:
                     # if location wrong
                     if self.generated[domain.name]['icinga'] != icinga:
                         removeHost(self.generated[domain.name]['icinga'], domain.name)
-                        createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR))
+                        createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore
                         return False
                     # if template wrong
                     elif self.generated[domain.name]['templates'][0] != domain.getAttr(TEMPLATE_ATTR):
-                        updateHostTemplate(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR))
+                        updateHostTemplate(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore
                         return False
                 # if no monitor
                 else:
-                    createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR))
+                    createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore # TODO find mypy fix
                     return False
 
         return True
@@ -197,11 +161,11 @@ class MonitorManager:
         for domain in domain_set:
             if self.validateDomain(domain):
                 if domain.name in self.generated:
-                    domain.icinga = self.generated[domain.name]
+                    setattr(domain, 'icinga', self.generated[domain.name])
                 else:
                     for icinga in self.icingas:
                         if domain.name in self.manual[icinga]:
-                            domain.icinga = self.manual[icinga][domain.name][0]
+                            setattr(domain, 'icinga', self.manual[icinga][domain.name][0])
             else:
                 invalid.append(domain)
         
@@ -232,7 +196,7 @@ class MonitorManager:
 
     ## Miscellaneous
 
-    def locateDomain(self, domain: str) -> str:
+    def locateDomain(self, domain: str) -> Optional[str]:
         """
         Guesses the best location to attribute to a domain name.
         Returns None if no location can be found.
@@ -246,8 +210,8 @@ class MonitorManager:
         :rtype: str
         """
         if domain in self.network.domains:
-            if self.network.domains[domain].node:
-                return self.network.domains[domain].node.location
+            node = self.network.domains[domain].node
+            if node: return node.location
             else:
                 return self.network.locator.locate(
                     self.network.domains[domain].records['A']
@@ -259,14 +223,15 @@ class MonitorManager:
         Appends a properties-fragment to the psmlFooter of each domain with a monitor.
         """
         for domain in self.network.domains:
-            if hasattr(domain, 'icinga'):
+            icinga_details = getattr(domain, 'icinga', None)
+            if icinga_details:
                 frag = BeautifulSoup(f'''
                 <properties-fragment id="icinga">
-                    <property name="icinga" title="Icinga Instance" value="{domain.icinga['icinga']}" />
-                    <property name="template" title="Monitor Template" value="{domain.icinga['templates'][0]}" />
+                    <property name="icinga" title="Icinga Instance" value="{icinga_details['icinga']}" />
+                    <property name="template" title="Monitor Template" value="{icinga_details['templates'][0]}" />
                 </properties-fragment>
                 ''', features = 'xml')
-                for service in domain.icinga['services']:
+                for service in icinga_details['services']:
                     frag.find(id='icinga').append(frag.new_tag('property', attrs = {
                         'name': 'service',
                         'title': 'Monitor Service',
