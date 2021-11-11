@@ -6,15 +6,13 @@ from __future__ import annotations
 import logging
 import os
 from collections import defaultdict
-from typing import Iterable
+from typing import cast
 
 import yaml
-from bs4.element import Tag
 from kubernetes import config
 from kubernetes.client import ApiClient
 from netdox import psml, utils
-from netdox import Domain, Network
-from netdox.nwobjs import Node
+from netdox import Network
 
 logging.getLogger('kubernetes').setLevel(logging.INFO)
 
@@ -91,10 +89,10 @@ def domainapps(network: Network) -> None:
     domainpaths = defaultdict(set)
     for node in network.nodes:
         if node.type == App.type:
-            node: App
-            for path in node.paths:
+            appnode = cast(App, node)
+            for path in appnode.paths:
                 domainpaths[path.split('/')[0]].add(path)
-                pathnodes[path] = node
+                pathnodes[path] = appnode
     
     for domain, paths in domainpaths.items():
         ## Add a pfrag of paths relevant to each domain

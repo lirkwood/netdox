@@ -15,7 +15,7 @@ class App(Node):
     paths: set[str]
     """Ingress paths that resolve to this node. 
     Only includes paths starting on domains that also resolve to a configured proxy IP."""
-    labels: dict
+    pod_labels: dict
     """Labels applied to the pods"""
     template: dict
     """Template pods are started from"""
@@ -35,17 +35,11 @@ class App(Node):
             template: dict = None
         ) -> None:
 
-        domains = {p.split('/')[0] for p in sorted(paths, key = len)}
+        domains = {p.split('/')[0] for p in sorted(paths if paths else [], key = len)}
         for domain in list(domains):
-            if domain in network.domains:
-                for proxy in utils.config('k8s')[cluster]['proxies']:
-                    if not network.resolvesTo(network.domains[domain], network.ips[proxy]):
-                        domains.remove(domain)
-
-            else:
-                Domain(network, domain)       
-        
-        self.paths = {path for path in paths if path.split('/')[0] in domains}
+            for proxy in utils.config('k8s')[cluster]['proxies']:
+                if not network.resolvesTo(network.domains[domain], network.ips[proxy]):
+                    domains.remove(domain)
 
         super().__init__(
             network = network, 
@@ -57,14 +51,14 @@ class App(Node):
         
         self.paths = set(paths) if paths else set()
         self.cluster = cluster
-        self.labels = labels or {}
+        self.pod_labels = labels or {}
         self.template = template or {}
         self.pods = pods or {}
 
     ## abstract properties
     
     @property
-    def psmlBody(self) -> Iterable[Tag]:
+    def psmlBody(self) -> list[Tag]:
         return [self.psmlPodTemplate, self.psmlRunningPods]
 
     ## properties
@@ -104,6 +98,7 @@ class App(Node):
         section = Tag(is_xml=True, name='section', attrs={'id':'pods', 'title':'Running Pods'})
         count = 0
         for pod in self.pods.values():
+            worker_node = self.network.ips[pod["workerIp"]].node
             section.append(psml.PropertiesFragment(id = 'pod_' + str(count), properties = [
                 psml.Property(name = 'pod', title = 'Pod', value = pod['name']),
 
@@ -114,7 +109,10 @@ class App(Node):
                     value = psml.Link(pod['rancher'])),
 
                 psml.Property(name = 'worker_node', title = 'Worker Node', 
-                    value = psml.XRef(docid = self.network.ips[pod["workerIp"]].node.docid))
+                    value = (
+                        psml.XRef(docid = worker_node.docid)
+                        if worker_node else '—'
+                    ))
             ]))
             count += 1
         return section

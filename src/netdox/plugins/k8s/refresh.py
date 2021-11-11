@@ -11,6 +11,7 @@ which describes all apps running from deployments in the configured Kubernetes c
 import json
 import logging
 from collections import defaultdict
+from typing import DefaultDict
 
 from kubernetes import client
 
@@ -22,10 +23,12 @@ from netdox.plugins.k8s.app import App
 
 logger = logging.getLogger(__name__)
 
-def getDeploymentDetails(namespace: str='default') -> dict[str, dict]:
+def getDeploymentDetails(apiClient: client.ApiClient, namespace: str='default') -> dict[str, dict]:
     """
     Maps deployments in a given namespace to their labels and pod template.
 
+    :param apiClient: The client to use for contacting the API.
+    :type apiClient: client.ApiClient
     :param namespace: The namespace to search in, defaults to 'default'.
     :type namespace: str, optional
     :return: A dictionary mapping deployment name to a dictionary of details about it.
@@ -65,16 +68,18 @@ def getDeploymentDetails(namespace: str='default') -> dict[str, dict]:
     return depDetails
 
 
-def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
+def getPodsByLabel(apiClient: client.ApiClient, namespace: str='default') -> dict[int, list[dict[str, str]]]:
     """
     Maps the digest of a pod's labels to the name of the pod and its host node.
 
+    :param apiClient: The client to use for contacting the API.
+    :type apiClient: client.ApiClient
     :param namespace: The namespace to search in, defaults to 'default'
     :type namespace: str, optional
     :return: A dictionary mapping the sha1 digest of the pod's labels, to a list of dictionaries describing pods with those labels.
     :rtype: dict[str, list[dict[str, str]]]
     """
-    podsByLabel = {}
+    podsByLabel: dict[int, list[dict[str, str]]] = {}
     api = client.CoreV1Api(apiClient)
     allPods = api.list_namespaced_pod(namespace)
     for pod in allPods.items:
@@ -92,10 +97,12 @@ def getPodsByLabel(namespace: str='default') -> dict[str, list[dict[str, str]]]:
 
     return podsByLabel
 
-def getServiceMatchLabels(namespace: str='default') -> dict[str, dict[str, str]]:
+def getServiceMatchLabels(apiClient: client.ApiClient, namespace: str='default') -> dict[str, dict[str, str]]:
     """
     Maps a service in a given namespace to its match labels.
 
+    :param apiClient: The client to use for contacting the API.
+    :type apiClient: client.ApiClient
     :param namespace: The namespace to search in, defaults to 'default'.
     :type namespace: str, optional
     :return: A dictionary mapping the service name to a dictionary of its selectors.
@@ -109,10 +116,12 @@ def getServiceMatchLabels(namespace: str='default') -> dict[str, dict[str, str]]
     
     return serviceMatchLabels
 
-def getServicePaths(namespace: str='default') -> dict[str, set]:
+def getServicePaths(apiClient: client.ApiClient, namespace: str='default') -> dict[str, set]:
     """
     Maps a service in a given namespace to the domains / paths on the domains that will forward requests to it.
 
+    :param apiClient: The client to use for contacting the API.
+    :type apiClient: client.ApiClient
     :param namespace: The namespace to search in, defaults to 'default'
     :type namespace: str, optional
     :return: A dictionary mapping service names to the domain paths that resolve to them.
@@ -140,17 +149,16 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     :return: A dictionary mapping deployment names to some information about the pods that deployment manages.
     :rtype: dict[str]
     """
-    global apiClient
     apiClient = initContext(context)
-    podsByLabel = getPodsByLabel(namespace)
-    serviceMatchLabels = getServiceMatchLabels(namespace)
-    serviceDomains = getServicePaths(namespace)
+    podsByLabel = getPodsByLabel(apiClient, namespace)
+    serviceMatchLabels = getServiceMatchLabels(apiClient, namespace)
+    serviceDomains = getServicePaths(apiClient, namespace)
 
     contextDetails = utils.config('k8s')[context]
     podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workloads/{namespace}:'
 
     # map domains to their destination pods
-    podPaths = defaultdict(set)
+    podPaths: DefaultDict[str, set] = defaultdict(set)
     for service, paths in serviceDomains.items():
         if service in serviceMatchLabels:
             labelHash = hash(json.dumps(serviceMatchLabels[service], sort_keys=True))
@@ -165,7 +173,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     
     apps = {}
     # construct app by mapping deployment to pods
-    deploymentDetails = getDeploymentDetails(namespace)
+    deploymentDetails = getDeploymentDetails(apiClient, namespace)
     for deployment, details in deploymentDetails.items():
         labels = details['labels']
         apps[deployment] = {
@@ -200,7 +208,7 @@ def runner(network: Network) -> None:
     """
     auth = utils.config('k8s')
 
-    workerApps = {}
+    workerApps: dict[str, DefaultDict[str, set]] = {}
     for context in auth:
         apps = getApps(context)
         workerApps[context] = defaultdict(set)

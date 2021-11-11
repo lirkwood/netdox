@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import DefaultDict, cast
 
 from bs4 import BeautifulSoup
 from netdox import Network
@@ -9,22 +10,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 def genpub(network: Network) -> None:
-    workerApps = defaultdict(lambda: defaultdict(list))
+    workerApps: DefaultDict[str, DefaultDict[str, list]] = defaultdict(lambda: defaultdict(list))
     for node in network.nodes:
         if node.type == App.type:
-            for pod in node.pods.values():
-                if network.ips[pod['workerIp']].node:
-                    pod['workerNode'] = network.ips[pod['workerIp']].node.docid
-                    workerApps[node.cluster][pod['workerNode']].append(node.docid)
+            appnode = cast(App, node)
+            for pod in appnode.pods.values():
+                workerNode = network.ips[pod['workerIp']].node
+                if workerNode:
+                    pod['workerNode'] = workerNode.docid
+                    workerApps[appnode.cluster][pod['workerNode']].append(appnode.docid)
 
+    sortedWorkerApps: dict[str, dict[str, list[str]]] = {}
     for cluster in workerApps:
-        workerApps[cluster] = {k: workerApps[cluster][k] for k in sorted(workerApps[cluster])}
+        sortedWorkerApps[cluster] = {k: workerApps[cluster][k] for k in sorted(workerApps[cluster])}
 
     pub = BeautifulSoup(TEMPLATE, features='xml')
     section = pub.find('section', id = 'clusters')
 
     count = 0
-    for cluster, workers in workerApps.items():
+    for cluster, workers in sortedWorkerApps.items():
         heading = pub.new_tag('heading', level = 1)
         heading.string = cluster
         section.append(heading)
@@ -34,8 +38,8 @@ def genpub(network: Network) -> None:
         for worker, apps in workers.items():
             xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = worker))
 
-            for app in apps:
-                xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = app, level = 1))
+            for app_docid in apps:
+                xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = app_docid, level = 1))
         section.append(xfrag)
         count += 1
     
