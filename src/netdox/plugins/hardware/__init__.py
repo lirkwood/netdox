@@ -11,7 +11,7 @@ import time
 import zipfile
 from shutil import rmtree
 from traceback import print_exc
-from typing import Iterable
+from typing import Iterable, Optional
 
 import requests
 from bs4 import BeautifulSoup, SoupStrainer, Tag
@@ -87,7 +87,7 @@ class HardwareNode(Node):
 
     ## methods
 
-    def _addrFromProperty(self, property: Tag) -> str:
+    def _addrFromProperty(self, property: Tag) -> Optional[str]:
         """
         Extracts the name of the referenced DNS object from some psml property (as a bs4 Tag).
 
