@@ -3,6 +3,13 @@
 Releases
 ########
 
+v1.0.1
+======
+Updated CI/CD and made all code mypy compliant
+- Added XOServer to the XenOrchestra plugin
+- Removed globals from multiple plugins, as mypy does not work well with them.
+- Added generic types for NetworkObjectContainers
+
 v1.0.0
 ======
 Replaced the roles system with configurable label attributes.
