@@ -76,7 +76,7 @@ def main():
     nwman.runStage('write')
     
     nwman.staleReport()
-    nwman.network.writeReport()
+    nwman.network.report.writeReport()
 
     #-------------------------------------------------------------------#
     # Zip, upload, and cleanup                                          #
