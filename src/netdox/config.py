@@ -1,5 +1,5 @@
 """
-This module contains functions / classes for fetching, reading, and updating the 
+This module contains functions / classes for fetching, reading, and updating the config on PageSeeder.
 """
 from __future__ import annotations
 
