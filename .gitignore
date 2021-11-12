@@ -30,3 +30,4 @@ src/netdox/plugins/screenshots/base/
 !src/netdox/plugins/screenshots/src/placeholder.jpg
 
 docs/_build/
+docs/_source/source/
