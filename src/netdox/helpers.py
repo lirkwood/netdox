@@ -11,7 +11,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Iterable, Iterator, Optional
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 from lxml import etree
 from netdox import base, iptools, nwobjs, pageseeder, psml, utils
 
@@ -397,7 +398,7 @@ class Report:
             report = BeautifulSoup(stream.read(), 'xml')
 
         for tag in self.sections:
-            report.document.append(tag)
+            report.document.append(BeautifulSoup(tag, 'xml'))
 
         with open(utils.APPDIR+ 'out/report.psml', 'w') as stream:
             stream.write(str(report))
