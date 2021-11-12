@@ -19,7 +19,7 @@ def nodes(network: Network) -> None:
     global pubdict
     pubdict = runner(network)
 
-def write(network: Network) -> None:
+def _write(network: Network) -> None:
     genpub(network, pubdict)
     genreport(network)
 
@@ -27,7 +27,7 @@ def write(network: Network) -> None:
 
 __stages__ = {
     'nodes': nodes,
-    'write': write
+    'write': _write
 }
 
 __nodes__ = [VirtualMachine]

@@ -8,8 +8,7 @@ from bs4 import BeautifulSoup, Tag
 from lxml import etree
 from netdox import pageseeder
 from netdox import Network
-from netdox.nwobjs import Node
-from netdox.plugins.xenorchestra.vm import VirtualMachine
+from netdox.plugins.xenorchestra.objs import VirtualMachine
 from netdox.utils import APPDIR
 
 logger = logging.getLogger(__name__)
