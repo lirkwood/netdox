@@ -17,29 +17,26 @@ and you should restrict the functionality of each stage of your plugin to the pu
 - write: Writing PSML to disk for uploading to PageSeeder.
 - cleanup: Cleanup to perform after the PSML has been uploaded.
 
-In order to register your plugin for a stage, create a dictionary at the top level of your plugin called ``__stages__``.
-In this dictionary the key of each item should be the desired stage, 
+
+Plugin Exports
+==============
+Certain variables, if defined at the top level of your plugin, can be used to control the behaviour of Netdox.
+For example, in order to register your plugin for a stage, 
+create a dictionary at the top level of your plugin called ``__stages__``.
+In this dictionary the key of each item should be the name of the desired stage, 
 and the value should be a callable object that takes a single Network object as a positional argument.
 
-For more information about adding NetworkObjects to the Network, see :ref:`source`.
+In order to register a label attribute, use the ``__attrs__`` name for an iterable object containing the
+string names of the attributes to register. For more info see :ref:`config`.
+
+Finally, to register a Node type as an export from your plugin, use the ``__nodes__`` iterable.
 
 
 Default Plugins
 ===============
-There are a number of plugins included in the installation by default, documented below.
-Those that are untested or non-functional have been omitted.
+A number of plugins are installed with Netdox by default. The source code for these plugins is documented below.
 
 .. toctree::
     :maxdepth: 4
- 
-    plugins/plugins.activedirectory
-    plugins/plugins.aws
-    plugins/plugins.cloudflare
-    plugins/plugins.dnsmadeeasy
-    plugins/plugins.fortigate
-    plugins/plugins.hardware
-    plugins/plugins.icinga
-    plugins/plugins.k8s
-    plugins/plugins.pfsense
-    plugins/plugins.screenshots
-    plugins/plugins.xenorchestra
+
+    source/netdox.plugins.rst
