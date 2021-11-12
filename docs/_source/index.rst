@@ -56,5 +56,5 @@ More detail is available here: :ref:`plugins`.
    config.rst
    webhooks.rst
    plugins.rst
-   source.rst
    releases.rst
+   source/netdox.rst
