@@ -1,7 +1,5 @@
-from pytest import fixture
 from netdox.plugins.certificates import analyze
-from netdox import Domain, Network
-from netdox.psml import PropertiesFragment
+from netdox import Domain
 from test_nwobjs import network
 
 def test_analyze(network):
