@@ -109,6 +109,10 @@ class NetworkConfig:
             soup = BeautifulSoup(stream.read(), 'xml')
         soup.find('t:fragment').decompose()
 
+        docinfo = soup.new_tag('documentinfo')
+        docinfo.append(soup.new_tag('uri', docid = self.DOCID, title = 'Config'))
+        soup.insert(0, docinfo)
+
         exclusionFrag = soup.find('fragment', id = self.__class__.EXCLUSION_FRAG_ID)
         for domain in self.exclusions:
             para = soup.new_tag('para')
@@ -131,7 +135,7 @@ class NetworkConfig:
         """
         try:
             return cls.from_psml(
-                pageseeder.get_default_docid('_nd_config').text)
+                pageseeder.get_default_docid(cls.DOCID).text)
         except Exception:
             logger.error('Failed to retrieve config from PageSeeder')
             return cls()
