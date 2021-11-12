@@ -36,14 +36,14 @@ setup(
         'beautifulsoup4',   # core
         'lxml',             # core
         'requests',         # core
-        'Pillow',           # screenshots
         'websockets',       # xenorchestra
         'boto3',            # aws
         'kubernetes',       # k8s
         'pyppeteer',        # screenshots, pfSense
         'diffimg',          # screenshots
         'pypsrp',           # activedirectory
-        'fortiosapi'        # fortigate
+        'fortiosapi',       # fortigate
+        'pysnmp'            # snmp
     ],
     entry_points = {'console_scripts': ['netdox=netdox.cli:parse_args']}
 )
