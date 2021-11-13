@@ -1,10 +1,11 @@
-from random import choices
-from string import ascii_letters
-from pytest import raises
-from netdox import Network, IPv4Address
-from netdox.nwobjs import Node
+from netdox import IPv4Address, Network
 from netdox.iptools import subn_iter
+from netdox.nwobjs import Node
+from pytest import raises
+from conftest import randstr
+
 from test_nwobjs import network, node
+
 
 class TestIPv4AddressSet:
     def test_fillSubnets(self, network: Network):
@@ -17,24 +18,12 @@ class TestIPv4AddressSet:
 
 
 class TestNodeSet:
-    def test_addRef(self, node: Node):
-        ref = ''.join(choices(ascii_letters, k = 20))
-        node.network.nodes.addRef(node, ref)
-        assert node.network.nodes[ref] is node
+    def test_addRef(self, node: Node, randstr: str):
+        node.network.nodes.addRef(node, randstr)
+        assert node.network.nodes[randstr] is node
 
         with raises(KeyError):
             node.network.nodes['test']
-
-    def test_resolveRefs(self, node: Node):
-        net = Network()
-        net.ips['0.0.0.0'].link('domain.com', '')
-        net.domains['domain.com'].link('sub.domain.com', '')
-        net.domains['sub.domain.com'].link('othersub.domain.com', '')
-        net.domains['sub.domain.com'].link('target.domain.com', '')
-
-        assert net.resolvesTo('0.0.0.0', 'domain.com')
-        assert net.resolvesTo('0.0.0.0', 'sub.domain.com')
-        assert net.resolvesTo('0.0.0.0', 'target.domain.com')
 
 
 class TestDomainSet:
@@ -44,5 +33,12 @@ class TestDomainSet:
 
 class TestNetwork:
 
-    def test_constructor(self):
-        net = Network()
+    def test_resolveRefs(self, network: Network):
+        network.ips['0.0.0.0'].link('domain.com', '')
+        network.domains['domain.com'].link('sub.domain.com', '')
+        network.domains['sub.domain.com'].link('othersub.domain.com', '')
+        network.domains['sub.domain.com'].link('target.domain.com', '')
+
+        assert network.resolvesTo('0.0.0.0', 'domain.com')
+        assert network.resolvesTo('0.0.0.0', 'sub.domain.com')
+        assert network.resolvesTo('0.0.0.0', 'target.domain.com')

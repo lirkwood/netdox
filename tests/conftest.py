@@ -2,6 +2,8 @@ import json
 import os
 import shutil
 import sys
+from random import choices
+from string import ascii_letters
 
 from cryptography.fernet import Fernet
 from netdox import utils
@@ -106,3 +108,8 @@ def hide_file():
 
     if _path and os.path.exists(_path + '.bkp'):
         os.rename(_path + '.bkp', _path)
+
+
+@fixture
+def randstr():
+    return ''.join(choices(ascii_letters, k = 20))
