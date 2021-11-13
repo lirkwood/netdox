@@ -111,7 +111,7 @@ class NetworkConfig:
 
         docinfo = soup.new_tag('documentinfo')
         docinfo.append(soup.new_tag('uri', docid = self.DOCID, title = 'Config'))
-        soup.insert(0, docinfo)
+        soup.find('document').insert(0, docinfo)
 
         exclusionFrag = soup.find('fragment', id = self.__class__.EXCLUSION_FRAG_ID)
         for domain in self.exclusions:
