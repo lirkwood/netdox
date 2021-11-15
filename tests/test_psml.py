@@ -1,7 +1,6 @@
-from bs4 import BeautifulSoup
 from netdox import psml, nwobjs
 from test_nwobjs import domain, ipv4, network, node
-from pytest import raises, fixture
+from pytest import fixture
 
 class TestXRef:
     URIID = '7357'

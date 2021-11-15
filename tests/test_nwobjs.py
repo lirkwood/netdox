@@ -1,8 +1,8 @@
-from netdox import iptools
-from netdox import nwobjs
-from netdox import Network
-from pytest import fixture, raises
 from gc import collect, get_referrers
+
+from lxml import etree
+from netdox import Network, iptools, nwobjs, utils
+from pytest import fixture, raises
 
 
 @fixture
@@ -27,6 +27,10 @@ def node(network: Network):
         ips = ['0.0.0.0']
     )
 
+
+@fixture
+def psml_schema():
+    return etree.XMLSchema(file = utils.APPDIR+ 'src/psml.xsd')
 
 class TestDomain:
 
@@ -93,6 +97,9 @@ class TestDomain:
 
         with raises(AttributeError):
             domain.merge(nwobjs.Domain(network, 'different.domain.tld'))
+
+    def test_serialise(self, domain: nwobjs.Domain, psml_schema: etree.XMLSchema):
+        assert psml_schema.validate(etree.fromstring(bytes(str(domain.to_psml()), 'utf-8')))
 
 
 class TestIPv4Address:
@@ -190,6 +197,9 @@ class TestIPv4Address:
         ipv4.node = nwobjs.DefaultNode(ipv4.network, ipv4.name, ipv4.name)
         assert not ipv4.unused
 
+    def test_serialise(self, ipv4: nwobjs.IPv4Address, psml_schema: etree.XMLSchema):
+        assert psml_schema.validate(etree.fromstring(bytes(str(ipv4.to_psml()), 'utf-8')))
+
 
 class TestNode:
     
@@ -252,6 +262,9 @@ class TestNode:
 
         del node.location
         assert node.location == node.network.locator.locate({'192.168.0.0', '192.168.0.1'})
+
+    def test_serialise(self, node: nwobjs.Node, psml_schema: etree.XMLSchema):
+        assert psml_schema.validate(etree.fromstring(bytes(str(node.to_psml()), 'utf-8')))
 
 
 class TestDefaultNode:

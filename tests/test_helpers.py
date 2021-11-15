@@ -24,36 +24,7 @@ class TestLocator:
         assert locator.locate(['192.168.1.0']) == 'Subnet1or2'
         assert locator.locate(['192.168.1.0', '192.168.2.255']) == 'Subnet1or2'
 
-        assert locator.locate(['192.168.0.0', '192.168.1.0']) == None
-
-
-@pytest.fixture
-def psml_schema():
-    return etree.XMLSchema(file = utils.APPDIR+ 'src/psml.xsd')
-
-class TestPSMLWriter:
-
-    def test_serialise_domain(self, domain: nwobjs.Domain, psml_schema: etree.XMLSchema):
-        """
-        Assert that the serialise method generates valid PSML from a Domain.
-        """
-        helpers.PSMLWriter().serialise(domain)
-        assert psml_schema.validate(etree.parse(domain.outpath))
-
-    def test_serialise_ipv4(self, ipv4: nwobjs.IPv4Address, psml_schema: etree.XMLSchema):
-        """
-        Assert that the serialise method generates valid PSML from a IPv4Address.
-        """
-        helpers.PSMLWriter().serialise(ipv4)
-        assert psml_schema.validate(etree.parse(ipv4.outpath))
-
-    def test_serialise_node(self, node: nwobjs.Node, psml_schema: etree.XMLSchema):
-        """
-        Assert that the serialise method generates valid PSML from a Node.
-        """
-        helpers.PSMLWriter().serialise(node)
-        assert psml_schema.validate(etree.parse(node.outpath))
-        
+        assert locator.locate(['192.168.0.0', '192.168.1.0']) == None    
 
 class TestRecordSet:
 
