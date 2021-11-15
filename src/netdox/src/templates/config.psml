@@ -6,6 +6,10 @@
       </properties-fragment>
     </t:fragment>
 
+    <documentinfo>
+        <uri title="Config" />
+    </documentinfo>
+
     <section id="title" fragmenttype="title">
         <fragment id="title" type="title">
             <heading level="1">Config</heading>
