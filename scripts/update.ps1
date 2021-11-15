@@ -1,4 +1,4 @@
 Remove-Item .\dist\*.whl
-pip uninstall netdox
+pip uninstall -y netdox
 python setup.py bdist_wheel
-Get-ChildItem .\dist\*.whl | % {pip install $_.Name}
+Get-ChildItem .\dist\*.whl | % {pip install $_.FullName}
