@@ -3,22 +3,18 @@ before_script:
   - source venv/bin/activate
   - python3 -m pip install tox mypy wheel
 
-stages:
-  - test
-  - build
-
 tox:
   stage: test
   script: 
-    - 'tox -- --cov'
+    - tox -- --cov
 
 mypy:
   stage: test
   allow_failure: true
   script:
-    - 'mypy --install-types --non-interactive src/netdox'
+    - mypy --install-types --non-interactive src/netdox
 
-build:
+build_wheel:
   stage: build
   only: 
     - tags
@@ -28,3 +24,12 @@ build:
   artifacts:
     paths:
       - dist/*.whl
+
+build_image:
+  stage: build
+  only: 
+    - tags
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t netdox:$CI_COMMIT_TAG .
+    - docker push netdox:$CI_COMMIT_TAG
