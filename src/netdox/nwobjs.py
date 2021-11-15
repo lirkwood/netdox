@@ -5,13 +5,13 @@ from __future__ import annotations
 
 import os
 import re
-from typing import TYPE_CHECKING, Iterable, Optional
 from hashlib import sha256
+from typing import TYPE_CHECKING, Iterable, Optional
 
-from bs4 import Tag
-
-from netdox import iptools, utils
-from netdox import base, helpers
+from bs4 import BeautifulSoup, Tag
+from netdox import base, helpers, iptools, utils
+from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE, NODE_TEMPLATE,
+                         PropertiesFragment, Property, XRef, recordset2pfrags)
 
 if TYPE_CHECKING:
     from netdox import Network
@@ -29,6 +29,7 @@ class Domain(base.DNSObject):
     """
     subnets: set[str]
     """A set of the 24 bit CIDR subnets this domain resolves to."""
+    TEMPLATE = DOMAIN_TEMPLATE
     
     ## dunder methods
 
@@ -129,6 +130,30 @@ class Domain(base.DNSObject):
             self.network.domains[self.name] = self
         return self
 
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        body = soup.find('section', id = 'records')
+
+        for frag in recordset2pfrags(
+            recordset = self.records['A'],
+            id_prefix = 'A_record_',
+            docid_prefix = '_nd_ip_',
+            p_name = 'ipv4',
+            p_title = 'A Record'
+        ):  
+            body.append(frag)
+
+        for frag in recordset2pfrags(
+            recordset = self.records['CNAME'],
+            id_prefix = 'CNAME_record_',
+            docid_prefix = '_nd_domain_',
+            p_name = 'domain',
+            p_title = 'CNAME Record'
+        ):  
+            body.append(frag)
+
+        return soup
+
     def merge(self, domain: Domain) -> Domain: # type: ignore
         """
         In place merge of two Domain instances.
@@ -154,6 +179,7 @@ class IPv4Address(base.DNSObject):
     """The 24 bit CIDR subnet this IP is in."""
     is_private: bool
     """Whether or not this IP is private"""
+    TEMPLATE = IPV4ADDRESS_TEMPLATE
     
     ## dunder methods
 
@@ -244,6 +270,41 @@ class IPv4Address(base.DNSObject):
             self.network.ips.subnets.add(self.subnetFromMask())
         return self
 
+    def to_psml(self) -> BeautifulSoup:
+        if self.unused:
+            self.labels.add('unused')
+        soup = super().to_psml()
+        body = soup.find('section', id = 'records')
+
+        for frag in recordset2pfrags(
+            recordset = self.records['PTR'],
+            id_prefix = 'PTR_record_',
+            docid_prefix = '_nd_domain_',
+            p_name = 'domain',
+            p_title = 'PTR Record'
+        ):  
+            body.append(frag)
+
+        # TODO convert NAT to recordset
+        if self.nat:
+            soup.find('properties-fragment', id = 'header').append(Property(
+                name = 'nat',
+                title = 'NAT Destination',
+                value = XRef(docid = f'_nd_ip_{self.nat.replace(".","_")}')
+            ))
+
+        body.append(
+            PropertiesFragment(id = 'implied_ptr', properties = [
+                Property(
+                        name = 'domain',
+                        title = 'Implied PTR Record',
+                        value = XRef(docid = f'_nd_domain_{domain.replace(".","_")}')
+                    )
+                for domain in self.backrefs['A']
+            ]))
+
+        return soup
+
     def merge(self, ip: IPv4Address) -> IPv4Address: # type: ignore
         """
         In place merge of two IPv4Address instances.
@@ -306,6 +367,7 @@ class Node(base.NetworkObject):
     """A string unique to this implementation of Node."""
     _location: Optional[str]
     """Optional manual location attribute to use instead of the network locator."""
+    TEMPLATE = NODE_TEMPLATE
 
     ## dunder methods
 
@@ -386,6 +448,40 @@ class Node(base.NetworkObject):
             cache |= self.network.nodes.resolveRefs(self.identity, ip, cache)
 
         return self
+
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+
+        body = soup.find('section', id = 'body')
+        for tag in self.psmlBody:
+            body.append(tag)
+        body.unwrap()
+
+        domains = PropertiesFragment('domains', properties = [
+            Property(
+                    name = 'domain',
+                    title = 'Domain',
+                    value = XRef(docid = f'_nd_domain_{domain.replace(".","_")}') \
+                        if domain in self.network.domains else domain
+                )
+            for domain in self.domains
+        ])
+
+        ips = PropertiesFragment('ips', properties = [
+            Property(
+                    name = 'ipv4',
+                    title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
+                    value = XRef(docid = f'_nd_ip_{ip.replace(".","_")}') \
+                        if ip in self.network.ips else ip
+                )
+            for ip in self.ips
+        ])
+
+        header = soup.find('section', id = 'header')
+        header.append(domains)
+        header.append(ips)
+
+        return soup
 
     def merge(self, node: Node) -> Node: # type: ignore
         super().merge(node)

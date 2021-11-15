@@ -3,12 +3,15 @@ This module contains the abstract base classes for most of the other classes in 
 """
 from __future__ import annotations
 
+import os
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cache
 from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type,
                     TypeVar, Union)
 
 from bs4.element import Tag
+from bs4 import BeautifulSoup
+from netdox import psml
 
 if TYPE_CHECKING:
     from netdox import Network, helpers
@@ -53,6 +56,9 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     labels: set[str]
     """A set of labels to apply to this object's output document."""
     DEFAULT_LABELS = ['show-reversexrefs', 'netdox-default']
+    """A set of labels to apply to this object upon instantiation."""
+    TEMPLATE: str
+    """The template to populate during serialisation."""
 
     ## dunder methods
 
@@ -67,6 +73,9 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         :param docid: The docid / filename to give this object's document in PageSeeder.
         :type docid: str
         """
+        if not hasattr(self, 'TEMPLATE') or not self.TEMPLATE:
+            raise AttributeError('NetworkObject must have the TEMPLATE attribute set.')
+
         self.network = network
         self.name = name.lower().strip()
         self.identity = identity.lower()
@@ -136,6 +145,41 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         pass
 
+    def to_psml(self) -> BeautifulSoup:
+        """
+        Serialises this object to PSML and returns a BeautifulSoup object.
+        """
+        soup = psml.populate(self.TEMPLATE, self)
+
+        soup.find('labels').string = ','.join(self.labels)
+
+        footer = soup.find(id = 'footer')
+        for tag in self.psmlFooter:
+            footer.append(tag)
+
+        search_octets = []
+        for ip in self.ips:
+            octets = ip.split('.')
+            search_octets.append(octets[-1])
+            search_octets.append('.'.join(octets[-2:]))
+        psml.PropertiesFragment(id = 'for-search', properties = [
+            psml.Property(name = 'octets', title = 'Octets for search', 
+                value = ', '.join(search_octets) if search_octets else '')
+        ], attrs = {'labels':'s-hide-content'})
+
+        dir = os.path.dirname(self.outpath)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        return soup
+
+    def serialise(self) -> None:
+        """
+        Serialises this object to PSML and writes it to the outpath.
+        """
+        with open(self.outpath, 'w') as stream:
+            stream.write(str(self.to_psml()))
+
     def merge(self, object: NetworkObject) -> NetworkObject:
         """
         Should add the contents of any containers in *object* to the corresponding containers in *self*.
@@ -202,6 +246,16 @@ class DNSObject(NetworkObject):
         :type source: str
         """
         pass
+
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        
+        soup.find('properties-fragment', id = 'header').append(psml.Property(
+            name = 'node',
+            title = 'Node',
+            value = psml.XRef(docid = self.node.docid) if self.node else '—'
+        ))
+        return soup
 
     def merge(self, object: DNSObject) -> DNSObject: # type: ignore
         """

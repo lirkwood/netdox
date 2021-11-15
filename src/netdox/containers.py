@@ -242,8 +242,6 @@ class Network:
     """A defaultdict mapping document docids to their applied labels."""
     locator: helpers.Locator
     """A helper class to provide location data to Nodes."""
-    writer: helpers.PSMLWriter
-    """A helper class to serialise NetworkObjects."""
     report: helpers.Report
     """A helper class to report network changes."""
     cache: set
@@ -277,7 +275,6 @@ class Network:
         self.labels = labels or helpers.LabelDict()
         
         self.locator = helpers.Locator()
-        self.writer = helpers.PSMLWriter()
         self.report = helpers.Report()
         self.cache = set()
 
@@ -354,19 +351,13 @@ class Network:
                 if encrypted else nw.read()
             )
 
-    def setToPSML(self, set: str) -> None:
-        """
-        Serialises a NetworkObjectContainer to PSML and writes the PSML files to *dir*.
-
-        :param set: The atribute name of the set to serialise, one of: 'domains', 'ips', or 'nodes'.
-        :type set: str
-        """
-        self.writer.serialiseSet(getattr(self, set))
-
     def writePSML(self) -> None:
         """
         Writes the domains, ips, and nodes of a network to PSML using ``self.writer``.
         """
-        self.setToPSML('domains')
-        self.setToPSML('ips')
-        self.setToPSML('nodes')
+        for domain in self.domains:
+            domain.serialise()
+        for ip in self.ips:
+            ip.serialise()
+        for node in self.nodes:
+            node.serialise()
