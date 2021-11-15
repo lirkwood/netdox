@@ -113,17 +113,17 @@ class NetworkConfig:
         docinfo.append(soup.new_tag('uri', docid = self.DOCID, title = 'Config'))
         soup.find('document').insert(0, docinfo)
 
-        exclusionFrag = soup.find('fragment', id = self.__class__.EXCLUSION_FRAG_ID)
+        exclusionFrag = soup.find('fragment', id = self.EXCLUSION_FRAG_ID)
         for domain in self.exclusions:
             para = soup.new_tag('para')
             para.string = domain
             exclusionFrag.append(para)
 
-        labelSection = soup.find('section', id = self.__class__.LABEL_SECTION_ID)
+        labelSection = soup.find('section', id = self.LABEL_SECTION_ID)
         for label, properties in self.labels.items():
             labelSection.append(psml.PropertiesFragment.from_dict(
                 id = f'label_{label}', 
-                constructor = properties | {'label': label}
+                constructor = {'label': label} | properties
             ))
 
         return str(soup)
