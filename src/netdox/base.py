@@ -189,7 +189,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         Serialises this object to PSML and writes it to the outpath.
         """
         os.makedirs(os.path.dirname(self.outpath), exist_ok = True)
-        with open(self.outpath, 'w') as stream:
+        with open(self.outpath, 'w', encoding = 'utf-8') as stream:
             stream.write(str(self.to_psml()))
 
     def merge(self, object: NetworkObject) -> NetworkObject:
