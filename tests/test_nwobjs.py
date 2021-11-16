@@ -51,6 +51,10 @@ class TestDomain:
         with raises(ValueError):
             nwobjs.Domain(network, '!& invalid name &!')
 
+    def test_default_zone(self, network: Network):
+        domain = nwobjs.Domain(network, 'sub.domain.tld')
+        assert domain.zone == 'domain.tld'
+
     def test_link(self, domain: nwobjs.Domain):
         """
         Tests that the Domain link method correctly creates forward and reverse refs.
