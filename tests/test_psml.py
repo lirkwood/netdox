@@ -180,31 +180,6 @@ class TestPropertiesFragment:
             mock_PropertiesFragment)
 
 
-def test_populate_domain(domain: nwobjs.Domain):
-    """
-    Tests the populate function output for a Domain.
-    """
-    document = psml.populate(psml.DOMAIN_TEMPLATE, domain)
-    assert document.find('property', attrs={'name': 'name'})['value'] == domain.name
-    assert document.find('property', attrs={'name': 'zone'})['value'] == domain.zone
-
-def test_populate_ipv4(ipv4: nwobjs.IPv4Address):
-    """
-    Tests the populate function output for an IPv4Address.
-    """
-    document = psml.populate(psml.IPV4ADDRESS_TEMPLATE, ipv4)
-    assert document.find('property', attrs={'name': 'ipv4'})['value'] == ipv4.name
-    assert document.find('property', attrs={'name': 'subnet'})['value'] == ipv4.subnet
-
-def test_populate_node(node: nwobjs.DefaultNode):
-    """
-    Tests the populate function output for a Node.
-    """
-    document = psml.populate(psml.NODE_TEMPLATE, node)
-    assert document.find('property', attrs={'name': 'name'})['value'] == node.name
-    assert document.find('property', attrs={'name': 'type'})['value'] == node.type
-
-
 def test_recordset2pfrags():
     """
     Tests the recordset2pfrags function.
