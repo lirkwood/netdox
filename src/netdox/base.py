@@ -4,13 +4,14 @@ This module contains the abstract base classes for most of the other classes in 
 from __future__ import annotations
 
 import os
+import re
 from abc import ABC, ABCMeta, abstractmethod
 from functools import cache
 from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type,
                     TypeVar, Union)
 
-from bs4.element import Tag
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from netdox import psml
 
 if TYPE_CHECKING:
@@ -149,8 +150,20 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         Serialises this object to PSML and returns a BeautifulSoup object.
         """
-        soup = psml.populate(self.TEMPLATE, self)
+        body = self.TEMPLATE
+        for field in re.findall(r'(#![a-zA-Z0-9_]+)', self.TEMPLATE):
+            attr = getattr(self, field.replace('#!',''), None)
+            if attr:
+                if not isinstance(attr, str):
+                    try:
+                        attr = str(attr)
+                    except Exception:
+                        continue
+                body = re.sub(field, attr, body)
+            else:
+                body = re.sub(field, '—', body)
 
+        soup = BeautifulSoup(body, features = 'xml')
         soup.find('labels').string = ','.join(self.labels)
 
         footer = soup.find(id = 'footer')
@@ -162,14 +175,12 @@ class NetworkObject(metaclass=NetworkObjectMeta):
             octets = ip.split('.')
             search_octets.append(octets[-1])
             search_octets.append('.'.join(octets[-2:]))
-        psml.PropertiesFragment(id = 'for-search', properties = [
-            psml.Property(name = 'octets', title = 'Octets for search', 
-                value = ', '.join(search_octets) if search_octets else '')
-        ], attrs = {'labels':'s-hide-content'})
 
-        dir = os.path.dirname(self.outpath)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        footer.append(
+            psml.PropertiesFragment(id = 'for-search', properties = [
+                psml.Property(name = 'octets', title = 'Octets for search', 
+                    value = ', '.join(search_octets) if search_octets else '')
+            ], attrs = {'labels':'s-hide-content'}))
 
         return soup
 
@@ -177,6 +188,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         Serialises this object to PSML and writes it to the outpath.
         """
+        os.makedirs(os.path.dirname(self.outpath), exist_ok = True)
         with open(self.outpath, 'w') as stream:
             stream.write(str(self.to_psml()))
 

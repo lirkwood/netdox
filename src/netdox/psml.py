@@ -307,25 +307,6 @@ PROPERTY_DATATYPES: dict[str, type[PSMLLink]] = {
 # Functions #
 #############
 
-def populate(template: str, nwobj: NetworkObject) -> BeautifulSoup:
-    """
-    Populates a NetworkObject template with the attributes from *nwobj*.
-
-    :param template: The template to populate.
-    :type template: str
-    :param nwobj: The object to copy the attribute from.
-    :type nwobj: NetworkObject
-    :return: A /BeautifulSoup object containing the populated and parsed template.
-    :rtype: BeautifulSoup
-    """
-    template = re.sub('#!docid', nwobj.docid, template)
-    for attribute, value in nwobj.__dict__.items():
-        if isinstance(value, str):
-            template = re.sub(f'#!{attribute}', value, template)
-        elif value is None:
-            template = re.sub(f'#!{attribute}', '—', template)
-    soup = BeautifulSoup(template, features = 'xml')
-    return soup
 
 def recordset2pfrags(
         recordset: RecordSet, 
