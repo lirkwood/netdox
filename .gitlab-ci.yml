@@ -31,5 +31,5 @@ build_image:
     - tags
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t netdox:$CI_COMMIT_TAG .
-    - docker push netdox:$CI_COMMIT_TAG
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
