@@ -32,7 +32,7 @@ def init():
         else:
             os.remove(folder)
     
-    for outfolder in ('config', 'domains', 'ips', 'nodes'):
+    for outfolder in ('domains', 'ips', 'nodes'):
         os.mkdir(utils.APPDIR+ 'out'+ os.sep+ outfolder)
 
 
