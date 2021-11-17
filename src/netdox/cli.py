@@ -15,6 +15,7 @@ from cryptography.fernet import Fernet
 from netdox import pageseeder
 from netdox.refresh import main as _refresh
 from netdox.utils import APPDIR, decrypt_file, encrypt_file
+from netdox.utils import config as _config_file
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -119,6 +120,7 @@ def refresh(_):
     """
     Generates a new set of documentation and uploads it to PageSeeder.
     """
+    assert _config_file(), 'Config file is empty'
     fileHandler = logging.FileHandler(APPDIR+ f'/logs/{date.today().isoformat()}.log')
     fileHandler.setLevel(logging.DEBUG)
     fileHandler.setFormatter(formatter)
