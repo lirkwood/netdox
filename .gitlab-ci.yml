@@ -3,8 +3,16 @@ stages:
   - build
   - release
 
+variables:
+  PIP_CACHE_DIR: $CI_PROJECT_DIR/.pipcache/
+
+cache:
+  paths:
+    - .pipcache/
+    - venv/
+
 before_script:
-  - python3 -m virtualenv venv
+  - python3 -m venv venv
   - source venv/bin/activate
   - python3 -m pip install tox mypy wheel
 
