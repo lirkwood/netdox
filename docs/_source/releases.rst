@@ -3,6 +3,14 @@
 Releases
 ########
 
+v1.1.0
+======
+Added docker image support, moved serialisation into NetworkObjects.
+* Removed PSMLWriter, populate.
+* Added dev scripts.
+* Fixed DNS Zone property not being populated.
+* Fixed config not setting its docid.
+
 v1.0.1
 ======
 Updated CI/CD and made all code mypy compliant.
