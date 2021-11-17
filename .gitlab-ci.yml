@@ -1,3 +1,8 @@
+stages:
+  - test
+  - build
+  - release
+
 before_script:
   - python3 -m virtualenv venv
   - source venv/bin/activate
@@ -33,3 +38,18 @@ build_image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+
+create_release:
+  stage: release
+  only: 
+    - tags
+  script:
+    - echo 'Creating release...'
+    - for file in dist/*.whl; do export NETDOX_WHEEL=$file; done
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: Release version $CI_COMMIT_TAG
+    assets:
+      links:
+        - name: Wheel
+          url: $CI_SERVER_URL/$CI_PROJECT_PATH/-/jobs/artifacts/$CI_COMMIT_REF_NAME/raw/$NETDOX_WHEEL?job=build_wheel
