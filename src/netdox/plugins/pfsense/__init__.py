@@ -3,11 +3,10 @@ Used to retrieve NAT information from pfSense.
 """
 import asyncio
 import logging
+from getpass import getuser
 
+from netdox import Network, utils
 from pyppeteer import launch
-
-from netdox import utils
-from netdox import IPv4Address, Network
 
 logger = logging.getLogger(__name__)
 logging.getLogger('pyppeteer').setLevel(logging.WARNING)
@@ -19,7 +18,7 @@ def runner(network: Network) -> None:
 async def pfsenseScrapeNat() -> dict:
     nat = {}
     config = utils.config('pfsense')
-    browser = await launch(args = ['--no-sandbox'])
+    browser = await launch(args = ['--no-sandbox'] if getuser() == 'root' else [])
     page = await browser.newPage()
     gateway = f"https://{config['host']}/"
     await page.goto(gateway, waitUntil = 'networkidle0')

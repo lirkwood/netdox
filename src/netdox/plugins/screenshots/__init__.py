@@ -6,6 +6,7 @@ import re
 import shutil
 from datetime import date
 from typing import Iterable, Tuple
+from getpass import getuser
 
 import diffimg
 from bs4 import BeautifulSoup
@@ -169,7 +170,10 @@ class ScreenshotManager:
         :return: A list of tuples containing a Domain object and boolean. True if successfully screenshotted.
         :rtype: list[Tuple[Domain, bool]]
         """
-        browser = await launch(ignoreHTTPSErrors = True)
+        browser = await launch(
+            ignoreHTTPSErrors = True, 
+            args = ['--no-sandbox'] if getuser() == 'root' else []
+        )
         page = await browser.newPage()
         await page.setViewport({'width':1680,'height':1050})
         values = [ await self.screenshot(page, domain) for domain in domains ]
