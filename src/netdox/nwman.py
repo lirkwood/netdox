@@ -42,7 +42,7 @@ class NetworkManager:
     stale: dict[date, set[str]]
     """Dictionary mapping stale URIs to their expiry date."""
 
-    def __init__(self, namespace: ModuleType = None) -> None:
+    def __init__(self, namespace: ModuleType = None, network: Network = None) -> None:
 
         self.pluginmap = {
             'any': set(),
@@ -79,7 +79,7 @@ class NetworkManager:
             if '.'.join((self.namespace.__name__, plugin)) not in [module.__name__ for module in self.plugins]:
                 logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
 
-        self.network = Network(
+        self.network = network or Network(
             config = self.validConfig(), 
             labels = LabelDict.from_pageseeder()
         )
