@@ -107,6 +107,7 @@ def auth(func):
             if kw not in kwargs and kw in defaults:
                 kwargs[kw] = defaults[kw]
         return utils.handle(func)(*args, **kwargs)
+        # TODO remove handle functionality
 
     return wrapper
 
