@@ -27,7 +27,7 @@ mypy:
   script:
     - mypy --install-types --non-interactive src/netdox
 
-build_wheel:
+wheel:
   stage: build
   only: 
     - tags
@@ -38,7 +38,7 @@ build_wheel:
     paths:
       - dist/*.whl
 
-build_image:
+docker:
   stage: build
   only: 
     - tags
@@ -47,17 +47,16 @@ build_image:
     - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
 
-create_release:
+create:
   stage: release
   only: 
     - tags
   script:
     - echo 'Creating release...'
-    - for file in dist/*.whl; do export NETDOX_WHEEL=$file; done
   release:
     tag_name: $CI_COMMIT_TAG
     description: Release version $CI_COMMIT_TAG
     assets:
       links:
         - name: Wheel
-          url: $CI_SERVER_URL/$CI_PROJECT_PATH/-/jobs/artifacts/$CI_COMMIT_REF_NAME/raw/$NETDOX_WHEEL?job=build_wheel
+          url: $CI_SERVER_URL/$CI_PROJECT_PATH/-/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build_wheel
