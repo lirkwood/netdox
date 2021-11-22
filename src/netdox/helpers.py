@@ -5,22 +5,20 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 from typing import Iterable, Iterator, Optional
 
 from bs4 import BeautifulSoup
-from bs4.element import Tag
 from lxml import etree
-from netdox import base, iptools, nwobjs, pageseeder, psml, utils
+from netdox import iptools, pageseeder, utils
 
 logger = logging.getLogger(__name__)
 
-###################
-# Location Helper #
-###################
+#################
+# Location Data #
+#################
 
 class Locator:
     """
@@ -82,9 +80,9 @@ class Locator:
             return None
     
 
-####################
-# RecordSet Helper #
-####################
+###############
+# DNS Records #
+###############
 
 class RecordType(Enum):
     A = 0
@@ -133,9 +131,9 @@ class RecordSet:
         yield from self.records
 
 
-######################
-# JSONEncoder Helper #
-######################
+#################
+# JSON Encoding #
+#################
 
 class JSONEncoder(json.JSONEncoder):
     """
@@ -155,9 +153,9 @@ class JSONEncoder(json.JSONEncoder):
             return super().default(obj)
 
 
-#################
-# Report Helper #
-#################
+################
+# Daily Report #
+################
 
 class Report:
     """
