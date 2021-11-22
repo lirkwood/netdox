@@ -114,3 +114,16 @@ __stages__ = {
     'footers': domainapps,
     'write': genpub
 }
+
+__nodes__ = [App]
+
+__config__ = {
+    "cluster_name": {
+        "proxies": [str],
+        "location": str,
+        "host": str,
+        "clusterId": str,
+        "projectId": str,
+        "token": str
+    }
+}

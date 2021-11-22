@@ -27,6 +27,10 @@ def runner(network: Network) -> None:
         network.ips[ip].nat = nat[ip]
 
 __stages__ = {'nat': runner}
+__config__ = {
+    'apitoken': str,
+    'host': str
+}
 
 if __name__ == '__main__':
     runner(Network())

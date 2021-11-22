@@ -10,5 +10,11 @@ logging.getLogger('pypsrp').setLevel(logging.WARNING)
 
 __stages__ = {
     'dns': fetchDNS,
-    'footers': addFooters
+    'footers': addFooters,
+}
+
+__config__ = {
+    "server": str,
+    "username": str,
+    "password": str
 }

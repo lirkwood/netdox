@@ -35,3 +35,9 @@ __stages__ = {
 }
 
 __nodes__ = [VirtualMachine]
+
+__config__ = {
+    'username': str,
+    'password': str,
+    'host': str,
+}
