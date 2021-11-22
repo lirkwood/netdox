@@ -6,20 +6,20 @@ from __future__ import annotations
 import importlib
 import json
 import logging
+import os
 import pkgutil
+from collections import defaultdict
 from datetime import date, timedelta
 from traceback import format_exc
 from types import ModuleType
-from typing import Callable
-from collections import defaultdict
+from typing import Iterator, Union
 
 from bs4.element import Tag
-
 from netdox import pageseeder, utils
-from netdox.nwobjs import Node
-from netdox.containers import Network
 from netdox.config import NetworkConfig, update_template
+from netdox.containers import Network
 from netdox.helpers import LabelDict
+from netdox.nwobjs import Node
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +37,26 @@ class NetworkManager:
     """Dictionary of stages and their plugins."""
     nodemap: dict[type[Node], ModuleType]
     """Maps the subclasses of Node that a plugin exports to the module object."""
-    enabled: list[str]
+    enabled: PluginWhitelist
     """List of plugins enabled by the user."""
     stale: dict[date, set[str]]
     """Dictionary mapping stale URIs to their expiry date."""
 
-    def __init__(self, namespace: ModuleType = None, network: Network = None) -> None:
+    def __init__(self, namespace: ModuleType = None, whitelist: list[str] = None, network: Network = None) -> None:
+        """
+        Constructor.
 
+        :param namespace: Namespace to load plugins from, defaults to DEFAULT_NAMESPACE
+        :type namespace: ModuleType, optional
+        :param whitelist: List of plugin names to enable.
+        If equal to PluginWhitelist.WILDCARD (["*"]), all plugins are enabled.
+        If not set, defaults to the value in the config file. 
+        If the file is missing or empty, falls back to wildcard.
+        :type whitelist: list[str], optional
+        :param network: existing Network object to use, defaults to None.
+        :type network: Network, optional
+        """
+        # Initialisation
         self.pluginmap = {
             'any': set(),
             'dns': set(),
@@ -58,27 +71,38 @@ class NetworkManager:
 
         self.stale = defaultdict(set)
 
-        try:
-            with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
-                self.enabled = json.load(stream)
-        except Exception:
-            logger.warning('Unable to load plugin configuration file. No plugins will run.')
-            self.enabled = []
+        if whitelist:
+            self.enabled = PluginWhitelist(whitelist)
+        else:
+            try:
+                with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
+                    self.enabled = PluginWhitelist(json.load(stream))
+            except FileNotFoundError:
+                logger.warning('Plugin configuration file is missing from: ',
+                    os.path.realpath(os.path.join(utils.APPDIR, 'cfg/plugins.json')))
+                self.enabled = PluginWhitelist(PluginWhitelist.WILDCARD)
+            except Exception:
+                logger.warning('Unable to load plugin configuration file.')
+                self.enabled = PluginWhitelist(PluginWhitelist.WILDCARD)
         
         self.namespace = namespace or importlib.import_module(self.DEFAULT_NAMESPACE)
         self.loadPlugins()
 
+        # Reporting
+        if self.enabled.is_wildcard:
+            logger.warning('Plugin whitelist is wildcard. All plugins will be enabled.')
+        else:
+            for plugin in self.enabled:
+                if f'{self.namespace.__name__}.{plugin}' not in [module.__name__ for module in self.plugins]:
+                    logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
+
         if self.plugins:
             logger.info(f"NetworkManager discovered the following plugins in '{self.namespace.__name__}': "
-                + json.dumps([plugin.__name__.split('.')[-1] for plugin in self.plugins], indent = 2)
-            )
+                + json.dumps([plugin.__name__.split('.')[-1] for plugin in self.plugins], indent = 2))
         else:
             logger.warning(f"Failed to discover any plugins in '{self.namespace.__name__}'")
 
-        for plugin in self.enabled:
-            if '.'.join((self.namespace.__name__, plugin)) not in [module.__name__ for module in self.plugins]:
-                logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
-
+        # Network
         self.network = network or Network(
             config = self.validConfig(), 
             labels = LabelDict.from_pageseeder()
@@ -253,3 +277,20 @@ class NetworkManager:
                 ))
             section.append(frag)
         self.network.report.addSection(str(section))
+
+class PluginWhitelist(list):
+    WILDCARD = ["*"]
+    """Constant that matches every plugin."""
+    @property
+    def is_wildcard(self) -> bool:
+        return self == self.WILDCARD
+
+    def __contains__(self, key) -> bool:
+        if self.is_wildcard:
+            return True
+        return super().__contains__(key)
+
+    def __iter__(self) -> Iterator[str]:
+        if self.is_wildcard:
+            return ().__iter__()
+        return super().__iter__()
