@@ -11,6 +11,7 @@ from datetime import date
 from distutils.util import strtobool
 import json
 from collections import defaultdict
+from typing import Union
 
 from cryptography.fernet import Fernet
 
@@ -19,6 +20,7 @@ from netdox.refresh import main as _refresh
 from netdox.utils import APPDIR, decrypt_file, encrypt_file
 from netdox.utils import config as _config_file
 from netdox import Network, NetworkManager
+from netdox.nwman import PluginWhitelist
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -62,6 +64,64 @@ def init_dirs():
     if os.path.lexists(APPDIR+ 'cfg'):
         os.remove(APPDIR+ 'cfg')
 
+def _convert_types(obj: Union[dict, list]) -> Union[dict, list]:
+    """
+    Recursively creates an datastructure of type instances from 
+    a datastructure of types.
+    """
+    if isinstance(obj, dict):
+        outdict = {}
+        for key, value in obj.items():
+            if isinstance(value, type):
+                outdict[key] = value()
+            else:
+                outdict[key] = _convert_types(value)
+        return outdict
+        
+    elif isinstance(obj, list):
+        outlist = []
+        for value in obj:
+            if isinstance(value, type):
+                outlist.append(value())
+            else:
+                outlist.append(_convert_types(value))
+        return outlist
+
+    raise TypeError('Must be a dict or list.')
+
+def _gen_config():
+    with open(APPDIR+ 'src/defaults/config.json', 'r') as stream:
+        app_config = json.load(stream)
+    app_config['plugins'] = defaultdict(dict)
+
+    # deactivate logging while initialising a networkmanager
+    nwman_logger = logging.getLogger('netdox.nwman')
+    nwman_level = nwman_logger.level
+    nwman_logger.setLevel(logging.CRITICAL)
+
+    # generate config template from plugins
+    for plugin in NetworkManager(
+        whitelist = PluginWhitelist.WILDCARD, 
+        network = Network()
+    ).plugins:
+        plugin_name = plugin.__name__.split('.')[-1]
+        plugin_config_model = getattr(plugin, '__config__', {})
+        if plugin_config_model:
+            try:
+                plugin_config = _convert_types(plugin_config_model)
+                json.dumps(plugin_config)
+            except Exception:
+                logger.error(
+                    f"Plugin {plugin.__name__.split('.')[-1]} "
+                    'registered an invalid JSON object under __config__.')
+            else:
+                app_config['plugins'][plugin_name] = plugin_config
+
+    nwman_logger.setLevel(nwman_level)
+    
+    with open(APPDIR+ 'cfg/config.json', 'w') as stream:
+        stream.write(json.dumps(app_config, indent = 2))
+
 def _load_config():
     if os.path.exists(APPDIR+ 'cfg/config.json'):
         print('Config file already exists in target directory.')
@@ -75,22 +135,7 @@ def _load_config():
         else:
             return True
     else:
-        # generate config template from plugins
-        with open(APPDIR+ 'src/defaults/config.json', 'r') as stream:
-            config_obj = json.load(stream)
-        config_obj['plugins'] = defaultdict(dict)
-
-        # TODO solve missing plugins.json
-        # for plugin in NetworkManager(network = Network()).plugins:
-        #     keys = getattr(plugin, '__config__', {})
-        #     plugin_name = plugin.__name__.split('.')[-1]
-        #     for key, val_type in keys:
-        #         config_obj['plugins'][plugin_name][key] = val_type()
-        
-        with open(APPDIR+ 'cfg/config.json', 'w') as stream:
-            stream.write(json.dumps(config_obj, indent = 2))
         return False
-
 
 def init(args: argparse.Namespace):
     """
@@ -109,6 +154,8 @@ def init(args: argparse.Namespace):
         for default_file in os.scandir(APPDIR+ 'src/defaults'):
             if default_file.name == 'config.json':
                 config_loaded = _load_config()
+                if not config_loaded:
+                    _gen_config()
             else:
                 if not os.path.exists(APPDIR+ 'cfg/'+ default_file.name):
                     shutil.copy(default_file.path, APPDIR+ 'cfg/'+ default_file.name)
