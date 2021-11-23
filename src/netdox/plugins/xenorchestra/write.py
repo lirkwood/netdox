@@ -2,7 +2,7 @@ import json
 import logging
 import shutil
 from datetime import date, timedelta
-from typing import cast
+from typing import Optional, cast
 
 from bs4 import BeautifulSoup, Tag
 from lxml import etree
@@ -71,61 +71,54 @@ def genreport(network: Network) -> None:
     :param network: The network
     :type network: Network
     """
-    search = json.loads(pageseeder.search({
+    started_search = json.loads(pageseeder.search({
         'filters': ','.join([
             'pstype:document',
             'psdocumenttype:node',
             'psproperty-type:'+ VirtualMachine.type,
-            '-label:stale'
+            f'pscreateddate:[{date.today()}|1D]'
         ])}))
 
-    sentencedToday = json.loads(pageseeder.search({
+    stopped_search = json.loads(pageseeder.search({
         'filters': ','.join([
             'pstype:document',
             'psdocumenttype:node',
             'psproperty-type:'+ VirtualMachine.type,
             'label:expires-' + (date.today() + timedelta(days = 30)).isoformat()
         ])}))
-        
-    psvms = {}
-    for result in (search['results']['result'] + sentencedToday['results']['result']):
-        for field in result['fields']:
-            if field['name'] == 'psproperty-uuid':
-                # first field is always uriid
-                psvms[field['value']] = result['fields'][0]['value']
-                break
 
-    netvms = {}
-    for node in network.nodes:
-        if node.type == VirtualMachine.type:
-            vm = cast(VirtualMachine, node)
-            netvms[vm.uuid] = node.docid
 
-    if psvms or netvms:
-        report = BeautifulSoup(REPORT, 'xml')
 
-        newfrag = report.find('fragment', id='xovms_new')
-        for newvm in (set(netvms) - set(psvms)):
-            logger.debug('Started VM; URIID ' + netvms[newvm])
-            newfrag.append(Tag(is_xml = True,
+    report = BeautifulSoup(REPORT, 'xml')
+    newfrag = report.find('fragment', id='xovms_new')
+    oldfrag = report.find('fragment', id='xovms_old')
+    for frag, results in (
+        (newfrag, started_search), 
+        (oldfrag, stopped_search)
+    ):
+        for result in results:
+            uriid = _parse_uriid(result)
+            assert uriid, 'Failed to parse uriid from search result'
+
+            frag.append(Tag(is_xml = True,
                 name = 'blockxref', attrs = {
                     'frag': 'default',
-                    'docid': netvms[newvm]
+                    'uriid': uriid
             }))
-            
-        oldfrag = report.find('fragment', id='xovms_old')
-        for oldvm in (set(psvms) - set(netvms)):
-            logger.debug('Stopped VM; URIID ' + psvms[oldvm])
-            oldfrag.append(Tag(is_xml = True,
-                name = 'blockxref', attrs = {
-                    'frag': 'default',
-                    'uriid': psvms[oldvm]
-            }))
+    
+    network.report.addSection(str(report))
 
-        network.report.addSection(str(report))
+def _parse_uriid(result: dict) -> Optional[str]:
+    """
+    Parses the URIID of a document from a PageSeeder search result.
+    """
+    uriid = None
+    for field in result['fields']:
+        if field['name'] == 'psid':
+            uriid = field['value']
+            break
+    return uriid
 
-    else:
-        logger.debug('No VMs on local or PageSeeder')
 
 PUB = '''
 <document level="portable" type="references">
