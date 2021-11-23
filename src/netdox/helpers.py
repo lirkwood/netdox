@@ -173,7 +173,7 @@ class Report:
         Adds a psml *section* tag to the report, if it is valid.
 
         :param section: The section tag to add.
-        :type section: Tag
+        :type section: str
         """
         if etree.XMLSchema(file = utils.APPDIR + 'src/psml.xsd').validate(
             etree.fromstring(bytes(section, 'utf-8'))
