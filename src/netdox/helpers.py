@@ -198,7 +198,7 @@ class Report:
 # Label Helper #
 ################
 
-class LabelDict(defaultdict):
+class LabelDict(dict):
     """
     Container for the labels applied to documents on PageSeeder.
     Behaves like a defaultdict with a 'default_factory' of *set*.
@@ -210,11 +210,9 @@ class LabelDict(defaultdict):
     def __getitem__(self, key: str) -> set[str]:
         return super().__getitem__(key)
 
-    def __init__(self, *args, **kwargs) -> None:
-        """
-        Dictionary constructor.
-        """
-        super().__init__(set, *args, **kwargs)
+    def __missing__(self, key) -> set:
+        self[key] = self.default_factory()
+        return self[key]
 
     @classmethod
     def from_pageseeder(cls) -> LabelDict:
