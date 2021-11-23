@@ -280,6 +280,17 @@ class Network:
 
     ## resolving refs
 
+    def find_dns(self, name: str) -> Union[nwobjs.Domain, nwobjs.IPv4Address]:
+        """
+        Returns a DNSObject from its name.
+
+        :param name: The name of the DNSObject.
+        :type name: str
+        :return: A Domain or IPv4Address
+        :rtype: Union[nwobjs.Domain, nwobjs.IPv4Address]
+        """
+        return self.ips[name] if iptools.valid_ip(name) else self.domains[name]
+
     def resolvesTo(self, startObj: Union[base.DNSObject, str], target: Union[base.DNSObject, str]) -> bool:
         """
         Returns a bool based on if *startObj* resolves to *target*.
