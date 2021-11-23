@@ -325,11 +325,9 @@ class Network:
         :param encrypt: Whether or not to encrypt the dump, defaults to True
         :type encrypt: bool, optional
         """
+        network = pickle.dumps(self)
         with open(outpath, 'wb') as nw:
-            nw.write(
-                Cryptor().encrypt(pickle.dumps(self))
-                if encrypt else pickle.dumps(self)
-            )
+            nw.write(Cryptor().encrypt(network) if encrypt else network)
 
     @classmethod
     def fromDump(cls: Type[Network], inpath: str = APPDIR + 'src/network.bin', encrypted = True) -> Network:
