@@ -5,15 +5,12 @@ Provides some useful classes, functions and constants for generating and manipul
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
-import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, Union
 
-from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 if TYPE_CHECKING:
-    from netdox.base import NetworkObject
     from netdox.helpers import RecordSet
 
 ###########

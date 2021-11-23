@@ -4,7 +4,7 @@ Used to retrieve NAT information from FortiGate.
 from fortiosapi import FortiOSAPI
 import logging
 
-from netdox import IPv4Address, Network
+from netdox import Network
 from netdox import utils, iptools
 
 logging.getLogger('fortiosapi').setLevel(logging.INFO)
