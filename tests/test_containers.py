@@ -8,6 +8,7 @@ from test_nwobjs import network, node
 
 
 class TestIPv4AddressSet:
+
     def test_fillSubnets(self, network: Network):
         """
         Tests that the fillSubnets method correctly populates existing subnets.
@@ -18,6 +19,7 @@ class TestIPv4AddressSet:
 
 
 class TestNodeSet:
+
     def test_addRef(self, node: Node, randstr: str):
         node.network.nodes.addRef(node, randstr)
         assert node.network.nodes[randstr] is node
@@ -42,3 +44,7 @@ class TestNetwork:
         assert network.resolvesTo('0.0.0.0', 'domain.com')
         assert network.resolvesTo('0.0.0.0', 'sub.domain.com')
         assert network.resolvesTo('0.0.0.0', 'target.domain.com')
+
+    def test_serialise(self, network: Network):
+        network.dump()
+        Network.fromDump()
