@@ -300,6 +300,7 @@ class IPv4Address(base.DNSObject):
                         value = XRef(docid = f'_nd_domain_{domain.replace(".","_")}')
                     )
                 for domain in self.backrefs['A']
+                if domain not in self.records['PTR']
             ]))
 
         return soup
