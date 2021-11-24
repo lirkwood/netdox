@@ -20,7 +20,6 @@ def footers(network):
     :type network: Network
     """
     mgr = MonitorManager(network)
-    mgr.pruneGenerated()
     mgr.validateNetwork()
     mgr.addPSMLFooters()
 

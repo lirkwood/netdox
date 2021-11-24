@@ -176,6 +176,7 @@ class MonitorManager:
         Validates the Icinga monitors of every Domain in the network, and modifies them to be valid if necessary.
         """
         self.refreshMonitorInfo()
+        self.pruneGenerated()
         invalid = self.validateDomainSet(self.network.domains)
 
         if invalid:
