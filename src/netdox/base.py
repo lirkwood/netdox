@@ -90,6 +90,31 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     ## properties
 
     @property
+    def search_terms(self) -> set[str]:
+        """
+        A set of terms this object should be searchable by.
+
+        :return: A set of strings.
+        :rtype: set[str]
+        """
+        terms = set()
+        for domain in self.domains:
+            _domain = []
+            for term in domain.split('.'):
+                _domain.append(term)
+                terms.add(term)
+                terms.add('.'.join(_domain))
+
+        for ip in self.ips:
+            _ip = []
+            for term in ip.split('.'):
+                _ip.append(term)
+                terms.add(term)
+                terms.add('.'.join(_ip))
+        
+        return terms
+
+    @property
     @abstractmethod
     def docid(self) -> str:
         """
@@ -177,10 +202,12 @@ class NetworkObject(metaclass=NetworkObjectMeta):
             search_octets.append('.'.join(octets[-2:]))
 
         footer.append(
-            psml.PropertiesFragment(id = 'for-search', properties = [
-                psml.Property(name = 'octets', title = 'Octets for search', 
-                    value = ', '.join(search_octets) if search_octets else '')
-            ], attrs = {'labels':'s-hide-content'}))
+            psml.PropertiesFragment(id = 'search', properties = [
+                psml.Property(
+                    name = 'terms', 
+                    title = 'Search Terms', 
+                    value = self.search_terms
+            )], attrs = {'labels':'s-hide-content'}))
 
         return soup
 
