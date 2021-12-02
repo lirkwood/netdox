@@ -109,7 +109,7 @@ class Property(Tag):
 
     def __init__(self, 
         name: str,
-        value: Union[PSMLLink, str],
+        value: Union[PSMLLink, Iterable[str], str],
         title: str = None,
         attrs: Mapping[str, Any] = {}
     ) -> None:
@@ -139,6 +139,12 @@ class Property(Tag):
             elif isinstance(value, PSMLLink):
                 self.attrs['datatype'] = value.name
                 self.append(value)
+            elif isinstance(value, Iterable) and value:
+                self.attrs['multiple'] = 'true'
+                for val in value:
+                    val_tag = Tag(name = 'value')
+                    val_tag.string = str(val)
+                    self.append(val_tag)
         else:
             self.attrs['value'] = ''
 
@@ -154,14 +160,26 @@ class Property(Tag):
             )
         
         elif property.children:
-            return cls(
-                property['name'], 
-                PROPERTY_DATATYPES[property['datatype']].from_tag(
-                    property.findChild()
-                ),
-                title,
-                property.attrs
-            )
+            if property.has_attr('datatype') and property['datatype'] in PROPERTY_DATATYPES:
+                return cls(
+                    property['name'], 
+                    PROPERTY_DATATYPES[property['datatype']].from_tag(
+                        property.findChild()
+                    ),
+                    title,
+                    property.attrs
+                )
+            elif property.has_attr('multiple'):
+                return cls(
+                    property['name'], 
+                    [val.string for val in property('value')], 
+                    title,
+                    property.attrs
+                )
+
+            else:
+                raise NotImplementedError(
+                    'Failed to parse property from the following tag: '+ str(property))
 
         elif property.has_attr('name'):
             return cls(property['name'], '')

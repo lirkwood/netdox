@@ -67,6 +67,7 @@ class TestLink:
 class TestProperty:
     NAME = 'property_name'
     VALUE = 'property_value!'
+    MULTI_VALUE = ['prop_value_1', 'prop_value_2', 'prop_value_3']
     TITLE = 'Property Title'
 
     @fixture
@@ -80,6 +81,10 @@ class TestProperty:
     @fixture
     def property_Link(self):
         return psml.Property(self.NAME, psml.Link(TestLink.URL), self.TITLE)
+
+    @fixture
+    def property_multiple(self):
+        return psml.Property(self.NAME, self.MULTI_VALUE, self.TITLE)
 
     # n.b. attrs are alphabetically ordered
     def test_to_string(self, property):
@@ -109,6 +114,14 @@ class TestProperty:
             str(property_Link) ==
             f'<property datatype="link" name="{self.NAME}" title="{self.TITLE}">'
             f'<link href="{TestLink.URL}">{TestLink.URL}</link></property>' 
+        )
+
+    def test_multiple_string(self, property_multiple):
+        value_str = ''.join([f'<value>{val}</value>' for val in self.MULTI_VALUE])
+        assert (
+            str(property_multiple) == 
+            f'<property multiple="true" name="{self.NAME}" title="{self.TITLE}">'
+            + value_str + '</property>'
         )
 
     def test_roundtrip_tag(self, property):
