@@ -1,8 +1,5 @@
 from typing import Optional
 from netdox import Network, Node, Domain, IPv4Address
-from plantuml import PlantUML
-
-from netdox.base import NetworkObject, DNSObject
 from netdox.plugins.plantuml.diagram import NodeDiagramFactory
 from netdox.psml import PropertiesFragment, Property, Link
 
