@@ -6,6 +6,13 @@
       </properties-fragment>
     </t:fragment>
 
+    <t:fragment type="organisations" title="New organisation">
+      <properties-fragment>
+        <property name="label" title="Label Name" value="" />
+        <property name="organisation" title="Organisation" datatype="xref" />
+      </properties-fragment>
+    </t:fragment>
+
     <documentinfo>
         <uri title="Config" />
     </documentinfo>
@@ -23,6 +30,14 @@ In order to apply those attributes to a document, simply label it with the speci
             <heading level="2">Labels</heading>
             <preformat>Each label may have an arbitrary map of attributes associated with it, which will be inherited by NetworkObjects bearing the label.
 To configure a label, create a new fragment in this section and populate the properties.</preformat>
+        </fragment>
+    </section>
+
+    <section fragmenttype="organisations" id="organisations">
+        <fragment id="orgs_title" type="organisation">
+            <heading level="2">Organisations</heading>
+            <preformat>Each organisation may be assigned to one or more document labels.
+To assign an Organisation to a label, create new fragment in this section and link to the desired Organisation document.</preformat>
         </fragment>
     </section>
   
