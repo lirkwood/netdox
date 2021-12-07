@@ -156,7 +156,7 @@ class NetworkManager:
             if callable(init):
                 init()
 
-    def runPlugin(self, plugin: ModuleType, stage: str = 'none') -> None:
+    def runPlugin(self, plugin: ModuleType, stage: str) -> None:
         """
         Runs the runner method of a plugin with a Network object and the current stage as arguments.
 
