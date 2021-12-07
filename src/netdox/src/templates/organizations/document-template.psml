@@ -1,0 +1,29 @@
+<document type="organization" level="portable"
+    xmlns:t="http://pageseeder.com/psml/template">
+
+    <t:param name="admin-name" default="" />
+    <t:param name="admin-email" default="" />
+    <t:param name="admin-phone" default="" />
+
+    <section id="title">
+        <fragment id="1">
+            <heading level="1">
+                <t:value name="ps.title" />
+            </heading>
+        </fragment>
+    </section>
+
+    <section id="details">
+        <properties-fragment id="2">
+            <property name="admin-name" title="Admin contact name" value="{$admin-name}" />
+            <property name="admin-email" title="Admin contact email" value="{$admin-email}" />
+            <property name="admin-phone" title="Admin contact phone" value="{$admin-phone}" />
+        </properties-fragment>
+    </section>
+
+    <section id="notes">
+        <title>Notes</title>
+        <fragment id="3" />
+    </section>
+
+</document>
