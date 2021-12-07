@@ -279,6 +279,14 @@ def get_default_docid(docid, params={}, header={}):
     url = f'https://{utils.config()["pageseeder"]["host"]}/ps/docid/{docid}'
     return requests.get(url, headers=header, params=params)
 
+@auth
+def get_default_uriid(uriid, params={}, header={}):
+    """
+    Returns the content of a document, from it's uriid.
+    """
+    url = f'https://{utils.config()["pageseeder"]["host"]}/ps/uriid/{uriid}'
+    return requests.get(url, headers=header, params=params)
+
 
 ###########################
 # PageSeeder API Services #
