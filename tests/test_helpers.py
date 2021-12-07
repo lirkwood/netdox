@@ -37,3 +37,34 @@ class TestRecordSet:
         recordset = helpers.RecordSet('CNAME')
         recordset.add('SomE.DomaiN.com   ', 'source')
         assert recordset.names == ['some.domain.com']
+
+class TestOrganisation:
+    NAME = 'Organisation Name'
+    URIID = '999'
+    CONTACT_NAME = 'Admin Fullname'
+    CONTACT_EMAIL = 'admin@organisation.org'
+    CONTACT_PHONE = '123456789'
+
+    @pytest.fixture
+    def organisation(self):
+        return helpers.Organisation(
+            self.NAME, self.URIID, self.CONTACT_NAME, 
+            self.CONTACT_EMAIL, self.CONTACT_PHONE
+        )
+
+    def test_from_psml(self, organisation):
+        assert organisation == helpers.Organisation.from_psml(
+            f'''<document id="{self.URIID}">
+                <section id="title">
+                    <fragment xmlns:psof="http://www.pageseeder.org/function" id="1">
+                        <heading level="1">{self.NAME}</heading>
+                    </fragment>
+                </section>
+                <section id="details">
+                    <properties-fragment xmlns:psof="http://www.pageseeder.org/function" id="2">
+                        <property name="admin-name" title="Admin contact name" value="{self.CONTACT_NAME}"/>
+                        <property name="admin-email" title="Admin contact email" value="{self.CONTACT_EMAIL}"/>
+                        <property name="admin-phone" title="Admin contact phone" value="{self.CONTACT_PHONE}"/>
+                    </properties-fragment>
+                </section>
+            </document>''')

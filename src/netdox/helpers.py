@@ -2,13 +2,13 @@
 This module contains some essential helper classes.
 """
 from __future__ import annotations
+from dataclasses import dataclass
 
 import json
 import logging
-from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Iterable, Iterator, Optional
+from typing import Iterable, Iterator, Optional, no_type_check
 
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -175,9 +175,13 @@ class Report:
         :param section: The section tag to add.
         :type section: str
         """
-        if etree.XMLSchema(file = utils.APPDIR + 'src/psml.xsd').validate(
-            etree.fromstring(bytes(section, 'utf-8'))
-        ):
+        try:
+            etree.XMLSchema(file = utils.APPDIR + 'src/psml.xsd').assertValid(
+                etree.fromstring(bytes(section, 'utf-8')))
+        except Exception:
+            logger.warning(f'Failed to add invalid PSML section to report.')
+            logger.debug(section)
+        else:
             self.sections.append(section)
 
     def writeReport(self) -> None:
@@ -240,3 +244,39 @@ class LabelDict(dict):
                 uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
                 for uri in all_uris['uris'] if 'docid' in uri
             })
+
+
+#######################
+# Organisation Helper #
+#######################
+
+@dataclass
+class Organisation:
+    name: str
+    """Name of the organisation."""
+    uriid: str
+    """URIID of the organisation document."""
+    contact_name: str
+    """Full name of the organisation contact."""
+    contact_email: str
+    """Email address of the organisation contact."""
+    contact_phone: str
+    """Phone number of the organisation contact."""
+
+    @classmethod
+    @no_type_check
+    def from_psml(cls, psml: str) -> Organisation:
+        tree = etree.fromstring(psml)
+        details = tree.find("section[@id = 'details']/properties-fragment")
+        try:
+            attrs = [
+                tree.find("section[@id = 'title']/fragment/heading").text,
+                tree.get('id'),
+                details.find("property[@name = 'admin-name']").get('value'),
+                details.find("property[@name = 'admin-email']").get('value'),
+                details.find("property[@name = 'admin-phone']").get('value')
+            ]
+        except AttributeError:
+            raise ValueError('Failed to parse essential attribute from PSML.')
+        else:
+            return cls(*[str(attr) for attr in attrs])
