@@ -247,25 +247,25 @@ class LabelDict(dict):
 
 
 #######################
-# Organisation Helper #
+# Organization Helper #
 #######################
 
 @dataclass
-class Organisation:
+class Organization:
     name: str
-    """Name of the organisation."""
+    """Name of the organization."""
     uriid: str
-    """URIID of the organisation document."""
+    """URIID of the organization document."""
     contact_name: str
-    """Full name of the organisation contact."""
+    """Full name of the organization contact."""
     contact_email: str
-    """Email address of the organisation contact."""
+    """Email address of the organization contact."""
     contact_phone: str
-    """Phone number of the organisation contact."""
+    """Phone number of the organization contact."""
 
     @classmethod
     @no_type_check
-    def from_psml(cls, psml: str) -> Organisation:
+    def from_psml(cls, psml: str) -> Organization:
         tree = etree.fromstring(psml)
         details = tree.find("section[@id = 'details']/properties-fragment")
         try:

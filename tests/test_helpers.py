@@ -38,22 +38,22 @@ class TestRecordSet:
         recordset.add('SomE.DomaiN.com   ', 'source')
         assert recordset.names == ['some.domain.com']
 
-class TestOrganisation:
-    NAME = 'Organisation Name'
+class Testorganization:
+    NAME = 'organization Name'
     URIID = '999'
     CONTACT_NAME = 'Admin Fullname'
-    CONTACT_EMAIL = 'admin@organisation.org'
+    CONTACT_EMAIL = 'admin@organization.org'
     CONTACT_PHONE = '123456789'
 
     @pytest.fixture
-    def organisation(self):
-        return helpers.Organisation(
+    def organization(self):
+        return helpers.Organization(
             self.NAME, self.URIID, self.CONTACT_NAME, 
             self.CONTACT_EMAIL, self.CONTACT_PHONE
         )
 
-    def test_from_psml(self, organisation):
-        assert organisation == helpers.Organisation.from_psml(
+    def test_from_psml(self, organization):
+        assert organization == helpers.Organization.from_psml(
             f'''<document id="{self.URIID}">
                 <section id="title">
                     <fragment xmlns:psof="http://www.pageseeder.org/function" id="1">
