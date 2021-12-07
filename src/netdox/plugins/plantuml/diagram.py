@@ -70,6 +70,7 @@ class NodeDiagramFactory:
         :return: The cache.
         :rtype: set[str]
         """
+        assert self._node is not None, 'Cannot draw DNS records to nonexistent node.'
         cache = cache or set()
         if dnsobj.name not in cache:
             cache.add(dnsobj.name)
