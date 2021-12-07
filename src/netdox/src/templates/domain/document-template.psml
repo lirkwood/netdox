@@ -1,48 +1,42 @@
-<document type="domain" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+<document type="domain" level="portable"
+    xmlns:t="http://pageseeder.com/psml/template">
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="6.2" />
+            <property name="template_version" title="Template version" value="6.3" />
         </properties>
     </metadata>
-  
-    <t:fragment type="record" title="Private IP">
-      <properties-fragment>
-       <property name="ipv4" title="Private IP" datatype="xref"/>
-       <property name="source" title="Source Plugin" value=""/>
-     </properties-fragment>
-    </t:fragment>
-  
-    <t:fragment type="record" title="Public IP">
-      <properties-fragment>
-       <property name="ipv4" title="Public IP" datatype="xref"/>
-       <property name="source" title="Source Plugin" value=""/>
-     </properties-fragment>
-    </t:fragment>
-  
-    <t:fragment type="record" title="CNAME">
-      <properties-fragment>
-       <property name="cname" title="CNAME" datatype="xref"/>
-       <property name="source" title="Source Plugin" value=""/>
-     </properties-fragment>
+
+    <t:fragment type="a_record" title="A Record">
+        <properties-fragment>
+            <property name="ipv4" title="IP Address" datatype="xref"/>
+            <property name="source" title="Source Plugin" value=""/>
+        </properties-fragment>
     </t:fragment>
 
-    <section id="title">
-      <fragment id="title">
-        <heading level="2">Domain name</heading>
-         <heading level="1"/>
-      </fragment>
-   </section>
-      
-   <section id="header">
-      <properties-fragment id="header">
-         <property name="name"       title="Name"        value="#!name" />
-         <property name="zone"       title="DNS Zone"    value="#!zone" />
-      </properties-fragment>
-   </section>
+    <t:fragment type="cname_record" title="CNAME Record">
+        <properties-fragment>
+            <property name="cname" title="CNAME" datatype="xref"/>
+            <property name="source" title="Source Plugin" value=""/>
+        </properties-fragment>
+    </t:fragment>
 
-   <section id="records" title="DNS Records" fragmenttype="record" />
+    <section id="title" lockstructure="true">
+        <fragment id="title">
+            <heading level="2">Domain name</heading>
+            <heading level="1"/>
+        </fragment>
+    </section>
 
-   <section id="footer" />
+    <section id="header" lockstructure="true">
+        <properties-fragment id="header">
+            <property name="name" title="Name" value="#!name" />
+            <property name="zone" title="DNS Zone" value="#!zone" />
+        </properties-fragment>
+    </section>
+
+    <section id="records" title="DNS Records" fragmenttype="a_record,cname_record" />
+
+    <section id="footer" />
 
 </document>

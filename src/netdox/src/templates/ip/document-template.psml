@@ -1,48 +1,49 @@
-<document type="ip" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+<document type="ip" level="portable"
+    xmlns:t="http://pageseeder.com/psml/template">
 
     <metadata>
-      <properties>
-        <property name="template_version"     title="Template version"   value="3.2" />
-      </properties>
+        <properties>
+            <property name="template_version" title="Template version" value="3.3" />
+        </properties>
     </metadata>
-    
-    <t:fragment type="record" title="PTR">
-      <properties-fragment>
-        <property name="ptr" title="PTR Record" datatype="xref"/>
-        <property name="source" title="Source Plugin" value=""/>
-      </properties-fragment>
-    </t:fragment>
-    
-    <t:fragment type="record" title="CNAME">
-      <properties-fragment>
-        <property name="cname" title="CNAME Record" datatype="xref"/>
-        <property name="source" title="Source Plugin" value=""/>
-      </properties-fragment>
-    </t:fragment>
-    
-    <t:fragment type="record" title="NAT">
-      <properties-fragment>
-        <property name="nat" title="NAT Record" datatype="xref"/>
-        <property name="source" title="Source Plugin" value=""/>
-      </properties-fragment>
-    </t:fragment>
-    
-    <section id="title">
-      <fragment id="title">
-          <heading level="2">IP Address</heading>
-          <heading level="1">#!name</heading>
-      </fragment>
-  </section>
 
-  <section id="header">
-      <properties-fragment id="header">
-          <property name="ipv4"               title="IP"                  value="#!name" /> 
-          <property name="subnet"             title="Subnet"              value="#!subnet" />
-      </properties-fragment>
-  </section>
-  
-  <section id="records" title="DNS Records" fragmenttype="record" />
-  
-  <section id="footer" />
+    <t:fragment type="ptr_record" title="PTR">
+        <properties-fragment>
+            <property name="ptr" title="PTR Record" datatype="xref"/>
+            <property name="source" title="Source Plugin" value=""/>
+        </properties-fragment>
+    </t:fragment>
+
+    <t:fragment type="cname_record" title="CNAME">
+        <properties-fragment>
+            <property name="cname" title="CNAME Record" datatype="xref"/>
+            <property name="source" title="Source Plugin" value=""/>
+        </properties-fragment>
+    </t:fragment>
+
+    <t:fragment type="nat_record" title="NAT">
+        <properties-fragment>
+            <property name="nat" title="NAT Record" datatype="xref"/>
+            <property name="source" title="Source Plugin" value=""/>
+        </properties-fragment>
+    </t:fragment>
+
+    <section id="title" lockstructure="true">
+        <fragment id="title">
+            <heading level="2">IP Address</heading>
+            <heading level="1">#!name</heading>
+        </fragment>
+    </section>
+
+    <section id="header" lockstructure="true">
+        <properties-fragment id="header">
+            <property name="ipv4" title="IP" value="#!name" />
+            <property name="subnet" title="Subnet" value="#!subnet" />
+        </properties-fragment>
+    </section>
+
+    <section id="records" title="DNS Records" fragmenttype="ptr_record,cname_record,nat_record" />
+
+    <section id="footer" />
 
 </document>
