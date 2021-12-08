@@ -382,7 +382,7 @@ DOMAIN_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="6.2" />
+                <property name="template_version"     title="Template version"   value="6.4" />
             </properties>
         </metadata>
 
@@ -400,6 +400,7 @@ DOMAIN_TEMPLATE = '''
             <properties-fragment id="header">
                 <property name="name"       title="Name"        value="#!name" />
                 <property name="zone"       title="DNS Zone"    value="#!zone" />
+                <property name="org"  title="Organization" value="#!organization" />
             </properties-fragment>
 
         </section>
@@ -422,7 +423,7 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="3.2" />
+                <property name="template_version"     title="Template version"   value="3.4" />
             </properties>
         </metadata>
 
@@ -438,6 +439,7 @@ IPV4ADDRESS_TEMPLATE = '''
             <properties-fragment id="header">
                 <property name="ipv4"               title="IP"                  value="#!name" /> 
                 <property name="subnet"             title="Subnet"              value="#!subnet" />
+                <property name="org"  title="Organization" value="#!organization" />
             </properties-fragment>
 
         </section>
@@ -460,7 +462,7 @@ NODE_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="1.1" />
+                <property name="template_version"     title="Template version"   value="1.2" />
             </properties>
         </metadata>
 
@@ -478,6 +480,7 @@ NODE_TEMPLATE = '''
                 <property name="identity" title="Identity" value="#!identity" />
                 <property name="type" title="Node Type" value="#!type" />
                 <property name="location" title="Location" value="#!location" />
+                <property name="org"  title="Organization" value="#!organization" />
             </properties-fragment>
 
         </section>
