@@ -16,3 +16,5 @@ def runner(network: Network) -> None:
         node.psmlFooter.append(PropertiesFragment('diagram', properties = [
             Property('diagram', Link(url), 'PlantUML Diagram')
         ]))
+
+__stages__ = {'footers': runner}
