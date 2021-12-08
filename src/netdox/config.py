@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from collections import defaultdict
 from typing import Iterable
 
 from bs4 import BeautifulSoup
+from lxml import etree
 from netdox import pageseeder, psml, utils
 from requests import Response
 
@@ -25,14 +27,23 @@ class NetworkConfig:
     """ID of the exclusions fragment in PSML."""
     LABEL_SECTION_ID = 'labels'
     """ID of the labels section in PSML."""
+    ORG_SECTION_ID = 'organizations'
+    """ID of the organization section in PSML."""
     exclusions: set[str]
     """Set of FQDNs to exclude from the network."""
     labels: dict[str, dict]
     """A dictionary mapping document label names to a map of attributes."""
+    organizations: dict[str, set[str]]
+    """A dictionary mapping organization document URIIDs to their assigned labels."""
 
-    def __init__(self, exclusions: Iterable[str] = [], labels: dict[str, dict] = None) -> None:
+    def __init__(self, 
+            exclusions: Iterable[str] = [],
+            labels: dict[str, dict] = None,
+            organizations: dict[str, set[str]] = None
+        ) -> None:
         self.exclusions = set(exclusions)
         self.labels = labels or {}
+        self.organizations = organizations or {}
 
     @property
     def is_empty(self) -> bool:
@@ -82,6 +93,8 @@ class NetworkConfig:
         :return: An instance of this class.
         :rtype: NetworkConfig
         """
+        etree.XMLSchema(file = utils.APPDIR + 'src/psml.xsd').assertValid(
+            etree.fromstring(bytes(document, 'utf-8')))
         soup = BeautifulSoup(document, 'xml')
 
         exclusions = set()
@@ -96,7 +109,19 @@ class NetworkConfig:
             labelName = attrs.pop('label')
             labels[labelName] = attrs
 
-        return cls(exclusions, labels)
+        orgs = defaultdict(set)
+        orgSection = soup.find('section', id = cls.ORG_SECTION_ID)
+        for frag in orgSection('properties-fragment'):
+            org_prop = frag.find(attrs = {'name':'organization'})
+            label_prop = frag.find(attrs = {'name':'label'})
+            if (
+                org_prop.find('xref') and 
+                org_prop.xref.has_attr('uriid') and
+                label_prop['value']
+            ):
+                orgs[org_prop.xref['uriid']].add(label_prop['value'])
+
+        return cls(exclusions, labels, orgs)
 
     def to_psml(self) -> str:
         """
@@ -107,11 +132,14 @@ class NetworkConfig:
         """
         with open(utils.APPDIR+ 'src/templates/config.psml', 'r') as stream:
             soup = BeautifulSoup(stream.read(), 'xml')
-        soup.find('t:fragment').decompose()
+        for tag in soup.find_all('t:fragment'):
+            tag.decompose()
 
-        docinfo = soup.new_tag('documentinfo')
-        docinfo.append(soup.new_tag('uri', docid = self.DOCID, title = 'Config'))
-        soup.find('document').insert(0, docinfo)
+        docinfo = soup.find('documentinfo')
+        assert docinfo is not None, 'Failed to find element documentinfo in config template.'
+        uri = docinfo.uri
+        assert uri is not None, 'Failed to find element uri in config documentinfo.'
+        uri['docid'] = self.DOCID
 
         exclusionFrag = soup.find('fragment', id = self.EXCLUSION_FRAG_ID)
         for domain in self.exclusions:
@@ -125,6 +153,14 @@ class NetworkConfig:
                 id = f'label_{label}', 
                 constructor = {'label': label} | properties
             ))
+
+        orgSection = soup.find('section', id = self.ORG_SECTION_ID)
+        for uriid, labels in self.organizations.items():
+            for count, label in enumerate(labels):
+                orgSection.append(psml.PropertiesFragment(f'org_{uriid}_{count}', [
+                    psml.Property('label', label, 'Label Name'),
+                    psml.Property('organization', psml.XRef(uriid), 'Organization')
+                ]))
 
         return str(soup)
 
