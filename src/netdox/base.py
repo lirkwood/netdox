@@ -202,6 +202,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
         soup = BeautifulSoup(body, features = 'xml')
         soup.find('labels').string = ','.join(self.labels)
+        soup.find(attrs={'name':'organization'}).append(psml.XRef(self.organization))
 
         footer = soup.find(id = 'footer')
         for tag in self.psmlFooter:

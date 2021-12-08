@@ -398,9 +398,9 @@ DOMAIN_TEMPLATE = '''
         <section id="header">
 
             <properties-fragment id="header">
-                <property name="name"       title="Name"        value="#!name" />
-                <property name="zone"       title="DNS Zone"    value="#!zone" />
-                <property name="org"  title="Organization" value="#!organization" />
+                <property name="name"       title="Name"            value="#!name" />
+                <property name="zone"       title="DNS Zone"        value="#!zone" />
+                <property name="org"        title="Organization"    datatype="xref" />
             </properties-fragment>
 
         </section>
@@ -439,7 +439,7 @@ IPV4ADDRESS_TEMPLATE = '''
             <properties-fragment id="header">
                 <property name="ipv4"               title="IP"                  value="#!name" /> 
                 <property name="subnet"             title="Subnet"              value="#!subnet" />
-                <property name="org"  title="Organization" value="#!organization" />
+                <property name="org"                title="Organization"        datatype="xref" />
             </properties-fragment>
 
         </section>
@@ -476,11 +476,11 @@ NODE_TEMPLATE = '''
         <section id="header">
 
             <properties-fragment id="header">
-                <property name="name" title="Name" value="#!name" />
-                <property name="identity" title="Identity" value="#!identity" />
-                <property name="type" title="Node Type" value="#!type" />
-                <property name="location" title="Location" value="#!location" />
-                <property name="org"  title="Organization" value="#!organization" />
+                <property name="name"       title="Name"            value="#!name" />
+                <property name="identity"   title="Identity"        value="#!identity" />
+                <property name="type"       title="Node Type"       value="#!type" />
+                <property name="location"   title="Location"        value="#!location" />
+                <property name="org"        title="Organization"    datatype="xref" />
             </properties-fragment>
 
         </section>
