@@ -288,7 +288,7 @@ def get_default_uriid(uriid, params={}, header={}):
     return requests.get(url, headers=header, params=params)
 
 @auth
-def loading_zone_upload(path, params={}, group='', header={}):
+def loading_zone_upload(path, params={}, host='', group='', header={}):
     with open(path, 'rb') as stream:
         payload = stream.read()
 
@@ -562,7 +562,7 @@ def zip_upload(path, uploadpath, host='', group='', header={}):
     loading_zone_upload(path, params={'file':'netdox-psml.zip'}, host='https://ps-netdox.allette.com.au', group=group, header=header)
     logger.info('File sent successfully.')
     thread = BeautifulSoup(unzip_loading_zone('netdox-psml.zip', params={'deleteoriginal':'true'}), features = 'xml').thread
-    while thread['status'] != 'completed':
+    while thread and thread['status'] != 'completed':
         sleep(2)
         try:
             thread = BeautifulSoup(get_thread_progress(thread['id']), features = 'xml').thread
