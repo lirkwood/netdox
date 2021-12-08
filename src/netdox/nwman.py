@@ -192,7 +192,7 @@ class NetworkManager:
         """
         return {
             attr for plugin in {
-                plugin for plugin in self.plugins if hasattr(plugin, '__attrs__')
+                plugin for plugin in self.plugins
             } for attr in getattr(plugin, '__attrs__', ())
         }
 
@@ -206,7 +206,8 @@ class NetworkManager:
         This config will be serialised for the upload.
         """
         cfg = NetworkConfig.from_pageseeder()
-        if cfg.is_empty or (not cfg.normal_attrs) or self.pluginAttrs != cfg.attrs:
+        # TODO find solution for config vals being dropped when the plugin is disabled
+        if cfg.is_empty or (not cfg.normal_attrs) or (self.pluginAttrs - cfg.attrs):
             logger.warning('Updating config template on PageSeeder.')
             update_template(self.pluginAttrs)
             cfg.update_attrs(self.pluginAttrs)
