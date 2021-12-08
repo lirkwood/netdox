@@ -9,7 +9,7 @@
     <t:fragment type="organizations" title="New organization">
       <properties-fragment>
         <property name="label" title="Label Name" value="" />
-        <property name="organization" title="organization" datatype="xref" />
+        <property name="organization" title="Organization" datatype="xref" />
       </properties-fragment>
     </t:fragment>
 
@@ -35,7 +35,7 @@ To configure a label, create a new fragment in this section and populate the pro
 
     <section fragmenttype="organizations" id="organizations">
         <fragment id="orgs_title" type="organization">
-            <heading level="2">organizations</heading>
+            <heading level="2">Organizations</heading>
             <preformat>Each organization may be assigned to one or more document labels.
 To assign an organization to a label, create new fragment in this section and link to the desired organization document.</preformat>
         </fragment>
