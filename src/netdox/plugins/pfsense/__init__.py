@@ -18,7 +18,9 @@ def runner(network: Network) -> None:
 async def pfsenseScrapeNat() -> dict:
     nat = {}
     config = utils.config('pfsense')
-    browser = await launch(args = ['--no-sandbox'] if getuser() == 'root' else [])
+    browser = await launch(autoClose = False,
+        args = ['--no-sandbox'] if getuser() == 'root' else []
+    )
     page = await browser.newPage()
     gateway = f"https://{config['host']}/"
     await page.goto(gateway, waitUntil = 'networkidle0')

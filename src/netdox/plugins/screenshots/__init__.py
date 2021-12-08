@@ -172,6 +172,7 @@ class ScreenshotManager:
         """
         browser = await launch(
             ignoreHTTPSErrors = True, 
+            autoClose = False,
             args = ['--no-sandbox'] if getuser() == 'root' else []
         )
         page = await browser.newPage()
