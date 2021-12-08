@@ -2,6 +2,7 @@ from typing import Optional
 from plantuml import PlantUML
 from netdox import Network, Node
 from netdox.base import DNSObject, NetworkObject
+from netdox.iptools import valid_ip
 
 class NodeDiagramFactory:
     server: PlantUML
@@ -13,7 +14,6 @@ class NodeDiagramFactory:
     HEADER = (
         '@startuml', 
         'set namespaceSeparator none',
-        'skinparam linetype polyline',
         'skinparam shadowing false',
         'skinparam package<<Layout>> {',
             'borderColor Transparent',
@@ -26,7 +26,7 @@ class NodeDiagramFactory:
     _node: Optional[Node]
 
     def __init__(self, server: PlantUML = None) -> None:
-        self.server = server or PlantUML('http://www.plantuml.com/plantuml/img/')
+        self.server = server or PlantUML('http://www.plantuml.com/plantuml/svg/')
         self.markup = []
         self.links = []
         self._node = None
@@ -47,10 +47,11 @@ class NodeDiagramFactory:
             'package dns <<Layout>>{',
         ]
         
+        cache = set()
         for domain in node.domains:
-            self._draw_dns(node.network.find_dns(domain))
+            cache |= self._draw_dns(node.network.find_dns(domain), cache)
         for ip in node.ips:
-            self._draw_dns(node.network.find_dns(ip))
+            cache |= self._draw_dns(node.network.find_dns(ip), cache)
 
         self.markup.extend(self.links)
         self.markup.append('}@enduml')
@@ -83,23 +84,26 @@ class NodeDiagramFactory:
             ])
 
             for recordset in dnsobj.records.values():
-                for record in recordset:
+                for record, source in recordset.records:
                     dest = self._node.network.find_dns(record)
                     cache |= self._draw_dns(dest, cache)
-                    self._link(class_name, self._class_name(dest))
+                    self._link(class_name, self._class_name(dest), source)
             
             for backrefset in dnsobj.backrefs.values():
                 for backref in backrefset:
                     dest = self._node.network.find_dns(backref)
                     cache |= self._draw_dns(dest, cache)
-                    self._link(self._class_name(dest), class_name)
 
-            if dnsobj.node is self._node:
+            if valid_ip(dnsobj.name) and dnsobj.node is self._node:
                 self._link(class_name)
 
         return cache
 
-    def _link(self, origin: str, destination: str = None) -> None:
+    def _link(self, 
+            origin: str, 
+            destination: str = None, 
+            annotation: str = None
+        ) -> None:
         """
         Links from the UML class at *origin* to the current node, 
         or the UML class with name *destination* instead if specified.
@@ -110,7 +114,8 @@ class NodeDiagramFactory:
         :type destination: str
         """
         destination = destination or self._node_name
-        link = f'"{origin}" --> "{destination}"'
+        annotation = f' : {annotation}' if annotation else ''
+        link = f'"{origin}" --> "{destination}"{annotation}'
         if link not in self.markup:
             self.markup.append(link)
 
