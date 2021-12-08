@@ -287,6 +287,20 @@ def get_default_uriid(uriid, params={}, header={}):
     url = f'https://{utils.config()["pageseeder"]["host"]}/ps/uriid/{uriid}'
     return requests.get(url, headers=header, params=params)
 
+@auth
+def loading_zone_upload(path, params={}, group='', header={}):
+    with open(path, 'rb') as stream:
+        payload = stream.read()
+
+    if 'group' not in params:
+        params['group'] = group
+    if 'filename' not in params and 'X-File-Name' not in header:
+        params['filename'] = 'netdox-psml.zip'
+
+    url = f'https://{utils.config()["pageseeder"]["host"]}/ps/servlet/upload'
+    r = requests.put(url, headers=header, params=params, data=payload)
+    return r.text
+
 
 ###########################
 # PageSeeder API Services #
@@ -511,21 +525,6 @@ def search(params={}, host='', group='', header={}):
 def resolve_group_refs(params={}, host='', group='', member='', header={}):
     service = f'/members/{member}/groups/{group}/resolverefs'
     r = requests.post(host+service, headers=header, params=params)
-    return r.text
-
-
-@auth
-def loading_zone_upload(path, params={}, host='', group='', header={}):
-    with open(path, 'rb') as stream:
-        payload = stream.read()
-
-    if 'group' not in params:
-        params['group'] = group
-    if 'filename' not in params and 'X-File-Name' not in header:
-        params['filename'] = 'netdox-psml.zip'
-
-    service = f'/ps/servlet/upload'
-    r = requests.put(host+service, headers=header, params=params, data=payload)
     return r.text
 
 
