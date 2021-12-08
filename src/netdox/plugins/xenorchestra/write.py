@@ -72,22 +72,22 @@ def genreport(network: Network) -> None:
     :type network: Network
     """
     started_search = json.loads(pageseeder.search({
+        'pagesize': 999,
         'filters': ','.join([
             'pstype:document',
             'psdocumenttype:node',
             'psproperty-type:'+ VirtualMachine.type,
-            f'pscreateddate:[{date.today()}|1D]'
+            f'pscreateddate:{date.today()}'
         ])}))
 
     stopped_search = json.loads(pageseeder.search({
+        'pagesize': 999,
         'filters': ','.join([
             'pstype:document',
             'psdocumenttype:node',
             'psproperty-type:'+ VirtualMachine.type,
             'label:expires-' + (date.today() + timedelta(days = 30)).isoformat()
         ])}))
-
-
 
     report = BeautifulSoup(REPORT, 'xml')
     newfrag = report.find('fragment', id='xovms_new')
@@ -96,7 +96,7 @@ def genreport(network: Network) -> None:
         (newfrag, started_search), 
         (oldfrag, stopped_search)
     ):
-        for result in results:
+        for result in results['results']['result']:
             uriid = _parse_uriid(result)
             assert uriid, 'Failed to parse uriid from search result'
 
