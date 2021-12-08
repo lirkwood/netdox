@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from textwrap import dedent
@@ -5,9 +6,7 @@ from typing import Iterable
 
 import boto3
 from bs4.element import Tag
-
-from netdox import psml, utils
-from netdox import DefaultNode, IPv4Address, Network
+from netdox import DefaultNode, IPv4Address, Network, psml, utils
 
 logger = logging.getLogger(__name__)
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -139,28 +138,32 @@ def runner(network: Network) -> None:
         for instance in reservation['Instances']:
             if instance['NetworkInterfaces']:
                 netInf = instance['NetworkInterfaces'][0]
+                if 'Association' in netInf:
+                    dns = {
+                        'public_ips': [netInf['Association']['PublicIp']],
+                        'domains': [netInf['Association']['PublicDnsName']]
+                    }
+                else:
+                    dns = {'public_ips': [], 'domains': []}
             else:
                 logger.warning(f'Instance {instance["InstanceId"]} has no network interfaces and has been ignored')
                 continue
 
-            EC2Instance(
-                network = network,
-                name = instance['KeyName'],
-                id = instance['InstanceId'],
-                mac = netInf['MacAddress'],
-                instance_type = instance['InstanceType'],
-                monitoring = instance['Monitoring']['State'],
-                region = instance['Placement']['AvailabilityZone'],
-                tags = instance['Tags'],
-                private_ip = netInf['PrivateIpAddress'],
-                public_ips = [netInf['Association']['PublicIp']],
-                domains = [netInf['Association']['PublicDnsName']]
-            )
-            
-            for ip in (instance['PrivateIpAddress'], instance['PublicIpAddress']):
-                if ip not in network.ips:
-                    IPv4Address(network, ip)
-
+            try:
+                EC2Instance(
+                    network = network,
+                    name = instance['KeyName'],
+                    id = instance['InstanceId'],
+                    mac = netInf['MacAddress'],
+                    instance_type = instance['InstanceType'],
+                    monitoring = instance['Monitoring']['State'],
+                    region = instance['Placement']['AvailabilityZone'],
+                    tags = instance['Tags'],
+                    private_ip = netInf['PrivateIpAddress'],
+                    **dns
+                )
+            except KeyError:
+                logger.error('AWS Key error: \n'+ str(netInf))
 
 ## metadata
 
