@@ -195,7 +195,6 @@ class SNMPExplorer:
         :type message: bytes
         """
         if txiface != self.rxiface:
-            logger.debug('\n\n'+ str(txiface))
             while message:
                 rspMsg, message = decoder.decode(message, v2c.Message())
                 rspPDU = v2c.apiMessage.getPDU(rspMsg)
