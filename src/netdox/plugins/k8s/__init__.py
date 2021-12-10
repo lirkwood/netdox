@@ -119,11 +119,11 @@ __nodes__ = [App]
 
 __config__ = {
     "cluster_name": {
-        "proxies": [str],
-        "location": str,
-        "host": str,
-        "clusterId": str,
-        "projectId": str,
-        "token": str
+        "proxies": [''],
+        "location": '',
+        "host": '',
+        "clusterId": '',
+        "projectId": '',
+        "token": ''
     }
 }

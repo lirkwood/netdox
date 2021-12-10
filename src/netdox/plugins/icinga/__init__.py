@@ -29,8 +29,8 @@ __attrs__ = {TEMPLATE_ATTR}
 
 __config__ = {
     "hostname": {
-        "locations": [str],
-        "username": str,
-        "password": str
+        "locations": [''],
+        "username": '',
+        "password": ''
     }
 }

@@ -28,8 +28,8 @@ def runner(network: Network) -> None:
 
 __stages__ = {'nat': runner}
 __config__ = {
-    'apitoken': str,
-    'host': str
+    'apitoken': '',
+    'host': ''
 }
 
 if __name__ == '__main__':

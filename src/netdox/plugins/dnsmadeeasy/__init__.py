@@ -40,7 +40,7 @@ from netdox.plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
 
 
 __stages__ = {'dns': fetchDNS}
-__config__ = {'api': str, 'secret': str}
+__config__ = {'api': '', 'secret': ''}
 
 
 def init() -> None:

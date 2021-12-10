@@ -170,7 +170,7 @@ def runner(network: Network) -> None:
 __stages__ = {'nodes': runner}
 __nodes__ = [EC2Instance]
 __config__ = {
-    'region': str,
-    'aws_access_key_id': str,
-    'aws_secret_access_key': str
+    'region': '',
+    'aws_access_key_id': '',
+    'aws_secret_access_key': ''
 }

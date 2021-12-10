@@ -14,7 +14,7 @@ __stages__ = {
 }
 
 __config__ = {
-    "server": str,
-    "username": str,
-    "password": str
+    "server": '',
+    "username": '',
+    "password": ''
 }

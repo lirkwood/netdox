@@ -45,7 +45,7 @@ async def pfsenseScrapeNat() -> dict:
 
 __stages__ = {'nat': runner}
 __config__ = {
-    'username': str,
-    'password': str,
-    'host': str
+    'username': '',
+    'password': '',
+    'host': ''
 }
