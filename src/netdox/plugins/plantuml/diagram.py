@@ -51,7 +51,7 @@ class NodeDiagramFactory:
         :return: A URL.
         :rtype: str
         """
-        return f'{self.scheme}://{self.server}/{deflate_and_encode(self._build_markup(node))}'
+        return f'{self.scheme}://{self.server}/svg/{deflate_and_encode(self._build_markup(node))}'
 
     def _build_markup(self, node: Node) -> str:
         """
