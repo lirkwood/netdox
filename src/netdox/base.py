@@ -104,29 +104,15 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         return None
 
     @property
-    def search_terms(self) -> set[str]:
+    def search_terms(self) -> list[str]:
         """
         A set of terms this object should be searchable by.
 
-        :return: A set of strings.
-        :rtype: set[str]
+        :return: A list of strings.
+        :rtype: list[str]
         """
-        terms = set()
-        for domain in self.domains:
-            _domain = []
-            for term in domain.split('.'):
-                _domain.append(term)
-                terms.add(term)
-                terms.add('.'.join(_domain))
-
-        for ip in self.ips:
-            _ip = []
-            for term in ip.split('.'):
-                _ip.append(term)
-                terms.add(term)
-                terms.add('.'.join(_ip))
-        
-        return terms
+        tokenized = self.name.split('.')
+        return tokenized + ['.'.join(tokenized[:i]) for i in len(tokenized)]
 
     @property
     @abstractmethod
