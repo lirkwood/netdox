@@ -58,6 +58,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A set of labels to apply to this object's output document."""
     DEFAULT_LABELS = ['show-reversexrefs', 'netdox-default']
     """A set of labels to apply to this object upon instantiation."""
+    type: str
+    """A string unique to each subclass of NetworkObject."""
     TEMPLATE: str
     """The template to populate during serialisation."""
 
@@ -264,9 +266,9 @@ class DNSObject(NetworkObject):
     """
     zone: Optional[str]
     """The DNS zone this object is from."""
-    records: dict[str, helpers.RecordSet]
-    """A dictionary mapping record type to a RecordSet."""
-    backrefs: dict[str, set]
+    records: helpers.DNSContainer
+    """A dictionary mapping a RecordType to a RecordSet."""
+    backrefs: helpers.DNSContainer
     """Like records but stores reverse references from DNSObjects linking to this one."""
     node: Optional[Node]
     """The node this DNSObject resolves to"""
@@ -295,6 +297,7 @@ class DNSObject(NetworkObject):
 
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
+        #TODO add generic DNSRecord serialisation here for records/backrefs
         
         soup.find('properties-fragment', id = 'header').append(psml.Property(
             name = 'node',

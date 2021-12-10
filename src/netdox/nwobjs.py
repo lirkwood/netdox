@@ -16,6 +16,8 @@ from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE, NODE_TEMPLATE,
 if TYPE_CHECKING:
     from netdox import Network
 
+RECORD = helpers.RecordType
+
 ###########
 # DNSObjs #
 ###########
@@ -29,6 +31,7 @@ class Domain(base.DNSObject):
     """
     subnets: set[str]
     """A set of the 24 bit CIDR subnets this domain resolves to."""
+    type = 'domain'
     TEMPLATE = DOMAIN_TEMPLATE
     
     ## dunder methods
@@ -57,16 +60,8 @@ class Domain(base.DNSObject):
                 labels = labels
             )
             
-            self.records = {
-                'A': helpers.RecordSet('A'),
-                'CNAME': helpers.RecordSet('CNAME')
-            }
-
-            self.backrefs = {
-                'CNAME': set(),
-                'PTR': set()
-            }
-
+            self.records = helpers.DNSContainer()
+            self.backrefs = helpers.DNSContainer()
             self.subnets = set()
             
         else:
@@ -84,11 +79,12 @@ class Domain(base.DNSObject):
 
     @property
     def domains(self) -> set[str]:
-        return set(self.records['CNAME'].names + [self.name]).union(self.backrefs['CNAME'])
+        return (self.records.CNAME.values.union(self.backrefs.CNAME.values)).union(
+            [self.name])
 
     @property
     def ips(self) -> set[str]:
-        return set(self.records['A'].names).union(self.backrefs['PTR'])
+        return self.records.A.values.union(self.backrefs.PTR.values)
     
     ## abstract methods
 
@@ -105,14 +101,14 @@ class Domain(base.DNSObject):
         :raises ValueError: If the destination cannot be recognised as a FQDN or IPv4 address.
         """
         if iptools.valid_ip(value):
-            self.records['A'].add(value, source)
-            self.network.ips[value].backrefs['A'].add(self.name)
+            self.records.A.add(value, source)
+            self.network.ips[value].backrefs.A.add(self.name, source)
             if not iptools.public_ip(value):
                 self.subnets.add(iptools.sort(value))
 
         elif re.fullmatch(utils.dns_name_pattern, value):
-            self.records['CNAME'].add(value, source)
-            self.network.domains[value].backrefs['CNAME'].add(self.name)
+            self.records.CNAME.add(value, source)
+            self.network.domains[value].backrefs.CNAME.add(self.name, source)
 
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
@@ -135,7 +131,7 @@ class Domain(base.DNSObject):
         body = soup.find('section', id = 'records')
 
         for frag in recordset2pfrags(
-            recordset = self.records['A'],
+            recordset = self.records.A,
             id_prefix = 'A_record_',
             docid_prefix = '_nd_ip_',
             p_name = 'ipv4',
@@ -144,7 +140,7 @@ class Domain(base.DNSObject):
             body.append(frag)
 
         for frag in recordset2pfrags(
-            recordset = self.records['CNAME'],
+            recordset = self.records.CNAME,
             id_prefix = 'CNAME_record_',
             docid_prefix = '_nd_domain_',
             p_name = 'domain',
@@ -173,12 +169,11 @@ class IPv4Address(base.DNSObject):
     """
     A single IP address found in the network
     """
-    nat: Optional[str]
-    """The IP this address resolves to through the NAT."""
     subnet: str
     """The 24 bit CIDR subnet this IP is in."""
     is_private: bool
     """Whether or not this IP is private"""
+    type = 'ipv4'
     TEMPLATE = IPV4ADDRESS_TEMPLATE
     
     ## dunder methods
@@ -198,19 +193,10 @@ class IPv4Address(base.DNSObject):
             )
 
             self.is_private = not iptools.public_ip(self.name)
-
-            self.records = {
-                'PTR': helpers.RecordSet('PTR'),
-                'CNAME': helpers.RecordSet('CNAME')
-            }
-
-            self.backrefs = {
-                'A': set(),
-                'CNAME': set()
-            }
-
             self.subnet = self.subnetFromMask()
-            self.nat = None
+
+            self.records = helpers.DNSContainer()
+            self.backrefs = helpers.DNSContainer()
         else:
             raise ValueError('Must provide a valid name for an IPv4Address (some IPv4, in CIDR form)')
 
@@ -226,11 +212,12 @@ class IPv4Address(base.DNSObject):
 
     @property
     def domains(self) -> set[str]:
-        return set(self.records['PTR'].names).union(self.backrefs['A'])
+        return set(self.records.PTR.values).union(self.backrefs.A.values)
 
     @property
     def ips(self) -> set[str]:
-        return set(self.records['CNAME'].names + [self.name]).union(self.backrefs['CNAME'])
+        return (self.records.CNAME.values.union(self.backrefs.CNAME)).union(
+            [self.name])
     
     ## abstract methods
 
@@ -245,12 +232,12 @@ class IPv4Address(base.DNSObject):
         :type source: str
         """
         if iptools.valid_ip(value):
-            self.records['CNAME'].add(value, source)
-            self.network.ips[value].backrefs['CNAME'].add(self.name)
+            self.records.CNAME.add(value, source)
+            self.network.ips[value].backrefs.CNAME.add(self.name, source)
 
         elif re.fullmatch(utils.dns_name_pattern, value):
-            self.records['PTR'].add(value, source)
-            self.network.domains[value].backrefs['PTR'].add(self.name)
+            self.records.PTR.add(value, source)
+            self.network.domains[value].backrefs.PTR.add(self.name, source)
             
         else:
             raise ValueError('Unable to parse value as a domain or IPv4 address')
@@ -277,21 +264,13 @@ class IPv4Address(base.DNSObject):
         body = soup.find('section', id = 'records')
 
         for frag in recordset2pfrags(
-            recordset = self.records['PTR'],
+            recordset = self.records.PTR,
             id_prefix = 'PTR_record_',
             docid_prefix = '_nd_domain_',
             p_name = 'domain',
             p_title = 'PTR Record'
         ):  
             body.append(frag)
-
-        # TODO convert NAT to recordset
-        if self.nat:
-            soup.find('properties-fragment', id = 'header').append(Property(
-                name = 'nat',
-                title = 'NAT Destination',
-                value = XRef(docid = f'_nd_ip_{self.nat.replace(".","_")}')
-            ))
 
         body.append(
             PropertiesFragment(id = 'implied_ptr', properties = [
@@ -300,8 +279,8 @@ class IPv4Address(base.DNSObject):
                         title = 'Implied PTR Record',
                         value = XRef(docid = f'_nd_domain_{domain.replace(".","_")}')
                     )
-                for domain in self.backrefs['A']
-                if domain not in self.records['PTR']
+                for domain in self.backrefs.A.values
+                if domain not in self.records.PTR.values
             ]))
 
         return soup
@@ -329,6 +308,7 @@ class IPv4Address(base.DNSObject):
         Returns False if this object is pointing to any other objects, or is being pointed at.
         True otherwise.
         """
+        #TODO fix
         return not bool(
             any([rs.names for rs in self.records.values()])
             or any(self.backrefs.values())
@@ -364,11 +344,10 @@ class Node(base.NetworkObject):
     """A set of domains resolving to this Node."""
     _ips: set[str]
     """A set of IPv4 addresses resolving to this Node."""
-    type: str = 'base'
-    """A string unique to this implementation of Node."""
     _location: Optional[str]
     """Optional manual location attribute to use instead of the network locator."""
     TEMPLATE = NODE_TEMPLATE
+    type: str = 'node'
 
     ## dunder methods
 

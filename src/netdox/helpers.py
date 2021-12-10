@@ -7,8 +7,9 @@ from dataclasses import dataclass
 import json
 import logging
 from datetime import datetime
-from enum import Enum
+from collections import namedtuple
 from typing import Iterable, Iterator, Optional, no_type_check
+from functools import cache
 
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -84,23 +85,15 @@ class Locator:
 # DNS Records #
 ###############
 
-class RecordType(Enum):
-    A = 0
-    PTR = 1
-    CNAME = 2
-    NAT = 3
-
 class RecordSet:
-    """Container for DNS records of a specific type."""
-    record_type: RecordType
-    """Enum containing the resource record type this object holds."""
-    records: set
-    """Set of 2-tuples containing a record value and the plugin name that provided it."""
+    """Container for DNS records. 
+    Proxies a set of 2-tuples containing DNS names and source plugin names."""
+    records: set[DNSRecord]
+    """Set of DNSRecords."""
 
     ## dunder methods
 
-    def __init__(self, type: str) -> None:
-        self.record_type = RecordType[type]
+    def __init__(self) -> None:
         self.records = set()
 
     def __iter__(self) -> Iterator[str]:
@@ -129,6 +122,71 @@ class RecordSet:
 
     def items(self) -> Iterator[tuple[str, str]]:
         yield from self.records
+
+
+class DNSRecord(namedtuple('DNSRecord', ['value', 'source'])):
+    """Named 2-tuple containing a DNS record value, 
+    and the name of the source plugin."""
+    __slots__ = ()
+
+@dataclass
+class DNSRecordSet:
+    """Container for DNSRecords."""
+    _set: set[DNSRecord]
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self._set
+
+    @cache
+    def _values(self) -> set[str]:
+        """
+        Returns the cached values of all DNS records in this set.
+        """
+        return {record.value for record in self._set}
+
+    @property
+    def values(self) -> set[str]:
+        """
+        Returns the values of all DNS records in this set.
+        """
+        return {record.value for record in self._set}
+
+    @cache
+    def _sources(self) -> set[str]:
+        """
+        Returns the cached sources of all DNS records in this set.
+        """
+        return {record.source for record in self._set}
+    
+    @property
+    def sources(self) -> set[str]:
+        """
+        Returns the sources of all DNS records in this set.
+        """
+        return self._sources()
+
+    def add(self, value: str, source: str) -> None:
+        """Adds a new DNS record to the set created from the provided arguments."""
+        self.add_record(DNSRecord(value, source))
+
+    def add_record(self, record: DNSRecord) -> None:
+        """Adds a DNS record to the set."""
+        self._sources.cache_clear()
+        self._values.cache_clear()
+        self._set.add(record)
+
+@dataclass
+class DNSContainer:
+    """Container for DNSRecordSets."""
+    A: DNSRecordSet
+    """Set of DNS records of type 'A'."""
+    CNAME: DNSRecordSet
+    """Set of DNS records of type 'CNAME'."""
+    PTR: DNSRecordSet
+    """Set of DNS records of type 'PTR'."""
+    NAT: DNSRecordSet
+    """Set of DNS records of type 'NAT'."""
+    #TODO add to_psml methods for DNS helpers
 
 
 #################
