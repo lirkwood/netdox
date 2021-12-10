@@ -10,6 +10,7 @@ import os
 import re
 from functools import cache, wraps
 from traceback import format_exc
+from tldextract import extract
 
 from cryptography.fernet import Fernet
 
@@ -145,3 +146,16 @@ def fileFetchRecursive(dir: str, relative: str = None, extension: str = None) ->
         elif file.is_file() and not (extension and not file.name.endswith(extension)):
             fileset.append(os.path.relpath(file.path, relative))
     return fileset
+
+def rootDomainExtract(fqdn: str) -> str:
+    """
+    Returns the root domain and TLD suffix of a FQDN.
+    e.g. for subsub.sub.domain.com.au, would return domain.com.au
+
+    :param fqdn: The full qualified domain name to extract the root domain from.
+    :type fqdn: str
+    :return: The root domain and TLD suffix.
+    :rtype: str
+    """
+    result = extract(fqdn)
+    return result.domain +'.'+ result.suffix
