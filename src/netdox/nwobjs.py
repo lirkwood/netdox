@@ -49,10 +49,11 @@ class Domain(base.DNSObject):
         :raises ValueError: If *name* is not a valid FQDN
         """
         if re.fullmatch(utils.dns_name_pattern, name):
+
             super().__init__(
                 network = network, 
                 name = name, 
-                zone = zone or '.'.join(name.split('.')[1:]), 
+                zone = zone or utils.rootDomainExtract(name),
                 labels = labels
             )
             
