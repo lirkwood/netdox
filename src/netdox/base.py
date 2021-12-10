@@ -112,7 +112,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         :rtype: list[str]
         """
         tokenized = self.name.split('.')
-        return tokenized + ['.'.join(tokenized[:i]) for i in len(tokenized)]
+        return tokenized + ['.'.join(tokenized[:i]) for i in range(len(tokenized))]
 
     @property
     @abstractmethod
