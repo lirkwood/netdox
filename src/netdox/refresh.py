@@ -67,7 +67,8 @@ def main():
     nwman.runStage('footers')
 
     #-------------------------------------------------------------------#
-    # Write domains, ips, and nodes to json and psml,                   #
+    # Write domains, ips, and nodes to pickle and psml,                 #
+    # scan for stale files and generate report,                         #
     # and run any post-write plugins                                    #
     #-------------------------------------------------------------------#
 
