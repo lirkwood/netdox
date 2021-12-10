@@ -29,7 +29,11 @@ and the value should be a callable object that takes a single Network object as 
 In order to register a label attribute, use the ``__attrs__`` name for an iterable object containing the
 string names of the attributes to register. For more info see :ref:`config`.
 
-Finally, to register a Node type as an export from your plugin, use the ``__nodes__`` iterable.
+To register a config object that your plugin will expect to read from the application config (``config.json``),
+use a dictionary named ``__config__``. 
+This dict will be copied to the config template when a new netdox instance is initialised, under the name of your plugin.
+
+To register a Node type as an export from your plugin, use the ``__nodes__`` iterable.
 
 
 Default Plugins

@@ -64,31 +64,6 @@ def init_dirs():
     if os.path.lexists(APPDIR+ 'cfg'):
         os.remove(APPDIR+ 'cfg')
 
-def _convert_types(obj: Union[dict, list]) -> Union[dict, list]:
-    """
-    Recursively creates an datastructure of type instances from 
-    a datastructure of types.
-    """
-    if isinstance(obj, dict):
-        outdict = {}
-        for key, value in obj.items():
-            if isinstance(value, type):
-                outdict[key] = value()
-            else:
-                outdict[key] = _convert_types(value)
-        return outdict
-        
-    elif isinstance(obj, list):
-        outlist = []
-        for value in obj:
-            if isinstance(value, type):
-                outlist.append(value())
-            else:
-                outlist.append(_convert_types(value))
-        return outlist
-
-    raise TypeError('Must be a dict or list.')
-
 def _gen_config():
     with open(APPDIR+ 'src/defaults/config.json', 'r') as stream:
         app_config = json.load(stream)
@@ -108,14 +83,13 @@ def _gen_config():
         plugin_config_model = getattr(plugin, '__config__', {})
         if plugin_config_model:
             try:
-                plugin_config = _convert_types(plugin_config_model)
-                json.dumps(plugin_config)
+                json.dumps(plugin_config_model)
             except Exception:
                 logger.error(
                     f"Plugin {plugin.__name__.split('.')[-1]} "
                     'registered an invalid JSON object under __config__.')
             else:
-                app_config['plugins'][plugin_name] = plugin_config
+                app_config['plugins'][plugin_name] = plugin_config_model
 
     nwman_logger.setLevel(nwman_level)
     
