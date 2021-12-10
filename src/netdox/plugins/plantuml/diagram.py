@@ -103,6 +103,7 @@ class NodeDiagramFactory:
             class_name = self._class_name(dnsobj)
             self.markup.extend([
                 f'class "{class_name}" {{',
+                    f'link: [[https://{dnsobj.name}/]]',
                     f'zone: {dnsobj.zone}',
                 '}'
             ])
