@@ -92,14 +92,16 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     @property
     def organization(self) -> Optional[str]:
         """
-        Returns the URIID of the organization document this object belongs to.
+        Returns the URIID of the organization document this object belongs to,
+        if any.
 
-        :return: An integer, as a string.
+        :return: An integer (as a string), or None.
         :rtype: str
         """
         for uri, labels in self.network.config.organizations.items():
             if (self.labels & labels):
                 return uri
+        return None
 
     @property
     def search_terms(self) -> set[str]:

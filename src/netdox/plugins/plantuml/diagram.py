@@ -73,7 +73,7 @@ class NodeDiagramFactory:
             'package dns <<Layout>>{',
         ]
         
-        cache = set()
+        cache: set[str] = set()
         for domain in node.domains:
             cache |= self._draw_dns(node.network.find_dns(domain), cache)
         for ip in node.ips:
