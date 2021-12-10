@@ -1,12 +1,12 @@
 from typing import Optional
-from plantuml import PlantUML
+from plantuml import deflate_and_encode
 from netdox import Network, Node
 from netdox.base import DNSObject, NetworkObject
 from netdox.iptools import valid_ip
 
 class NodeDiagramFactory:
-    server: PlantUML
-    """The server to use to process the markup into an image."""
+    server: str
+    """The hostname + path of the PlantUML server to use."""
     markup: list[str]
     """The markup to send to the server, as a list of lines."""
     links: list[str]
@@ -25,8 +25,15 @@ class NodeDiagramFactory:
     """Some markup to insert at the top."""
     _node: Optional[Node]
 
-    def __init__(self, server: PlantUML = None) -> None:
-        self.server = server or PlantUML('http://www.plantuml.com/plantuml/svg/')
+    def __init__(self, server: str = None, https: bool = True) -> None:
+        """
+        Constructor.
+
+        :param server: The PlantUML server hostname + path. Defaults to public server.
+        :type server: PlantUML, optional
+        """
+        self.server = (server or 'www.plantuml.com/plantuml').strip('/')
+        self.scheme = 'https' if https else 'http'
         self.markup = []
         self.links = []
         self._node = None
@@ -36,6 +43,25 @@ class NodeDiagramFactory:
         return f'{nwobj.__class__.__name__}: {nwobj.name}'
 
     def draw(self, node: Node) -> str:
+        """
+        Generate diagram for the given node and return the url.
+
+        :param node: The node to draw.
+        :type node: Node
+        :return: A URL.
+        :rtype: str
+        """
+        return f'{self.scheme}://{self.server}/{deflate_and_encode(self._build_markup(node))}'
+
+    def _build_markup(self, node: Node) -> str:
+        """
+        Generate markup for the diagram of the given node.
+
+        :param node: The node to generate markup for.
+        :type node: Node
+        :return: The markup for the diagram.
+        :rtype: str
+        """
         self._node = node
         self._node_name = self._class_name(node)
         self.links = []
@@ -55,9 +81,7 @@ class NodeDiagramFactory:
 
         self.markup.extend(self.links)
         self.markup.append('}@enduml')
-        return self.server.get_url(
-            '\n'.join((*self.HEADER, *self.markup, *self.links))
-        )
+        return '\n'.join((*self.HEADER, *self.markup, *self.links))
 
     def _draw_dns(self, dnsobj: DNSObject, cache: set[str] = None) -> set[str]:
         """
