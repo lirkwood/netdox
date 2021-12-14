@@ -16,7 +16,7 @@ from netdox import psml
 
 if TYPE_CHECKING:
     from netdox import Network, helpers
-    from netdox.nwobjs import Node
+    from netdox.nodes import Node
 
 ###########
 # Objects #
@@ -260,79 +260,6 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
 NWObjT = TypeVar('NWObjT', bound = NetworkObject)
 
-class DNSObject(NetworkObject):
-    """
-    A NetworkObject representing an object in a managed DNS zone.
-    """
-    zone: Optional[str]
-    """The DNS zone this object is from."""
-    records: helpers.DNSContainer
-    """A dictionary mapping a RecordType to a RecordSet."""
-    backrefs: helpers.DNSContainer
-    """Like records but stores reverse references from DNSObjects linking to this one."""
-    node: Optional[Node]
-    """The node this DNSObject resolves to"""
-
-    ## dunder methods
-
-    def __init__(self, network: Network, name: str, zone: str = None, labels: Iterable[str] = None) -> None:
-        super().__init__(network, name, name, labels)
-        self.zone = zone.lower() if zone else zone
-        self.node = None
-
-    ## methods
-
-    @abstractmethod
-    def link(self, value: str, source: str) -> None:
-        """
-        Adds a record from this object to a DNSObject named *value*.
-        Should also create a backref if there is a network.
-
-        :param value: The name of the DNSObject to link to.
-        :type value: str
-        :param source: The plugin that provided this link.
-        :type source: str
-        """
-        pass
-
-    def to_psml(self) -> BeautifulSoup:
-        soup = super().to_psml()
-        #TODO add generic DNSRecord serialisation here for records/backrefs
-        
-        soup.find('properties-fragment', id = 'header').append(psml.Property(
-            name = 'node',
-            title = 'Node',
-            value = psml.XRef(docid = self.node.docid) if self.node else '—'
-        ))
-        return soup
-
-    def merge(self, object: DNSObject) -> DNSObject: # type: ignore
-        """
-        In place merge of two DNSObjects of the same type.
-        This method should always be called on the object entering the set.
-        """
-        if object.name == self.name:
-            super().merge(object)
-            for recordType in self.records:
-                if recordType in object.records:
-                    self.records[recordType] |= object.records[recordType]
-
-            for recordType in self.backrefs:
-                if recordType in object.backrefs:
-                    self.backrefs[recordType] |= object.backrefs[recordType]
-
-            return self
-        else:
-            raise AttributeError('Cannot merge DNSObjects with different names.')
-
-    #TODO add exclusion validation at this level: _enter?
-
-DNSObjT = TypeVar('DNSObjT', bound = DNSObject)
-
-##############
-# Containers #
-##############
-
 class NetworkObjectContainer(ABC, Generic[NWObjT]):
     """
     Container for a set of network objects
@@ -362,25 +289,3 @@ class NetworkObjectContainer(ABC, Generic[NWObjT]):
 
     def __contains__(self, key: str) -> bool:
         return self.objects.__contains__(key.lower())
-
-class DNSObjectContainer(NetworkObjectContainer[DNSObjT], Generic[DNSObjT]):
-    """
-    Container for a set of DNSObjects.
-    """
-
-    ## dunder methods
-
-    def __init__(self, network: Network, objects: Iterable[DNSObjT] = []) -> None:
-        self.network = network
-        self.objects = {object.name: object for object in objects}
-
-    def __getitem__(self, key: str) -> DNSObjT:
-        if key not in self.objects:
-            self.objects[key] = self.objectClass(self.network, key)
-        return super().__getitem__(key)
-
-    def __contains__(self, key: Union[str, DNSObjT]) -> bool:
-        if isinstance(key, str):
-            return super().__contains__(key)
-        else:
-            return super().__contains__(key.name)
