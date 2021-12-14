@@ -182,9 +182,9 @@ class DNSRecordSet:
 
         :param network: The network to use to look up docids.
         :type network: Network
-        :param implied: [description], defaults to False
+        :param implied: Whether to prefix record properties with 'Implied', defaults to False
         :type implied: bool, optional
-        :return: [description]
+        :return: a list of BS4 tags.
         :rtype: list[Tag]
         """
         title = f'Implied {self.type} record' if implied else f'{self.type} record'
