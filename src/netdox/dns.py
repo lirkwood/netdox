@@ -188,10 +188,11 @@ class DNSRecordSet:
         :rtype: list[Tag]
         """
         title = f'Implied {self.type.value} record' if implied else f'{self.type.value} record'
+        id_prefix = 'implied_' if implied else ''
         fragments: list[Tag] = []
         for count, record in enumerate(self):
             dest = record.destination
-            fragments.append(PropertiesFragment(f'{self.type.value}_{count}', [
+            fragments.append(PropertiesFragment(f'{id_prefix}{self.type.value}_{count}', [
                 Property(dest.type, XRef(docid = dest.docid), title),
                 Property('source', record.source, 'Source Plugin')
             ]))
@@ -234,6 +235,12 @@ class DNSContainer:
 
     def __iter__(self) -> Iterator[DNSRecordSet]:
         yield from [self.A, self.CNAME, self.PTR]
+
+    def __getitem__(self, key: DNSRecordType) -> DNSRecordSet:
+        for recordSet in self:
+            if key == recordSet.type:
+                return recordSet
+        raise KeyError(f'No DNSRecordSet with type {key}')
 
     def merge(self, other: DNSContainer) -> None:
         """
@@ -313,9 +320,14 @@ class DNSObject(base.NetworkObject):
             value = XRef(docid = self.node.docid) if self.node else '—'
         ))
         
-        body = soup.find('section', id = 'records')
-        body.extend(self.records.to_psml(False))
-        body.extend(self.backrefs.to_psml(True))
+        #TODO fix this awful hack with simpler dns system
+        soup.find('section', id = 'records').extend(self.records.to_psml(False))
+        implied = soup.find('section', id = 'implied_records')
+        for recordSet in self.backrefs:
+            implied.extend(DNSRecordSet(self, recordSet.type, [
+                record for record in recordSet 
+                if record not in self.records[recordSet.type]
+            ]).to_psml(True))
 
         return soup
 
