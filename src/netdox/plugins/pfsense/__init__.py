@@ -13,7 +13,7 @@ logging.getLogger('pyppeteer').setLevel(logging.WARNING)
 
 def runner(network: Network) -> None:
     for ip, alias in asyncio.run(pfsenseScrapeNat()).items():
-        network.ips[ip].nat = alias
+        network.ips[ip].translate(alias)
 
 async def pfsenseScrapeNat() -> dict:
     nat = {}
@@ -35,7 +35,6 @@ async def pfsenseScrapeNat() -> dict:
         for row in rows:
             columns = await row.JJeval('td', 'columns => columns.map(column => column.textContent.trim())')
             nat[columns[3]] = columns[4]
-            nat[columns[4]] = columns[3]
     else:
         logging.debug('Failed to navigate to pfSense NAT page')
     

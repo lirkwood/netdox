@@ -6,7 +6,7 @@ from pypsrp.wsman import WSMan
 
 from netdox import utils
 from netdox import Domain, Network
-from netdox.nwobjs import PlaceholderNode
+from netdox.nodes import PlaceholderNode
 
 logger = logging.getLogger(__name__)
 

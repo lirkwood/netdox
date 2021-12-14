@@ -6,36 +6,36 @@ from __future__ import annotations
 from typing import Iterable, Iterator, Type, Union
 import pickle
 
-from netdox import iptools
-from netdox import base, helpers, nwobjs
+from netdox import iptools, nodes, dns
+from netdox import base, helpers
 from netdox.config import NetworkConfig
 from netdox.utils import APPDIR, Cryptor
 
 
-class DomainSet(base.DNSObjectContainer[nwobjs.Domain]):
+class DomainSet(dns.DNSObjectContainer[dns.Domain]):
     """
     Container for a set of Domains
     """
-    objects: dict[str, nwobjs.Domain]
+    objects: dict[str, dns.Domain]
     objectType: str = 'domains'
-    objectClass: Type[nwobjs.Domain] = nwobjs.Domain
+    objectClass: Type[dns.Domain] = dns.Domain
 
     ## dunder methods
 
-    def __init__(self, network: Network, domains: Iterable[nwobjs.Domain] = []) -> None:
+    def __init__(self, network: Network, domains: Iterable[dns.Domain] = []) -> None:
         super().__init__(network, domains)
 
-    def __getitem__(self, key: str) -> nwobjs.Domain:
+    def __getitem__(self, key: str) -> dns.Domain:
         return super().__getitem__(key)
 
     ## Re-implemented to type hint
-    def __iter__(self) -> Iterator[nwobjs.Domain]:
+    def __iter__(self) -> Iterator[dns.Domain]:
         yield from super().__iter__()
 
     ## properties
 
     @property
-    def domains(self) -> dict[str, nwobjs.Domain]:
+    def domains(self) -> dict[str, dns.Domain]:
         """
         Returns the underlying objects dict.
 
@@ -45,28 +45,28 @@ class DomainSet(base.DNSObjectContainer[nwobjs.Domain]):
         return self.objects
 
 
-class IPv4AddressSet(base.DNSObjectContainer[nwobjs.IPv4Address]):
+class IPv4AddressSet(dns.DNSObjectContainer[dns.IPv4Address]):
     """
     Container for a set of IPv4Address
     """
-    objects: dict[str, nwobjs.IPv4Address]
+    objects: dict[str, dns.IPv4Address]
     objectType: str = 'ips'
-    objectClass: Type[nwobjs.IPv4Address] = nwobjs.IPv4Address
+    objectClass: Type[dns.IPv4Address] = dns.IPv4Address
     subnets: set
     """A set of the /24 subnets of the private IPs in this container."""
 
-    def __init__(self, network: Network, ips: list[nwobjs.IPv4Address] = []) -> None:
+    def __init__(self, network: Network, ips: list[dns.IPv4Address] = []) -> None:
         super().__init__(network, ips)
         self.subnets = set()
 
-    def __getitem__(self, key: str) -> nwobjs.IPv4Address:
+    def __getitem__(self, key: str) -> dns.IPv4Address:
         return super().__getitem__(key)
 
-    def __iter__(self) -> Iterator[nwobjs.IPv4Address]:
+    def __iter__(self) -> Iterator[dns.IPv4Address]:
         yield from super().__iter__()
 
     @property
-    def ips(self) -> dict[str, nwobjs.IPv4Address]:
+    def ips(self) -> dict[str, dns.IPv4Address]:
         """
         Returns the underlying objects dict.
 
@@ -76,7 +76,7 @@ class IPv4AddressSet(base.DNSObjectContainer[nwobjs.IPv4Address]):
         return self.objects
 
     @property
-    def private_ips(self) -> list[nwobjs.IPv4Address]:
+    def private_ips(self) -> list[dns.IPv4Address]:
         """
         Returns all IPs in the set that are part of the private namespace
 
@@ -86,7 +86,7 @@ class IPv4AddressSet(base.DNSObjectContainer[nwobjs.IPv4Address]):
         return [ip for ip in self if ip.is_private]
 
     @property
-    def public_ips(self) -> list[nwobjs.IPv4Address]:
+    def public_ips(self) -> list[dns.IPv4Address]:
         """
         Returns all IPs in the set that are not part of the private namespace
 
@@ -96,7 +96,7 @@ class IPv4AddressSet(base.DNSObjectContainer[nwobjs.IPv4Address]):
         return [ip for ip in self if not ip.is_private]
 
     @property
-    def unused(self) -> list[nwobjs.IPv4Address]:
+    def unused(self) -> list[dns.IPv4Address]:
         """
         Returns all IPs in the set that are not referenced by a DNS record.
 
@@ -106,7 +106,7 @@ class IPv4AddressSet(base.DNSObjectContainer[nwobjs.IPv4Address]):
         return [ip for ip in self if ip.unused]
 
     @property
-    def used(self) -> list[nwobjs.IPv4Address]:
+    def used(self) -> list[dns.IPv4Address]:
         """
         Returns all IPs in the set that are referenced by a DNS record.
 
@@ -125,32 +125,32 @@ class IPv4AddressSet(base.DNSObjectContainer[nwobjs.IPv4Address]):
                 self[ip]
 
 
-class NodeSet(base.NetworkObjectContainer[nwobjs.Node]):
+class NodeSet(base.NetworkObjectContainer[nodes.Node]):
     """
     Container for a set of Nodes
     """
-    objects: dict[str, nwobjs.Node]
+    objects: dict[str, nodes.Node]
     objectType: str = 'nodes'
-    objectClass: Type[nwobjs.Node] = nwobjs.Node
+    objectClass: Type[nodes.Node] = nodes.Node
 
-    def __init__(self, network: Network, nodeSet: list[nwobjs.Node] = []) -> None:
+    def __init__(self, network: Network, nodeSet: list[nodes.Node] = []) -> None:
         self.objects = {node.identity: node for node in nodeSet}
         self.network = network
 
-    def __getitem__(self, key: str) -> nwobjs.Node:
+    def __getitem__(self, key: str) -> nodes.Node:
         return super().__getitem__(key)
 
-    def __iter__(self) -> Iterator[nwobjs.Node]:
+    def __iter__(self) -> Iterator[nodes.Node]:
         yield from super().__iter__()
 
-    def __contains__(self, key: Union[str, nwobjs.Node]) -> bool:
+    def __contains__(self, key: Union[str, nodes.Node]) -> bool:
         if isinstance(key, str):
             return super().__contains__(key)
         else:
             return super().__contains__(key.identity)
 
     @property
-    def nodes(self) -> dict[str, nwobjs.Node]:
+    def nodes(self) -> dict[str, nodes.Node]:
         """
         Returns the underlying objects dict
 
@@ -161,7 +161,7 @@ class NodeSet(base.NetworkObjectContainer[nwobjs.Node]):
 
     ## ref handling
 
-    def addRef(self, node: nwobjs.Node, ref: str) -> None:
+    def addRef(self, node: nodes.Node, ref: str) -> None:
         """
         Adds a pointer from *ref* to *node* as long as it is present in the network.
 
@@ -196,7 +196,7 @@ class NodeSet(base.NetworkObjectContainer[nwobjs.Node]):
             return cache
         cache.add(dnsobj_name)
 
-        dnsobj: base.DNSObject
+        dnsobj: dns.DNSObject
         if dnsobj_name in self.network.ips:
             dnsobj = self.network.ips[dnsobj_name]
             dnsobj_set = node.ips
@@ -215,12 +215,9 @@ class NodeSet(base.NetworkObjectContainer[nwobjs.Node]):
         dnsobj_set.add(dnsobj.name)
         dnsobj.node = node
         
-        for backrefs in dnsobj.backrefs.values():
-            for backref in backrefs:
+        for backrefs in dnsobj.backrefs:
+            for backref in backrefs.names:
                 cache |= self.resolveRefs(node_identity, backref, cache)
-
-        if isinstance(dnsobj, nwobjs.IPv4Address) and dnsobj.nat:
-            cache |= self.resolveRefs(node_identity, dnsobj.nat, cache)
 
         return cache
 
@@ -280,7 +277,7 @@ class Network:
 
     ## resolving refs
 
-    def find_dns(self, name: str) -> Union[nwobjs.Domain, nwobjs.IPv4Address]:
+    def find_dns(self, name: str) -> dns.DNSObject:
         """
         Returns a DNSObject from its name.
 
@@ -291,7 +288,10 @@ class Network:
         """
         return self.ips[name] if iptools.valid_ip(name) else self.domains[name]
 
-    def resolvesTo(self, startObj: Union[base.DNSObject, str], target: Union[base.DNSObject, str]) -> bool:
+    def resolvesTo(self, 
+            startObj: Union[dns.DNSObject, str], 
+            target: Union[dns.DNSObject, str]
+        ) -> bool:
         """
         Returns a bool based on if *startObj* resolves to *target*.
 
@@ -303,26 +303,23 @@ class Network:
         :rtype: bool
         """
         if isinstance(startObj, str):
-            startObj = self.ips[startObj] if startObj in self.ips else self.domains[startObj]
-        if isinstance(target, str):
-            target = self.ips[target] if target in self.ips else self.domains[target]
-        self.cache.add(startObj.name)
+            startObj = self.find_dns(startObj)
+        if isinstance(target, dns.DNSObject):
+            target = target.name
 
-        for set in ('ips', 'domains'):
-            networkSet = getattr(self, set)
-            objSet = getattr(startObj, set)
+        if startObj in self.cache:
+            return False
+        self.cache.add(startObj)
+        
+        for recordSet in startObj.records:
+            if target in recordSet.names:
+                self.cache.clear()
+                return True
 
-            if set == 'ips' and isinstance(startObj, nwobjs.IPv4Address) and startObj.nat:
-                objSet.add(startObj.nat)
+            for record in recordSet.destinations:
+                if self.resolvesTo(record, target):
+                    return True
 
-            for name in objSet:
-                if name not in self.cache:
-                    if name == target.name:
-                        self.cache.clear()
-                        return True
-
-                    elif name in networkSet and self.resolvesTo(networkSet[name], target):
-                        return True
         return False
 
     ## Serialisation

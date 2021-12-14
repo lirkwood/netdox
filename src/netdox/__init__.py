@@ -4,4 +4,5 @@ This package contains the source code of that tool, and can be used to develop p
 """
 from .containers import Network
 from .nwman import NetworkManager
-from .nwobjs import DefaultNode, Domain, IPv4Address, Node, PlaceholderNode
+from .nodes import DefaultNode, Node, PlaceholderNode
+from .dns import Domain, IPv4Address, DNSRecord

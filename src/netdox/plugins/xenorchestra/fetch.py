@@ -12,7 +12,7 @@ import logging
 
 from netdox import iptools, utils
 from netdox import IPv4Address, Network
-from netdox.nwobjs import PlaceholderNode
+from netdox.nodes import PlaceholderNode
 from netdox.plugins.xenorchestra.objs import XOServer, VirtualMachine
 
 logger = logging.getLogger(__name__)

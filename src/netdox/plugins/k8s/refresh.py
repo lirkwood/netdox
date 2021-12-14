@@ -17,7 +17,7 @@ from kubernetes import client
 
 from netdox import utils
 from netdox import Network
-from netdox.nwobjs import PlaceholderNode
+from netdox.nodes import PlaceholderNode
 from netdox.plugins.k8s import initContext
 from netdox.plugins.k8s.app import App
 

@@ -19,7 +19,7 @@ from netdox import pageseeder, utils
 from netdox.config import NetworkConfig, update_template
 from netdox.containers import Network
 from netdox.helpers import LabelDict
-from netdox.nwobjs import Node
+from netdox.nodes import Node
 
 logger = logging.getLogger(__name__)
 

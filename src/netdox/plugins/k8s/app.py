@@ -3,7 +3,7 @@ from typing import Iterable
 from bs4 import Tag
 from netdox import psml, utils
 from netdox import Domain, Network
-from netdox.nwobjs import Node
+from netdox.nodes import Node
 
 
 class App(Node):

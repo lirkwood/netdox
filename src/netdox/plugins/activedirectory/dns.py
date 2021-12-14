@@ -7,8 +7,8 @@ from pypsrp.powershell import PowerShell, RunspacePool
 from pypsrp.wsman import WSMan
 
 from netdox import utils
-from netdox import Domain, IPv4Address, Network
-from netdox.base import DNSObject
+from netdox.containers import Network
+from netdox.dns import DNSObject
 
 logger = logging.getLogger(__name__)
 

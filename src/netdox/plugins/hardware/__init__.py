@@ -18,7 +18,7 @@ from bs4 import BeautifulSoup, SoupStrainer, Tag
 
 from netdox import iptools, pageseeder, utils
 from netdox import Network
-from netdox.nwobjs import Node
+from netdox.nodes import Node
 
 logger = logging.getLogger(__name__)
 
