@@ -19,6 +19,6 @@ def runner(network: Network) -> None:
 
 __stages__ = {'footers': runner}
 __config__ = {
-    'server': (lambda: 'www.plantuml.com/plantuml'),
-    'https': (lambda: True)
+    'server': 'www.plantuml.com/plantuml',
+    'https': True
 }
