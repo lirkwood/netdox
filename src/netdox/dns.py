@@ -187,12 +187,12 @@ class DNSRecordSet:
         :return: a list of BS4 tags.
         :rtype: list[Tag]
         """
-        title = f'Implied {self.type} record' if implied else f'{self.type} record'
+        title = f'Implied {self.type.value} record' if implied else f'{self.type.value} record'
         fragments: list[Tag] = []
         for count, record in enumerate(self):
             dest = record.destination
-            fragments.append(PropertiesFragment(f'{self.type}_{count}', [
-                Property(dest.type, dest.docid, title),
+            fragments.append(PropertiesFragment(f'{self.type.value}_{count}', [
+                Property(dest.type, XRef(docid = dest.docid), title),
                 Property('source', record.source, 'Source Plugin')
             ]))
         return fragments
