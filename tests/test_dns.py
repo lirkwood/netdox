@@ -18,16 +18,31 @@ class TestDNSRecord:
 class TestDNSRecordSet:
 
     SOURCE = 'test source'
+    TYPE = dns.DNSRecordType.A
 
     @fixture
-    def origin(self):
+    def origin(self, domain):
         return domain
 
     @fixture
-    def mock_record_set(self, origin, ipv4):
-        set = dns.DNSRecordSet(origin, dns.DNSRecordType.A)
-        set.add(ipv4, self.SOURCE)
+    def destination(self, ipv4):
+        return ipv4
+
+    @fixture
+    def mock_record_set(self, origin, destination):
+        set = dns.DNSRecordSet(origin, self.TYPE)
+        set.add(destination, self.SOURCE)
         return set
+
+    def test_to_psml(self, mock_record_set: dns.DNSRecordSet, destination: dns.DNSObject):
+        assert (
+            str(mock_record_set.to_psml()[0]) ==
+            f'<properties-fragment id="{mock_record_set.type.value}_0">'
+            f'<property datatype="xref" name="{destination.type}" title="{mock_record_set.type.value} record">'
+            f'<xref docid="{destination.docid}" frag="default"></xref></property>'
+            f'<property name="source" title="Source Plugin" value="test source"/>'
+            f'</properties-fragment>'
+        )
 
 class TestDomain:
 
