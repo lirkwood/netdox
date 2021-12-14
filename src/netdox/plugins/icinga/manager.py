@@ -97,7 +97,7 @@ class MonitorManager:
          in any of the configured Icinga instances. False otherwise.
         :rtype: bool
         """
-        for selector in [domain.name] + list(domain.records['A']):
+        for selector in domain.domains:
             for icinga_host in self.icingas:
                 # if has a manually created monitor, just load info
                 if selector in self.manual[icinga_host]:
@@ -215,7 +215,7 @@ class MonitorManager:
             if node: return node.location
             else:
                 return self.network.locator.locate(
-                    self.network.domains[domain].records['A']
+                    self.network.domains[domain].records.A.names
                 )
         return None
 
