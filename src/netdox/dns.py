@@ -69,8 +69,66 @@ class NATEntry:
             self.source == other.source
         )
 
-class TypedDNSRecordSet:
+class DNSRecordSet:
+    #TODO profile mem usage with instance of this on each dnsobj
     """Container for DNSRecords."""
+    _set: set[DNSRecord]
+
+    def __init__(self, records: Iterable[DNSRecord]) -> None:
+        self._set = set(records) if records else set()
+
+    def __iter__(self) -> Iterator[DNSRecord]:
+        yield from self._set
+
+    def __contains__(self, key: DNSRecord) -> bool:
+        return key in self._set
+
+    def add(self, record: DNSRecord) -> None:
+        self._set.add(record)
+
+    def remove(self, record: DNSRecord) -> None:
+        self._set.remove(record)
+
+    def merge(self, other: DNSRecordSet) -> None:
+        """Copies all records from the other set into this one."""
+        self._set |= other._set
+
+    # Record types
+
+    @property
+    def A(self) -> set[DNSRecord]:
+        """Returns all DNSRecords of type 'A'"""
+        return {record for record in self if record.type == DNSRecordType.A}
+
+    @property
+    def PTR(self) -> set[DNSRecord]:
+        """Returns all DNSRecords of type 'PTR'"""
+        return {record for record in self if record.type == DNSRecordType.PTR}
+
+    @property
+    def CNAME(self) -> set[DNSRecord]:
+        """Returns all DNSRecords of type 'CNAME'"""
+        return {record for record in self if record.type == DNSRecordType.CNAME}
+
+    # Record attributes
+
+    @property
+    def destinations(self) -> set[str]:
+        """Returns all destinations in the set."""
+        return {record.destination for record in self}
+
+    @property
+    def names(self) -> set[str]:
+        """Returns all destination names in the set."""
+        return {record.destination.name for record in self}
+
+    @property
+    def sources(self) -> set[str]:
+        """Returns all sources in the set."""
+        return {record.source for record in self}
+
+class TypedDNSRecordSet:
+    """Container for DNSRecords of a specific type."""
     origin: DNSObject
     """The DNS object records in this set originate from."""
     type: DNSRecordType
