@@ -1,5 +1,5 @@
-from netdox import nodes, psml
-from test_nwobjs import domain, ipv4, network, node
+from netdox import utils, psml
+from fixtures import network, node, domain, ipv4, psml_schema
 from pytest import fixture
 
 class TestXRef:

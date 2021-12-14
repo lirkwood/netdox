@@ -1,10 +1,9 @@
+from conftest import randstr
+from fixtures import node, network
 from netdox import IPv4Address, Network
 from netdox.iptools import subn_iter
 from netdox.nodes import Node
-from pytest import raises
-from conftest import randstr
-
-from test_nwobjs import network, node
+from pytest import fixture, raises
 
 
 class TestIPv4AddressSet:

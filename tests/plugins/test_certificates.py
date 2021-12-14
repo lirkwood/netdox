@@ -1,6 +1,6 @@
 from netdox.plugins.certificates import analyze
 from netdox import Domain
-from test_nwobjs import network
+from fixtures import network
 
 def test_analyze(network):
     """

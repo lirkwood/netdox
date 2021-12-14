@@ -2,7 +2,7 @@ import pytest
 from conftest import LOCATIONS, hide_file
 from netdox import utils
 from netdox import helpers
-from test_nwobjs import network, domain, ipv4, node
+from fixtures import network, domain, ipv4, node
 
 class TestLocator:
     
