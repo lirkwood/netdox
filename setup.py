@@ -36,6 +36,7 @@ setup(
         'beautifulsoup4',   # core
         'lxml',             # core
         'requests',         # core
+        'tldextract',       # core
         'websockets',       # xenorchestra
         'boto3',            # aws
         'kubernetes',       # k8s
