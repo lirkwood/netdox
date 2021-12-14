@@ -161,12 +161,12 @@ class NodeSet(base.NetworkObjectContainer[nodes.Node]):
 
     ## ref handling
 
-    def addRef(self, node: nodes.Node, ref: str) -> None:
+    def addRef(self, node: nodes.Node, ref: str) -> None: # type: ignore
         """
         Adds a pointer from *ref* to *node* as long as it is present in the network.
 
         :param node: The node to point *ref* to.
-        :type node: nwobjs.Node
+        :type node: nodes.Node
         :param ref: The identifier which can now be used to find *node*.
         :type ref: str
         :raises RuntimeError: If the node is not in the same network.
