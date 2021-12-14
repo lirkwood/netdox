@@ -96,24 +96,27 @@ class DNSRecordSet:
     # Record types
 
     @property
-    def A(self) -> set[DNSRecord]:
+    def A(self) -> DNSRecordSet:
         """Returns all DNSRecords of type 'A'"""
-        return {record for record in self if record.type == DNSRecordType.A}
+        return DNSRecordSet(
+            {record for record in self if record.type == DNSRecordType.A})
 
     @property
-    def PTR(self) -> set[DNSRecord]:
+    def PTR(self) -> DNSRecordSet:
         """Returns all DNSRecords of type 'PTR'"""
-        return {record for record in self if record.type == DNSRecordType.PTR}
+        return DNSRecordSet(
+            {record for record in self if record.type == DNSRecordType.PTR})
 
     @property
-    def CNAME(self) -> set[DNSRecord]:
+    def CNAME(self) -> DNSRecordSet:
         """Returns all DNSRecords of type 'CNAME'"""
-        return {record for record in self if record.type == DNSRecordType.CNAME}
+        return DNSRecordSet(
+            {record for record in self if record.type == DNSRecordType.CNAME})
 
     # Record attributes
 
     @property
-    def destinations(self) -> set[str]:
+    def destinations(self) -> set[DNSObject]:
         """Returns all destinations in the set."""
         return {record.destination for record in self}
 
