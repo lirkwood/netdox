@@ -522,10 +522,12 @@ class IPv4Address(DNSObject):
         :type source: str
         """
         if isinstance(destination, str):
-            destination = self.network.find_dns(destination)
+            destObj = self.network.ips[destination]
+        else:
+            destObj = destination
         
-        self.NAT.add(NATEntry(self, destination, source))
-        destination.NAT.add(NATEntry(destination, self, source))
+        self.NAT.add(NATEntry(self, destObj, source))
+        destObj.NAT.add(NATEntry(destObj, self, source))
 
     def _enter(self) -> IPv4Address:
         """
