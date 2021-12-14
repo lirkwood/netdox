@@ -10,9 +10,6 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, Union
 
 from bs4.element import Tag
 
-if TYPE_CHECKING:
-    from netdox.helpers import RecordSet
-
 ###########
 # Classes #
 ###########
@@ -317,54 +314,6 @@ class Link(PSMLLink):
 PROPERTY_DATATYPES: dict[str, type[PSMLLink]] = {
     'xref': XRef, 'link': Link
 }
-
-#############
-# Functions #
-#############
-
-
-def recordset2pfrags(
-        recordset: RecordSet, 
-        id_prefix: str, 
-        docid_prefix: str, 
-        p_name: str, 
-        p_title: str
-    ) -> list[Tag]:
-    """
-    Generates properties-fragments for the DNS records in *recordset* and returns them.
-
-    Iterates over a set of 2-tuples, containing a record destination and the source plugin.
-    Generate a properties-fragment for each tuple, with an xref to the destination and a property holding the source plugin.
-    Appends each properties-fragment to the current ``self.body``.
-
-    :param recordset: An Iterable object containing 2-tuples each describing a DNS record.
-    :type recordset: Iterable[Tuple[str, str]]
-    :param id_prefix: The prefix to give each properties-fragment.
-    :type id_prefix: str
-    :param docid_prefix: The prefix to give each xref *docid* attribute.
-    :type docid_prefix: str
-    :param p_name: The name to give each xref property.
-    :type p_name: str
-    :param p_title: The title to give each xref property.
-    :type p_title: str
-    """
-    frags = []
-    count = 0
-    for value, plugin in recordset.items():
-        frags.append(PropertiesFragment(id = id_prefix + str(count), properties = [
-            Property(
-                name = p_name, 
-                title = p_title, 
-                value = XRef(docid = docid_prefix + value.replace(".","_"))
-            ),
-            Property(
-                name = 'source', 
-                title = 'Source Plugin', 
-                value = plugin
-            )
-        ]))
-        count += 1
-    return frags
 
 
 #############
