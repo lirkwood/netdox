@@ -1,6 +1,6 @@
 from netdox import IPv4Address, Network
 from netdox.iptools import subn_iter
-from netdox.nwobjs import Node
+from netdox.nodes import Node
 from pytest import raises
 from conftest import randstr
 

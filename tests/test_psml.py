@@ -1,4 +1,4 @@
-from netdox import psml, nwobjs
+from netdox import nodes, psml
 from test_nwobjs import domain, ipv4, network, node
 from pytest import fixture
 
