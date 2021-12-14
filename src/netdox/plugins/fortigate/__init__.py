@@ -24,7 +24,7 @@ def runner(network: Network) -> None:
                 raise NotImplementedError('Only 1:1 SNAT is currently implemented.')
 
     for ip in nat:
-        network.ips[ip].nat = nat[ip]
+        network.ips[ip].translate(nat[ip], 'fortigate')
 
 __stages__ = {'nat': runner}
 __config__ = {

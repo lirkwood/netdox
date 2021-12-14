@@ -13,7 +13,7 @@ logging.getLogger('pyppeteer').setLevel(logging.WARNING)
 
 def runner(network: Network) -> None:
     for ip, alias in asyncio.run(pfsenseScrapeNat()).items():
-        network.ips[ip].translate(alias)
+        network.ips[ip].translate(alias, 'pfsense')
 
 async def pfsenseScrapeNat() -> dict:
     nat = {}
