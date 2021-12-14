@@ -191,36 +191,3 @@ class TestPropertiesFragment:
     def test_from_tag(self, mock_PropertiesFragment):
         assert mock_PropertiesFragment == psml.PropertiesFragment.from_tag(
             mock_PropertiesFragment)
-
-
-def test_recordset2pfrags():
-    """
-    Tests the recordset2pfrags function.
-    """
-    # dict emulates ordered record set
-    # as they both implement an ``items`` method
-    records = {
-        'record 1': 'source 1',
-        'record 2': 'source 1',
-        'record 3': 'source 2'
-     }
-
-    assert psml.recordset2pfrags(
-        records, 'pfrag_', 'docid_', 'propname', 'Prop Title'
-    ) == [
-        psml.PropertiesFragment('pfrag_0', properties=[
-            psml.Property('propname', title = 'Prop Title', 
-                value = psml.XRef(docid='docid_record 1')),
-            psml.Property('source', title = 'Source Plugin', value = 'source 1'),
-        ]),
-        psml.PropertiesFragment('pfrag_1', properties=[
-            psml.Property('propname', title = 'Prop Title', 
-                value = psml.XRef(docid='docid_record 2')),
-            psml.Property('source', title = 'Source Plugin', value = 'source 1'),
-        ]),
-        psml.PropertiesFragment('pfrag_2', properties=[
-            psml.Property('propname', title = 'Prop Title', 
-                value = psml.XRef(docid='docid_record 3')),
-            psml.Property('source', title = 'Source Plugin', value = 'source 2'),
-        ]),
-    ]
