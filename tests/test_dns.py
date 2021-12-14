@@ -30,11 +30,11 @@ class TestDNSRecordSet:
 
     @fixture
     def mock_record_set(self, origin, destination):
-        set = dns.DNSRecordSet(origin, self.TYPE)
+        set = dns.TypedDNSRecordSet(origin, self.TYPE)
         set.add(destination, self.SOURCE)
         return set
 
-    def test_to_psml(self, mock_record_set: dns.DNSRecordSet, destination: dns.DNSObject):
+    def test_to_psml(self, mock_record_set: dns.TypedDNSRecordSet, destination: dns.DNSObject):
         assert (
             str(mock_record_set.to_psml()[0]) ==
             f'<properties-fragment id="{mock_record_set.type.value}_0">'

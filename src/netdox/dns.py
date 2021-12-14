@@ -69,7 +69,7 @@ class NATEntry:
             self.source == other.source
         )
 
-class DNSRecordSet:
+class TypedDNSRecordSet:
     """Container for DNSRecords."""
     origin: DNSObject
     """The DNS object records in this set originate from."""
@@ -105,7 +105,7 @@ class DNSRecordSet:
     def __contains__(self, record: DNSRecord) -> bool:
         return self._set.__contains__(record)
 
-    def __ior__(self, recordSet: DNSRecordSet) -> None:
+    def __ior__(self, recordSet: TypedDNSRecordSet) -> None:
         self.merge(recordSet)
 
     # TODO find better solution to clearable cached properties
@@ -166,7 +166,7 @@ class DNSRecordSet:
         self._set.add(record)
         self._clear_cache()
 
-    def merge(self, other: DNSRecordSet) -> None:
+    def merge(self, other: TypedDNSRecordSet) -> None:
         """
         Copies all the DNS records from the other set into this one.
 
@@ -203,18 +203,18 @@ class DNSContainer:
     """Container for DNSRecordSets."""
     origin: DNSObject
     """DNS object records in this container originate from."""
-    A: DNSRecordSet
+    A: TypedDNSRecordSet
     """Set of DNS records of type 'A'."""
-    CNAME: DNSRecordSet
+    CNAME: TypedDNSRecordSet
     """Set of DNS records of type 'CNAME'."""
-    PTR: DNSRecordSet
+    PTR: TypedDNSRecordSet
     """Set of DNS records of type 'PTR'."""
 
     def __init__(self, 
         origin: DNSObject,
-        A: DNSRecordSet = None, 
-        CNAME: DNSRecordSet = None, 
-        PTR: DNSRecordSet = None
+        A: TypedDNSRecordSet = None, 
+        CNAME: TypedDNSRecordSet = None, 
+        PTR: TypedDNSRecordSet = None
     ) -> None:
         """
         Constructor.
@@ -229,14 +229,14 @@ class DNSContainer:
         :type PTR: DNSRecordSet, optional
         """
         self.origin = origin
-        self.A = A or DNSRecordSet(origin, DNSRecordType.A)
-        self.CNAME = CNAME or DNSRecordSet(origin, DNSRecordType.CNAME)
-        self.PTR = PTR or DNSRecordSet(origin, DNSRecordType.PTR)
+        self.A = A or TypedDNSRecordSet(origin, DNSRecordType.A)
+        self.CNAME = CNAME or TypedDNSRecordSet(origin, DNSRecordType.CNAME)
+        self.PTR = PTR or TypedDNSRecordSet(origin, DNSRecordType.PTR)
 
-    def __iter__(self) -> Iterator[DNSRecordSet]:
+    def __iter__(self) -> Iterator[TypedDNSRecordSet]:
         yield from [self.A, self.CNAME, self.PTR]
 
-    def __getitem__(self, key: DNSRecordType) -> DNSRecordSet:
+    def __getitem__(self, key: DNSRecordType) -> TypedDNSRecordSet:
         for recordSet in self:
             if key == recordSet.type:
                 return recordSet
@@ -324,7 +324,7 @@ class DNSObject(base.NetworkObject):
         soup.find('section', id = 'records').extend(self.records.to_psml(False))
         implied = soup.find('section', id = 'implied_records')
         for recordSet in self.backrefs:
-            implied.extend(DNSRecordSet(self, recordSet.type, [
+            implied.extend(TypedDNSRecordSet(self, recordSet.type, [
                 record for record in recordSet 
                 if record not in self.records[recordSet.type]
             ]).to_psml(True))
