@@ -3,7 +3,7 @@
 
     <metadata>
         <properties>
-            <property name="template_version" title="Template version" value="3.4" />
+            <property name="template_version" title="Template version" value="3.5" />
         </properties>
     </metadata>
 
@@ -21,9 +21,9 @@
         </properties-fragment>
     </t:fragment>
 
-    <t:fragment type="nat_record" title="NAT">
+    <t:fragment type="nat_entry" title="NAT">
         <properties-fragment>
-            <property name="nat" title="NAT Record" datatype="xref"/>
+            <property name="nat" title="NAT Entry" datatype="xref"/>
             <property name="source" title="Source Plugin" value=""/>
         </properties-fragment>
     </t:fragment>
@@ -43,7 +43,9 @@
         </properties-fragment>
     </section>
 
-    <section id="records" title="DNS Records" fragmenttype="ptr_record,cname_record,nat_record" />
+    <section id="records" title="DNS Records" fragmenttype="ptr_record,cname_record,nat_entry" />
+
+    <section id="implied_records" title="Implied DNS Records" lockstructure="true" />
 
     <section id="footer" />
 

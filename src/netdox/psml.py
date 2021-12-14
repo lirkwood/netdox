@@ -335,7 +335,7 @@ DOMAIN_TEMPLATE = '''
             </properties>
         </metadata>
 
-        <section id="title">
+        <section id="title" lockstructure="true">
             <fragment id="title">
                 <heading level="2">Domain name</heading>
                 <heading level="1">
@@ -344,7 +344,7 @@ DOMAIN_TEMPLATE = '''
             </fragment>
         </section>
         
-        <section id="header">
+        <section id="header" lockstructure="true">
 
             <properties-fragment id="header">
                 <property name="name"       title="Name"            value="#!name" />
@@ -354,7 +354,9 @@ DOMAIN_TEMPLATE = '''
 
         </section>
 
-        <section id="records" title="DNS Records" fragmenttype="record" />
+        <section id="records" title="DNS Records" fragmenttype="a_record,cname_record" />
+
+        <section id="implied_records" title="Implied DNS Records" lockstructure="true" />
 
         <section id="footer" />
 
@@ -376,14 +378,14 @@ IPV4ADDRESS_TEMPLATE = '''
             </properties>
         </metadata>
 
-        <section id="title">
+        <section id="title" lockstructure="true">
             <fragment id="title">
                 <heading level="2">IP Address</heading>
                 <heading level="1">#!name</heading>
             </fragment>
         </section>
 
-        <section id="header">
+        <section id="header" lockstructure="true">
         
             <properties-fragment id="header">
                 <property name="ipv4"               title="IP"                  value="#!name" /> 
@@ -393,7 +395,9 @@ IPV4ADDRESS_TEMPLATE = '''
 
         </section>
         
-        <section id="records" title="DNS Records" fragmenttype="record" />
+        <section id="records" title="DNS Records" fragmenttype="ptr_record,cname_record,nat_entry" />
+
+        <section id="implied_records" title="Implied DNS Records" lockstructure="true" />
         
         <section id="footer" />
 

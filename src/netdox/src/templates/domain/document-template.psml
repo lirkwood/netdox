@@ -3,7 +3,7 @@
 
     <metadata>
         <properties>
-            <property name="template_version" title="Template version" value="6.4" />
+            <property name="template_version" title="Template version" value="6.5" />
         </properties>
     </metadata>
 
@@ -37,6 +37,8 @@
     </section>
 
     <section id="records" title="DNS Records" fragmenttype="a_record,cname_record" />
+
+    <section id="implied_records" title="Implied DNS Records" lockstructure="true" />
 
     <section id="footer" />
 
