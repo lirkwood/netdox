@@ -544,6 +544,18 @@ class IPv4Address(DNSObject):
             self.network.ips.subnets.add(self.subnetFromMask())
         return self
 
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        body = soup.find('section', id = 'records')
+        for count, record in enumerate(self.NAT):
+            dest = record.destination
+            body.append(PropertiesFragment(f'NAT_{count}', [
+                Property(dest.type, XRef(docid = dest.docid), 'NAT Entry'),
+                Property('source', record.source, 'Source Plugin')
+            ]))
+
+        return soup
+
     def merge(self, ip: IPv4Address) -> IPv4Address: # type: ignore
         """
         In place merge of two IPv4Address instances.
