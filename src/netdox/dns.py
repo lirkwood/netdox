@@ -93,6 +93,33 @@ class DNSRecordSet:
         """Copies all records from the other set into this one."""
         self._set |= other._set
 
+    def to_psml(self, implied: bool = False) -> Tag:
+        """
+        Returns a section tag containing the records in this set.
+
+        :param implied: Whether this recordset is tracking implied records, 
+        defaults to False
+        :type implied: bool, optional
+        :return: A PSML section tag.
+        :rtype: Tag
+        """
+        title_prefix = 'Implied ' if implied else ''
+        section_id = 'implied_records' if implied else 'records'
+        root = Tag(is_xml = True, name = 'section', id = section_id)
+        
+        for count, record in enumerate(self.A):
+            dest = record.destination
+            root.append(PropertiesFragment(f'a_record_{count}', [
+                Property(
+                    dest.type, 
+                    XRef(docid = dest.docid), 
+                    title_prefix + 'A record'
+                ),
+                Property('source', record.source, 'Source Plugin')
+            ]))
+        return root
+        
+
     # Record types
 
     @property
