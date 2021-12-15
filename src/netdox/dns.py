@@ -89,9 +89,13 @@ class DNSRecordSet:
     def remove(self, record: DNSRecord) -> None:
         self._set.remove(record)
 
-    def merge(self, other: DNSRecordSet) -> None:
-        """Copies all records from the other set into this one."""
-        self._set |= other._set
+    def union(self, other: DNSRecordSet) -> DNSRecordSet:
+        """Returns a new DNSRecordSet containing all records from both sets."""
+        return DNSRecordSet(self._set | other._set)
+
+    def difference(self, other: DNSRecordSet) -> DNSRecordSet:
+        """Returns a new DNSRecordSet without any records from the other set."""
+        return DNSRecordSet(self._set - other._set)
 
     def to_psml(self, implied: bool = False) -> Tag:
         """
@@ -409,7 +413,7 @@ class DNSObject(base.NetworkObject):
         ))
         
         #TODO fix this awful hack with simpler dns system
-        soup.find('section', id = 'records').extend(self.records.to_psml(False))
+        soup.find('section', id = 'records').replace_with(self.records.to_psml(False))
         implied = soup.find('section', id = 'implied_records')
         for recordSet in self.backrefs:
             implied.extend(TypedDNSRecordSet(self, recordSet.type, [
