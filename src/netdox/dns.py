@@ -83,6 +83,9 @@ class DNSRecordSet:
     def __contains__(self, key: DNSRecord) -> bool:
         return key in self._set
 
+    def __getitem__(self, key: DNSRecordType) -> DNSRecordSet:
+        return getattr(self, key.value)
+
     def add(self, record: DNSRecord) -> None:
         self._set.add(record)
 
@@ -233,8 +236,8 @@ class DNSObject(base.NetworkObject):
         """
         if object.name == self.name:
             super().merge(object)
-            self.records.merge(object.records)
-            self.backrefs.merge(object.backrefs)
+            self.records = self.records.union(object.records)
+            self.backrefs = self.backrefs.union(object.backrefs)
             return self
         else:
             raise AttributeError('Cannot merge DNSObjects with different names.')
@@ -455,9 +458,9 @@ class IPv4Address(DNSObject):
         """
         #TODO fix
         return not bool(
-            any([rs.names for rs in self.records])
-            or any([rs.names for rs in self.backrefs])
-            or self.node
+            self.records.names or
+            self.backrefs.names or
+            self.node
         )
 
     ## methods
