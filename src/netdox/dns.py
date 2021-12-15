@@ -34,16 +34,21 @@ class DNSRecord:
     """The name of the plugin that provided this record."""
     type: DNSRecordType
     """The type of this DNS record."""
+    hash: int
+    """Pre-calculated hash of origin/dest name and source. Necessary for pickling."""
 
     def __init__(self, origin: DNSObject, destination: DNSObject, source: str) -> None:
         object.__setattr__(self, 'origin', origin)
         object.__setattr__(self, 'destination', destination)
         object.__setattr__(self, 'source', source)
+
+        object.__setattr__(self, 'hash', hash(
+            (origin.name, destination.name, source)))
         object.__setattr__(self, 'type', 
             RECORD_TYPE_MAP[(origin.type, destination.type)])
 
     def __hash__(self) -> int:
-        return hash((self.origin.name, self.destination.name, self.source))
+        return self.hash
 
     def __eq__(self, other) -> bool:
         return (
