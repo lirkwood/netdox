@@ -109,7 +109,12 @@ class DNSRecordSet:
         """
         title_prefix = 'Implied ' if implied else ''
         section_id = 'implied_records' if implied else 'records'
-        root = Tag(is_xml = True, name = 'section', id = section_id)
+        root = Tag(
+            is_xml = True, 
+            name = 'section', 
+            id = section_id,
+            title = title_prefix + 'DNS Records'
+        )
         
         for count, record in enumerate(self.A):
             dest = record.destination
