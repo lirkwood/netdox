@@ -368,10 +368,10 @@ class DNSObject(base.NetworkObject):
     """
     zone: Optional[str]
     """The DNS zone this object is from."""
-    records: DNSContainer
-    """A dictionary mapping a RecordType to a RecordSet."""
-    backrefs: DNSContainer
-    """Like records but stores reverse references from DNSObjects linking to this one."""
+    records: DNSRecordSet
+    """A set of DNSRecords originating from this object."""
+    backrefs: DNSRecordSet
+    """Like records but stores DNSRecords resolving to this object."""
     node: Optional[Node]
     """The node this DNSObject resolves to"""
 
@@ -381,8 +381,8 @@ class DNSObject(base.NetworkObject):
         super().__init__(network, name, name, labels)
         self.zone = zone.lower() if zone else zone
         self.node = None
-        self.records = DNSContainer(self)
-        self.backrefs = DNSContainer(self)
+        self.records = DNSRecordSet()
+        self.backrefs = DNSRecordSet()
 
     ## abstract properties
 
@@ -412,14 +412,9 @@ class DNSObject(base.NetworkObject):
             value = XRef(docid = self.node.docid) if self.node else '—'
         ))
         
-        #TODO fix this awful hack with simpler dns system
         soup.find('section', id = 'records').replace_with(self.records.to_psml(False))
-        implied = soup.find('section', id = 'implied_records')
-        for recordSet in self.backrefs:
-            implied.extend(TypedDNSRecordSet(self, recordSet.type, [
-                record for record in recordSet 
-                if record not in self.records[recordSet.type]
-            ]).to_psml(True))
+        soup.find('section', id = 'implied_records').replace_with(
+            self.backrefs.difference(self.records))
 
         return soup
 
