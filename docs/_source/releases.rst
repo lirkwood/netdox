@@ -3,6 +3,15 @@
 Releases
 ########
 
+v1.2.0
+======
+Added Organizations, PlantUML plugin, dynamic config templates.
+* Added PluginWhitelist.
+* Overhauled internal DNS system, replaced RecordSet with DNSRecordSet and DNSRecord.
+* Config file now reads the __config__ attribute on plugins to generate template.
+* Added support for multi-value psml Property.
+* Added tldextract dependency to better validate DNS zones.
+
 v1.1.0
 ======
 Added docker image support, moved serialisation into NetworkObjects.
