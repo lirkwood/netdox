@@ -309,7 +309,8 @@ class Domain(DNSObject):
     ## abstract methods
 
     def merge(self, other: Domain) -> Domain: # type: ignore
-        return super().merge(other)
+        super().merge(other)
+        return self
 
     def _enter(self) -> Domain:
         """
