@@ -20,6 +20,9 @@ class DNSRecordType(Enum):
     CNAME = 'CNAME'
     PTR = 'PTR'
 
+    def __str__(self) -> str:
+        return self.value
+
 @dataclass(frozen = True)
 class DNSRecord:
     """Represents a DNS record."""
@@ -121,16 +124,18 @@ class DNSRecordSet:
             }
         )
         
-        for count, record in enumerate(self.A):
-            dest = record.destination
-            root.append(PropertiesFragment(f'a_record_{count}', [
-                Property(
-                    dest.type, 
-                    XRef(docid = dest.docid), 
-                    title_prefix + 'A record'
-                ),
-                Property('source', record.source, 'Source Plugin')
-            ]))
+        for record_type in DNSRecordType:
+            for count, record in enumerate(self[record_type]):
+                dest = record.destination
+                root.append(PropertiesFragment(f'{record_type}_record_{count}', [
+                    Property(
+                        dest.type, 
+                        XRef(docid = dest.docid), 
+                        title_prefix + f'{record_type} record'
+                    ),
+                    Property('source', record.source, 'Source Plugin')
+                ]))
+
         return root
         
 
