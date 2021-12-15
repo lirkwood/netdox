@@ -215,9 +215,8 @@ class NodeSet(base.NetworkObjectContainer[nodes.Node]):
         dnsobj_set.add(dnsobj.name)
         dnsobj.node = node
         
-        for backrefs in dnsobj.backrefs:
-            for backref in backrefs.names:
-                cache |= self.resolveRefs(node_identity, backref, cache)
+        for backref in dnsobj.backrefs.names:
+            cache |= self.resolveRefs(node_identity, backref, cache)
 
         return cache
 
@@ -311,14 +310,13 @@ class Network:
             return False
         self.cache.add(startObj)
         
-        for recordSet in startObj.records:
-            if target in recordSet.names:
-                self.cache.clear()
-                return True
+        if target in startObj.records.names:
+            self.cache.clear()
+            return True
 
-            for record in recordSet.destinations:
-                if self.resolvesTo(record, target):
-                    return True
+        for dest in startObj.records.destinations:
+            if self.resolvesTo(dest, target):
+                return True
 
         return False
 
