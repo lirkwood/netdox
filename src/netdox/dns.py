@@ -308,6 +308,9 @@ class Domain(DNSObject):
     
     ## abstract methods
 
+    def merge(self, other: Domain) -> Domain: # type: ignore
+        return super().merge(other)
+
     def _enter(self) -> Domain:
         """
         Adds this Domain to the network's DomainSet.
@@ -451,7 +454,6 @@ class IPv4Address(DNSObject):
         Returns False if this object is pointing to any other objects, or is being pointed at.
         True otherwise.
         """
-        #TODO fix
         return not bool(
             self.records.names or
             self.backrefs.names or
