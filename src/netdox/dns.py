@@ -115,8 +115,10 @@ class DNSRecordSet:
         root = Tag(
             is_xml = True, 
             name = 'section', 
-            id = section_id,
-            title = title_prefix + 'DNS Records'
+            attrs = {
+                'id': section_id,
+                'title': title_prefix + 'DNS Records'
+            }
         )
         
         for count, record in enumerate(self.A):
@@ -213,7 +215,7 @@ class DNSObject(base.NetworkObject):
         if isinstance(destination, str):
             destination = self.network.find_dns(destination)
         self.records.add(DNSRecord(self, destination, source))
-        destination.records.add(DNSRecord(destination, self, source))
+        destination.backrefs.add(DNSRecord(destination, self, source))
 
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
