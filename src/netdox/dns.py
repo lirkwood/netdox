@@ -225,9 +225,9 @@ class DNSObject(base.NetworkObject):
             value = XRef(docid = self.node.docid) if self.node else '—'
         ))
         
-        soup.find('section', id = 'records').replace_with(self.records.to_psml(False))
+        soup.find('section', id = 'records').replace_with(self.records.to_psml())
         soup.find('section', id = 'implied_records').replace_with(
-            self.backrefs.difference(self.records))
+            self.backrefs.difference(self.records).to_psml(implied = True))
 
         return soup
 
@@ -254,8 +254,6 @@ class Domain(DNSObject):
     Contains all A/CNAME DNS records from managed zones 
     using this domain as the record name.
     """
-    subnets: set[str]
-    """A set of the 24 bit CIDR subnets this domain resolves to."""
     type = 'domain'
     TEMPLATE = DOMAIN_TEMPLATE
     
@@ -284,8 +282,6 @@ class Domain(DNSObject):
                 zone = zone or utils.rootDomainExtract(name),
                 labels = labels
             )
-
-            self.subnets = set()
             
         else:
             raise ValueError('Must provide a valid name for a Domain (some FQDN)')
@@ -320,20 +316,12 @@ class Domain(DNSObject):
             self.network.domains[self.name] = self
         return self
 
-    def merge(self, domain: Domain) -> Domain: # type: ignore
-        """
-        In place merge of two Domain instances.
-        This method should always be called on the object entering the set.
+    ## properties
 
-        :param domain: The Domain to merge with.
-        :type domain: Domain
-        :raises ValueError: If the Domain objects cannot be merged (if their name attributes are not equal).
-        :return: This Domain object, which is now a superset of the two.
-        :rtype: Domain
-        """
-        super().merge(domain)
-        self.subnets |= domain.subnets
-        return self
+    @property
+    def subnets(self) -> set[str]:
+        """Returns a set of IPv4 CIDR 8-bit subnets that this domain resolves to."""
+        return {iptools.sort(ip) for ip in self.ips}
 
 class IPv4Address(DNSObject):
     """
