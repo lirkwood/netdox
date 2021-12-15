@@ -74,7 +74,7 @@ class DNSRecordSet:
     """Container for DNSRecords."""
     _set: set[DNSRecord]
 
-    def __init__(self, records: Iterable[DNSRecord]) -> None:
+    def __init__(self, records: Iterable[DNSRecord] = None) -> None:
         self._set = set(records) if records else set()
 
     def __iter__(self) -> Iterator[DNSRecord]:
@@ -128,19 +128,19 @@ class DNSRecordSet:
 
     @property
     def A(self) -> DNSRecordSet:
-        """Returns all DNSRecords of type 'A'"""
+        """Returns a new record set with all DNSRecords of type 'A'."""
         return DNSRecordSet(
             {record for record in self if record.type == DNSRecordType.A})
 
     @property
     def PTR(self) -> DNSRecordSet:
-        """Returns all DNSRecords of type 'PTR'"""
+        """Returns a new record set with all DNSRecords of type 'PTR'"""
         return DNSRecordSet(
             {record for record in self if record.type == DNSRecordType.PTR})
 
     @property
     def CNAME(self) -> DNSRecordSet:
-        """Returns all DNSRecords of type 'CNAME'"""
+        """Returns a new record set with all DNSRecords of type 'CNAME'"""
         return DNSRecordSet(
             {record for record in self if record.type == DNSRecordType.CNAME})
 
@@ -392,17 +392,20 @@ class DNSObject(base.NetworkObject):
 
     ## methods
 
-    @abstractmethod
     def link(self, destination: Union[str, DNSObject], source: str) -> None:
         """
         Adds a record from this object to a DNSObject at *destination*.
+        Also creates a record in the *destination* backrefs.
 
         :param destination: The name of the DNSObject to link to, or the object itself.
         :type destination: Union[str, DNSObject]
         :param source: The plugin that provided this link.
         :type source: str
         """
-        pass
+        if isinstance(destination, str):
+            destination = self.network.find_dns(destination)
+        self.records.add(DNSRecord(self, destination, source))
+        destination.records.add(DNSRecord(destination, self, source))
 
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
@@ -494,24 +497,6 @@ class Domain(DNSObject):
     
     ## abstract methods
 
-    def link(self, destination: Union[str, DNSObject], source: str) -> None:
-        if isinstance(destination, str):
-            destination = self.network.find_dns(destination)
-
-        if isinstance(destination, IPv4Address):
-            self.records.A.add(destination, source)
-            destination.backrefs.A.add(self, source)
-            
-            if not iptools.public_ip(destination.name):
-                self.subnets.add(iptools.sort(destination.name))
-
-        elif isinstance(destination, Domain):
-            self.records.CNAME.add(destination, source)
-            destination.backrefs.CNAME.add(self, source)
-
-        else:
-            raise ValueError('Unable to parse value as a domain or IPv4 address')
-
     def _enter(self) -> Domain:
         """
         Adds this Domain to the network's DomainSet.
@@ -595,21 +580,6 @@ class IPv4Address(DNSObject):
         return (self.records.PTR.names.union(self.backrefs.A.names))
     
     ## abstract methods
-
-    def link(self, destination: Union[str, DNSObject], source: str) -> None:
-        if isinstance(destination, str):
-            destination = self.network.find_dns(destination)
-
-        if isinstance(destination, IPv4Address):
-            self.records.CNAME.add(destination, source)
-            destination.backrefs.CNAME.add(self, source)
-
-        elif isinstance(destination, Domain):
-            self.records.PTR.add(destination, source)
-            destination.backrefs.A.add(self, source)
-
-        else:
-            raise ValueError('Unable to parse value as a domain or IPv4 address')
 
     def translate(self, destination: Union[str, IPv4Address], source: str) -> None:
         """
