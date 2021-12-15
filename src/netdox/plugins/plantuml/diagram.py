@@ -2,7 +2,7 @@ from typing import Optional
 from plantuml import deflate_and_encode
 from netdox import Network, Node
 from netdox.base import NetworkObject
-from netdox.dns import DNSObject
+from netdox.dns import DNSObject, IPv4Address
 from netdox.iptools import valid_ip
 
 class NodeDiagramFactory:
@@ -109,17 +109,15 @@ class NodeDiagramFactory:
                 '}'
             ])
 
-            for recordset in dnsobj.records:
-                for record in recordset:
-                    cache |= self._draw_dns(record.destination, cache)
-                    dest_name = self._class_name(record.destination)
-                    self._link(class_name, dest_name, record.source)
+            for record in dnsobj.records:
+                cache |= self._draw_dns(record.destination, cache)
+                dest_name = self._class_name(record.destination)
+                self._link(class_name, dest_name, record.source)
             
-            for backrefset in dnsobj.backrefs:
-                for backref in backrefset.destinations:
-                    cache |= self._draw_dns(backref, cache)
+            for backref in dnsobj.backrefs.destinations:
+                cache |= self._draw_dns(backref, cache)
 
-            if valid_ip(dnsobj.name) and dnsobj.node is self._node:
+            if isinstance(dnsobj, IPv4Address) and dnsobj.node is self._node:
                 self._link(class_name)
 
         return cache
