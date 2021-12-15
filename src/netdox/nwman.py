@@ -41,6 +41,16 @@ class NetworkManager:
     """List of plugins enabled by the user."""
     stale: dict[date, set[str]]
     """Dictionary mapping stale URIs to their expiry date."""
+    stages: list[str] = [
+        'any',
+        'dns',
+        'nat',
+        'nodes',
+        'footers',
+        'write',
+        'cleanup'
+    ]
+    """A list of the plugin stages."""
 
     def __init__(self, namespace: ModuleType = None, whitelist: list[str] = None, network: Network = None) -> None:
         """
@@ -57,34 +67,10 @@ class NetworkManager:
         :type network: Network, optional
         """
         # Initialisation
-        self.pluginmap = {
-            'any': set(),
-            'dns': set(),
-            'nat': set(),
-            'nodes': set(),
-            'footers': set(),
-            'write': set(),
-            'cleanup': set()
-        }
+        self.pluginmap = {stage: set() for stage in self.stages}
         self.nodemap = {}
-        self.stages = self.pluginmap.keys()
-
         self.stale = defaultdict(set)
-
-        if whitelist:
-            self.enabled = PluginWhitelist(whitelist)
-        else:
-            try:
-                with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
-                    self.enabled = PluginWhitelist(json.load(stream))
-            except FileNotFoundError:
-                logger.warning('Plugin configuration file is missing from: ',
-                    os.path.realpath(os.path.join(utils.APPDIR, 'cfg/plugins.json')))
-                self.enabled = PluginWhitelist(PluginWhitelist.WILDCARD)
-            except Exception:
-                logger.warning('Unable to load plugin configuration file.')
-                self.enabled = PluginWhitelist(PluginWhitelist.WILDCARD)
-        
+        self.enabled = PluginWhitelist(whitelist) if whitelist else self._load_whitelist()
         self.namespace = namespace or importlib.import_module(self.DEFAULT_NAMESPACE)
         self.loadPlugins()
 
@@ -195,6 +181,24 @@ class NetworkManager:
                 plugin for plugin in self.plugins
             } for attr in getattr(plugin, '__attrs__', ())
         }
+
+    def _load_whitelist(self) -> PluginWhitelist:
+        """
+        Returns a PluginWhitelist from the config file or a wildcard.
+
+        :return: A PluginWhitelist instance.
+        :rtype: PluginWhitelist
+        """
+        try:
+            with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
+                return PluginWhitelist(json.load(stream))
+        except FileNotFoundError:
+            logger.warning('Plugin configuration file is missing from: ',
+                os.path.realpath(os.path.join(utils.APPDIR, 'cfg/plugins.json')))
+            return PluginWhitelist(PluginWhitelist.WILDCARD)
+        except Exception:
+            logger.warning('Unable to load plugin configuration file.')
+            return PluginWhitelist(PluginWhitelist.WILDCARD)
 
     def validConfig(self) -> NetworkConfig:
         """
