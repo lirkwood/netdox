@@ -18,6 +18,17 @@ from cryptography.fernet import Fernet
 
 logger = logging.getLogger(__name__)
 
+#############
+# Constants #
+#############
+
+APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
+"""Absolute path to the directory containing the running source code."""
+
+OUTDIRS = ('domains', 'ips', 'nodes')
+"""Tuple of directories documents will be written to. 
+Relative to the output directory / PageSeeder website context."""
+
 ## Regex patterns
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
@@ -76,9 +87,6 @@ def decrypt_file(inpath: str, outpath: str = None) -> str:
 ##################
 # Config loaders #
 ##################
-
-global APPDIR
-APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
 
 @cache
 def config(plugin: str = None) -> dict:

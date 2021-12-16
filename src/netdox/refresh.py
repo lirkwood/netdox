@@ -32,7 +32,7 @@ def init():
         else:
             os.remove(folder)
     
-    for outfolder in ('domains', 'ips', 'nodes'):
+    for outfolder in utils.OUTDIRS:
         os.mkdir(utils.APPDIR+ 'out'+ os.sep+ outfolder)
 
 
@@ -77,7 +77,7 @@ def main():
     nwman.runStage('write')
     
     nwman.network.report.addSection(
-        utils.staleReport(pageseeder.findStale(('domains', 'nodes', 'ips'))))
+        utils.staleReport(pageseeder.findStale(utils.OUTDIRS)))
     nwman.network.report.writeReport()
 
     #-------------------------------------------------------------------#
