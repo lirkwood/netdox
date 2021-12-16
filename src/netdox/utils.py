@@ -11,6 +11,8 @@ import re
 from functools import cache, wraps
 from traceback import format_exc
 from tldextract import extract
+from datetime import date, timedelta
+from bs4.element import Tag
 
 from cryptography.fernet import Fernet
 
@@ -159,3 +161,53 @@ def rootDomainExtract(fqdn: str) -> str:
     """
     result = extract(fqdn)
     return result.domain +'.'+ result.suffix
+
+def staleReport(stale: dict[date, list[str]]) -> str:
+    """
+    Returns a section describing stale network objects for the report.
+
+    :param stale: A dict mapping date to a list of URIs that expire on that day.
+    :type stale: dict[date, list[str]]
+    :return: A PSML section tag with an id of 'stale'.
+    :rtype: str
+    """
+    section = Tag(is_xml = True, 
+        name = 'section', 
+        attrs = {
+            'id': 'stale', 
+            'title': 'Stale Documents'
+    })
+
+    plus_thirty = date.today() + timedelta(days = 30)
+
+    if plus_thirty in stale:
+        todayFrag = Tag(is_xml = True, name = 'fragment', attrs = {'id': plus_thirty.isoformat()})
+        heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '2'})
+        heading.string = 'Sentenced Today'
+        todayFrag.append(heading)
+
+        for uri in stale.pop(plus_thirty):
+            todayFrag.append(Tag(is_xml = True,
+                name = 'blockxref',
+                attrs = {
+                    'frag': 'default',
+                    'uriid': uri
+                }
+            ))
+        section.insert(0, todayFrag)
+
+    for expiry, uris in sorted(stale.items(), reverse = True):
+        frag = Tag(is_xml = True, name = 'fragment', attrs = {'id': expiry.isoformat()})
+        heading = Tag(is_xml=True, name='heading', attrs={'level': '2'})
+        heading.string = 'Expiring on: '+ expiry.isoformat()
+        frag.append(heading)
+        for uri in uris:
+            frag.append(Tag(is_xml = True,
+                name = 'blockxref',
+                attrs = {
+                    'frag': 'default',
+                    'uriid': uri
+                }
+            ))
+        section.append(frag)
+    return str(section)

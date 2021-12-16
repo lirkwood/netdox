@@ -8,14 +8,11 @@ import json
 import logging
 import os
 import pkgutil
-from collections import defaultdict
-from datetime import date, timedelta
 from traceback import format_exc
 from types import ModuleType
-from typing import Iterator, Union
+from typing import Iterator
 
-from bs4.element import Tag
-from netdox import pageseeder, utils
+from netdox import utils
 from netdox.config import NetworkConfig, update_template
 from netdox.containers import Network
 from netdox.helpers import LabelDict
@@ -39,8 +36,6 @@ class NetworkManager:
     """Maps the subclasses of Node that a plugin exports to the module object."""
     enabled: PluginWhitelist
     """List of plugins enabled by the user."""
-    stale: dict[date, set[str]]
-    """Dictionary mapping stale URIs to their expiry date."""
     stages: list[str] = [
         'any',
         'dns',
@@ -69,7 +64,6 @@ class NetworkManager:
         # Initialisation
         self.pluginmap = {stage: set() for stage in self.stages}
         self.nodemap = {}
-        self.stale = defaultdict(set)
         self.enabled = PluginWhitelist(whitelist) if whitelist else self._load_whitelist()
         self.namespace = namespace or importlib.import_module(self.DEFAULT_NAMESPACE)
         self.loadPlugins()
@@ -193,7 +187,7 @@ class NetworkManager:
             with open(utils.APPDIR+ 'cfg/plugins.json', 'r') as stream:
                 return PluginWhitelist(json.load(stream))
         except FileNotFoundError:
-            logger.warning('Plugin configuration file is missing from: ',
+            logger.warning('Plugin configuration file is missing from: ' +
                 os.path.realpath(os.path.join(utils.APPDIR, 'cfg/plugins.json')))
             return PluginWhitelist(PluginWhitelist.WILDCARD)
         except Exception:
@@ -218,57 +212,6 @@ class NetworkManager:
             with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
                 stream.write(cfg.to_psml())
         return cfg
-
-    ## Sentencing
-
-    def staleReport(self) -> None:
-        """
-        Sentences stale network objects and adds a section on stale documents to the network report.
-        """
-        for folder in ('domains', 'ips', 'nodes'):
-            for expiry, uri_list in pageseeder.sentenceStale(folder).items():
-                self.stale[expiry] |= set(uri_list)
-
-        section = Tag(is_xml = True, 
-            name = 'section', 
-            attrs = {
-                'id': 'stale', 
-                'title': 'Stale Documents'
-        })
-
-        plus_thirty = date.today() + timedelta(days = 30)
-
-        if plus_thirty in self.stale:
-            todayFrag = Tag(is_xml = True, name = 'fragment', attrs = {'id': plus_thirty.isoformat()})
-            heading = Tag(is_xml = True, name = 'heading', attrs = {'level': '2'})
-            heading.string = 'Sentenced Today'
-            todayFrag.append(heading)
-
-            for uri in self.stale.pop(plus_thirty):
-                todayFrag.append(Tag(is_xml = True,
-                    name = 'blockxref',
-                    attrs = {
-                        'frag': 'default',
-                        'uriid': uri
-                    }
-                ))
-            section.insert(0, todayFrag)
-
-        for expiry, uris in sorted(self.stale.items(), reverse = True):
-            frag = Tag(is_xml = True, name = 'fragment', attrs = {'id': expiry.isoformat()})
-            heading = Tag(is_xml=True, name='heading', attrs={'level': '2'})
-            heading.string = 'Expiring on: '+ expiry.isoformat()
-            frag.append(heading)
-            for uri in uris:
-                frag.append(Tag(is_xml = True,
-                    name = 'blockxref',
-                    attrs = {
-                        'frag': 'default',
-                        'uriid': uri
-                    }
-                ))
-            section.append(frag)
-        self.network.report.addSection(str(section))
 
 class PluginWhitelist(list):
     WILDCARD = ["*"]

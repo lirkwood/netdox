@@ -76,7 +76,8 @@ def main():
     nwman.network.writePSML()
     nwman.runStage('write')
     
-    nwman.staleReport()
+    nwman.network.report.addSection(
+        utils.staleReport(pageseeder.findStale(('domains', 'nodes', 'ips'))))
     nwman.network.report.writeReport()
 
     #-------------------------------------------------------------------#
