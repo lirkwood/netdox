@@ -18,6 +18,7 @@ RUN pip install pyppeteer && pyppeteer-install && \
     libxfixes3 fonts-liberation lsb-release xdg-utils wget
 
 COPY scripts/entrypoint.sh /opt/entrypoint.sh
+RUN chmod +x /opt/entrypoint.sh
 
 RUN mkdir /opt/wheels
 COPY --from=build /opt/netdox/dist/*.whl /opt/wheels/
