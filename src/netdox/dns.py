@@ -66,9 +66,19 @@ class NATEntry:
     """The IPv4Address the record points to."""
     source: str
     """The name of the plugin that provided this record."""
+    hash: int
+    """Pre-calculated hash of origin/dest name and source. Necessary for pickling."""
+
+    def __init__(self, origin: DNSObject, destination: DNSObject, source: str) -> None:
+        object.__setattr__(self, 'origin', origin)
+        object.__setattr__(self, 'destination', destination)
+        object.__setattr__(self, 'source', source)
+
+        object.__setattr__(self, 'hash', hash(
+            (origin.name, destination.name, source)))
 
     def __hash__(self) -> int:
-        return hash((self.origin.name, self.destination.name, self.source))
+        return self.hash
 
     def __eq__(self, other) -> bool:
         return (
@@ -119,12 +129,12 @@ class DNSRecordSet:
         :rtype: Tag
         """
         title_prefix = 'Implied ' if implied else ''
-        section_id = 'implied_records' if implied else 'records'
+        id_prefix = 'implied_' if implied else ''
         root = Tag(
             is_xml = True, 
             name = 'section', 
             attrs = {
-                'id': section_id,
+                'id': id_prefix + 'records',
                 'title': title_prefix + 'DNS Records'
             }
         )
@@ -132,13 +142,12 @@ class DNSRecordSet:
         for record_type in DNSRecordType:
             for count, record in enumerate(self[record_type]):
                 dest = record.destination
-                root.append(PropertiesFragment(f'{record_type}_record_{count}', [
-                    Property(
-                        dest.type, 
-                        XRef(docid = dest.docid), 
-                        title_prefix + f'{record_type} record'
-                    ),
-                    Property('source', record.source, 'Source Plugin')
+                root.append(PropertiesFragment(
+                    id = id_prefix + f'{record_type}_record_{count}', 
+                    properties = [
+                        Property(dest.type, XRef(docid = dest.docid), 
+                            title_prefix + f'{record_type} record'),
+                        Property('source', record.source, 'Source Plugin')
                 ]))
 
         return root
