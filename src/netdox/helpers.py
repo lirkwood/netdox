@@ -81,26 +81,6 @@ class Locator:
             return None
 
 
-#################
-# JSON Encoding #
-#################
-
-class JSONEncoder(json.JSONEncoder):
-    """
-    JSON Encoder compatible with sets and datetime objects
-    """
-    def default(self, obj):
-        """
-        :meta private:
-        """
-        if isinstance(obj, set):
-            return sorted(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
-        else:
-            return super().default(obj)
-
-
 ################
 # Daily Report #
 ################
@@ -132,9 +112,13 @@ class Report:
         else:
             self.sections.append(section)
 
-    def writeReport(self) -> None:
+    def writeReport(self, path: str = None) -> None:
         """
         Generates a report from the supplied sections in ``self.report``.
+
+        :param path: Path to write the file to, 
+        defaults to ``out/report.psml`` in the app directory.
+        :type path: str, optional
         """
         with open(utils.APPDIR+ 'src/templates/report.psml', 'r') as stream:
             report = BeautifulSoup(stream.read(), 'xml')
@@ -142,7 +126,8 @@ class Report:
         for tag in self.sections:
             report.document.append(BeautifulSoup(tag, 'xml'))
 
-        with open(utils.APPDIR+ 'out/report.psml', 'w') as stream:
+        path = path or utils.APPDIR+ 'out/report.psml'
+        with open(path, 'w') as stream:
             stream.write(str(report))
 
 
