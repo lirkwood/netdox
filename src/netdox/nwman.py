@@ -219,19 +219,6 @@ class NetworkManager:
                 stream.write(cfg.to_psml())
         return cfg
 
-    ## Serialisation
-
-    def loadNetworkDump(self, inpath: str = utils.APPDIR + 'src/network.bin', encrypted = True) -> None:
-        """
-        Loads an encrypted, pickled network object.
-
-        :param inpath: The path to the binary network dump, defaults to 'src/network.bin'
-        :type inpath: str, optional
-        :param encrypted: Whether or not the dump was encrypted, defaults to True
-        :type encrypted: bool, optional
-        """
-        self.network = Network.fromDump(inpath, encrypted)
-
     ## Sentencing
 
     def staleReport(self) -> None:
