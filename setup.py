@@ -44,7 +44,8 @@ setup(
         'diffimg',          # screenshots
         'pypsrp',           # activedirectory
         'fortiosapi',       # fortigate
-        'pysnmp'            # snmp
+        'pysnmp',           # snmp
+        'plantuml'          # plantuml
     ],
     entry_points = {'console_scripts': ['netdox=netdox.cli:parse_args']}
 )
