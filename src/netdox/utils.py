@@ -13,6 +13,7 @@ from traceback import format_exc
 from tldextract import extract
 from datetime import date, timedelta
 from bs4.element import Tag
+from lxml import etree
 
 from cryptography.fernet import Fernet
 
@@ -168,7 +169,26 @@ def rootDomainExtract(fqdn: str) -> str:
     :rtype: str
     """
     result = extract(fqdn)
+    if not result.suffix:
+        return result.domain
     return result.domain +'.'+ result.suffix
+
+def validatePSML(psml: str) -> bool:
+    """
+    Validates the PSML against the XSD schema.
+
+    :param psml: A string containing PSML to validate.
+    :type psml: str
+    :return: True if valid. False otherwise.
+    :rtype: bool
+    """
+    try:
+        etree.XMLSchema(file = APPDIR + 'src/psml.xsd').assertValid(
+            etree.fromstring(psml))
+    except Exception:
+        return False
+    else:
+        return True
 
 def staleReport(stale: dict[date, list[str]]) -> str:
     """
