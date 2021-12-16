@@ -122,21 +122,21 @@ class Node(base.NetworkObject):
 
         domains = PropertiesFragment('domains', properties = [
             Property(
-                    name = 'domain',
-                    title = 'Domain',
-                    value = XRef(docid = f'_nd_domain_{domain.replace(".","_")}') \
-                        if domain in self.network.domains else domain
-                )
+                name = 'domain',
+                title = 'Domain',
+                value = XRef(docid = f'_nd_domain_{domain.replace(".","_")}') \
+                    if domain in self.network.domains else domain
+            )
             for domain in self.domains
         ])
 
         ips = PropertiesFragment('ips', properties = [
             Property(
-                    name = 'ipv4',
-                    title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
-                    value = XRef(docid = f'_nd_ip_{ip.replace(".","_")}') \
-                        if ip in self.network.ips else ip
-                )
+                name = 'ipv4',
+                title = 'Public IP' if iptools.public_ip(ip) else 'Private IP',
+                value = XRef(docid = f'_nd_ipv4_{ip.replace(".","_")}') \
+                    if ip in self.network.ips else ip
+            )
             for ip in self.ips
         ])
 

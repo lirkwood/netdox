@@ -68,7 +68,7 @@ class VirtualMachine(DefaultNode):
             psml.Property(name='description', title='Description', value=self.desc),
             psml.Property(name='uuid', title='UUID', value=self.uuid),
             psml.Property(name='ipv4', title='Host IP', 
-                value = psml.XRef(docid = '_nd_ip_'+ self.hostIp.name.replace('.','_'))),
+                value = psml.XRef(docid = '_nd_ipv4_'+ self.hostIp.name.replace('.','_'))),
             psml.Property(name='host', title='Host Node', 
                 value = (
                     psml.XRef(docid = self.hostIp.node.docid))

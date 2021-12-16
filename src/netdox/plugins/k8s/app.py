@@ -38,7 +38,7 @@ class App(Node):
         domains = {p.split('/')[0] for p in sorted(paths if paths else [], key = len)}
         for domain in list(domains):
             for proxy in utils.config('k8s')[cluster]['proxies']:
-                if not network.resolvesTo(network.domains[domain], network.ips[proxy]):
+                if not network.resolvesTo(domain, proxy):
                     domains.remove(domain)
 
         super().__init__(
@@ -103,7 +103,7 @@ class App(Node):
                 psml.Property(name = 'pod', title = 'Pod', value = pod['name']),
 
                 psml.Property(name = 'ipv4', title = 'Worker IP', 
-                    value = psml.XRef(docid = f'_nd_ip_{pod["workerIp"].replace(".","_")}')),
+                    value = psml.XRef(docid = f'_nd_ipv4_{pod["workerIp"].replace(".","_")}')),
 
                 psml.Property(name = 'rancher', title="Pod on Rancher", 
                     value = psml.Link(pod['rancher'])),
