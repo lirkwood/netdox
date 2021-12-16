@@ -384,12 +384,9 @@ class IPv4Address(DNSObject):
     ## abstract properties
 
     @property
-    def docid(self) -> str:
-        return '_nd_ip_' + self.identity.replace('.','_')
-
-    @property
     def outpath(self) -> str:
-        return os.path.normpath(os.path.join(utils.APPDIR, f'out/ips/{self.subnet.replace("/","_")}/{self.docid}.psml'))
+        return os.path.normpath(os.path.join(
+            utils.APPDIR, 'out/ips/', self.subnet.replace("/","_"), self.docid))
 
     @property
     def ips(self) -> set[str]:
