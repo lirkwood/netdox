@@ -270,7 +270,7 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
                     
     return stale
 
-def findStale(dirs: Iterable[str]) -> dict[date, list[str]]:
+def findStale(dirs: Iterable[str]) -> dict[date, set[str]]:
     """
     Finds any stale documents in the provided directories (relative to the output dir).
 
@@ -280,7 +280,7 @@ def findStale(dirs: Iterable[str]) -> dict[date, list[str]]:
     :return: A dict mapping a date to a list of URIs that will expire on that date.
     :rtype: dict[date, list[str]]
     """
-    stale = {}
+    stale: dict[date, set[str]] = {}
     for folder in dirs:
         for expiry, uri_list in sentenceStale(folder).items():
             if expiry not in stale:

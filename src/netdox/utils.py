@@ -10,6 +10,7 @@ import os
 import re
 from functools import cache, wraps
 from traceback import format_exc
+from typing import Iterable
 from tldextract import extract
 from datetime import date, timedelta
 from bs4.element import Tag
@@ -190,7 +191,7 @@ def validatePSML(psml: str) -> bool:
     else:
         return True
 
-def staleReport(stale: dict[date, list[str]]) -> str:
+def staleReport(stale: dict[date, Iterable[str]]) -> str:
     """
     Returns a section describing stale network objects for the report.
 
