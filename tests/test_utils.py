@@ -5,6 +5,7 @@ from random import choices
 from string import ascii_letters
 from sys import getdefaultencoding
 from bs4 import BeautifulSoup
+from datetime import date, timedelta
 
 import pytest
 from conftest import CONFIG, hide_file
@@ -151,3 +152,26 @@ def test_fileFetchRecursive(mock_dir):
         'mockdir/mock_subdir_1/file.ext2',
         'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
     ]}
+
+def test_rootDomainExtract():
+    assert utils.rootDomainExtract('domain.com.au') == 'domain.com.au'
+    assert utils.rootDomainExtract('sub.domain.co.uk') == 'domain.co.uk'
+    assert utils.rootDomainExtract('subsub.sub.domain.net') == 'domain.net'
+    assert utils.rootDomainExtract('subsub.sub.domain.gov.au') == 'domain.gov.au'
+    assert utils.rootDomainExtract('domain.faketld') == 'faketld'
+
+def test_validatePSML_success():
+    assert utils.validatePSML('<document level="portable" />')
+
+def test_validatePSML_failure():
+    assert not utils.validatePSML('<invalid-tag />')
+
+def test_staleReport():
+    today = date.today()
+    plus_thirty = today + timedelta(days = 30)
+    report = utils.staleReport({
+        today: ['0', '1', '2'],
+        plus_thirty: ['3', '4', '5']
+    })
+
+    assert utils.validatePSML(report)
