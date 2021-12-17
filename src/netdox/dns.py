@@ -1,19 +1,20 @@
 from __future__ import annotations
-from abc import abstractmethod
 
 import os
 import re
-from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union
-
-from enum import Enum
 from dataclasses import dataclass
-from functools import cache
+from enum import Enum
+from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
+                    TypeVar, Union)
+
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from netdox import base, iptools, utils, containers
-from netdox.nodes import Node
+from netdox import base, containers, iptools, utils
 from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE,
                          PropertiesFragment, Property, XRef)
+
+if TYPE_CHECKING:
+    from netdox import nodes
 
 class DNSRecordType(Enum):
     A = 'A'
@@ -201,7 +202,7 @@ class DNSObject(base.NetworkObject):
     """A set of DNSRecords originating from this object."""
     backrefs: DNSRecordSet
     """Like records but stores DNSRecords resolving to this object."""
-    node: Optional[Node]
+    node: Optional[nodes.Node]
     """The node this DNSObject resolves to"""
 
     ## dunder methods
