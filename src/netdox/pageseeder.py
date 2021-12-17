@@ -305,7 +305,7 @@ def get_default_uriid(uriid, params={}, header={}):
     """
     Returns the content of a document, from it's uriid.
     """
-    url = f'https://{utils.config()["pageseeder"]["host"]}/ps/uriid/{uriid}'
+    url = f'https://{utils.config()["pageseeder"]["host"]}/ps/uri/{uriid}'
     return requests.get(url, headers=header, params=params)
 
 @auth
