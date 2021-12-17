@@ -6,11 +6,11 @@ from __future__ import annotations
 import os
 import re
 from hashlib import sha256
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from netdox import base, iptools, utils
+from netdox import base, iptools, utils, dns
 from netdox.psml import (NODE_TEMPLATE,
                          PropertiesFragment, Property, XRef)
 
@@ -42,8 +42,24 @@ class Node(base.NetworkObject):
             ips: Iterable[str],
             labels: Iterable[str] = None
         ) -> None:
+        """
+        Constructor.
+
+        :param network: The network this node is in.
+        :type network: Network
+        :param name: The name for this node.
+        :type name: str
+        :param identity: A unique identifier for this node.
+        :type identity: str
+        :param domains: A set of domain names that this node claims resolve to it.
+        :type domains: Iterable[str]
+        :param ips: A set of IPv4 addresses that this node claims resolve to it.
+        :type ips: Iterable[str]
+        :param labels: A set of document labels to apply to the resulting 
+        PageSeeder document, defaults to None
+        :type labels: Iterable[str], optional
+        """
         self.identity = identity.lower()
-        self.type = self.__class__.type
         self._location = None
         super().__init__(network, name, identity, labels)
 
@@ -65,7 +81,7 @@ class Node(base.NetworkObject):
     @property
     def docid(self) -> str:
         return (
-            f'_nd_node_{self.__class__.type}_' +
+            f'_nd_node_{self.type}_' +
             re.sub(utils.docid_invalid_patten, "_", self.identity)
         )
 
@@ -103,12 +119,7 @@ class Node(base.NetworkObject):
         else:
             self.network.nodes[self.identity] = self
 
-        cache: set[str] = set()
-        for domain in list(self.domains):
-            cache |= self.network.nodes.resolveRefs(self.identity, domain, cache)
-
-        for ip in list(self.ips):
-            cache |= self.network.nodes.resolveRefs(self.identity, ip, cache)
+        self.resolveDNS()
 
         return self
 
@@ -171,6 +182,60 @@ class Node(base.NetworkObject):
     @location.deleter
     def location(self) -> None:
         self._location = None
+
+    ## methods
+
+    def resolveDNS(self) -> None:
+        """
+        Walks backwards through the DNS for each of this nodes domains / ips,
+        setting the node attribute to this object.
+        Also adds those dns objects to the internal domain / ip sets.
+        """
+        cache: set[str] = set()
+        for domain in list(self.domains):
+            cache |= self._walkBackrefs(
+                self.network.find_dns(domain), cache)
+
+        for ip in list(self.ips):
+            cache |= self._walkBackrefs(
+                self.network.find_dns(ip), cache)
+
+    def _walkBackrefs(self, 
+            dnsobj: dns.DNSObject, 
+            cache: set[str] = None
+        ) -> set[str]:
+        """
+        Walks through the backrefs of *dnobj*, 
+        setting the node attribute to this object and storing the addresses.
+
+        :param dnsobj: The DNSObject to start with.
+        :type dnsobj: Union[str, dns.DNSObject]
+        :param cache: [description], defaults to None
+        :type cache: set[str], optional
+        :return: [description]
+        :rtype: set[str]
+        """ 
+        if not cache:
+            cache = set()
+        elif dnsobj.name in cache:
+            return cache
+        cache.add(dnsobj.name)
+
+        if dnsobj.node: 
+            if dnsobj.node.type == PlaceholderNode.type:
+                dnsobj.node.merge(self)
+            return cache
+
+        if isinstance(dnsobj, dns.Domain):
+            self.domains.add(dnsobj.name)
+        else:
+            self.ips.add(dnsobj.name)
+        dnsobj.node = self
+        
+        for backref in dnsobj.backrefs.destinations:
+            cache |= self._walkBackrefs(backref, cache)
+
+        return cache
 
 
 class DefaultNode(Node):

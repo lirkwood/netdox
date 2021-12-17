@@ -176,50 +176,6 @@ class NodeSet(base.NetworkObjectContainer[nodes.Node]):
         else:
             raise RuntimeError('Cannot add ref to a node in a different network.')
 
-    def resolveRefs(self, node_identity: str, dnsobj_name: str, cache: set[str] = None) -> set[str]:
-        """
-        Creates noderefs from the DNSObj at *dnsobj_name* (and DNSObjs which resolve to it) to the node with *node_identity*.
-
-        :param node_identity: The identity of the target node.
-        :type node_identity: str
-        :param dnsobj_name: The name of the DNSObj to link from.
-        :type dnsobj_name: str
-        :param cache: A set of DNSObject names to ignore, defaults to None
-        :type cache: set[str], optional
-        :return: The set of DNSObject names that have been tested, including cached names.
-        :rtype: set[str]
-        """
-        node = self[node_identity]
-        if not cache:
-            cache = set()
-        elif dnsobj_name in cache:
-            return cache
-        cache.add(dnsobj_name)
-
-        dnsobj: dns.DNSObject
-        if dnsobj_name in self.network.ips:
-            dnsobj = self.network.ips[dnsobj_name]
-            dnsobj_set = node.ips
-
-        elif dnsobj_name in self.network.domains:
-            dnsobj = self.network.domains[dnsobj_name]
-            dnsobj_set = node.domains
-        
-        else: return cache
-
-        if dnsobj.node: 
-            if dnsobj.node.type == 'placeholder':
-                dnsobj.node.merge(node)
-            return cache
-
-        dnsobj_set.add(dnsobj.name)
-        dnsobj.node = node
-        
-        for backref in dnsobj.backrefs.names:
-            cache |= self.resolveRefs(node_identity, backref, cache)
-
-        return cache
-
 
 class Network:
     """
