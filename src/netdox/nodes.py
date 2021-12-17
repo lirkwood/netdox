@@ -238,6 +238,47 @@ class Node(base.NetworkObject):
         return cache
 
 
+class ProxiedNode(Node):
+    """
+    Represents a Node behind a proxy, possibly in another network.
+
+    Like a Node, but does not set the node attribute 
+    on its registered DNS objects when entering the network.
+    """
+
+    def _walkBackrefs(self, 
+            dnsobj: dns.DNSObject, 
+            cache: set[str] = None
+        ) -> set[str]:
+        """
+        Walks through the backrefs of *dnobj*, 
+        storing the addresses.
+        Does **not** modify the node attribute of any DNSObjects.
+
+        :param dnsobj: The DNSObject to start with.
+        :type dnsobj: Union[str, dns.DNSObject]
+        :param cache: [description], defaults to None
+        :type cache: set[str], optional
+        :return: [description]
+        :rtype: set[str]
+        """ 
+        if not cache:
+            cache = set()
+        elif dnsobj.name in cache:
+            return cache
+        cache.add(dnsobj.name)
+
+        if isinstance(dnsobj, dns.Domain):
+            self.domains.add(dnsobj.name)
+        else:
+            self.ips.add(dnsobj.name)
+        
+        for backref in dnsobj.backrefs.destinations:
+            cache |= self._walkBackrefs(backref, cache)
+
+        return cache
+
+
 class DefaultNode(Node):
     """
     Default implementation of Node, with one private IPv4 address.
