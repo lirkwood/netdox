@@ -2,11 +2,11 @@ from typing import Iterable
 
 from bs4 import Tag
 from netdox import psml, utils
-from netdox import Domain, Network
-from netdox.nodes import Node
+from netdox import Network
+from netdox.nodes import ProxiedNode
 
 
-class App(Node):
+class App(ProxiedNode):
     """
     Kubernetes app from a namespaced deployment
     """
@@ -45,7 +45,7 @@ class App(Node):
             network = network, 
             name = name,
             identity = cluster +'_'+ name,
-            domains = [],
+            domains = domains,
             ips = []
         )
         
