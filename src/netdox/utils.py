@@ -34,8 +34,11 @@ Relative to the output directory / PageSeeder website context."""
 ## Regex patterns
 
 dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
+"""Matches if the string is a valid DNS name."""
 expiry_date_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
+"""Matches with a named group 'date' if string is a valid stale document expiry label."""
 docid_invalid_patten = re.compile(r'[^a-zA-Z0-9_-]')
+"""Matches any characters not allowed in a PageSeeder docid."""
 
 ################
 # Cryptography #
