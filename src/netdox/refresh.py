@@ -36,11 +36,13 @@ def init():
         os.mkdir(utils.APPDIR+ 'out'+ os.sep+ outfolder)
 
 
-def main():
+def main(dry: bool = False):
     """
     The main flow of the refresh process.
     Calls most other functions in this script in the required order.
     """
+
+    if dry: logger.info('Refresh running as dry run: no documents will be uploaded.')
 
     #-------------------------------------------------------------------#
     # Initialisation                                                    #
@@ -85,7 +87,10 @@ def main():
     #-------------------------------------------------------------------#
 
     zip = shutil.make_archive(utils.APPDIR+ 'src/netdox-psml', 'zip', utils.APPDIR + 'out')
-    pageseeder.zip_upload(zip, 'website')
+    if not dry:
+        pageseeder.zip_upload(zip, 'website')
+    else:
+        logger.warning('Did not upload documents due to --dry-run flag.')
 
     nwman.runStage('cleanup')
 
