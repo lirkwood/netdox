@@ -114,9 +114,9 @@ def auth(func):
 
 def uri_from_path(path: str) -> int:
     """
-    Returns the URI of a PageSeeder object, from it's filepath.
+    Returns the URI of a PageSeeder folder, from it's filepath.
 
-    :param path: Path to object, relative to group root directory.
+    :param path: Path to folder, relative to group root directory.
     :type path: str
     :return: The URI of the specified object,
     :rtype: int
@@ -147,7 +147,7 @@ def urimap(
         path: str = 'website', 
         type: str = 'folder', 
         relationship: str = 'children'
-    ) -> dict[str, str]:
+    ) -> dict[str, int]:
     """
     Maps the names of the uris of type *type* in the folder *path* to their URIs.
 
@@ -160,7 +160,7 @@ def urimap(
     :type relationship: str
     :raises FileNotFoundError: If the path is not present on PageSeeder.
     :return: A dictionary mapping filenames to URIs.
-    :rtype: dict[str, str]
+    :rtype: dict[str, int]
     """
     uris = get_uris(uri_from_path(path), params={
         'type': type,
