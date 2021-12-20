@@ -62,6 +62,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A string unique to each subclass of NetworkObject."""
     TEMPLATE: str
     """The template to populate during serialisation."""
+    _organization: Optional[str]
+    """A fallback value for the organization of this object."""
 
     ## dunder methods
 
@@ -84,6 +86,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.identity = identity.lower()
 
         self.psmlFooter = []
+        self._organization = None
         
         self.labels = self.network.labels[self.docid]
         self.labels.update(self.DEFAULT_LABELS)
@@ -97,13 +100,32 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         Returns the URIID of the organization document this object belongs to,
         if any.
 
+        Will return the first organization that shares a label with this object,
+        or the fallback value if no orgs match.
+
+        Assigning a value to this property will set the fallback value.
+
         :return: An integer (as a string), or None.
         :rtype: str
         """
         for uri, labels in self.network.config.organizations.items():
             if (self.labels & labels):
                 return uri
-        return None
+        return self._organization
+
+    @organization.setter
+    def organization(self, value: str) -> None:
+        """
+        Sets the fallback value for this object's organization.
+
+        :param value: The URIID of an organization document.
+        :type value: str
+        """
+        self._organization = value
+
+    @organization.deleter
+    def organization(self) -> None:
+        self._organization = None
 
     @property
     def search_terms(self) -> list[str]:
