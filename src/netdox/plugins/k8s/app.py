@@ -37,9 +37,11 @@ class App(ProxiedNode):
 
         domains = {p.split('/')[0] for p in sorted(paths if paths else [], key = len)}
         for domain in list(domains):
-            for proxy in utils.config('k8s')[cluster]['proxies']:
-                if not network.resolvesTo(domain, proxy):
-                    domains.remove(domain)
+            if not any([
+                network.resolvesTo(domain, proxy) for proxy 
+                in utils.config('k8s')[cluster]['proxies']
+            ]):
+                domains.remove(domain)
 
         super().__init__(
             network = network, 
