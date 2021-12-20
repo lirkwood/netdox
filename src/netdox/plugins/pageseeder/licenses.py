@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def runner(network: Network):
     # TODO change from ps to ps-licenses
     urimap = pageseeder.urimap('website/ps', 'document')
+    cache: set[str] = set()
     for uri in urimap.values():
         license_soup = BeautifulSoup(pageseeder.get_default_uriid(uri).text, 'xml')
         details = psml.PropertiesFragment.from_tag(
@@ -42,7 +43,9 @@ def runner(network: Network):
                 xref = details['organization']
                 if 'uriid' in xref.attrs:
                     org = xref['uriid']
-            apply_licenses(network.find_dns(domain), uri, license_type, org)
+
+            cache |= apply_licenses(network.find_dns(domain), 
+                uri, license_type, org, cache)
 
 def _domain_from_xref(input: psml.XRef) -> str:
     """
@@ -103,7 +106,9 @@ def apply_licenses(
     if org_uri and dnsobj.organization != org_uri:
         dnsobj.organization = org_uri
 
-        if dnsobj.node:
+        if dnsobj.node and dnsobj.node.identity not in cache:
+            cache.add(dnsobj.node.identity)
+            
             if not dnsobj.node.organization:
                 dnsobj.node.organization = org_uri
             add_footer(dnsobj.node, license_uri, license_type)
