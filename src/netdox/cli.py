@@ -181,7 +181,7 @@ def serve(_):
     """
     raise NotImplementedError('Webhooks are not currently usable')
 
-def refresh(_):
+def refresh(args: argparse.Namespace):
     """
     Generates a new set of documentation and uploads it to PageSeeder.
     """
@@ -193,7 +193,7 @@ def refresh(_):
 
     logger.debug('Refresh begins')
 
-    _refresh()
+    _refresh(dry = args.dry_run)
 
 def encrypt(args: argparse.Namespace):
     """
@@ -242,6 +242,7 @@ def parse_args():
 
     refresh_parser = subparsers.add_parser('refresh', help = 'Generates a new set of documentation and uploads it to PageSeeder.')
     refresh_parser.set_defaults(func = refresh)
+    refresh_parser.add_argument('-d', '--dry-run', action = 'store_true', help = 'do not upload documents at the end of the refresh')
 
     encrypt_parser = subparsers.add_parser('encrypt', help = 'Encrypts a file.')
     encrypt_parser.add_argument('inpath', type = pathlib.Path, help = 'path to a file to encrypt.')
