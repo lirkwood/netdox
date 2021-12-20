@@ -273,6 +273,15 @@ class Network:
         for dest in startObj.records.destinations:
             if self.resolvesTo(dest, target):
                 return True
+        
+        if isinstance(startObj, dns.IPv4Address):
+            for entry in startObj.NAT:
+                if entry.destination.name == target:
+                    self.cache.clear()
+                    return True
+                    
+                elif self.resolvesTo(entry.destination, target):
+                    return True
 
         return False
 
