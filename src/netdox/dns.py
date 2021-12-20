@@ -387,7 +387,8 @@ class IPv4Address(DNSObject):
     @property
     def outpath(self) -> str:
         return os.path.normpath(os.path.join(
-            utils.APPDIR, 'out/ips/', self.subnet.replace("/","_"), self.docid))
+            utils.APPDIR, 'out/ips', self.subnet.replace("/","_"), self.docid + '.psml'
+        ))
 
     @property
     def ips(self) -> set[str]:
