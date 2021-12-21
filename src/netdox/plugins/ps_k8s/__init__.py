@@ -16,6 +16,9 @@ IMAGES = {
     'psberlioz-simple': 'Simple Site'
 }
 
+__depends__ = ['k8s']
+# TODO teach nwman about this attribute
+
 def footer(network: Network) -> None:
     for node in network.nodes:
         if isinstance(node, App):
