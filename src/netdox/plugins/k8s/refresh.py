@@ -208,10 +208,9 @@ def runner(network: Network) -> None:
     """
     auth = utils.config('k8s')
 
-    workerApps: dict[str, DefaultDict[str, set]] = {}
+    workers = {}
     for context in auth:
         apps = getApps(context)
-        workerApps[context] = defaultdict(set)
         location = auth[context]['location'] if 'location' in auth[context] else None
         
         for app in apps.values():
@@ -219,8 +218,7 @@ def runner(network: Network) -> None:
             node.location = location
 
             for pod in node.pods.values():
-                PlaceholderNode(
-                    network = network,
-                    name = pod['workerName'],
-                    ips = [pod['workerIp']]
-                )
+                workers[pod['workerIp']] = pod['workerName']
+    
+    for ip, name in workers.items():
+        PlaceholderNode(network = network, name = name, ips = [ip])
