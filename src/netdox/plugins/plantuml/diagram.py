@@ -1,9 +1,13 @@
+import logging
 from typing import Optional
-from plantuml import deflate_and_encode
+
 from netdox import Network, Node
 from netdox.base import NetworkObject
 from netdox.dns import DNSObject, IPv4Address
-from netdox.iptools import valid_ip
+from netdox.nodes import ProxiedNode
+from plantuml import deflate_and_encode
+
+logger = logging.getLogger(__name__)
 
 class NodeDiagramFactory:
     server: str
@@ -43,6 +47,10 @@ class NodeDiagramFactory:
         """Returns the UML class name for an object."""
         return f'{nwobj.__class__.__name__}: {nwobj.name}'
 
+    def _class_definition(self, name: str, color: str = None) -> str:
+        """Returns the UML class definition line for a given class name."""
+        return f'class "{name}" {f"#{color}" if color else ""} {{'
+
     def draw(self, node: Node) -> str:
         """
         Generate diagram for the given node and return the url.
@@ -67,13 +75,31 @@ class NodeDiagramFactory:
         self._node_name = self._class_name(node)
         self.links = []
         self.markup = [
-            f'class "{self._node_name}" {{',
+            self._class_definition(self._node_name),
                 f'identity: {node.identity}',
                 f'type: {node.type}',
             '}',
-            'package dns <<Layout>>{',
         ]
-        
+
+        if isinstance(node, ProxiedNode):
+            # draw proxy node and link it to _node, then draw proxy node instead
+            if node.proxy.node:
+                proxy_name = self._class_name(node.proxy.node)
+
+                self.markup.extend([
+                    self._class_definition(proxy_name),
+                        f'identity: {node.proxy.node.identity}',
+                        f'type: {node.proxy.node.type}',
+                    '}'])
+                for addr in node.proxy.addresses:
+                    self._link(proxy_name, annotation = addr)
+
+                self._node = node.proxy.node
+                self._node_name = proxy_name
+            else:
+                logger.debug(f'No proxy node for {node.identity}')
+            
+        self.markup.append('package dns <<Layout>>{',)
         cache: set[str] = set()
         for domain in node.domains:
             cache |= self._draw_dns(node.network.find_dns(domain), cache)
@@ -103,7 +129,7 @@ class NodeDiagramFactory:
 
             class_name = self._class_name(dnsobj)
             self.markup.extend([
-                f'class "{class_name}" {{',
+                self._class_definition(class_name),
                     f'link: [[https://{dnsobj.name}/]]',
                     f'zone: {dnsobj.zone}',
                 '}'
@@ -117,8 +143,16 @@ class NodeDiagramFactory:
             for backref in dnsobj.backrefs.destinations:
                 cache |= self._draw_dns(backref, cache)
 
-            if isinstance(dnsobj, IPv4Address) and dnsobj.node is self._node:
-                self._link(class_name)
+            if isinstance(dnsobj, IPv4Address):
+                for entry in dnsobj.NAT:
+                    cache |= self._draw_dns(entry.destination, cache)
+                    dest_name = self._class_name(entry.destination)
+                    self._link(class_name, dest_name, entry.source)
+
+                if dnsobj.node is not None:
+                    node_class_name = self._class_name(dnsobj.node)
+                    if self._class_definition(node_class_name) in self.markup:
+                        self._link(class_name, node_class_name)
 
         return cache
 
