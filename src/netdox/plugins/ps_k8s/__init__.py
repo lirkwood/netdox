@@ -19,27 +19,31 @@ IMAGES = {
 __depends__ = ['k8s']
 # TODO teach nwman about this attribute
 
-def footer(network: Network) -> None:
+def footers(network: Network) -> None:
     for node in network.nodes:
         if isinstance(node, App):
-            for count, (pod, info) in enumerate(get_pod_info(node).items()):
-                pageseeders = []
-                for instance in info['about']['pageseeders']:
-                    ps_node = network.domains[instance['url']].node
-                    if ps_node:
-                        pageseeders.append(ps_node.docid)
+            try:
+                for count, (pod, info) in enumerate(get_pod_info(node).items()):
+                    pageseeders = []
+                    for instance in info['about']['pageseeders']:
+                        ps_node = network.domains[instance['url']].node
+                        if ps_node:
+                            pageseeders.append(ps_node.docid)
 
-                frag = psml.PropertiesFragment(f'psk8s_{count}', [
-                    psml.Property('pod', pod, 'Pod')
-                ])
-                frag.append([
-                    psml.Property(
-                        'pageseeder', 
-                        psml.XRef(docid = docid), 
-                        'Backend PageSeeder'
-                    ) for docid in pageseeders
-                ])
-                node.psmlFooter.append(frag)
+                    frag = psml.PropertiesFragment(f'psk8s_{count}', [
+                        psml.Property('pod', pod, 'Pod')
+                    ])
+                    frag.extend([
+                        psml.Property(
+                            'pageseeder', 
+                            psml.XRef(docid = docid), 
+                            'Backend PageSeeder'
+                        ) for docid in pageseeders
+                    ])
+                    node.psmlFooter.append(frag)
+                    print(node.name, pod)
+            except KeyError:
+                pass
 
 def get_pod_info(node: App) -> dict[str, Any]:
     """
@@ -58,6 +62,13 @@ def get_pod_info(node: App) -> dict[str, Any]:
             for domain in node.domains:
                 info_resp = requests.get(f'http://{domain}/api/info.json')
                 if info_resp.ok:
-                    pods[pod] = json.loads(info_resp.text)
-                    break
+                    try:
+                        pods[pod] = json.loads(info_resp.text)
+                        break
+                    except json.JSONDecodeError:
+                        pass
     return pods
+
+__stages__ = {
+    'footers': footers
+}
