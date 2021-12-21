@@ -7,6 +7,7 @@ import os
 import re
 from hashlib import sha256
 from typing import TYPE_CHECKING, Iterable, Optional, Union
+import logging
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -16,6 +17,8 @@ from netdox.psml import (NODE_TEMPLATE,
 
 if TYPE_CHECKING:
     from netdox import Network
+
+logger = logging.getLogger(__name__)
 
 class Node(base.NetworkObject):
     """
@@ -223,14 +226,25 @@ class Node(base.NetworkObject):
 
         if dnsobj.node: 
             if dnsobj.node.type == PlaceholderNode.type:
+                logger.debug(
+                    f'{self.name} consuming placeholder node from {dnsobj.name}')
                 dnsobj.node.merge(self)
-            return cache
+                return cache
+
+            elif isinstance(dnsobj.node, ProxiedNode):
+                if dnsobj.node.proxy.node is None:
+                    logger.debug(f'Proxy from {dnsobj.name} to {dnsobj.node.proxy.backend.name} set to {self.name}')
+                    dnsobj.node.proxy.node = self
+            
+            else:
+                return cache
+        else:
+            dnsobj.node = self
 
         if isinstance(dnsobj, dns.Domain):
             self.domains.add(dnsobj.name)
         else:
             self.ips.add(dnsobj.name)
-        dnsobj.node = self
         
         for backref in dnsobj.backrefs.destinations:
             cache |= self._walkBackrefs(backref, cache)
@@ -245,6 +259,22 @@ class ProxiedNode(Node):
     Like a Node, but does not set the node attribute 
     on its registered DNS objects when entering the network.
     """
+    proxy: NodeProxy
+    """The NodeProxy that sits in front of this Node."""
+    type = 'proxied_node'
+
+    def __init__(self,
+            network: Network, 
+            name: str, 
+            identity: str, 
+            domains: Iterable[str], 
+            ips: Iterable[str],
+            labels: Iterable[str] = None,
+            proxy_node: Node = None
+        ) -> None:
+            super().__init__(network, name, identity, domains, ips, labels)
+            self.proxy = NodeProxy(self, proxy_node, 
+                {addr for addrset in (domains, ips) for addr in addrset})
 
     def _walkBackrefs(self, 
             dnsobj: dns.DNSObject, 
@@ -268,15 +298,78 @@ class ProxiedNode(Node):
             return cache
         cache.add(dnsobj.name)
 
-        if isinstance(dnsobj, dns.Domain):
-            self.domains.add(dnsobj.name)
+        if dnsobj.node:
+            assert not isinstance(dnsobj.node, NodeProxy), \
+                f'Conflicting NodeProxies on {dnsobj.name}'
+
+            if self.proxy.node and dnsobj.node is self.proxy.node:
+                dnsobj.node = self.proxy # type: ignore
+
+            elif not self.proxy.node:
+                self.proxy.node = dnsobj.node
+                dnsobj.node = self.proxy # type: ignore
+
+            else:
+                logger.debug( #TODO remove warning once properly tested
+                    'False address claim from ProxiedNode '+
+                    f'{self.identity} on {dnsobj.name}')
         else:
-            self.ips.add(dnsobj.name)
+            dnsobj.node = self.proxy
         
         for backref in dnsobj.backrefs.destinations:
             cache |= self._walkBackrefs(backref, cache)
 
         return cache
+
+
+class NodeProxy:
+    """Represents a Node which behaves as a proxy, 
+    forwarding some of its traffic to a backend Node."""
+    backend: Node
+    """The Node the proxy forwards its traffic to."""
+    node: Optional[Node]
+    """The Node behaving as the proxy."""
+    addresses: set[str]
+    """Dict mapping string addresses / paths to Node objects."""
+    type = 'proxy'
+
+    def __init__(self, 
+            backend: ProxiedNode, 
+            proxy: Node = None, 
+            addresses: set[str] = None
+        ) -> None:
+        """
+        Constructor.
+
+        :param backend: The Node that this proxy conditionally forwards traffic to.
+        :type backend: ProxiedNode
+        :param proxy: The Node that performs the forwarding of, defaults to None
+        :type proxy: Node, optional
+        :param addresses: A set of DNS names that should resolve to the backend, 
+        defaults to None
+        :type addresses: Node, optional
+        """
+        self.backend = backend
+        self.node = proxy
+        self.addresses = addresses or set()
+    
+    def register_address(self, address: str) -> None:
+        """
+        Registers an address as one which resolves to the backend Node.
+
+        :param address: FQDN + optional path
+        :type address: str
+        """
+        self.addresses.add(address)
+
+    def lookup(self, address: str) -> Optional[Node]:
+        """
+        Return the backend Node if *address* is registered, 
+        otherwise returns the proxy.
+        """
+        if address in self.addresses:
+            return self.backend
+        return self.node
 
 
 class DefaultNode(Node):
