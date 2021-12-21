@@ -134,19 +134,24 @@ class NetworkManager:
         for plugin in self.plugins:
             init = getattr(plugin, 'init', None)
             if callable(init):
-                init()
+                try:
+                    init()
+                except Exception:
+                    logger.error(
+                        f'{plugin.__name__} threw an exception during initialisation: \n{format_exc()}')
 
     def runPlugin(self, plugin: ModuleType, stage: str) -> None:
         """
-        Runs the runner method of a plugin with a Network object and the current stage as arguments.
+        Runs the registered method of *plugin* for *stage*.
 
         :param plugin: The plugin module to run.
         :type plugin: ModuleType
-        :param stage: The stage to run
+        :param stage: The current stage.
         :type stage: str, optional
         """
         stages = getattr(plugin, '__stages__', {stage: lambda _: ...})
         try:
+            logger.debug(f'Running plugin {plugin.__name__} stage {stage}')
             stages[stage](self.network)
         except Exception:
             logger.error(f'{plugin.__name__} threw an exception during stage {stage}: \n{format_exc()}')
