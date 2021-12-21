@@ -43,9 +43,13 @@ def runner(network: Network):
                 xref = details['organization']
                 if 'uriid' in xref.attrs:
                     org = xref['uriid']
+            try:
+                version = pageseeder.get_version(domain)
+            except Exception:
+                version = None
 
             cache |= apply_licenses(network.find_dns(domain), 
-                uri, license_type, org, cache)
+                uri, license_type, org, version, cache)
 
 def _domain_from_xref(input: psml.XRef) -> str:
     """
@@ -77,6 +81,7 @@ def apply_licenses(
         dnsobj: DNSObject, 
         license_uri: int,
         license_type: str,
+        pageseeder_ver: str = None,
         org_uri: str = None, 
         cache: set[str] = None
     ) -> set[str]:
@@ -101,7 +106,7 @@ def apply_licenses(
         return cache
     cache.add(dnsobj.name)
     
-    add_footer(dnsobj, license_uri, license_type)
+    add_footer(dnsobj, license_uri, license_type, pageseeder_ver)
 
     if org_uri and dnsobj.organization != org_uri:
         dnsobj.organization = org_uri
@@ -115,17 +120,24 @@ def apply_licenses(
 
             for addr in (dnsobj.node.domains | dnsobj.node.ips):
                 cache |= apply_licenses(dnsobj.network.find_dns(addr),
-                    license_uri, license_type, org_uri, cache)
+                    license_uri, license_type, org_uri, pageseeder_ver, cache)
 
     for backref in dnsobj.backrefs.destinations:
-        cache |= apply_licenses(backref, license_uri, license_type, org_uri, cache)
+        cache |= apply_licenses(
+            backref, license_uri, license_type, org_uri, pageseeder_ver, cache)
 
     for dest in dnsobj.records.destinations:
-        cache |= apply_licenses(dest, license_uri, license_type, org_uri, cache)
+        cache |= apply_licenses(
+            dest, license_uri, license_type, org_uri, pageseeder_ver, cache)
 
     return cache
 
-def add_footer(nwobj: NetworkObject, license_uri: int, license_type: str) -> None:
+def add_footer(
+        nwobj: NetworkObject, 
+        license_uri: int, 
+        license_type: str, 
+        pageseeder_ver: str = None
+    ) -> None:
     """
     Adds a properties-fragment to the footer of the network object that describes 
     the PageSeeder license.
@@ -137,7 +149,9 @@ def add_footer(nwobj: NetworkObject, license_uri: int, license_type: str) -> Non
     :param license_type: Type of the associated license.
     :type license_type: str
     """
+    version = pageseeder_ver or 'Not available.'
     nwobj.psmlFooter.append(psml.PropertiesFragment('ps-license', [
         psml.Property('license', psml.XRef(str(license_uri)), 'PageSeeder License'),
+        psml.Property('version', version, 'PageSeeder Version'),
         psml.Property('license-type', license_type, 'License Type')
     ]))
