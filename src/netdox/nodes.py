@@ -314,7 +314,7 @@ class ProxiedNode(Node):
                     'False address claim from ProxiedNode '+
                     f'{self.identity} on {dnsobj.name}')
         else:
-            dnsobj.node = self.proxy
+            dnsobj.node = self.proxy # type: ignore
         
         for backref in dnsobj.backrefs.destinations:
             cache |= self._walkBackrefs(backref, cache)

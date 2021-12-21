@@ -242,8 +242,9 @@ class DNSObject(base.NetworkObject):
             title = 'Node',
             value = XRef(docid = self.node.docid) if self.node else '—'
         ))
-        
+
         if self.node is not None and isinstance(self.node, nodes.ProxiedNode):
+            proxy_value: Union[str, XRef]
             if self.node.proxy.node:
                 proxy_value = XRef(docid = self.node.proxy.node.docid)
             else:
