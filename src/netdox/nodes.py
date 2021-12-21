@@ -323,6 +323,7 @@ class ProxiedNode(Node):
 
 
 class NodeProxy:
+    # TODO add tests for this
     """Represents a Node which behaves as a proxy, 
     forwarding some of its traffic to a backend Node."""
     backend: Node
