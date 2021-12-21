@@ -42,6 +42,7 @@ commands = pytest {posargs}
 [tool.mypy]
 python_version = 3.9
 ignore_missing_imports = true
+ignore_missing_imports_per_module = true
 namespace_packages = true
 
 # Ignore all errors

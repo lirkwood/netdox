@@ -16,7 +16,7 @@ from netdox.plugins.xenorchestra.objs import VirtualMachine
 from netdox.plugins.xenorchestra.write import genpub, genreport
 
 global pubdict
-pubdict = {}
+pubdict: dict = {}
 def nodes(network: Network) -> None:
     global pubdict
     pubdict = runner(network)

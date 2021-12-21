@@ -110,7 +110,7 @@ class HardwareNode(Node):
 
 
 global thread
-thread = None
+thread: Optional[Tag] = None
 def init() -> None:
     global thread
     if os.path.exists(utils.APPDIR+ 'plugins/hardware/src'):
