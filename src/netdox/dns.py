@@ -4,17 +4,14 @@ import os
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional,
+from typing import (Generic, Iterable, Iterator, Optional,
                     TypeVar, Union)
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from netdox import base, containers, iptools, utils
+from netdox import base, containers, iptools, utils, nodes
 from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE,
                          PropertiesFragment, Property, XRef)
-
-if TYPE_CHECKING:
-    from netdox import nodes
 
 class DNSRecordType(Enum):
     A = 'A'
@@ -202,8 +199,8 @@ class DNSObject(base.NetworkObject):
     """A set of DNSRecords originating from this object."""
     backrefs: DNSRecordSet
     """Like records but stores DNSRecords resolving to this object."""
-    node: Optional[nodes.Node]
-    """The node this DNSObject resolves to"""
+    _node: Optional[Union[nodes.Node, nodes.NodeProxy]]
+    """The node/proxy this DNSObject resolves to."""
 
     ## dunder methods
 
@@ -265,6 +262,26 @@ class DNSObject(base.NetworkObject):
             raise AttributeError('Cannot merge DNSObjects with different names.')
 
     #TODO add exclusion validation at this level: _enter?
+
+    ## properties
+
+    @property
+    def node(self) -> Optional[nodes.Node]:
+        """
+        Returns the node this object resolves to.
+        If *_node* is a NodeProxy, perform a lookup and return the result.
+        """
+        if self._node is not None and isinstance(self._node, nodes.NodeProxy):
+            return self._node.lookup(self.name)
+        return self._node
+
+    @node.setter
+    def node(self, value: nodes.Node) -> None:
+        self._node = value
+
+    @node.deleter
+    def node(self) -> None:
+        self._node = None
 
 DNSObjT = TypeVar('DNSObjT', bound = DNSObject)
 
