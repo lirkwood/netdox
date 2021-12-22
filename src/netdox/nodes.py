@@ -233,7 +233,9 @@ class Node(base.NetworkObject):
 
             elif isinstance(dnsobj.node, ProxiedNode):
                 if dnsobj.node.proxy.node is None:
-                    logger.debug(f'Proxy from {dnsobj.name} to {dnsobj.node.proxy.backend.name} set to {self.name}')
+                    logger.debug(
+                        f'Proxy from {dnsobj.name} to {dnsobj.node.proxy.backend.name}'
+                        + f' set to {self.name}')
                     dnsobj.node.proxy.node = self
             
             else:
