@@ -14,4 +14,4 @@ The key should be the fully qualified domain name of your instance, and the map 
 }
 ```
 
-The locations array should be populated by your defined network locations as they appear in `locations.json`.
+The locations array is used to decide which domains each Icinga instance should monitor. It should be populated by your network locations as they appear in `locations.json`.
