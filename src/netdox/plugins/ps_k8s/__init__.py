@@ -41,7 +41,6 @@ def footers(network: Network) -> None:
                         ) for docid in pageseeders
                     ])
                     node.psmlFooter.append(frag)
-                    print(node.name, pod)
             except KeyError:
                 pass
 
