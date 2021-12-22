@@ -7,6 +7,7 @@ from netdox import Network, pageseeder, psml
 from netdox.base import NetworkObject
 from netdox.dns import DNSObject
 from netdox.utils import dns_name_pattern
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,9 @@ def runner(network: Network):
                     if 'uriid' in xref.attrs:
                         org = xref['uriid']
                 try:
-                    version = pageseeder.get_version(domain, timeout = 1)
+                    with warnings.catch_warnings(): #TODO investigate alternatives to this
+                        warnings.simplefilter('ignore')
+                        version = pageseeder.get_version(domain, timeout = 1, verify = False)
                 except Exception:
                     version = None
 
