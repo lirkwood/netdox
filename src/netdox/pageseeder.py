@@ -327,12 +327,12 @@ def loading_zone_upload(path, params={}, host='', group='', header={}):
 # PageSeeder API Services #
 ###########################
 
-def get_version(host):
+def get_version(host, **kwargs):
     """
     Returns the version of a PageSeeder server.
     """
     soup = BeautifulSoup(
-        requests.get(f'https://{host}/ps/service/version').text, 'xml')
+        requests.get(f'https://{host}/ps/service/version', **kwargs).text, 'xml')
     return soup.find('version')['string']
 
 @auth
