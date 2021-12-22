@@ -15,41 +15,45 @@ def runner(network: Network):
     urimap = pageseeder.urimap('website/ps', 'document')
     cache: set[str] = set()
     for uri in urimap.values():
-        license_soup = BeautifulSoup(pageseeder.get_default_uriid(uri).text, 'xml')
-        details = psml.PropertiesFragment.from_tag(
-            license_soup.find('section', id = 'details').find('properties-fragment')
-        ).to_dict()
-
-        domain = details['domain']
         try:
-            if isinstance(domain, str):
-                assert fullmatch(dns_name_pattern, domain)
-            elif isinstance(domain, psml.XRef):
-                domain = _domain_from_xref(domain)
-            else:
-                raise TypeError()
-        
-        except AssertionError:
-            logger.warning(f'License with uri {uri} has invalid domain: {domain}')
-        except AttributeError:
-            logger.warning(f'Domain is unresolved xref in license with uri {uri}.')
-        except TypeError:
-            logger.warning(
-                f'Unable to parse domain from PSML for license with uri {uri}.')
-        else:
-            license_type = details.get('license-type')
-            org = None
-            if isinstance(details.get('organization'), psml.XRef):
-                xref = details['organization']
-                if 'uriid' in xref.attrs:
-                    org = xref['uriid']
-            try:
-                version = pageseeder.get_version(domain)
-            except Exception:
-                version = None
+            license_soup = BeautifulSoup(pageseeder.get_default_uriid(uri).text, 'xml')
+            details = psml.PropertiesFragment.from_tag(
+                license_soup.find('section', id = 'details').find('properties-fragment')
+            ).to_dict()
 
-            cache |= apply_licenses(network.find_dns(domain), 
-                uri, license_type, org, version, cache)
+            domain = details['domain']
+            try:
+                if isinstance(domain, str):
+                    assert fullmatch(dns_name_pattern, domain)
+                elif isinstance(domain, psml.XRef):
+                    domain = _domain_from_xref(domain)
+                else:
+                    raise TypeError()
+            
+            except AssertionError:
+                logger.warning(f'License with uri {uri} has invalid domain: {domain}')
+            except AttributeError:
+                logger.warning(f'Domain is unresolved xref in license with uri {uri}.')
+            except TypeError:
+                logger.warning(
+                    f'Unable to parse domain from PSML for license with uri {uri}.')
+            else:
+                license_type = details.get('license-type')
+                org = None
+                if isinstance(details.get('organization'), psml.XRef):
+                    xref = details['organization']
+                    if 'uriid' in xref.attrs:
+                        org = xref['uriid']
+                try:
+                    version = pageseeder.get_version(domain, timeout = 1)
+                except Exception:
+                    version = None
+
+                cache |= apply_licenses(network.find_dns(domain), 
+                    uri, license_type, org, version, cache)
+                    
+        except KeyError:
+            logger.warning(f'License with uri {uri} missing property \'domain\'.')
 
 def _domain_from_xref(input: psml.XRef) -> str:
     """
