@@ -79,17 +79,15 @@ def _gen_config():
         whitelist = PluginWhitelist.WILDCARD, 
         network = Network()
     ).plugins:
-        plugin_name = plugin.__name__.split('.')[-1]
-        plugin_config_model = getattr(plugin, '__config__', {})
-        if plugin_config_model:
+        if plugin.config is not None:
             try:
-                json.dumps(plugin_config_model)
+                json.dumps(plugin.config)
             except Exception:
                 logger.error(
                     f"Plugin {plugin.__name__.split('.')[-1]} "
                     'registered an invalid JSON object under __config__.')
             else:
-                app_config['plugins'][plugin_name] = plugin_config_model
+                app_config['plugins'][plugin.name] = plugin.config
 
     nwman_logger.setLevel(nwman_level)
     

@@ -10,7 +10,7 @@ import os
 import pkgutil
 from traceback import format_exc
 from types import ModuleType
-from typing import Iterator
+from typing import Callable, Iterator, Optional
 
 from netdox import utils
 from netdox.config import NetworkConfig, update_template
@@ -30,9 +30,9 @@ class NetworkManager:
     """The namespace package to load plugins from."""
     DEFAULT_NAMESPACE = 'netdox.plugins'
     """Name of the namespace package to load by default."""
-    pluginmap: dict[str, set[ModuleType]]
-    """Dictionary of stages and their plugins."""
-    nodemap: dict[type[Node], ModuleType]
+    plugins: set[Plugin]
+    """Set of loaded plugins."""
+    nodemap: dict[type[Node], Plugin]
     """Maps the subclasses of Node that a plugin exports to the module object."""
     enabled: PluginWhitelist
     """List of plugins enabled by the user."""
@@ -62,7 +62,7 @@ class NetworkManager:
         :type network: Network, optional
         """
         # Initialisation
-        self.pluginmap = {stage: set() for stage in self.stages}
+        self.plugins = set()
         self.nodemap = {}
         self.enabled = PluginWhitelist(whitelist) if whitelist else self._load_whitelist()
         self.namespace = namespace or importlib.import_module(self.DEFAULT_NAMESPACE)
@@ -73,12 +73,12 @@ class NetworkManager:
             logger.warning('Plugin whitelist is wildcard. All plugins will be enabled.')
         else:
             for plugin in self.enabled:
-                if f'{self.namespace.__name__}.{plugin}' not in [module.__name__ for module in self.plugins]:
+                if plugin not in [_plugin.name for _plugin in self.plugins]:
                     logger.warning(f"Plugin '{plugin}' is enabled but was not found.")
 
         if self.plugins:
             logger.info(f"NetworkManager discovered the following plugins in '{self.namespace.__name__}': "
-                + json.dumps([plugin.__name__.split('.')[-1] for plugin in self.plugins], indent = 2))
+                + json.dumps([plugin.name for plugin in self.plugins], indent = 2))
         else:
             logger.warning(f"Failed to discover any plugins in '{self.namespace.__name__}'")
 
@@ -90,14 +90,7 @@ class NetworkManager:
 
     ## Plugin methods
 
-    @property
-    def plugins(self) -> set[ModuleType]:
-        """
-        A set of all plugins in the pluginmap
-        """
-        return self.pluginmap['any']
-
-    def add(self, plugin: ModuleType) -> None:
+    def add(self, plugin: Plugin) -> None:
         """
         Adds a plugin to the pluginmap
 
@@ -106,11 +99,8 @@ class NetworkManager:
         """
         self.plugins.add(plugin)
 
-        for node_type in getattr(plugin, '__nodes__', []):
+        for node_type in plugin.node_types:
             self.nodemap[node_type] = plugin
-
-        for stage in getattr(plugin, '__stages__', []):
-            self.pluginmap[stage].add(plugin)
 
     def loadPlugins(self) -> None:
         """
@@ -123,7 +113,8 @@ class NetworkManager:
         for plugin in pkgutil.iter_modules(getattr(self.namespace, '__path__', ())):
             if plugin.name in self.enabled:
                 try:
-                    self.add(importlib.import_module(self.namespace.__name__ +'.'+ plugin.name))
+                    self.add(
+                        Plugin(importlib.import_module(self.namespace.__name__ +'.'+ plugin.name)))
                 except Exception:
                     raise ImportError(f'Failed to import {plugin}: \n{format_exc()}')
 
@@ -132,15 +123,13 @@ class NetworkManager:
         Initialises all plugins in the pluginmap.
         """
         for plugin in self.plugins:
-            init = getattr(plugin, 'init', None)
-            if callable(init):
-                try:
-                    init()
-                except Exception:
-                    logger.error(
-                        f'{plugin.__name__} threw an exception during initialisation: \n{format_exc()}')
+            try:
+                plugin.init()
+            except Exception:
+                logger.error(
+                    f'{plugin.name} threw an exception during initialisation: \n{format_exc()}')
 
-    def runPlugin(self, plugin: ModuleType, stage: str) -> None:
+    def runPlugin(self, plugin: Plugin, stage: str) -> None:
         """
         Runs the registered method of *plugin* for *stage*.
 
@@ -149,12 +138,11 @@ class NetworkManager:
         :param stage: The current stage.
         :type stage: str, optional
         """
-        stages = getattr(plugin, '__stages__', {stage: lambda _: ...})
         try:
-            logger.debug(f'Running plugin {plugin.__name__} stage {stage}')
-            stages[stage](self.network)
+            logger.debug(f'Running plugin {plugin.name} stage {stage}')
+            plugin.stages[stage](self.network)
         except Exception:
-            logger.error(f'{plugin.__name__} threw an exception during stage {stage}: \n{format_exc()}')
+            logger.error(f'{plugin.name} threw an exception during stage {stage}: \n{format_exc()}')
 
     def runStage(self, stage: str) -> None:
         """
@@ -164,8 +152,9 @@ class NetworkManager:
         :type stage: str
         """
         logger.info(f'Starting stage: {stage}')
-        for plugin in self.pluginmap[stage]:
-            self.runPlugin(plugin, stage)
+        for plugin in self.plugins:
+            if stage in plugin.stages:
+                self.runPlugin(plugin, stage)
 
     @property
     def pluginAttrs(self) -> set[str]:
@@ -218,6 +207,7 @@ class NetworkManager:
                 stream.write(cfg.to_psml())
         return cfg
 
+
 class PluginWhitelist(list):
     WILDCARD = ["*"]
     """Constant that matches every plugin."""
@@ -234,3 +224,31 @@ class PluginWhitelist(list):
         if self.is_wildcard:
             return ().__iter__()
         return super().__iter__()
+
+
+class Plugin:
+    module: ModuleType
+    """The imported plugin module object."""
+    name: str
+    """Name of this plugin."""
+    stages: dict[str, Callable[[Network], None]]
+    """A dict mapping stages to a callable accepting a Network."""
+    config: Optional[dict]
+    """A dictionary of configuration values for this plugin.
+    Will be used in the config template."""
+    dependencies: set[str]
+    """A set of plugin names this plugin depends on."""
+    node_types: list[type]
+    """A list of the Node subclasses that this plugin exports."""
+
+    def __init__(self, module: ModuleType) -> None:
+        self.module = module
+        self.name = module.__name__.split('.')[-1]
+        self.stages = getattr(module, '__stages__')
+        self.config = getattr(module, '__config__', None)
+        self.dependencies = getattr(module, '__depends__', set())
+        self.node_types = getattr(module, '__nodes__', [])
+
+    def init(self) -> None:
+        """Performs any required initialisation for the plugin."""
+        getattr(self.module, 'init', lambda: None)()
