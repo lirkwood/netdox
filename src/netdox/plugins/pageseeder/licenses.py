@@ -37,9 +37,9 @@ def runner(network: Network):
             logger.warning(
                 f'Unable to parse domain from PSML for license with uri {uri}.')
         else:
-            license_type = details['license-type']
+            license_type = details.get('license-type')
             org = None
-            if isinstance(details['organization'], psml.XRef):
+            if isinstance(details.get('organization'), psml.XRef):
                 xref = details['organization']
                 if 'uriid' in xref.attrs:
                     org = xref['uriid']
@@ -80,7 +80,7 @@ def _domain_from_xref(input: psml.XRef) -> str:
 def apply_licenses(
         dnsobj: DNSObject, 
         license_uri: int,
-        license_type: str,
+        license_type: str = None,
         pageseeder_ver: str = None,
         org_uri: str = None, 
         cache: set[str] = None
@@ -135,7 +135,7 @@ def apply_licenses(
 def add_footer(
         nwobj: NetworkObject, 
         license_uri: int, 
-        license_type: str, 
+        license_type: str = None, 
         pageseeder_ver: str = None
     ) -> None:
     """
@@ -149,9 +149,10 @@ def add_footer(
     :param license_type: Type of the associated license.
     :type license_type: str
     """
+    type = license_type or 'Not available.'
     version = pageseeder_ver or 'Not available.'
     nwobj.psmlFooter.append(psml.PropertiesFragment('ps-license', [
         psml.Property('license', psml.XRef(str(license_uri)), 'PageSeeder License'),
         psml.Property('version', version, 'PageSeeder Version'),
-        psml.Property('license-type', license_type, 'License Type')
+        psml.Property('license-type', type, 'License Type')
     ]))
