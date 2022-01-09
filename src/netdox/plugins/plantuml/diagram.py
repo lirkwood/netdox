@@ -82,7 +82,7 @@ class NodeDiagramFactory:
         ]
 
         if isinstance(node, ProxiedNode):
-            # draw proxy node and link it to _node, then draw proxy node instead
+            # draw proxy and link it to node, then resolve node addrs to proxy
             if node.proxy.node:
                 proxy_name = self._class_name(node.proxy.node)
 
@@ -124,35 +124,33 @@ class NodeDiagramFactory:
         """
         assert self._node is not None, 'Cannot draw DNS records to nonexistent node.'
         cache = cache or set()
-        if dnsobj.name not in cache:
-            cache.add(dnsobj.name)
+        if dnsobj.name in cache:
+            return cache
+        cache.add(dnsobj.name)
 
-            class_name = self._class_name(dnsobj)
-            self.markup.extend([
-                self._class_definition(class_name),
-                    f'link: [[https://{dnsobj.name}/]]',
-                    f'zone: {dnsobj.zone}',
-                '}'
-            ])
+        class_name = self._class_name(dnsobj)
+        self.markup.extend([
+            self._class_definition(class_name),
+                f'link: [[https://{dnsobj.name}/]]',
+                f'zone: {dnsobj.zone}',
+            '}'
+        ])
 
-            for record in dnsobj.records:
-                cache |= self._draw_dns(record.destination, cache)
-                dest_name = self._class_name(record.destination)
-                self._link(class_name, dest_name, record.source)
-            
-            for backref in dnsobj.backrefs.destinations:
-                cache |= self._draw_dns(backref, cache)
+        for record in dnsobj.records:
+            cache |= self._draw_dns(record.destination, cache)
+            dest_name = self._class_name(record.destination)
+            self._link(class_name, dest_name, record.source)
 
-            if isinstance(dnsobj, IPv4Address):
-                for entry in dnsobj.NAT:
-                    cache |= self._draw_dns(entry.destination, cache)
-                    dest_name = self._class_name(entry.destination)
-                    self._link(class_name, dest_name, entry.source)
+        if isinstance(dnsobj, IPv4Address):
+            for entry in dnsobj.NAT:
+                cache |= self._draw_dns(entry.destination, cache)
+                dest_name = self._class_name(entry.destination)
+                self._link(class_name, dest_name, entry.source)
 
-                if dnsobj.node is not None:
-                    node_class_name = self._class_name(dnsobj.node)
-                    if self._class_definition(node_class_name) in self.markup:
-                        self._link(class_name, node_class_name)
+            if dnsobj.node is not None:
+                node_class_name = self._class_name(dnsobj.node)
+                if self._class_definition(node_class_name) in self.markup:
+                    self._link(class_name, node_class_name)
 
         return cache
 
