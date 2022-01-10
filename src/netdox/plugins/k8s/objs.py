@@ -1,9 +1,31 @@
-from typing import Iterable
+from __future__ import annotations
+from typing import Iterable, Optional
 
 from bs4 import Tag
 from netdox import psml, utils
 from netdox import Network
 from netdox.nodes import ProxiedNode
+from dataclasses import dataclass
+
+@dataclass
+class Pod:
+    name: str
+    """Name of this pod."""
+    workerName: str
+    """Name of this pod's host worker."""
+    workerIp: str
+    """CIDR IPv4 address of this pod's host worker.'"""
+    rancher: Optional[str]
+    """Link to this pod on rancher."""
+
+    @classmethod
+    def from_k8s_V1Pod(cls, pod) -> Pod:
+        return cls(
+            pod.metadata.name,
+            pod.spec.node_name,
+            pod.status.host_ip,
+            None
+        )
 
 
 class App(ProxiedNode):
@@ -19,8 +41,8 @@ class App(ProxiedNode):
     """Labels applied to the pods"""
     template: dict
     """Template pods are started from"""
-    pods: dict[str, dict]
-    """A dict of the pods running this app"""
+    pods: list[Pod]
+    """A list of pods running this app"""
     type: str = 'k8sapp'
 
     ## dunder methods
@@ -31,7 +53,7 @@ class App(ProxiedNode):
             cluster: str, 
             paths: Iterable[str] = None,
             labels: dict = None, 
-            pods: dict = None, 
+            pods: list[Pod] = None, 
             template: dict = None
         ) -> None:
 
@@ -54,8 +76,8 @@ class App(ProxiedNode):
         self.paths = set(paths) if paths else set()
         self.cluster = cluster
         self.pod_labels = labels or {}
+        self.pods = pods or []
         self.template = template or {}
-        self.pods = pods or {}
 
     ## abstract properties
     
@@ -99,22 +121,20 @@ class App(ProxiedNode):
     def psmlRunningPods(self) -> Tag:
         section = Tag(is_xml=True, name='section', attrs={'id':'pods', 'title':'Running Pods'})
         count = 0
-        for pod in self.pods.values():
-            worker_node = self.network.ips[pod["workerIp"]].node
+        for pod in self.pods:
+            workerIp = self.network.find_dns(pod.workerIp)
             section.append(psml.PropertiesFragment(id = 'pod_' + str(count), properties = [
-                psml.Property(name = 'pod', title = 'Pod', value = pod['name']),
+                psml.Property(name = 'pod', title = 'Pod', value = pod.name),
 
                 psml.Property(name = 'ipv4', title = 'Worker IP', 
-                    value = psml.XRef(docid = f'_nd_ipv4_{pod["workerIp"].replace(".","_")}')),
+                    value = psml.XRef(docid = workerIp.docid)),
 
                 psml.Property(name = 'rancher', title="Pod on Rancher", 
-                    value = psml.Link(pod['rancher'])),
+                    value = psml.Link(pod.rancher) if pod.rancher else '—'),
 
                 psml.Property(name = 'worker_node', title = 'Worker Node', 
-                    value = (
-                        psml.XRef(docid = worker_node.docid)
-                        if worker_node else '—'
-                    ))
+                    value = (psml.XRef(docid = workerIp.node.docid)
+                        if workerIp.node else '—'))
             ]))
             count += 1
         return section
