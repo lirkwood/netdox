@@ -35,7 +35,7 @@ def initContext(context: str = None) -> ApiClient:
 
 ## Plugin stuff
 
-from netdox.plugins.k8s.app import App
+from netdox.plugins.k8s.objs import App
 from netdox.plugins.k8s.pub import genpub
 from netdox.plugins.k8s.refresh import runner
 

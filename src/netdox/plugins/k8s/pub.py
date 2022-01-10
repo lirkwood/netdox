@@ -4,7 +4,7 @@ from typing import DefaultDict, cast
 from bs4 import BeautifulSoup
 from netdox import Network
 from netdox.utils import APPDIR
-from netdox.plugins.k8s.app import App
+from netdox.plugins.k8s.objs import App
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,13 +12,11 @@ logger = logging.getLogger(__name__)
 def genpub(network: Network) -> None:
     workerApps: DefaultDict[str, DefaultDict[str, list]] = defaultdict(lambda: defaultdict(list))
     for node in network.nodes:
-        if node.type == App.type:
-            appnode = cast(App, node)
-            for pod in appnode.pods.values():
-                workerNode = network.ips[pod['workerIp']].node
-                if workerNode:
-                    pod['workerNode'] = workerNode.docid
-                    workerApps[appnode.cluster][pod['workerNode']].append(appnode.docid)
+        if isinstance(node, App):
+            for pod in node.pods:
+                workerNode = network.find_dns(pod.workerIp).node
+                if workerNode is not None:
+                    workerApps[node.cluster][workerNode.docid].append(node.docid)
 
     sortedWorkerApps: dict[str, dict[str, list[str]]] = {}
     for cluster in workerApps:

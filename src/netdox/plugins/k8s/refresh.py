@@ -19,7 +19,7 @@ from netdox import utils
 from netdox import Network
 from netdox.nodes import PlaceholderNode
 from netdox.plugins.k8s import initContext
-from netdox.plugins.k8s.app import App
+from netdox.plugins.k8s.objs import App, Pod
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def getDeploymentDetails(apiClient: client.ApiClient, namespace: str='default') 
     return depDetails
 
 
-def getPodsByLabel(apiClient: client.ApiClient, namespace: str='default') -> dict[int, list[dict[str, str]]]:
+def getPodsByLabel(apiClient: client.ApiClient, namespace: str='default') -> dict[int, list[Pod]]:
     """
     Maps the digest of a pod's labels to the name of the pod and its host node.
 
@@ -79,21 +79,17 @@ def getPodsByLabel(apiClient: client.ApiClient, namespace: str='default') -> dic
     :return: A dictionary mapping the sha1 digest of the pod's labels, to a list of dictionaries describing pods with those labels.
     :rtype: dict[str, list[dict[str, str]]]
     """
-    podsByLabel: dict[int, list[dict[str, str]]] = {}
+    podsByLabel: dict[int, list[Pod]] = {}
     api = client.CoreV1Api(apiClient)
     allPods = api.list_namespaced_pod(namespace)
     for pod in allPods.items:
         if 'pod-template-hash' in pod.metadata.labels:
-            podinfo = {
-                'name': pod.metadata.name,
-                'workerName': pod.spec.node_name,
-                'workerIp': pod.status.host_ip
-            }
+            _pod = Pod.from_k8s_V1Pod(pod)
             del pod.metadata.labels['pod-template-hash']
             labelHash = hash(json.dumps(pod.metadata.labels, sort_keys=True))
             if labelHash not in podsByLabel:
                 podsByLabel[labelHash] = []
-            podsByLabel[labelHash].append(podinfo)
+            podsByLabel[labelHash].append(_pod)
 
     return podsByLabel
 
@@ -165,8 +161,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
             if labelHash in podsByLabel:
                 pods = podsByLabel[labelHash]
                 for pod in pods:
-                    podName = pod['name']
-                    podPaths[podName] |= paths
+                    podPaths[pod.name] |= paths
         else:
             logger.warning(f'Domain paths {", ".join(paths)} are being routed to non-existent service {service}'
             +f' (cluster: {context}, namespace: {namespace})')
@@ -178,7 +173,7 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
         labels = details['labels']
         apps[deployment] = {
             'name': deployment,
-            'pods':{},
+            'pods': [],
             'paths': set(),
             'cluster': context,
             'labels': labels,
@@ -189,12 +184,11 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
         labelHash = hash(json.dumps(labels, sort_keys=True))
         if labelHash in podsByLabel:
             for pod in podsByLabel[labelHash]:
-                podName = pod['name']
-                pod['rancher'] = podLinkBase + podName
-                app['pods'][podName] = pod
+                pod.rancher = podLinkBase + pod.name
+                app['pods'].append(pod)
                 
-                if podName in podPaths:
-                    app['paths'] |= podPaths[podName]
+                if pod.name in podPaths:
+                    app['paths'] |= podPaths[pod.name]
     
     return apps
     
@@ -217,8 +211,8 @@ def runner(network: Network) -> None:
             node = App(network, **app)
             node.location = location
 
-            for pod in node.pods.values():
-                workers[pod['workerIp']] = pod['workerName']
+            for pod in node.pods:
+                workers[pod.workerIp] = pod.workerName
     
     for ip, name in workers.items():
         PlaceholderNode(network = network, name = name, ips = [ip])
