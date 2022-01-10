@@ -14,16 +14,15 @@ from collections import defaultdict
 from typing import DefaultDict
 
 from kubernetes import client
-
-from netdox import utils
-from netdox import Network
+from netdox import Network, utils
 from netdox.nodes import PlaceholderNode
 from netdox.plugins.k8s import initContext
-from netdox.plugins.k8s.objs import App, Pod
+from netdox.plugins.k8s.objs import (App, Container, Deployment, MountedVolume,
+                                     Pod)
 
 logger = logging.getLogger(__name__)
 
-def getDeploymentDetails(apiClient: client.ApiClient, namespace: str='default') -> dict[str, dict]:
+def getDeployments(apiClient: client.ApiClient, namespace: str='default') -> list[Deployment]:
     """
     Maps deployments in a given namespace to their labels and pod template.
 
@@ -34,38 +33,42 @@ def getDeploymentDetails(apiClient: client.ApiClient, namespace: str='default') 
     :return: A dictionary mapping deployment name to a dictionary of details about it.
     :rtype: dict[str, dict]
     """
-    depDetails = {}
+    deployments = []
     api = client.AppsV1Api(apiClient)
     allDeps = api.list_namespaced_deployment(namespace)
     for deployment in allDeps.items:
+        #TODO investigate if still necessary
         if deployment.spec.template.spec.volumes:
             pvcs = {volume.name: volume.persistent_volume_claim.claim_name for volume in deployment.spec.template.spec.volumes
                     if volume.persistent_volume_claim is not None}
         else:
             pvcs = {}
 
-        containers = {}
+        containers = []
         for container in deployment.spec.template.spec.containers:
-            volumes = {}
+            volumes = []
             if container.volume_mounts:
                 for volume in container.volume_mounts:
                     if volume.name in pvcs:
-                        volumes[pvcs[volume.name]] = {
-                            'sub_path': volume.sub_path,
-                            'mount_path': volume.mount_path
-                        }
+                        volumes.append(MountedVolume(
+                            pvc = volume.name,
+                            sub_path = volume.sub_path,
+                            mount_path = volume.mount_path
+                        ))
 
-            containers[container.name] = {
-                'image': container.image,
-                'volumes': volumes
-            }
+            containers.append(Container(
+                name = container.name,
+                image = container.image,
+                volumes = volumes
+            ))
 
-        depDetails[deployment.metadata.name] = {
-            'labels': deployment.spec.selector.match_labels,
-            'template': containers
-        }
+        deployments.append(Deployment(
+            name = deployment.metadata.name,
+            labels = deployment.spec.selector.match_labels,
+            containers = containers
+        ))
 
-    return depDetails
+    return deployments
 
 
 def getPodsByLabel(apiClient: client.ApiClient, namespace: str='default') -> dict[int, list[Pod]]:
@@ -134,9 +137,9 @@ def getServicePaths(apiClient: client.ApiClient, namespace: str='default') -> di
     return servicePaths
 
 
-def getApps(context: str, namespace: str='default') -> dict[str, dict]:
+def getApps(network: Network, context: str, namespace: str='default') -> list[App]:
     """
-    Returns a dictionary of apps running from deployments in the specified context/namespace.
+    Returns a list of apps running from deployments in the specified context/namespace.
 
     :param context: The kubernetes API context to use.
     :type context: str
@@ -145,51 +148,55 @@ def getApps(context: str, namespace: str='default') -> dict[str, dict]:
     :return: A dictionary mapping deployment names to some information about the pods that deployment manages.
     :rtype: dict[str]
     """
+    #TODO simplify this functions
+    cfg = utils.config('k8s')[context]
+    location = cfg['location'] if 'location' in cfg else None
+    rancherBase = f'https://{cfg["host"]}/p/{cfg["clusterId"]}:{cfg["projectId"]}/workloads/{namespace}:'
+
     apiClient = initContext(context)
     podsByLabel = getPodsByLabel(apiClient, namespace)
     serviceMatchLabels = getServiceMatchLabels(apiClient, namespace)
-    serviceDomains = getServicePaths(apiClient, namespace)
+    servicePaths = getServicePaths(apiClient, namespace)
 
-    contextDetails = utils.config('k8s')[context]
-    podLinkBase = f'https://{contextDetails["host"]}/p/{contextDetails["clusterId"]}:{contextDetails["projectId"]}/workloads/{namespace}:'
-
-    # map domains to their destination pods
+    # map pod names to their ingress paths
     podPaths: DefaultDict[str, set] = defaultdict(set)
-    for service, paths in serviceDomains.items():
+    for service, paths in servicePaths.items():
         if service in serviceMatchLabels:
-            labelHash = hash(json.dumps(serviceMatchLabels[service], sort_keys=True))
-            if labelHash in podsByLabel:
-                pods = podsByLabel[labelHash]
-                for pod in pods:
+            serviceLabels = hash(json.dumps(serviceMatchLabels[service], sort_keys=True))
+            if serviceLabels in podsByLabel:
+                for pod in podsByLabel[serviceLabels]:
                     podPaths[pod.name] |= paths
         else:
             logger.warning(f'Domain paths {", ".join(paths)} are being routed to non-existent service {service}'
-            +f' (cluster: {context}, namespace: {namespace})')
+                +f' (cluster: {context}, namespace: {namespace})')
     
-    apps = {}
+    apps = []
     # construct app by mapping deployment to pods
-    deploymentDetails = getDeploymentDetails(apiClient, namespace)
-    for deployment, details in deploymentDetails.items():
-        labels = details['labels']
-        apps[deployment] = {
-            'name': deployment,
-            'pods': [],
-            'paths': set(),
-            'cluster': context,
-            'labels': labels,
-            'template': details['template']
-        }
-        app = apps[deployment]
-
-        labelHash = hash(json.dumps(labels, sort_keys=True))
+    deploymentDetails = getDeployments(apiClient, namespace)
+    for deployment in deploymentDetails:
+        pods = []
+        paths = set()
+        labelHash = hash(json.dumps(deployment.labels, sort_keys=True))
         if labelHash in podsByLabel:
             for pod in podsByLabel[labelHash]:
-                pod.rancher = podLinkBase + pod.name
-                app['pods'].append(pod)
+                pod.rancher = rancherBase + pod.name
+                pods.append(pod)
                 
                 if pod.name in podPaths:
-                    app['paths'] |= podPaths[pod.name]
-    
+                    paths |= podPaths[pod.name]
+
+        app = App(
+            network = network,
+            name = deployment.name,
+            pods = [],
+            paths = paths,
+            cluster = context,
+            labels = deployment.labels,
+            template = deployment.containers
+        )
+        
+        if not app.location: app.location = location
+        apps.append(app)
     return apps
     
 
@@ -200,18 +207,10 @@ def runner(network: Network) -> None:
     :param network: The network.
     :type network: Network
     """
-    auth = utils.config('k8s')
-
     workers = {}
-    for context in auth:
-        apps = getApps(context)
-        location = auth[context]['location'] if 'location' in auth[context] else None
-        
-        for app in apps.values():
-            node = App(network, **app)
-            node.location = location
-
-            for pod in node.pods:
+    for context in utils.config('k8s'):
+        for app in getApps(network, context):
+            for pod in app.pods:
                 workers[pod.workerIp] = pod.workerName
     
     for ip, name in workers.items():

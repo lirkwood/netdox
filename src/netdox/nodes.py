@@ -203,12 +203,9 @@ class Node(base.NetworkObject):
             cache |= self._walkBackrefs(
                 self.network.find_dns(ip), cache)
 
-    def _walkBackrefs(self, 
-            dnsobj: dns.DNSObject, 
-            cache: set[str] = None
-        ) -> set[str]:
+    def _walkBackrefs(self, dnsobj: dns.DNSObject, cache: set[str] = None) -> set[str]:
         """
-        Walks through the backrefs of *dnobj*, 
+        Walks through the backrefs of *dnsobj*, 
         setting the node attribute to this object and storing the addresses.
 
         :param dnsobj: The DNSObject to start with.
@@ -278,22 +275,7 @@ class ProxiedNode(Node):
             self.proxy = NodeProxy(self, proxy_node, 
                 {addr for addrset in (domains, ips) for addr in addrset})
 
-    def _walkBackrefs(self, 
-            dnsobj: dns.DNSObject, 
-            cache: set[str] = None
-        ) -> set[str]:
-        """
-        Walks through the backrefs of *dnobj*, 
-        storing the addresses.
-        Does **not** modify the node attribute of any DNSObjects.
-
-        :param dnsobj: The DNSObject to start with.
-        :type dnsobj: Union[str, dns.DNSObject]
-        :param cache: [description], defaults to None
-        :type cache: set[str], optional
-        :return: [description]
-        :rtype: set[str]
-        """ 
+    def _walkBackrefs(self, dnsobj: dns.DNSObject, cache: set[str] = None) -> set[str]:
         if not cache:
             cache = set()
         elif dnsobj.name in cache:
@@ -308,6 +290,9 @@ class ProxiedNode(Node):
                 dnsobj.node = self.proxy # type: ignore
 
             elif not self.proxy.node:
+                logger.debug(
+                    f'Proxy from {dnsobj.name} to {self.name}'
+                    + f' set to {dnsobj.node.name}')
                 self.proxy.node = dnsobj.node
                 dnsobj.node = self.proxy # type: ignore
 
