@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-pushd
-cd dirname "$0/.."
+pushd .
+cd $(dirname "$0")"/.."
 pip uninstall -y netdox
 rm -f dist/*.whl
 python3 setup.py bdist_wheel
