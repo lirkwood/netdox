@@ -21,7 +21,3 @@ class TestNetworkManager:
         yield import_module(namespace)
 
         rmtree(namespace)
-
-    def test_load_plugin_fail(self, mock_plugin_namespace: ModuleType):
-        with pytest.raises(ImportError):
-            nwman = NetworkManager(namespace = mock_plugin_namespace)
