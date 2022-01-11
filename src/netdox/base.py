@@ -92,6 +92,9 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.labels.update(self.DEFAULT_LABELS)
         if labels: self.labels |= set(labels)
 
+    def __str__(self) -> str:
+        return f'<{self.__class__.__name__} {self.identity}>'
+
     ## properties
 
     @property
