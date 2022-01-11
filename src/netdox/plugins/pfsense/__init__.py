@@ -36,7 +36,7 @@ async def pfsenseScrapeNat() -> dict:
             columns = await row.JJeval('td', 'columns => columns.map(column => column.textContent.trim())')
             nat[columns[3]] = columns[4]
     else:
-        logging.debug('Failed to navigate to pfSense NAT page')
+        logger.error('Failed to navigate to pfSense NAT page')
     
     await page.close()
     await browser.close()
