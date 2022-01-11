@@ -93,7 +93,11 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         if labels: self.labels |= set(labels)
 
     def __str__(self) -> str:
-        return f'<{self.__class__.__name__} {self.identity}>'
+        cls = self.__class__
+        return f'<{cls.__module__}.{cls.__name__} {self.identity}>'
+
+    def __repr__(self) -> str:
+        return str(self)
 
     ## properties
 
