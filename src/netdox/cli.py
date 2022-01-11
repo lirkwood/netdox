@@ -11,7 +11,6 @@ from datetime import date
 from distutils.util import strtobool
 import json
 from collections import defaultdict
-from typing import Union
 
 from cryptography.fernet import Fernet
 
