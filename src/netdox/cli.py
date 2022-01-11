@@ -30,6 +30,7 @@ streamHandler.setLevel(logging.INFO)
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
+logging.getLogger('charset_normalizer').setLevel(logging.WARNING)
 
 def _confirm(message: str, default = False) -> bool:
     """
