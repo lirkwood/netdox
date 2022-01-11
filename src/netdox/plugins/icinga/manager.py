@@ -18,7 +18,7 @@ class MonitorManager:
     """The network to validate the monitors against."""
     icingas: list[str]
     """List of the FQDN's of the available Icinga instances."""
-    locationIcingas: dict[str, str]
+    locationIcingas: dict[str, Optional[str]]
     """Maps every location in the network to an Icinga instance FQDN, or ``None``."""
     manual: dict
     """Dictionary of the manual monitors."""
@@ -32,10 +32,9 @@ class MonitorManager:
         icinga_details = dict(utils.config('icinga'))
 
         self.icingas = list(icinga_details)
-        self.locationIcingas = dict.fromkeys(self.network.locator)
+        self.locationIcingas = dict.fromkeys(self.network.locator, None)
         for icinga, details in icinga_details.items():
-            icingaLocations = details['locations']
-            for location in icingaLocations:
+            for location in details['locations']:
                 self.locationIcingas[location] = icinga
 
         self.manual, self.generated = {}, {}
@@ -68,11 +67,12 @@ class MonitorManager:
         for domain, monitors in self.overflow.items():
             monitors.append(self.generated[domain])
             location = self.locateDomain(domain)
-            if location and self.locationIcingas[location]:
-                icinga = self.locationIcingas[location]
-            else:
+            icinga = self.locationIcingas.get(location) if location else None
+
+            if icinga is None:
                 icinga = self.generated[domain]['icinga']
-                logger.warning(f'Unable to meaningfully decide which instance should monitor {domain}; Chose {icinga}')
+                logger.warning('Unable to meaningfully decide which instance'
+                    +f' should monitor {domain}; Chose {icinga}')
 
             for monitor in monitors:
                 if monitor['icinga'] != icinga:

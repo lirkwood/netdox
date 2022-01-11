@@ -37,7 +37,7 @@ class Section:
         :param title: Optional title to display at top of section, defaults to None
         :type title: str, optional
         """
-        attrs = attrs or {}
+        attrs = dict(attrs) if attrs else {}
         if title: attrs['title'] = title
         self._tag = Tag(
             name = 'section',
