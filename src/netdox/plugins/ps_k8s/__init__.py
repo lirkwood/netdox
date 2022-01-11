@@ -35,7 +35,7 @@ def footers(network: Network) -> None:
                         pass
 
                 if ps_docids:
-                    logger.debug(node.name)
+                    logger.debug(f'Found a PageSeeder instance behind {node.name}.')
                     node.psmlFooter.append(psml.PropertiesFragment(f'psk8s', [
                         psml.Property(
                             'pageseeder', 
