@@ -71,7 +71,7 @@ def _gen_config():
     # deactivate logging while initialising a networkmanager
     nwman_logger = logging.getLogger('netdox.nwman')
     nwman_level = nwman_logger.level
-    nwman_logger.setLevel(logging.CRITICAL)
+    nwman_logger.setLevel(logging.ERROR)
 
     # generate config template from plugins
     for plugin in NetworkManager(
