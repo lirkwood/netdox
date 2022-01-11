@@ -6,7 +6,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Union
+from typing import Any, Iterable, Mapping, Union
 
 from bs4.element import Tag
 
@@ -14,7 +14,73 @@ from bs4.element import Tag
 # Classes #
 ###########
 
-class PropertiesFragment(Tag):
+class Section:
+    """
+    PSML Section element.
+    """
+    _tag: Tag
+    """The internal tag object for this section."""
+    _frags: dict[str, int]
+    """IDs of the fragments in this section, mapped to their index."""
+
+    def __init__(self, 
+            id: str, 
+            title: str = None, 
+            fragments: Iterable[Fragment] = None,
+            attrs: Mapping[str, Any] = None
+        ) -> None:
+        """
+        Default constructor.
+
+        :param id: ID unique within the document
+        :type id: str
+        :param title: Optional title to display at top of section, defaults to None
+        :type title: str, optional
+        """
+        attrs = attrs or {}
+        if title: attrs['title'] = title
+        self._tag = Tag(
+            name = 'section',
+            is_xml = True,
+            can_be_empty_element = True,
+            attrs = {'id': id} | attrs
+        )
+
+        self._frags = {}
+        for fragment in (fragments or ()):
+            self.insert(fragment)
+
+    def __str__(self) -> str:
+        return str(self._tag)
+
+    def insert(self, fragment: Fragment, index: int = None) -> None:
+        """
+        Inserts a new fragment at the specified index.
+        If a fragment with an equal ID is already present, 
+        the new fragment will replace it.
+
+        :param fragment: Fragment to insert into the section.
+        :type fragment: Fragment
+        :param index: Index to insert fragment at.
+        Defaults to index of fragment with the same ID, or last.
+        :type index: int, optional
+        """
+        if fragment.id in self._frags:
+            index = index or self._frags.get(fragment.id)
+            self._tag.find(attrs = {'id': fragment.id}, recursive = False).decompose()
+
+        index = index or len(self._frags)
+        self._frags[fragment.id] = index
+        self._tag.insert(index, fragment)
+
+
+class Fragment(Tag):
+    
+    @property
+    def id(self) -> str:
+        return self.attrs['id']
+
+class PropertiesFragment(Fragment):
     """
     PSML PropertiesFragment element.
     """
