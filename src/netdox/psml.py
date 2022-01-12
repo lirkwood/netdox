@@ -18,8 +18,8 @@ class Section:
     """
     PSML Section element.
     """
-    _tag: Tag
-    """The internal tag object for this section."""
+    tag: Tag
+    """This Section as a BeautifulSoup Tag."""
     _frags: dict[str, int]
     """IDs of the fragments in this section, mapped to their index."""
 
@@ -39,7 +39,7 @@ class Section:
         """
         attrs = dict(attrs) if attrs else {}
         if title: attrs['title'] = title
-        self._tag = Tag(
+        self.tag = Tag(
             name = 'section',
             is_xml = True,
             can_be_empty_element = True,
@@ -51,13 +51,13 @@ class Section:
             self.insert(fragment)
 
     def __str__(self) -> str:
-        return str(self._tag)
+        return str(self.tag)
 
     def __eq__(self, other) -> bool:
         return str(self) == str(other)
 
     def __iter__(self) -> Iterator[Fragment]:
-        yield from self._tag.find_all(True, recursive = False)
+        yield from self.tag.find_all(True, recursive = False)
 
     def insert(self, fragment: Fragment, index: int = None) -> None:
         """
@@ -73,11 +73,11 @@ class Section:
         """
         if fragment.id in self._frags:
             index = index or self._frags.get(fragment.id)
-            self._tag.find(attrs = {'id': fragment.id}, recursive = False).decompose()
+            self.tag.find(attrs = {'id': fragment.id}, recursive = False).decompose()
 
         index = index or len(self._frags)
         self._frags[fragment.id] = index
-        self._tag.insert(index, fragment)
+        self.tag.insert(index, fragment)
 
     def extend(self, fragments: Iterable[Fragment]):
         """
@@ -88,7 +88,7 @@ class Section:
         """
         for frag in fragments: self.insert(frag)
 
-class Fragment(Tag):
+class Fragment(Tag): #TODO convert this to a proxy to Tag not subclass
 
     def __init__(self, id: str, attrs: Mapping[str, Any] = None) -> None:
         """
