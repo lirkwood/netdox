@@ -53,6 +53,9 @@ class Section:
     def __str__(self) -> str:
         return str(self._tag)
 
+    def __eq__(self, other) -> bool:
+        return str(self) == str(other)
+
     def __iter__(self) -> Iterator[Fragment]:
         yield from self._tag.find_all(True, recursive = False)
 
@@ -76,8 +79,33 @@ class Section:
         self._frags[fragment.id] = index
         self._tag.insert(index, fragment)
 
+    def extend(self, fragments: Iterable[Fragment]):
+        """
+        Inserts each fragment in *fragments* into this section.
+
+        :param fragments: Some fragments to add to this section.
+        :type fragments: Iterable[Fragment]
+        """
+        for frag in fragments: self.insert(frag)
 
 class Fragment(Tag):
+
+    def __init__(self, id: str, attrs: Mapping[str, Any] = None) -> None:
+        """
+        Default constructor.
+
+        :param id: ID unique within the document.
+        :type id: str
+        :param attrs: A map of attributes, defaults to None
+        :type attrs: Mapping[str, Any], optional
+        """
+        attrs = dict(attrs) if attrs else {}
+        super().__init__(
+            name = 'fragment',
+            is_xml = True,
+            can_be_empty_element = True,
+            attrs = {'id': id} | attrs
+        )
     
     @property
     def id(self) -> str:
@@ -91,25 +119,20 @@ class PropertiesFragment(Fragment):
     def __init__(self, 
             id: str, 
             properties: Iterable[Property] = [],
-            attrs: Mapping[str, Any] = {},
+            attrs: Mapping[str, Any] = None,
         ) -> None:
         """
         Default constructor.
 
-        :param id: ID unique within the document
+        :param id: ID unique within the document.
         :type id: str
         :param properties: Some properties to immediately append to this element, defaults to []
         :type properties: Iterable[Property], optional
-        :param attrs: A map of attributes, defaults to {}
+        :param attrs: A map of attributes, defaults to None
         :type attrs: Mapping[str, Any], optional
         """
-
-        super().__init__(
-            name = 'properties-fragment', 
-            is_xml = True, 
-            can_be_empty_element = True, 
-            attrs = {'id': id} | attrs
-        )
+        super().__init__(id, attrs)
+        self.name = 'properties-fragment'
 
         for property in properties:
             self.append(property)
