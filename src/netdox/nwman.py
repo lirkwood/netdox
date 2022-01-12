@@ -12,9 +12,7 @@ from traceback import format_exc
 from types import ModuleType
 from typing import Callable, Iterator, Optional
 
-from netdox import utils
-from netdox.config import NetworkConfig, update_template
-from netdox.containers import Network
+from netdox import utils, config, containers
 from netdox.helpers import LabelDict
 from netdox.nodes import Node
 
@@ -24,7 +22,7 @@ class NetworkManager:
     """
     Discovers plugins and uses them to populate a Network object.
     """
-    network: Network
+    network: containers.Network
     """The network object this class should manage."""
     namespace: ModuleType
     """The namespace package to load plugins from."""
@@ -47,7 +45,11 @@ class NetworkManager:
     ]
     """A list of the plugin stages."""
 
-    def __init__(self, namespace: ModuleType = None, whitelist: list[str] = None, network: Network = None) -> None:
+    def __init__(self, 
+            namespace: ModuleType = None, 
+            whitelist: list[str] = None, 
+            network: containers.Network = None
+        ) -> None:
         """
         Constructor.
 
@@ -83,7 +85,7 @@ class NetworkManager:
             logger.warning(f"Failed to discover any plugins in '{self.namespace.__name__}'")
 
         # Network
-        self.network = network or Network(
+        self.network = network or containers.Network(
             config = self.validConfig(), 
             labels = LabelDict.from_pageseeder()
         )
@@ -188,7 +190,7 @@ class NetworkManager:
             logger.warning('Unable to load plugin configuration file.')
             return PluginWhitelist(PluginWhitelist.WILDCARD)
 
-    def validConfig(self) -> NetworkConfig:
+    def validConfig(self) -> config.NetworkConfig:
         """
         Fetches the config from PageSeeder, but performs some validation
         before returning it.
@@ -197,11 +199,11 @@ class NetworkManager:
         the template will be updated, and a valid config created.
         This config will be serialised for the upload.
         """
-        cfg = NetworkConfig.from_pageseeder()
+        cfg = config.NetworkConfig.from_pageseeder()
         # TODO find solution for config vals being dropped when the plugin is disabled
         if cfg.is_empty or (not cfg.normal_attrs) or (self.pluginAttrs - cfg.attrs):
             logger.warning('Updating config template on PageSeeder.')
-            update_template(self.pluginAttrs)
+            config.update_template(self.pluginAttrs)
             cfg.update_attrs(self.pluginAttrs)
             with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
                 stream.write(cfg.to_psml())
@@ -231,7 +233,7 @@ class Plugin:
     """The imported plugin module object."""
     name: str
     """Name of this plugin."""
-    stages: dict[str, Callable[[Network], None]]
+    stages: dict[str, Callable[[containers.Network], None]]
     """A dict mapping stages to a callable accepting a Network."""
     config: Optional[dict]
     """A dictionary of configuration values for this plugin.
