@@ -118,7 +118,8 @@ class NetworkManager:
                     self.add(
                         Plugin(importlib.import_module(self.namespace.__name__ +'.'+ plugin.name)))
                 except Exception:
-                    logger.error(f'Failed to import {plugin}: \n{format_exc()}')
+                    logger.error(
+                        f'Failed to import {plugin.name}:\n{plugin}\n{format_exc()}')
 
     def initPlugins(self) -> None:
         """
