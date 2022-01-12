@@ -54,6 +54,8 @@ class Locator:
         :return: The location, as it appears in ``locations.json``, or None if one location exactly could not be assigned.
         :rtype: str
         """
+        if isinstance(ip_set, str) and iptools.valid_ip(ip_set):
+            ip_set = [ip_set]
         # sort every declared subnet that matches one of ips by mask size
         matches: dict[int, list[str]] = {}
         for subnet in ip_set:
