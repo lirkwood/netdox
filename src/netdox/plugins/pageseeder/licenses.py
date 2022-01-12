@@ -158,7 +158,7 @@ def add_footer(
     """
     type = license_type or 'Not available.'
     version = pageseeder_ver or 'Not available.'
-    nwobj.psmlFooter.append(psml.PropertiesFragment('ps-license', [
+    nwobj.psmlFooter.insert(psml.PropertiesFragment('ps-license', [
         psml.Property('license', psml.XRef(str(license_uri)), 'PageSeeder License'),
         psml.Property('version', version, 'PageSeeder Version'),
         psml.Property('license-type', type, 'License Type')

@@ -214,7 +214,7 @@ class ScreenshotManager:
         :type filename: str
         """
         filename = filename or os.path.basename(self.placeholder)
-        domain.psmlFooter.append(BeautifulSoup(f'''
+        domain.psmlFooter.insert(BeautifulSoup(f'''
             <fragment id="screenshot">
                 <para><image src="/ps/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{filename}"
             </fragment>

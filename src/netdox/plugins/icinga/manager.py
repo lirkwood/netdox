@@ -254,4 +254,4 @@ class MonitorManager:
                         'title': 'Monitor Service',
                         'value': service
                     }))
-                domain.psmlFooter.append(frag)
+                domain.psmlFooter.insert(frag)

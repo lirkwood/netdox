@@ -27,7 +27,7 @@ def runner(network) -> None:
         node = PlaceholderNode(network,
             ip, ips = [ip]
         )
-        node.psmlFooter.append(PropertiesFragment('snmp', [
+        node.psmlFooter.insert(PropertiesFragment('snmp', [
             Property('oid', f'{oid} = {val}', 'SNMP OID')
             for oid, val in varbinds.items() if val
         ]))

@@ -56,7 +56,7 @@ def addFooters(network: Network) -> None:
                     ips = [properties['IPv4Address']] if properties['IPv4Address'] else [],
                 ).identity
 
-                network.nodes[identity].psmlFooter.append(frag)
+                network.nodes[identity].psmlFooter.insert(frag)
             except AssertionError:
                 logger.warning(f'Computer \'{properties["Name"]}\' has addresses that resolve to different nodes.'\
                     + ' This can be caused by ambiguous DNS records or misconfiguration in ActiveDirectory.')

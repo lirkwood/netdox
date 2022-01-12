@@ -19,7 +19,7 @@ def analyze(domain: Domain) -> None:
     cert = x509.load_pem_x509_certificate(
         bytes(get_server_certificate((domain.name, 443)), 'utf-8'))
 
-    domain.psmlFooter.append(
+    domain.psmlFooter.insert(
         PropertiesFragment('certificate', [
             Property('valid_from', 
                 cert.not_valid_before.isoformat(), 'Valid from (UTC)'),

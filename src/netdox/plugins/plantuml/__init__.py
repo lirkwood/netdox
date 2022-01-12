@@ -13,7 +13,7 @@ def runner(network: Network) -> None:
     factory = NodeDiagramFactory(**config('plantuml'))
     for node in network.nodes:
         url = factory.draw(node)
-        node.psmlFooter.append(PropertiesFragment('diagram', properties = [
+        node.psmlFooter.insert(PropertiesFragment('diagram', properties = [
             Property('diagram', Link(url, string = factory.server), 'PlantUML Diagram')
         ]))
 

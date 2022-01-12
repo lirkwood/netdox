@@ -96,7 +96,7 @@ def domainapps(network: Network) -> None:
     
     for domain, paths in domainpaths.items():
         ## Add a pfrag of paths relevant to each domain
-        network.domains[domain].psmlFooter.append(
+        network.domains[domain].psmlFooter.insert(
             psml.PropertiesFragment(
                 id = 'k8sapps',
                 properties = [
