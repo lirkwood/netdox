@@ -9,12 +9,10 @@ import shutil
 import sys
 from datetime import date
 from distutils.util import strtobool
-import json
-from collections import defaultdict
 
 from cryptography.fernet import Fernet
 
-from netdox import pageseeder
+from netdox import pageseeder, config as _config_mod
 from netdox.refresh import main as _refresh
 from netdox.utils import APPDIR, decrypt_file, encrypt_file
 from netdox.utils import config as _config_file
@@ -64,36 +62,6 @@ def init_dirs():
     if os.path.lexists(APPDIR+ 'cfg'):
         os.remove(APPDIR+ 'cfg')
 
-def _gen_config():
-    with open(APPDIR+ 'src/defaults/config.json', 'r') as stream:
-        app_config = json.load(stream)
-    app_config['plugins'] = defaultdict(dict)
-
-    # deactivate logging while initialising a networkmanager
-    nwman_logger = logging.getLogger('netdox.nwman')
-    nwman_level = nwman_logger.level
-    nwman_logger.setLevel(logging.ERROR)
-
-    # generate config template from plugins
-    for plugin in NetworkManager(
-        whitelist = PluginWhitelist.WILDCARD, 
-        network = Network()
-    ).plugins:
-        if plugin.config is not None:
-            try:
-                json.dumps(plugin.config)
-            except Exception:
-                logger.error(
-                    f"Plugin {plugin.__name__.split('.')[-1]} "
-                    'registered an invalid JSON object under __config__.')
-            else:
-                app_config['plugins'][plugin.name] = plugin.config
-
-    nwman_logger.setLevel(nwman_level)
-    
-    with open(APPDIR+ 'cfg/config.json', 'w') as stream:
-        stream.write(json.dumps(app_config, indent = 2))
-
 def _load_config():
     if os.path.exists(APPDIR+ 'cfg/config.json'):
         print('Config file already exists in target directory.')
@@ -109,6 +77,37 @@ def _load_config():
     else:
         return False
 
+def _copy_readmes(nwman: NetworkManager) -> int:
+    """
+    Discovers README files from the plugins in *nwman* 
+    and copies them to the a folder in the config directory.
+    
+
+    :param nwman: The NetworkManager to read plugin data from.
+    :type nwman: NetworkManager
+    :return: The number of README files successfully copied.
+    :rtype: int
+    """
+    dest = os.path.join(APPDIR, 'cfg', 'README')
+    if not os.path.exists(dest):
+        os.mkdir(dest)
+
+    copied = 0
+    for plugin in nwman.plugins:
+        logger.debug('---------------')
+        logger.debug(plugin.name)
+        plugin_path = plugin.module.__file__
+        logger.debug(plugin_path)
+        if plugin_path:
+            for file in os.scandir(os.path.dirname(plugin_path)):
+                logger.debug(file.name)
+                if 'readme' in file.name.lower():
+                    shutil.copyfile(file.path, 
+                        os.path.join(dest, f'{plugin.name}_{file.name}'))
+                    copied += 1
+    return copied
+
+
 def init(args: argparse.Namespace):
     """
     Initialises a new config directory and generates a new cryptography key.
@@ -119,15 +118,25 @@ def init(args: argparse.Namespace):
     if ((not os.path.exists(APPDIR+ 'src/config.bin')) or
     _confirm('This action will destroy the existing cryptography key, and your current configuration will be lost. Continue? [y/n] ')):
 
-        init_dir = os.path.abspath(args.path)
+        # deactivate logging while initialising a networkmanager
+        nwman_logger = logging.getLogger('netdox.nwman')
+        nwman_level = nwman_logger.level
+        nwman_logger.setLevel(logging.ERROR)
+        nwman = NetworkManager(whitelist = PluginWhitelist.WILDCARD, 
+            network = Network())
+        nwman_logger.setLevel(nwman_level)
+
         init_dirs()
-        os.symlink(init_dir, APPDIR+ 'cfg', target_is_directory = True)
+        os.symlink(os.path.abspath(args.path), APPDIR+ 'cfg', 
+            target_is_directory = True) 
+        logger.debug(f'Copied {_copy_readmes(nwman)} plugin README files')
+
         config_loaded = False
         for default_file in os.scandir(APPDIR+ 'src/defaults'):
             if default_file.name == 'config.json':
                 config_loaded = _load_config()
                 if not config_loaded:
-                    _gen_config()
+                    _config_mod.gen_config_template(nwman)
             else:
                 if not os.path.exists(APPDIR+ 'cfg/'+ default_file.name):
                     shutil.copy(default_file.path, APPDIR+ 'cfg/'+ default_file.name)
