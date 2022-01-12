@@ -254,8 +254,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         Used to resolve identity conflicts in containers.
         This method should always be called on the object entering the set.
         """
-        for fragment in object.psmlFooter:
-            self.psmlFooter.insert(fragment)
+        self.psmlFooter.extend(object.psmlFooter)
         self.labels |= object.labels
         return self
 
