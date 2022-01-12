@@ -480,7 +480,7 @@ IPV4ADDRESS_TEMPLATE = '''
         <section id="header" lockstructure="true">
         
             <properties-fragment id="header">
-                <property name="ipv4"               title="IP"                  value="#!name" /> 
+                <property name="name"               title="Name"                  value="#!name" /> 
                 <property name="subnet"             title="Subnet"              value="#!subnet" />
                 <property name="org"                title="Organization"        datatype="xref" />
             </properties-fragment>
