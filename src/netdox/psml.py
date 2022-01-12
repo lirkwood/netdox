@@ -6,7 +6,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from collections import defaultdict
-from typing import Any, Iterable, Mapping, Union
+from typing import Any, Iterable, Iterator, Mapping, Union
 
 from bs4.element import Tag
 
@@ -52,6 +52,9 @@ class Section:
 
     def __str__(self) -> str:
         return str(self._tag)
+
+    def __iter__(self) -> Iterator[Fragment]:
+        yield from self._tag.find_all(True, recursive = False)
 
     def insert(self, fragment: Fragment, index: int = None) -> None:
         """
