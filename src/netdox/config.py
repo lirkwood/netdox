@@ -239,7 +239,7 @@ def gen_config_template(nwman: nwman.NetworkManager):
                 json.dumps(plugin.config)
             except Exception:
                 logger.error(
-                    f"Plugin {plugin.__name__.split('.')[-1]} "
+                    f"Plugin {plugin.module.__name__.split('.')[-1]} "
                     'registered an invalid JSON object under __config__.')
             else:
                 app_config['plugins'][plugin.name] = plugin.config
