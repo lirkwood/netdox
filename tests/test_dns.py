@@ -131,8 +131,8 @@ class TestDomain:
         assert new.backrefs.CNAME.names == set()
         assert new.backrefs.CNAME.sources == set()
 
-        assert str(new.psmlFooter) == str(
-            psml.Section('footer', fragments = self.FOOTER_FRAGMENTS))
+        assert all([frag.id in new.psmlFooter._frags 
+            for frag in self.FOOTER_FRAGMENTS])
         assert new.subnets == {'10.0.0.0/24', '10.255.255.0/24'}
         assert new.labels == set(['some_label', 'other_label']) | set(dns.Domain.DEFAULT_LABELS)
 

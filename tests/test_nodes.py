@@ -38,9 +38,6 @@ class TestNode:
         """
         Tests that the Node merge method correctly copies information from the targeted object.
         """
-        footer_frag = Fragment('id')
-        node.psmlFooter.insert(footer_frag)
-
         new = nodes.Node(
             network = node.network,
             name = 'nodename',
@@ -53,6 +50,7 @@ class TestNode:
         assert new.domains == node.domains | set(['nonexistent.domain.com'])
         assert new.ips == node.ips | set(['10.1.1.1'])
         assert new.labels == node.labels | set(['test-label'])
+        assert new.psmlFooter == node.psmlFooter
         assert str(new.psmlFooter) == str(Section('footer', fragments = [footer_frag]))
 
     def test_location(self, node: nodes.Node):
@@ -109,7 +107,7 @@ class TestPlaceholderNode:
         dns.IPv4Address(network, '10.0.0.0')
         placeholder = nodes.PlaceholderNode(network, 'name', ['test.domain.com'], ['10.0.0.0'])
 
-        placeholder.psmlFooter.insert(Fragment())
+        placeholder.psmlFooter.insert(Fragment('id'))
         network.nodes.addRef(placeholder, 'alias')
 
         node = nodes.DefaultNode(network, 'name', '10.0.0.0')

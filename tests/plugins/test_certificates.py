@@ -15,4 +15,4 @@ def test_analyze(network):
         'distinguishedname',
         'valid_from',
         'valid_to' 
-    ] == sorted(domain.psmlFooter.pop().to_dict().keys())
+    ] == sorted(domain.psmlFooter.tag.pop().to_dict().keys())
