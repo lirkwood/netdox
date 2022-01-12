@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 from bs4 import BeautifulSoup
 from netdox import Domain, Network, utils
@@ -97,11 +97,18 @@ class MonitorManager:
          in any of the configured Icinga instances. False otherwise.
         :rtype: bool
         """
-        for selector in domain.domains:
-            for icinga_host in self.icingas:
-                # if has a manually created monitor, just load info
-                if selector in self.manual[icinga_host]:
-                    return True
+        if self.manual:
+            for selector in domain.domains:
+                for icinga_host in self.icingas:
+                    # if has a manually created monitor, just load info
+                    if (
+                        icinga_host in self.manual and 
+                        selector in self.manual[icinga_host]
+                    ):
+                        return True
+        else:
+            logger.warning('Manual monitor info empty at lookup time.'
+                ' Consider calling refreshMonitorInfo first.')
         return False
 
     def requestsMonitor(self, domain: Domain) -> bool:
@@ -197,7 +204,7 @@ class MonitorManager:
 
     ## Miscellaneous
 
-    def locateDomain(self, domain: str) -> Optional[str]:
+    def locateDomain(self, domain: Union[Domain, str]) -> Optional[str]:
         """
         Guesses the best location to attribute to a domain name.
         Returns None if no location can be found.
@@ -210,13 +217,22 @@ class MonitorManager:
         :return: The location of the domain, or None
         :rtype: str
         """
-        if domain in self.network.domains:
-            node = self.network.domains[domain].node
-            if node: return node.location
+        if isinstance(domain, str):
+            domain = self.network.domains[domain]
+        
+        node = domain.node
+        if node:
+            node_loc = node.location
+            if node_loc is not None: return node_loc
+        else:
+            ip_loc = self.network.locator.locate(domain.ips)
+            if ip_loc is not None: 
+                return ip_loc
             else:
-                return self.network.locator.locate(
-                    self.network.domains[domain].records.A.names
-                )
+                for alias in domain.domains:
+                    alias_loc = self.locateDomain(alias)
+                    if alias_loc is not None: return alias_loc
+
         return None
 
     def addPSMLFooters(self) -> None:
