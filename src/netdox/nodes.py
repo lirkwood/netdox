@@ -495,7 +495,7 @@ class PlaceholderNode(Node):
         """
         node.domains |= self.domains
         node.ips |= self.ips
-        node.psmlFooter += self.psmlFooter
+        node.psmlFooter.extend(self.psmlFooter)
 
         for domain in self.domains:
             if self.network.domains[domain].node is self:
