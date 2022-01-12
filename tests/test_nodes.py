@@ -2,6 +2,7 @@ from gc import collect, get_referrers
 
 from lxml import etree
 from netdox import Network, nodes, utils, dns
+from netdox.psml import Fragment, Section
 from pytest import fixture, raises
 from fixtures import network, node
 
@@ -37,7 +38,8 @@ class TestNode:
         """
         Tests that the Node merge method correctly copies information from the targeted object.
         """
-        node.psmlFooter.append('footer tag')
+        footer_frag = Fragment('id')
+        node.psmlFooter.insert(footer_frag)
 
         new = nodes.Node(
             network = node.network,
@@ -51,7 +53,7 @@ class TestNode:
         assert new.domains == node.domains | set(['nonexistent.domain.com'])
         assert new.ips == node.ips | set(['10.1.1.1'])
         assert new.labels == node.labels | set(['test-label'])
-        assert new.psmlFooter == ['footer tag']
+        assert str(new.psmlFooter) == str(Section('footer', fragments = [footer_frag]))
 
     def test_location(self, node: nodes.Node):
         """
@@ -107,7 +109,7 @@ class TestPlaceholderNode:
         dns.IPv4Address(network, '10.0.0.0')
         placeholder = nodes.PlaceholderNode(network, 'name', ['test.domain.com'], ['10.0.0.0'])
 
-        placeholder.psmlFooter.append('footer value')
+        placeholder.psmlFooter.insert(Fragment())
         network.nodes.addRef(placeholder, 'alias')
 
         node = nodes.DefaultNode(network, 'name', '10.0.0.0')

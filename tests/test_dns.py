@@ -1,5 +1,5 @@
 from pytest import raises, fixture
-from netdox import Network, dns, iptools, nodes
+from netdox import Network, dns, iptools, nodes, psml
 from fixtures import domain, ipv4, network, psml_schema
 from lxml import etree
 
@@ -46,6 +46,17 @@ class TestDNSRecordSet:
         )
 
 class TestDomain:
+    FOOTER_FRAGMENTS = [
+        psml.PropertiesFragment('id_1', [
+            psml.Property('frag1_1', 'value'),
+            psml.Property('frag1_2', 'value')
+        ]),
+        psml.PropertiesFragment('id_2', [
+            psml.Property('frag2_1', 'value'),
+            psml.Property('frag2_2', 'value'),
+            psml.Property('frag2_3', 'value')
+        ])
+    ]
 
     def test_constructor(self, network: Network):
         """
@@ -96,16 +107,19 @@ class TestDomain:
         """
         Tests that the Domain merge method correctly copies information from the targeted object.
         """
+        footer_frags = list(self.FOOTER_FRAGMENTS)
         domain_name = 'subdom.zone.com'
         domain = dns.Domain(network, domain_name, 'zone.com', ['some_label'])
         domain.link('10.0.0.0', 'source 1')
-        domain.psmlFooter.append('test item')
+        domain.psmlFooter.insert(footer_frags.pop())
         network.ips['10.0.0.0'].link(domain_name, 'source 1')
 
         new = dns.Domain(network, domain_name, labels = ['other_label'])
         new.link('10.255.255.255', 'source 2')
         new.link('nonexistent.domain.com', 'source 2')
-        new.psmlFooter.append('another test item')
+
+        for frag in footer_frags:
+            new.psmlFooter.insert(frag)
 
         assert new.records.A.names == {'10.0.0.0', '10.255.255.255'}
         assert new.records.A.sources == {'source 1', 'source 2'}
@@ -117,7 +131,8 @@ class TestDomain:
         assert new.backrefs.CNAME.names == set()
         assert new.backrefs.CNAME.sources == set()
 
-        assert new.psmlFooter == ['test item', 'another test item']
+        assert str(new.psmlFooter) == str(
+            psml.Section('footer', fragments = self.FOOTER_FRAGMENTS))
         assert new.subnets == {'10.0.0.0/24', '10.255.255.0/24'}
         assert new.labels == set(['some_label', 'other_label']) | set(dns.Domain.DEFAULT_LABELS)
 
