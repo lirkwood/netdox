@@ -228,7 +228,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
         soup = BeautifulSoup(body, features = 'xml')
         soup.find('labels').string = ','.join(self.labels)
-        soup.find('section', id = 'footer').replace_with(self.psmlFooter)
+        soup.find('section', id = 'footer').replace_with(self.psmlFooter.tag)
         
         if self.organization: 
             soup.find(attrs={'name':'org'}).append(psml.XRef(self.organization))
