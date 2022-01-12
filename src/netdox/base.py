@@ -52,8 +52,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A unique, predictable identifier to be used for retrieving objects from NWObjContainers"""
     network: Network
     """The containing network."""
-    psmlFooter: list[Tag]
-    """A list of fragment tags to add to the *footer* section of this object's output PSML."""
+    psmlFooter: psml.Section
+    """A PSML section to be inserted at the footer of the document."""
     labels: set[str]
     """A set of labels to apply to this object's output document."""
     DEFAULT_LABELS = ['show-reversexrefs', 'netdox-default']
@@ -84,9 +84,16 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.network = network
         self.name = name.lower().strip()
         self.identity = identity.lower()
-
-        self.psmlFooter = []
         self._organization = None
+        
+        self.psmlFooter = psml.Section('footer', fragments = [
+            psml.PropertiesFragment(id = 'search', properties = [
+                psml.Property(
+                    name = 'terms', 
+                    title = 'Search Terms', 
+                    value = self.search_terms
+            )], attrs = {'labels':'s-hide-content'})
+        ])
         
         self.labels = self.network.labels[self.docid]
         self.labels.update(self.DEFAULT_LABELS)
@@ -221,6 +228,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
         soup = BeautifulSoup(body, features = 'xml')
         soup.find('labels').string = ','.join(self.labels)
+        soup.find('section', id = 'footer').replace_with(self.psmlFooter)
         
         if self.organization: 
             soup.find(attrs={'name':'org'}).append(psml.XRef(self.organization))
@@ -228,24 +236,6 @@ class NetworkObject(metaclass=NetworkObjectMeta):
             org_prop = soup.find(attrs={'name':'org'})
             org_prop['datatype'] = 'string'
             org_prop['value'] = '—'
-
-        footer = soup.find(id = 'footer')
-        for tag in self.psmlFooter:
-            footer.append(tag)
-
-        search_octets = []
-        for ip in self.ips:
-            octets = ip.split('.')
-            search_octets.append(octets[-1])
-            search_octets.append('.'.join(octets[-2:]))
-
-        footer.append(
-            psml.PropertiesFragment(id = 'search', properties = [
-                psml.Property(
-                    name = 'terms', 
-                    title = 'Search Terms', 
-                    value = self.search_terms
-            )], attrs = {'labels':'s-hide-content'}))
 
         return soup
 
@@ -269,7 +259,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         return self
 
     @cache
-    def getAttr(self, attr: str) -> Union[str, None]:
+    def getAttr(self, attr: str) -> Union[str, None]: # TODO rename get_attr
         """
         Returns the value of *attr* for the first label on this object that it is configured on.
 
