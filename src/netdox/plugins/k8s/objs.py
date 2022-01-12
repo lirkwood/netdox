@@ -4,6 +4,7 @@ from typing import Iterable, Optional
 from bs4 import Tag
 from netdox import psml, utils
 from netdox import Network
+from netdox.dns import IPv4Address
 from netdox.nodes import ProxiedNode
 from dataclasses import dataclass
 
@@ -58,12 +59,32 @@ class Pod:
             None
         )
 
+@dataclass
+class Cluster:
+    name: str
+    """Name of this cluster."""
+    node_ips: set[str]
+    """Set of IPv4 addresses (as strings) 
+    that resolve to nodes used in this cluster."""
+    location: Optional[str]
+    """Location of this cluster."""
+
+    def __init__(self, 
+            name: str, 
+            node_ips: Iterable[str], 
+            location: Optional[str] = None
+        ) -> None:
+        self.name = name
+        self.location = location
+        self.node_ips = set(node_ips) | set(
+            utils.config('k8s')[self.name]['proxies'])
+
 
 class App(ProxiedNode):
     """
     Kubernetes app from a namespaced deployment
     """
-    cluster: str
+    cluster: Cluster
     """Cluster this app is running in"""
     paths: set[str]
     """Ingress paths that resolve to this node. 
@@ -81,28 +102,31 @@ class App(ProxiedNode):
     def __init__(self, 
             network: Network,
             name: str, 
-            cluster: str, 
+            cluster: Cluster, 
             paths: Iterable[str] = None,
             labels: dict = None, 
             pods: Iterable[Pod] = None, 
             template: Iterable[Container] = None
         ) -> None:
-        proxies = [proxy for proxy in utils.config('k8s')[cluster]['proxies']]
-        domains = {p.split('/')[0] for p in sorted(paths if paths else [], key = len)}
+        domains = {path.split('/')[0] for path in (paths if paths else [])}
         for domain in list(domains):
-            if not any([network.resolvesTo(domain, proxy) for proxy in proxies]):
-                domains.remove(domain)
+            resolved = False
+            for ipv4 in cluster.node_ips:
+                if network.resolvesTo(domain, ipv4):
+                    resolved = True
+            if not resolved: domains.remove(domain)
 
         super().__init__(
             network = network, 
             name = name,
-            identity = cluster +'_'+ name,
+            identity = cluster.name +'_'+ name,
             domains = domains,
             ips = []
         )
         
         self.paths = set(paths) if paths else set()
         self.cluster = cluster
+        self._location = cluster.location
         self.pod_labels = labels or {}
         self.pods = list(pods) if pods else []
         self.template = list(template) if template else []
