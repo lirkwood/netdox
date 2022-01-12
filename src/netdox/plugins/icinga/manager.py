@@ -229,7 +229,7 @@ class MonitorManager:
             if ip_loc is not None: 
                 return ip_loc
             else:
-                for alias in domain.domains:
+                for alias in domain.domains: #TODO fix infinite recursion
                     alias_loc = self.locateDomain(alias)
                     if alias_loc is not None: return alias_loc
 
