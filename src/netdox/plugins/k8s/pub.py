@@ -16,7 +16,7 @@ def genpub(network: Network) -> None:
             for pod in node.pods:
                 workerNode = network.find_dns(pod.workerIp).node
                 if workerNode is not None:
-                    workerApps[node.cluster][workerNode.docid].append(node.docid)
+                    workerApps[node.cluster.name][workerNode.docid].append(node.docid)
 
     sortedWorkerApps: dict[str, dict[str, list[str]]] = {}
     for cluster in workerApps:

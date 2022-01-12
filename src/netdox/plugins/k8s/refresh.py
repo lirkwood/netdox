@@ -17,8 +17,7 @@ from kubernetes import client
 from netdox import Network, utils
 from netdox.nodes import PlaceholderNode
 from netdox.plugins.k8s import initContext
-from netdox.plugins.k8s.objs import (App, Container, Deployment, MountedVolume,
-                                     Pod)
+from netdox.plugins.k8s.objs import *
 
 logger = logging.getLogger(__name__)
 
@@ -123,19 +122,41 @@ def getServicePaths(apiClient: client.ApiClient, namespace: str='default') -> di
     :type apiClient: client.ApiClient
     :param namespace: The namespace to search in, defaults to 'default'
     :type namespace: str, optional
-    :return: A dictionary mapping service names to the domain paths that resolve to them.
+    :return: A dictionary mapping service names 
+    to the domain paths that resolve to them.
     :rtype: dict[str, set]
     """
     servicePaths = defaultdict(set)
     api = client.ExtensionsV1beta1Api(apiClient)
-    allIngress = api.list_namespaced_ingress(namespace)
-    for ingress in allIngress.items:
+    for ingress in api.list_namespaced_ingress(namespace).items:
         for rule in ingress.spec.rules:
             for path in rule.http.paths:
-                servicePaths[path.backend.service_name].add(rule.host + (path.path if path.path else '/'))
+                servicePaths[path.backend.service_name].add(
+                    rule.host + (path.path if path.path else '/'))
 
     return servicePaths
 
+def getClusterNodeIPs(apiClient: client.ApiClient) -> list[str]:
+    """
+    Returns a list of the ExternalIP addresses of the cluster nodes.
+
+    :param apiClient: The client to use for contacting the API.
+    :type apiClient: client.ApiClient
+    :return: List of IPv4 addresses, as strings.
+    :rtype: list[str]
+    """
+    ips: list[str] = []
+    api = client.CoreV1Api(apiClient)
+    for node in api.list_node().items:
+        startlen = len(ips)
+        for addr in node.status.addresses:
+            if addr.type == 'ExternalIP':
+                ips.append(addr.address)
+                continue
+
+        if len(ips) == startlen:
+            logger.warning('Failed to discover ExternalIP for a node')
+    return ips
 
 def getApps(network: Network, context: str, namespace: str='default') -> list[App]:
     """
@@ -150,13 +171,14 @@ def getApps(network: Network, context: str, namespace: str='default') -> list[Ap
     """
     #TODO simplify this functions
     cfg = utils.config('k8s')[context]
-    location = cfg['location'] if 'location' in cfg else None
     rancherBase = f'https://{cfg["host"]}/p/{cfg["clusterId"]}:{cfg["projectId"]}/workloads/{namespace}:'
 
     apiClient = initContext(context)
     podsByLabel = getPodsByLabel(apiClient, namespace)
     serviceMatchLabels = getServiceMatchLabels(apiClient, namespace)
     servicePaths = getServicePaths(apiClient, namespace)
+    cluster = Cluster(context, getClusterNodeIPs(apiClient), 
+        location = cfg['location'] if 'location' in cfg else None)
 
     # map pod names to their ingress paths
     podPaths: DefaultDict[str, set] = defaultdict(set)
@@ -185,18 +207,15 @@ def getApps(network: Network, context: str, namespace: str='default') -> list[Ap
                 if pod.name in podPaths:
                     paths |= podPaths[pod.name]
 
-        app = App(
+        apps.append(App(
             network = network,
             name = deployment.name,
-            pods = [],
+            pods = pods,
             paths = paths,
-            cluster = context,
+            cluster = cluster,
             labels = deployment.labels,
             template = deployment.containers
-        )
-        
-        if not app.location: app.location = location
-        apps.append(app)
+        ))
     return apps
     
 
