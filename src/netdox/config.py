@@ -3,18 +3,21 @@ This module contains functions / classes for fetching, reading, and updating the
 """
 from __future__ import annotations
 
+import json
 import logging
-from dataclasses import dataclass
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Iterable
 
 from bs4 import BeautifulSoup
 from lxml import etree
-from netdox import pageseeder, psml, utils
 from requests import Response
+
+from netdox import pageseeder, psml, utils, nwman
 
 logger = logging.getLogger(__name__)
 
+# PageSeeder config
 
 @dataclass
 class NetworkConfig:
@@ -209,3 +212,39 @@ def update_template(attrs: set[str]) -> Response:
     return pageseeder.put_group_resource(
         f'/WEB-INF/config/template/{project}/psml/netdox/document-template.psml',
         generate_template(attrs), overwrite = True)
+
+
+# Local config
+
+def gen_config_template(nwman: nwman.NetworkManager):
+    """
+    Generates a template config file from the plugins discovered by *nwman*.
+
+    :param nwman: The NetworkManager to read the plugin data from.
+    :type nwman: nwman.NetworkManager
+    """
+    with open(utils.APPDIR+ 'src/defaults/config.json', 'r') as stream:
+        app_config = json.load(stream)
+    app_config['plugins'] = defaultdict(dict)
+
+    # deactivate logging while initialising a networkmanager
+    nwman_logger = logging.getLogger('netdox.nwman')
+    nwman_level = nwman_logger.level
+    nwman_logger.setLevel(logging.ERROR)
+
+    # generate config template from plugins
+    for plugin in nwman.plugins:
+        if plugin.config is not None:
+            try:
+                json.dumps(plugin.config)
+            except Exception:
+                logger.error(
+                    f"Plugin {plugin.__name__.split('.')[-1]} "
+                    'registered an invalid JSON object under __config__.')
+            else:
+                app_config['plugins'][plugin.name] = plugin.config
+
+    nwman_logger.setLevel(nwman_level)
+    
+    with open(utils.APPDIR+ 'cfg/config.json', 'w') as stream:
+        stream.write(json.dumps(app_config, indent = 2))
