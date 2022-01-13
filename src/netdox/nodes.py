@@ -72,7 +72,7 @@ class Node(base.NetworkObject):
     ## abstract properties
 
     @property
-    def psmlBody(self) -> list[Tag]:
+    def psmlBody(self) -> list[Tag]: #TODO move to Section from Tag
         """
         Returns a list of section tags to add to the body of this Node's output PSML.
 
@@ -155,8 +155,8 @@ class Node(base.NetworkObject):
         ])
 
         header = soup.find('section', id = 'header')
-        header.append(domains)
-        header.append(ips)
+        header.append(domains.tag)
+        header.append(ips.tag)
 
         return soup
 

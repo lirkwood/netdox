@@ -146,7 +146,7 @@ class DNSRecordSet:
                         Property(dest.type, XRef(docid = dest.docid), 
                             title_prefix + f'{record_type} record'),
                         Property('source', record.source, 'Source Plugin')
-                ]))
+                ]).tag)
 
         return root
         
@@ -467,7 +467,7 @@ class IPv4Address(DNSObject):
             body.append(PropertiesFragment(f'NAT_{count}', [
                 Property(dest.type, XRef(docid = dest.docid), 'NAT Entry'),
                 Property('source', record.source, 'Source Plugin')
-            ]))
+            ]).tag)
 
         return soup
 

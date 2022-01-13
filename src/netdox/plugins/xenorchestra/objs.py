@@ -57,7 +57,7 @@ class VirtualMachine(DefaultNode):
         self.network.nodes.addRef(self, self.uuid)
     
     @property
-    def psmlCore(self) -> Tag:
+    def psmlCore(self) -> psml.PropertiesFragment:
         """
         Core fragment of the VirtualMachine Node document
 
@@ -77,7 +77,7 @@ class VirtualMachine(DefaultNode):
         ])
     
     @property
-    def psmlOS(self) -> Tag:
+    def psmlOS(self) -> psml.PropertiesFragment:
         """
         OS fragment of the VirtualMachine Node document
 
@@ -102,7 +102,7 @@ class VirtualMachine(DefaultNode):
         ])
 
     @property
-    def psmlTags(self) -> Tag:
+    def psmlTags(self) -> psml.PropertiesFragment:
         """
         Tags fragment of the VirtualMachine Node document
 

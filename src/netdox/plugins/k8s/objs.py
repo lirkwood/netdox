@@ -149,21 +149,23 @@ class App(ProxiedNode):
                 psml.Property(name = 'image', title = 'Image ID', value = container.image)
             ])
             for volume in container.volumes:
-                frag.append(psml.Property(
-                    name = 'pvc', 
-                    title = 'Persistent Volume Claim', 
-                    value = volume.pvc
-                ))
-                frag.append(psml.Property(
-                    name = 'mount_path', 
-                    title = 'Path in Container', 
-                    value = volume.mount_path
-                ))
-                frag.append(psml.Property(
-                    name = 'sub_path', 
-                    title = 'Path in PVC', 
-                    value = volume.sub_path
-                ))
+                frag.extend([
+                    psml.Property(
+                        name = 'pvc', 
+                        title = 'Persistent Volume Claim', 
+                        value = volume.pvc
+                    ),
+                    psml.Property(
+                        name = 'mount_path', 
+                        title = 'Path in Container', 
+                        value = volume.mount_path
+                    ),
+                    psml.Property(
+                        name = 'sub_path', 
+                        title = 'Path in PVC', 
+                        value = volume.sub_path
+                    )
+                ])
 
             section.append(frag)
             count += 1
@@ -187,6 +189,6 @@ class App(ProxiedNode):
                 psml.Property(name = 'worker_node', title = 'Worker Node', 
                     value = (psml.XRef(docid = workerIp.node.docid)
                         if workerIp.node else '—'))
-            ]))
+            ]).tag)
             count += 1
         return section

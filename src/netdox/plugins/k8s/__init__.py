@@ -106,7 +106,7 @@ def domainapps(network: Network) -> None:
                         value = psml.XRef(docid = pathnodes[path].docid)
                     ) for path in paths
                 ]
-            )
+            ).tag
         )
 
 __stages__ = {

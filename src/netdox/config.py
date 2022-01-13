@@ -150,9 +150,10 @@ class NetworkConfig:
             para.string = domain
             exclusionFrag.append(para)
 
-        labelSection = soup.find('section', id = self.LABEL_SECTION_ID)
+        labelSection = psml.Section.from_tag(
+            soup.find('section', id = self.LABEL_SECTION_ID))
         for label, properties in self.labels.items():
-            labelSection.append(psml.PropertiesFragment.from_dict(
+            labelSection.insert(psml.PropertiesFragment.from_dict(
                 id = f'label_{label}', 
                 constructor = {'label': label} | properties
             ))
@@ -163,7 +164,7 @@ class NetworkConfig:
                 orgSection.append(psml.PropertiesFragment(f'org_{uriid}_{count}', [
                     psml.Property('label', label, 'Label Name'),
                     psml.Property('organization', psml.XRef(uriid), 'Organization')
-                ]))
+                ]).tag)
 
         return str(soup)
 
@@ -195,7 +196,7 @@ def generate_template(attrs: set[str]) -> str:
     tFragment.append(psml.PropertiesFragment('', 
         [psml.Property('label', '', 'Label Name')] + [
         psml.Property(attr, '') for attr in attrs
-    ]))
+    ]).tag)
 
     return str(soup)
 

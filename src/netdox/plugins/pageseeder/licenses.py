@@ -69,13 +69,13 @@ def _domain_from_xref(input: psml.XRef) -> str:
     :return: The domain name, as a string.
     :rtype: str
     """
-    if 'unresolved' in input.attrs and bool(input['unresolved']):
+    if 'unresolved' in input.tag.attrs and bool(input.tag['unresolved']):
         raise AttributeError('Cannot extract domain name from unresolved xref.')
 
-    if 'urititle' in input.attrs and fullmatch(dns_name_pattern, input['urititle']):
-        return input['urititle']
+    if 'urititle' in input.tag.attrs and fullmatch(dns_name_pattern, input.tag['urititle']):
+        return input.tag['urititle']
     
-    dest = json.loads(pageseeder.get_uri(input['uriid']))
+    dest = json.loads(pageseeder.get_uri(input.tag['uriid']))
     if fullmatch(dns_name_pattern, dest['title']):
         return dest['title']
     elif fullmatch(dns_name_pattern, dest['displaytitle']):
@@ -162,4 +162,4 @@ def add_footer(
         psml.Property('license', psml.XRef(str(license_uri)), 'PageSeeder License'),
         psml.Property('version', version, 'PageSeeder Version'),
         psml.Property('license-type', type, 'License Type')
-    ]))
+    ]).tag)
