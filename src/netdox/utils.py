@@ -176,6 +176,8 @@ def rootDomainExtract(fqdn: str) -> str:
         return result.domain
     return result.domain +'.'+ result.suffix
 
+SCHEMA = None
+"""PSML XSD schema."""
 def validatePSML(psml: str) -> bool:
     """
     Validates the PSML against the XSD schema.
@@ -185,9 +187,11 @@ def validatePSML(psml: str) -> bool:
     :return: True if valid. False otherwise.
     :rtype: bool
     """
+    global SCHEMA
+    if SCHEMA is None: 
+        SCHEMA = etree.XMLSchema(file = APPDIR + 'src/psml.xsd')
     try:
-        etree.XMLSchema(file = APPDIR + 'src/psml.xsd').assertValid(
-            etree.fromstring(psml))
+        SCHEMA.assertValid(etree.fromstring(psml))
     except Exception:
         return False
     else:
