@@ -6,27 +6,51 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from collections import defaultdict
-from typing import Any, Iterable, Iterator, Mapping, Union
+from typing import Any, Iterable, Iterator, Mapping, Optional, Union
+from copy import copy
 
-from bs4.element import Tag
+from bs4.element import Tag, PageElement
 
 ###########
 # Classes #
 ###########
 
-class Section:
+class PSMLElement(ABC):
+    tag: Tag
+    """This PSMLElement as a BeautifulSoup Tag"""
+
+    def __str__(self) -> str:
+        return str(self.tag)
+
+    def __eq__(self, other) -> bool:
+        return str(self) == str(other)
+    
+    @classmethod
+    @abstractmethod
+    def from_tag(cls, tag: Tag) -> PSMLElement:
+        """
+        Instantiates a PSMLElement from a BeautifulSoup Tag.
+
+        :param tag: The Tag to read data from.
+        :type tag: Tag
+        :return: A PSMLElement.
+        :rtype: PSMLElement
+        """
+        ...
+
+class Section(PSMLElement):
     """
     PSML Section element.
     """
-    tag: Tag
-    """This Section as a BeautifulSoup Tag."""
-    _frags: dict[str, int]
+    _indices: dict[str, int]
     """IDs of the fragments in this section, mapped to their index."""
+    _frags: dict[str, PSMLFragment]
+    """IDs of the fragments in this section, mapped to the PSMLFragment object."""
 
     def __init__(self, 
             id: str, 
             title: str = None, 
-            fragments: Iterable[Fragment] = None,
+            fragments: Iterable[PSMLFragment] = None,
             attrs: Mapping[str, Any] = None
         ) -> None:
         """
@@ -46,6 +70,7 @@ class Section:
             attrs = {'id': id} | attrs
         )
 
+        self._indices = {}
         self._frags = {}
         for fragment in (fragments or ()):
             self.insert(fragment)
@@ -56,10 +81,10 @@ class Section:
     def __eq__(self, other) -> bool:
         return str(self) == str(other)
 
-    def __iter__(self) -> Iterator[Fragment]:
-        yield from self.tag.find_all(True, recursive = False)
+    def __iter__(self) -> Iterator[PSMLFragment]:
+        yield from self._frags.values()
 
-    def insert(self, fragment: Fragment, index: int = None) -> None:
+    def insert(self, fragment: PSMLFragment, index: int = None) -> None:
         """
         Inserts a new fragment at the specified index.
         If a fragment with an equal ID is already present, 
@@ -71,15 +96,17 @@ class Section:
         Defaults to index of fragment with the same ID, or last.
         :type index: int, optional
         """
-        if fragment.id in self._frags:
-            index = index or self._frags.get(fragment.id)
+        if fragment.id in self._indices:
+            index = index or self._indices.get(fragment.id)
             self.tag.find(attrs = {'id': fragment.id}, recursive = False).decompose()
 
-        index = index or len(self._frags)
-        self._frags[fragment.id] = index
-        self.tag.insert(index, fragment)
+        index = index or len(self._indices)
+        self._frags[fragment.id] = fragment
+        self._indices[fragment.id] = index
+        print(type(fragment.tag))
+        self.tag.insert(index, copy(fragment.tag))
 
-    def extend(self, fragments: Iterable[Fragment]):
+    def extend(self, fragments: Iterable[PSMLFragment]):
         """
         Inserts each fragment in *fragments* into this section.
 
@@ -88,9 +115,75 @@ class Section:
         """
         for frag in fragments: self.insert(frag)
 
-class Fragment(Tag): #TODO convert this to a proxy to Tag not subclass
+    @classmethod
+    def from_tag(cls, tag: Tag) -> Section:
+        """
+        Instantiates a Section from a BeautifulSoup Tag.
 
-    def __init__(self, id: str, attrs: Mapping[str, Any] = None) -> None:
+        :param tag: A valid PSML Section element as a BS4 Tag.
+        :type tag: Tag
+        :raises AttributeError: If the Tag is missing the 'id' attribute.
+        :return: A Section object.
+        :rtype: Section
+        """
+        if not tag.has_attr('id'):
+            raise AttributeError('Section tag missing required attribute \'id\'')
+        frags = []
+        for frag_tag in tag.find(True, recursive = False):
+            frag = fragment_from_tag(frag_tag)
+            if frag is not None: frags.append(frag)
+
+        return cls(
+            id = tag['id'],
+            title = tag['title'] if tag.has_attr('title') else None,
+            fragments = frags,
+            attrs = tag.attrs
+        )
+
+class PSMLFragment(PSMLElement): #TODO implement PSMLElement?
+    """
+    Parent class for the various fragments in PSML.
+    """
+
+    @classmethod
+    @abstractmethod
+    def from_tag(cls, tag: Tag) -> PSMLFragment:
+        ...
+    
+    @property
+    def id(self) -> str:
+        """
+        Returns the value of the ID attribute of this PSMLFragment.
+        """
+        return self.tag.attrs['id']
+
+    def insert(self, element: Tag, index: int = None) -> None:
+        """
+        Inserts a Tag into the PSMLFragment at the given index (or the end),
+        only if it is valid content.
+
+        :param element: Tag to insert.
+        :type element: Tag
+        :param index: Index to insert the Tag at, defaults to last.
+        :type index: int, optional
+        """
+        if index:
+            self.tag.insert(index, element)
+        else:
+            self.tag.append(element)
+
+    def extend(self, elements: Iterable[PageElement]) -> None:
+        for elem in elements: self.insert(elem)
+
+
+class Fragment(PSMLFragment):
+    tag: Tag
+    """This Fragment as a BeautifulSoup Tag."""
+
+    def __init__(self, 
+            id: str, 
+            elements: Iterable[PageElement] = None,
+            attrs: Mapping[str, Any] = None) -> None:
         """
         Default constructor.
 
@@ -100,25 +193,40 @@ class Fragment(Tag): #TODO convert this to a proxy to Tag not subclass
         :type attrs: Mapping[str, Any], optional
         """
         attrs = dict(attrs) if attrs else {}
-        super().__init__(
+        self.tag = Tag(
             name = 'fragment',
             is_xml = True,
             can_be_empty_element = True,
             attrs = {'id': id} | attrs
         )
-    
-    @property
-    def id(self) -> str:
-        return self.attrs['id']
 
-class PropertiesFragment(Fragment):
+        self.extend(elements or ())
+
+    @classmethod
+    def from_tag(cls, tag: Tag) -> Fragment:
+        """       
+        Instantiates a Fragment from a BeautifulSoup Tag.
+
+        :param tag: A valid PSML Fragment element as a BS4 Tag.
+        :type tag: Tag
+        :raises AttributeError: If the Tag is missing the 'id' attribute.
+        :return: A Fragment object.
+        :rtype: Fragment
+        """
+        if not tag.has_attr('id'):
+            raise AttributeError('Fragment tag missing required attribute \'id\'')
+        return cls(tag['id'], tag.attrs)
+
+class PropertiesFragment(PSMLFragment):
     """
     PSML PropertiesFragment element.
     """
+    properties: list[Property]
+    """List of Property objects."""
 
     def __init__(self, 
             id: str, 
-            properties: Iterable[Property] = [],
+            properties: Iterable[Property] = None,
             attrs: Mapping[str, Any] = None,
         ) -> None:
         """
@@ -126,24 +234,41 @@ class PropertiesFragment(Fragment):
 
         :param id: ID unique within the document.
         :type id: str
-        :param properties: Some properties to immediately append to this element, defaults to []
+        :param properties: Some properties to immediately append to this element, 
+        defaults to []
         :type properties: Iterable[Property], optional
         :param attrs: A map of attributes, defaults to None
         :type attrs: Mapping[str, Any], optional
         """
-        super().__init__(id, attrs)
-        self.name = 'properties-fragment'
+        attrs = dict(attrs) if attrs else {}
+        self.tag = Tag(
+            name = 'properties-fragment',
+            is_xml = True,
+            can_be_empty_element = True,
+            attrs = {'id': id} | attrs
+        )
 
-        for property in properties:
-            self.append(property)
+        self.properties = []
+        self.extend(properties or ())
 
-    @property
-    def id(self) -> str:
-        return self['id']
+    ## abstract methods
 
-    @property
-    def properties(self) -> Iterable[Property]:
-        return self('property')
+    def insert(self, property: Property, index: int = None) -> None:
+        if index:
+            self.tag.insert(index, property.tag)
+            self.properties.insert(index, property)
+        else:
+            self.tag.append(property.tag)
+            self.properties.append(property)
+
+    @classmethod
+    def from_tag(cls, fragment: Tag) -> PropertiesFragment:
+        properties = []
+        for property in fragment('property'):
+            properties.append(Property.from_tag(property))
+        return cls(fragment['id'], properties)
+
+    ## methods 
 
     def to_dict(self) -> dict:
         """
@@ -153,8 +278,8 @@ class PropertiesFragment(Fragment):
         :rtype: dict
         """
         outdict = defaultdict(list)
-        for property in self.children:
-            outdict[property.attrs['name']].append(property.value)
+        for property in self.properties:
+            outdict[property.tag.attrs['name']].append(property.value)
         return {key: val[0] if len(val) == 1 else val for key, val in outdict.items()}
 
     @classmethod
@@ -172,29 +297,43 @@ class PropertiesFragment(Fragment):
         pfrag = cls(id)
         for key, value in constructor.items():
             if isinstance(value, str) or not isinstance(value, Iterable):
-                pfrag.append(Property(key, value))
+                pfrag.insert(Property(key, value))
 
             elif isinstance(value, Iterable):
                 for _value in value:
-                    pfrag.append(Property(key, _value))
+                    pfrag.insert(Property(key, _value))
             
             else:
                 raise TypeError(
                     'Could not instantiate a Property from a value of: '+ str(value))
         return pfrag
 
-    @classmethod
-    def from_tag(cls, fragment: Tag) -> PropertiesFragment:
-        properties = []
-        for property in fragment('property'):
-            properties.append(Property.from_tag(property))
-        return cls(fragment['id'], properties)
+FRAGMENT_NAMES: dict[str, type[PSMLFragment]] = {
+    'fragment': Fragment, 'properties-fragment': PropertiesFragment 
+}
+"""Maps the tag name of fragment types to their respective classes."""
 
+def fragment_from_tag(tag: Tag) -> Optional[PSMLFragment]:
+    """
+    Creates a psml Fragment object (or one of it's subclasses) 
+    from a BeautifulSoup tag.
 
-class Property(Tag):
+    :param tag: A BS4 Tag
+    :type tag: Tag
+    :return: A Fragment, or None if *tag* is not a valid PSML fragment.
+    :rtype: Optional[Fragment]
+    """
+    name = tag.name
+    if name in FRAGMENT_NAMES:
+        return FRAGMENT_NAMES[name].from_tag(tag)
+    return None
+
+class Property(PSMLElement):
     """
     PSML Property element.
     """
+    value: Union[PSMLLink, Iterable[str], str]
+    """Value of this property."""
 
     def __init__(self, 
         name: str,
@@ -214,7 +353,7 @@ class Property(Tag):
         """
         _attrs = {'name': name, 'title': title or name}
         
-        super().__init__(
+        self.tag = Tag(
             name = 'property', 
             is_xml = True, 
             can_be_empty_element = True, 
@@ -224,21 +363,21 @@ class Property(Tag):
         self.value = value
         if value:
             if isinstance(value, str):
-                self.attrs['value'] = value
+                self.tag.attrs['value'] = value
             elif isinstance(value, PSMLLink):
-                self.attrs['datatype'] = value.name
-                self.append(value)
+                self.tag.attrs['datatype'] = value.tag.name
+                self.tag.append(value)
             elif isinstance(value, Iterable) and value:
-                self.attrs['multiple'] = 'true'
+                self.tag.attrs['multiple'] = 'true'
                 for val in value:
                     val_tag = Tag(name = 'value')
                     val_tag.string = str(val)
-                    self.append(val_tag)
+                    self.tag.append(val_tag)
         else:
-            self.attrs['value'] = ''
+            self.tag.attrs['value'] = ''
 
     @classmethod
-    def from_tag(cls, property: Tag):
+    def from_tag(cls, property: Tag) -> Property:
         title = property['title'] if 'title' in property.attrs else None
         if property.has_attr('value'):
             return cls(
@@ -253,7 +392,7 @@ class Property(Tag):
                 return cls(
                     property['name'], 
                     PROPERTY_DATATYPES[property['datatype']].from_tag(
-                        property.findChild()
+                        property.find(property['datatype'])
                     ),
                     title,
                     property.attrs
@@ -278,32 +417,11 @@ class Property(Tag):
                 'Cannot create Property from tag with no value, children, or name.')
 
 
-class PSMLLink(Tag, ABC):
+class PSMLLink(PSMLElement):
     """
     Represents a link tag in PSML.
     These elements will always have a separate closing tag due to the string content logic.
     """
-
-    def __init__(self, name: str, value: str, attrs: dict, string: str = None):
-        """
-        Constructor.
-
-        :param name: The name of the element / datatype.
-        :type name: str
-        :param value: Value for the link.
-        :type value: str
-        :param attrs: Additional attributes to set.
-        :type attrs: dict
-        :param string: String content for the element, defaults to the link value.
-        :type string: str, optional
-        """
-        super().__init__(
-            name = name,
-            is_xml = True, 
-            can_be_empty_element = True,
-            attrs = attrs
-        )
-        self.string = string if string is not None else value
 
     @classmethod
     @abstractmethod
@@ -343,18 +461,19 @@ class XRef(PSMLLink):
         :type string: str, optional
         """
         if uriid or docid or href:
-            super().__init__(
+            self.tag = Tag(
                 name = 'xref',
-                value = uriid or docid or href, # type: ignore
-                attrs = (attrs or {}) | {'frag': frag},
-                string = string or ''
+                is_xml = True,
+                can_be_empty_element = True,
+                attrs = (attrs or {}) | {'frag': frag}
             )
+            self.tag.string = (uriid or docid or href) if string is None else string,
             if uriid:
-                self.attrs['uriid'] = uriid
+                self.tag.attrs['uriid'] = uriid
             if docid:
-                self.attrs['docid'] = docid
+                self.tag.attrs['docid'] = docid
             if href:
-                self.attrs['href'] = href
+                self.tag.attrs['href'] = href
         else:
             raise AttributeError("One of 'uriid', 'docid', or 'href' must be set.")
 
@@ -388,12 +507,13 @@ class Link(PSMLLink):
         :param string: String content for the element, defaults to the link value.
         :type string: str, optional
         """
-        super().__init__(
+        self.tag = Tag(
             name = 'link', 
-            value = url, 
+            is_xml = True,
+            can_be_empty_element = True,
             attrs = (attrs or {}) | {'href': url}, 
-            string = string
         )
+        self.tag.string = url if string is None else string
 
     @classmethod
     def from_tag(cls, tag: Tag) -> Link:
@@ -406,6 +526,7 @@ class Link(PSMLLink):
 PROPERTY_DATATYPES: dict[str, type[PSMLLink]] = {
     'xref': XRef, 'link': Link
 }
+"""Maps Property value datatypes (e.g. 'xref') to their respective classes."""
 
 
 #############
