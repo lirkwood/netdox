@@ -124,18 +124,18 @@ class TestProperty:
             + value_str + '</property>'
         )
 
-    def test_roundtrip_tag(self, property):
-        assert psml.Property.from_tag(property) == property
+    def test_roundtrip_tag(self, property: psml.Property):
+        assert psml.Property.from_tag(property.tag) == property
 
-    def test_XRef_tag(self, property_XRef):
-        from_tag = psml.Property.from_tag(property_XRef)
+    def test_XRef_tag(self, property_XRef: psml.Property):
+        from_tag = psml.Property.from_tag(property_XRef.tag)
         assert from_tag == property_XRef
-        assert isinstance(from_tag.findChild(), psml.XRef)
+        assert isinstance(from_tag.value, psml.XRef)
 
-    def test_Link_tag(self, property_Link):
-        from_tag = psml.Property.from_tag(property_Link)
+    def test_Link_tag(self, property_Link: psml.Property):
+        from_tag = psml.Property.from_tag(property_Link.tag)
         assert from_tag == property_Link
-        assert isinstance(from_tag.findChild(), psml.Link)
+        assert isinstance(from_tag.value, psml.Link)
 
 class TestPropertiesFragment:
 
@@ -182,12 +182,12 @@ class TestPropertiesFragment:
             } == mock_PropertiesFragment.to_dict()
         )
 
-    def test_from_dict(self, mock_PropertiesFragment):
+    def test_from_dict(self, mock_PropertiesFragment: psml.PropertiesFragment):
         assert mock_PropertiesFragment == psml.PropertiesFragment.from_dict(
-            mock_PropertiesFragment['id'],
+            mock_PropertiesFragment.tag['id'],
             mock_PropertiesFragment.to_dict())
 
 
-    def test_from_tag(self, mock_PropertiesFragment):
+    def test_from_tag(self, mock_PropertiesFragment: psml.PropertiesFragment):
         assert mock_PropertiesFragment == psml.PropertiesFragment.from_tag(
-            mock_PropertiesFragment)
+            mock_PropertiesFragment.tag)

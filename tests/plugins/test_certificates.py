@@ -10,9 +10,10 @@ def test_analyze(network):
     domain = Domain(network, 'google.com')
     analyze(domain)
 
-    assert len(domain.psmlFooter) == 1
-    assert [
+    footer_str = str(domain.psmlFooter)
+    for propname in [
         'distinguishedname',
         'valid_from',
         'valid_to' 
-    ] == sorted(domain.psmlFooter.tag.pop().to_dict().keys())
+    ]:
+        assert propname in footer_str

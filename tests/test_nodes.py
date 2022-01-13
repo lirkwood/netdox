@@ -6,10 +6,6 @@ from netdox.psml import Fragment, Section
 from pytest import fixture, raises
 from fixtures import network, node
 
-@fixture
-def psml_schema():
-    return etree.XMLSchema(file = utils.APPDIR+ 'src/psml.xsd')
-
 class TestNode:
     
     def test_constructor(self, network: Network):
@@ -51,7 +47,7 @@ class TestNode:
         assert new.ips == node.ips | set(['10.1.1.1'])
         assert new.labels == node.labels | set(['test-label'])
         assert new.psmlFooter == node.psmlFooter
-        assert str(new.psmlFooter) == str(Section('footer', fragments = [footer_frag]))
+
 
     def test_location(self, node: nodes.Node):
         """
@@ -71,8 +67,8 @@ class TestNode:
         del node.location
         assert node.location == node.network.locator.locate({'192.168.0.0', '192.168.0.1'})
 
-    def test_serialise(self, node: nodes.Node, psml_schema: etree.XMLSchema):
-        assert psml_schema.validate(etree.fromstring(bytes(str(node.to_psml()), 'utf-8')))
+    def test_serialise(self, node: nodes.Node):
+        assert utils.validatePSML(str(node.to_psml()))
 
 
 class TestDefaultNode:

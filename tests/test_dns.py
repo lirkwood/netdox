@@ -46,17 +46,20 @@ class TestDNSRecordSet:
         )
 
 class TestDomain:
-    FOOTER_FRAGMENTS = [
-        psml.PropertiesFragment('id_1', [
-            psml.Property('frag1_1', 'value'),
-            psml.Property('frag1_2', 'value')
-        ]),
-        psml.PropertiesFragment('id_2', [
-            psml.Property('frag2_1', 'value'),
-            psml.Property('frag2_2', 'value'),
-            psml.Property('frag2_3', 'value')
-        ])
-    ]
+
+    MOCK_NAME = 'sub.domain.com'
+    MOCK_ZONE = 'domain.com'
+    MOCK_LABELS = {('some_label')}
+    MOCK_FOOTER = psml.Section('footer', fragments = [psml.Fragment('id')])
+
+    @fixture
+    def mock_domain(self, network: Network) -> dns.Domain:
+        domain = dns.Domain(network, self.MOCK_NAME, self.MOCK_ZONE,
+            labels = self.MOCK_LABELS)
+        domain.psmlFooter = self.MOCK_FOOTER
+        domain.link('255.255.255.255', 'source 1')
+        domain.link('test.domain.com', 'source 2')
+        return domain
 
     def test_constructor(self, network: Network):
         """
@@ -103,36 +106,33 @@ class TestDomain:
             domain.link('!& invalid name &!', 'source')
 
 
-    def test_merge(self, network: Network):
+    def test_merge(self, mock_domain: dns.Domain):
         """
         Tests that the Domain merge method correctly copies information from the targeted object.
         """
-        footer_frags = list(self.FOOTER_FRAGMENTS)
-        domain_name = 'subdom.zone.com'
-        domain = dns.Domain(network, domain_name, 'zone.com', ['some_label'])
-        domain.link('10.0.0.0', 'source 1')
-        domain.psmlFooter.insert(footer_frags.pop())
-        network.ips['10.0.0.0'].link(domain_name, 'source 1')
+        backref_name = '10.10.10.20'
+        backref_source = 'backref_source'
+        mock_domain.network.ips[backref_name].link(mock_domain, backref_source)
+        
+        print(str(mock_domain.psmlFooter))
+        new_labels = {('other_label')}
+        new = dns.Domain(mock_domain.network, mock_domain.name, labels = new_labels)
 
-        new = dns.Domain(network, domain_name, labels = ['other_label'])
-        new.link('10.255.255.255', 'source 2')
-        new.link('nonexistent.domain.com', 'source 2')
+        new_source = 'source 3'
+        new_names = {'255.0.0.0', 'other.domain.com'}
+        for name in new_names:
+            new.link(name, new_source)
 
-        for frag in footer_frags:
-            new.psmlFooter.insert(frag)
+        assert new.records.names == new_names | mock_domain.records.names
+        assert new.records.sources == {(new_source)} | mock_domain.records.sources
 
-        assert new.records.A.names == {'10.0.0.0', '10.255.255.255'}
-        assert new.records.A.sources == {'source 1', 'source 2'}
-        assert new.records.CNAME.names == {('nonexistent.domain.com')}
-        assert new.records.CNAME.sources == {('source 2')}
+        assert new.backrefs.names == {(backref_name)}
+        assert new.backrefs.sources == {(backref_source)}
 
-        assert new.backrefs.A.names == {('10.0.0.0')}
-        assert new.backrefs.A.sources == {('source 1')}
-        assert new.backrefs.CNAME.names == set()
-        assert new.backrefs.CNAME.sources == set()
-
-        assert all([frag.id in new.psmlFooter._frags 
-            for frag in self.FOOTER_FRAGMENTS])
+        print(str(new.psmlFooter))
+        print(str(mock_domain.psmlFooter))
+        assert new.psmlFooter == mock_domain.psmlFooter
+        assert not new.psmlFooter is mock_domain.psmlFooter
         assert new.subnets == {'10.0.0.0/24', '10.255.255.0/24'}
         assert new.labels == set(['some_label', 'other_label']) | set(dns.Domain.DEFAULT_LABELS)
 
@@ -147,7 +147,7 @@ class TestIPv4Address:
 
     MOCK_NAME = '10.0.0.0'
     MOCK_LABELS = {('some_label')}
-    MOCK_FOOTER = ['test item']
+    MOCK_FOOTER = psml.Section('footer', fragments = [psml.Fragment('id')])
 
     @fixture
     def mock_ipv4(self, network: Network) -> dns.IPv4Address:
@@ -208,9 +208,6 @@ class TestIPv4Address:
         new_labels = {('other_label')}
         new = dns.IPv4Address(mock_ipv4.network, mock_ipv4.name, new_labels)
 
-        new_footers = ['another test item']
-        new.psmlFooter.extend(new_footers)
-
         new_nat = new.network.ips['10.10.10.10']
         new_source = 'source 2'
         new.translate(new_nat, new_source)
@@ -226,7 +223,8 @@ class TestIPv4Address:
         assert new.backrefs.sources == {(backref_source)}
 
         assert new.labels == mock_ipv4.labels | new_labels
-        assert new.psmlFooter == mock_ipv4.psmlFooter + new_footers
+        assert str(new.psmlFooter) == str(mock_ipv4.psmlFooter)
+        assert not new.psmlFooter is mock_ipv4.psmlFooter
         assert new.NAT == mock_ipv4.NAT | {dns.NATEntry(new, new_nat, new_source)}
 
         with raises(AttributeError):
