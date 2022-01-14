@@ -36,7 +36,7 @@ dns_name_pattern = re.compile(r'([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+')
 """Matches if the string is a valid DNS name."""
 expiry_date_pattern = re.compile(r'expires-(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})')
 """Matches with a named group 'date' if string is a valid stale document expiry label."""
-docid_invalid_patten = re.compile(r'[^a-zA-Z0-9_-]')
+docid_invalid_pattern = re.compile(r'[^a-zA-Z0-9_-]')
 """Matches any characters not allowed in a PageSeeder docid."""
 
 ################
@@ -192,7 +192,7 @@ def validatePSML(psml: str) -> bool:
         SCHEMA = etree.XMLSchema(file = APPDIR + 'src/psml.xsd')
     try:
         SCHEMA.assertValid(etree.fromstring(psml))
-    except Exception:
+    except etree.DocumentInvalid:
         return False
     else:
         return True
