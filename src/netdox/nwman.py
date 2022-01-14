@@ -30,6 +30,8 @@ class NetworkManager:
     """Name of the namespace package to load by default."""
     plugins: set[Plugin]
     """Set of loaded plugins."""
+    loaded: list[str]
+    """List of the names of loaded plugins."""
     nodemap: dict[type[Node], Plugin]
     """Maps the subclasses of Node that a plugin exports to the module object."""
     enabled: PluginWhitelist
@@ -110,13 +112,30 @@ class NetworkManager:
 
         :param dir: The namespace to scan for plugins
         :type dir: str
-        :raises ImportError: If an Exception is raised during the call to ``importlib.import_module``
+        :raises ImportError: If an Exception is raised during the call to 
+        ``importlib.import_module``
         """
-        for plugin in pkgutil.iter_modules(getattr(self.namespace, '__path__', ())):
-            if plugin.name in self.enabled:
+        modules = list(pkgutil.iter_modules(getattr(self.namespace, '__path__', ())))
+        names = [module.name for module in modules]
+        for module in modules:
+            logger.debug(f'Discovered module {module.name}')
+            if module.name in self.enabled:
                 try:
-                    self.add(
-                        Plugin(importlib.import_module(self.namespace.__name__ +'.'+ plugin.name)))
+                    plugin = Plugin(importlib.import_module(
+                        self.namespace.__name__ +'.'+ module.name))
+
+                    failed = set()
+                    for dep in plugin.dependencies:
+                        if dep not in self.enabled:
+                            failed.add(dep)
+                        elif (dep not in names) and (dep not in self.loaded):
+                            failed.add(dep)
+
+                    if failed:
+                        raise ImportError(
+                            f'Failed to load the following plugin dependecies: ' +
+                            ', '.join(failed))
+                    self.add(plugin)
                 except Exception:
                     logger.error(
                         f'Failed to import {plugin.name}:\n{plugin}\n{format_exc()}')
