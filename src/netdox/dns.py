@@ -241,7 +241,7 @@ class DNSObject(base.NetworkObject):
             name = 'node',
             title = 'Node',
             value = XRef(docid = self.node.docid) if self.node else '—'
-        ))
+        ).tag)
 
         if self.node is not None and isinstance(self.node, nodes.ProxiedNode):
             proxy_value: Union[str, XRef]
@@ -249,7 +249,7 @@ class DNSObject(base.NetworkObject):
                 proxy_value = XRef(docid = self.node.proxy.node.docid)
             else:
                 proxy_value = 'Not Provided'
-            header.append(Property('proxy', proxy_value, 'Proxy'))
+            header.append(Property('proxy', proxy_value, 'Proxy').tag)
         
         soup.find('section', id = 'records').replace_with(self.records.to_psml())
         soup.find('section', id = 'implied_records').replace_with(

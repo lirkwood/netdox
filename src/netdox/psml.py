@@ -103,7 +103,6 @@ class Section(PSMLElement):
         index = index or len(self._indices)
         self._frags[fragment.id] = fragment
         self._indices[fragment.id] = index
-        print(type(fragment.tag))
         self.tag.insert(index, copy(fragment.tag))
 
     def extend(self, fragments: Iterable[PSMLFragment]):
@@ -366,7 +365,7 @@ class Property(PSMLElement):
                 self.tag.attrs['value'] = value
             elif isinstance(value, PSMLLink):
                 self.tag.attrs['datatype'] = value.tag.name
-                self.tag.append(value)
+                self.tag.append(value.tag)
             elif isinstance(value, Iterable) and value:
                 self.tag.attrs['multiple'] = 'true'
                 for val in value:
@@ -467,7 +466,8 @@ class XRef(PSMLLink):
                 can_be_empty_element = True,
                 attrs = (attrs or {}) | {'frag': frag}
             )
-            self.tag.string = (uriid or docid or href) if string is None else string,
+            if string is not None:
+                self.tag.string = string
             if uriid:
                 self.tag.attrs['uriid'] = uriid
             if docid:

@@ -150,13 +150,14 @@ class NetworkConfig:
             para.string = domain
             exclusionFrag.append(para)
 
-        labelSection = psml.Section.from_tag(
-            soup.find('section', id = self.LABEL_SECTION_ID))
+        labelTemplate = soup.find('section', id = self.LABEL_SECTION_ID)
+        labelSection = psml.Section.from_tag(labelTemplate)
         for label, properties in self.labels.items():
             labelSection.insert(psml.PropertiesFragment.from_dict(
                 id = f'label_{label}', 
                 constructor = {'label': label} | properties
             ))
+        labelTemplate.replace_with(labelSection.tag)
 
         orgSection = soup.find('section', id = self.ORG_SECTION_ID)
         for uriid, labels in self.organizations.items():
