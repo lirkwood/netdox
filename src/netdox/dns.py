@@ -4,14 +4,15 @@ import os
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import (Generic, Iterable, Iterator, Optional,
-                    TypeVar, Union)
+from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from netdox import base, containers, iptools, utils, nodes
+
+from netdox import base, containers, iptools, nodes, utils
 from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE,
-                         PropertiesFragment, Property, XRef)
+                         PropertiesFragment, Property, Section, XRef)
+
 
 class DNSRecordType(Enum):
     A = 'A'
@@ -116,7 +117,7 @@ class DNSRecordSet:
         """Returns a new DNSRecordSet without any records from the other set."""
         return DNSRecordSet(self._set - other._set)
 
-    def to_psml(self, implied: bool = False) -> Tag:
+    def to_psml(self, implied: bool = False) -> Section:
         """
         Returns a section tag containing the records in this set.
 
@@ -126,27 +127,20 @@ class DNSRecordSet:
         :return: A PSML section tag.
         :rtype: Tag
         """
-        title_prefix = 'Implied ' if implied else ''
         id_prefix = 'implied_' if implied else ''
-        root = Tag(
-            is_xml = True, 
-            name = 'section', 
-            attrs = {
-                'id': id_prefix + 'records',
-                'title': title_prefix + 'DNS Records'
-            }
-        )
+        title_prefix = 'Implied ' if implied else ''
+        root = Section(id_prefix + 'records', title_prefix + 'DNS Records')
         
         for record_type in DNSRecordType:
             for count, record in enumerate(self[record_type]):
                 dest = record.destination
-                root.append(PropertiesFragment(
+                root.insert(PropertiesFragment(
                     id = id_prefix + f'{record_type}_record_{count}', 
                     properties = [
                         Property(dest.type, XRef(docid = dest.docid), 
                             title_prefix + f'{record_type} record'),
                         Property('source', record.source, 'Source Plugin')
-                ]).tag)
+                ]))
 
         return root
         
@@ -251,9 +245,9 @@ class DNSObject(base.NetworkObject):
                 proxy_value = 'Not Provided'
             header.append(Property('proxy', proxy_value, 'Proxy').tag)
         
-        soup.find('section', id = 'records').replace_with(self.records.to_psml())
+        soup.find('section', id = 'records').replace_with(self.records.to_psml().tag)
         soup.find('section', id = 'implied_records').replace_with(
-            self.backrefs.difference(self.records).to_psml(implied = True))
+            self.backrefs.difference(self.records).to_psml(implied = True).tag)
 
         return soup
 
