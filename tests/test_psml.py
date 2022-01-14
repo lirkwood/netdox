@@ -1,5 +1,5 @@
-from netdox import utils, psml
-from fixtures import network, node, domain, ipv4, psml_schema
+from netdox import psml
+from fixtures import *
 from pytest import fixture
 
 class TestXRef:

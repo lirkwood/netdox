@@ -1,6 +1,6 @@
 from types import ModuleType
 from netdox import NetworkManager, Network
-from fixtures import network
+from fixtures import *
 import pytest
 from os import mkdir
 from shutil import rmtree

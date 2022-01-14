@@ -4,7 +4,7 @@ from lxml import etree
 from netdox import Network, nodes, utils, dns
 from netdox.psml import Fragment, Section
 from pytest import fixture, raises
-from fixtures import network, node
+from fixtures import *
 
 class TestNode:
     
@@ -70,6 +70,18 @@ class TestNode:
     def test_serialise(self, node: nodes.Node):
         print(str(node.to_psml()))
         assert utils.validatePSML(node.to_psml().encode('utf-8'))
+
+    def test_organization_node(self, node: nodes.Node, org_label: str, org: str):
+        assert node.organization == None
+
+        node.organization = org
+        assert node.organization == org
+
+        del node.organization
+        assert node.organization == None
+
+        node.labels.add(org_label)
+        assert node.organization == org
 
 
 class TestDefaultNode:

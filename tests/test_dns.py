@@ -1,6 +1,6 @@
 from pytest import raises, fixture
 from netdox import Network, dns, iptools, nodes, psml
-from fixtures import domain, ipv4, network, psml_schema
+from fixtures import *
 from lxml import etree
 
 class TestDNSRecord:
@@ -138,6 +138,17 @@ class TestDomain:
     def test_serialise(self, domain: dns.Domain, psml_schema: etree.XMLSchema):
         assert psml_schema.validate(etree.fromstring(domain.to_psml().encode('utf-8')))
 
+    def test_organization(self, mock_domain: dns.Domain, org: str, org_label: str):
+        assert mock_domain.organization == None
+
+        mock_domain.organization = org
+        assert mock_domain.organization == org
+
+        del mock_domain.organization
+        assert mock_domain.organization == None
+
+        mock_domain.labels.add(org_label)
+        assert mock_domain.organization == org
 
 class TestIPv4Address:
 
@@ -252,3 +263,15 @@ class TestIPv4Address:
 
     def test_serialise(self, ipv4: dns.IPv4Address, psml_schema: etree.XMLSchema):
         assert psml_schema.validate(etree.fromstring(ipv4.to_psml().encode('utf-8')))
+
+    def test_organization(self, mock_ipv4: dns.Domain, org: str, org_label: str):
+        assert mock_ipv4.organization == None
+
+        mock_ipv4.organization = org
+        assert mock_ipv4.organization == org
+
+        del mock_ipv4.organization
+        assert mock_ipv4.organization == None
+
+        mock_ipv4.labels.add(org_label)
+        assert mock_ipv4.organization == org

@@ -1,5 +1,5 @@
 from conftest import randstr
-from fixtures import node, network
+from fixtures import *
 from netdox import IPv4Address, Network
 from netdox.iptools import subn_iter
 from netdox.nodes import Node
