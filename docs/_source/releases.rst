@@ -3,6 +3,21 @@
 Releases
 ########
 
+v1.3.0
+======
+Added Plugin dependencies, NodeProxy/ProxiedNode, DNSRecord, ps_k8s plugin.
+* Plugins can now use the name __depends__ to register a list of plugin names
+the plugin depends on to run.
+* Added NodeProxy and ProxiedNode to represent a proxy in front of a node, 
+and a node behind a proxy respectively.
+* Added DNSRecord/DNSRecordSet classes to better encapsulate records.
+* Added ps_k8s plugin for discovering PageSeeder-based apps running on K8s.
+* Added Section class to PSML module.
+* PSML objects now proxy a BS4 Tag instead of subclassing.
+* Initialising a config directory now copies plugin README files to the dir.
+* Search terms are now configurable by the NWObj implementation.
+
+
 v1.2.0
 ======
 Added Organizations, PlantUML plugin, dynamic config templates.
