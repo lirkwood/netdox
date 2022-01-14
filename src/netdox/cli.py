@@ -14,7 +14,7 @@ from cryptography.fernet import Fernet
 
 from netdox import pageseeder, config as _config_mod
 from netdox.refresh import main as _refresh
-from netdox.utils import APPDIR, decrypt_file, encrypt_file
+from netdox.utils import APPDIR, decrypt_file, encrypt_file, fileFetchRecursive
 from netdox.utils import config as _config_file
 from netdox import Network, NetworkManager
 from netdox.nwman import PluginWhitelist
@@ -94,17 +94,13 @@ def _copy_readmes(nwman: NetworkManager) -> int:
 
     copied = 0
     for plugin in nwman.plugins:
-        logger.debug('---------------')
-        logger.debug(plugin.name)
         plugin_path = plugin.module.__file__
-        logger.debug(plugin_path)
         if plugin_path:
-            for file in os.scandir(os.path.dirname(plugin_path)):
-                logger.debug(file.name)
-                if 'readme' in file.name.lower():
-                    shutil.copyfile(file.path, 
-                        os.path.join(dest, f'{plugin.name}_{file.name}'))
-                    copied += 1
+            for path in fileFetchRecursive(plugin_path):
+                filename = os.path.basename(path).lower()
+                if 'readme' in filename:
+                    shutil.copyfile(path, 
+                        os.path.join(dest, f'{plugin.name}_{filename}'))
     return copied
 
 
