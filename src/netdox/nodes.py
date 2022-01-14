@@ -85,7 +85,7 @@ class Node(base.NetworkObject):
     def docid(self) -> str:
         return (
             f'_nd_node_{self.type}_' +
-            re.sub(utils.docid_invalid_patten, "_", self.identity)
+            re.sub(utils.docid_invalid_pattern, "_", self.identity)
         )
 
     @property
