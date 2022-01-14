@@ -40,7 +40,7 @@ class TestDNSRecordSet:
             f'<section id="records" title="DNS Records">'
             f'<properties-fragment id="{record.type.value}_record_0">'
             f'<property datatype="xref" name="{destination.type}" title="{record.type.value} record">'
-            f'<xref docid="{destination.docid}" frag="default"></xref></property>'
+            f'<xref docid="{destination.docid}" frag="default"/></property>'
             f'<property name="source" title="Source Plugin" value="test source"/>'
             f'</properties-fragment></section>'
         )
@@ -56,7 +56,7 @@ class TestDomain:
     def mock_domain(self, network: Network) -> dns.Domain:
         domain = dns.Domain(network, self.MOCK_NAME, self.MOCK_ZONE,
             labels = self.MOCK_LABELS)
-        domain.psmlFooter = self.MOCK_FOOTER
+        domain.psmlFooter.extend(self.MOCK_FOOTER)
         domain.link('255.255.255.255', 'source 1')
         domain.link('test.domain.com', 'source 2')
         return domain
@@ -114,7 +114,6 @@ class TestDomain:
         backref_source = 'backref_source'
         mock_domain.network.ips[backref_name].link(mock_domain, backref_source)
         
-        print(str(mock_domain.psmlFooter))
         new_labels = {('other_label')}
         new = dns.Domain(mock_domain.network, mock_domain.name, labels = new_labels)
 
@@ -129,18 +128,15 @@ class TestDomain:
         assert new.backrefs.names == {(backref_name)}
         assert new.backrefs.sources == {(backref_source)}
 
-        print(str(new.psmlFooter))
-        print(str(mock_domain.psmlFooter))
         assert new.psmlFooter == mock_domain.psmlFooter
         assert not new.psmlFooter is mock_domain.psmlFooter
-        assert new.subnets == {'10.0.0.0/24', '10.255.255.0/24'}
-        assert new.labels == set(['some_label', 'other_label']) | set(dns.Domain.DEFAULT_LABELS)
+        assert new.labels == new_labels | mock_domain.labels
 
         with raises(AttributeError):
             domain.merge(dns.Domain(network, 'different.domain.com'))
 
     def test_serialise(self, domain: dns.Domain, psml_schema: etree.XMLSchema):
-        assert psml_schema.validate(etree.fromstring(bytes(str(domain.to_psml()), 'utf-8')))
+        assert psml_schema.validate(etree.fromstring(domain.to_psml().encode('utf-8')))
 
 
 class TestIPv4Address:
@@ -152,7 +148,7 @@ class TestIPv4Address:
     @fixture
     def mock_ipv4(self, network: Network) -> dns.IPv4Address:
         ipv4 = dns.IPv4Address(network, self.MOCK_NAME, self.MOCK_LABELS)
-        ipv4.psmlFooter = self.MOCK_FOOTER
+        ipv4.psmlFooter.extend(self.MOCK_FOOTER)
         ipv4.translate('255.255.255.255', 'NAT source')
         ipv4.link('test.domain.com', 'source 1')
         return ipv4
@@ -255,4 +251,4 @@ class TestIPv4Address:
         assert not ipv4.unused
 
     def test_serialise(self, ipv4: dns.IPv4Address, psml_schema: etree.XMLSchema):
-        assert psml_schema.validate(etree.fromstring(bytes(str(ipv4.to_psml()), 'utf-8')))
+        assert psml_schema.validate(etree.fromstring(ipv4.to_psml().encode('utf-8')))

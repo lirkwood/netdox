@@ -12,5 +12,6 @@ class TestNetworkConfig:
         )
 
     def test_psml_roundtrip(self, mock_NetworkConfig):
+        print(mock_NetworkConfig.to_psml())
         assert mock_NetworkConfig == config.NetworkConfig.from_psml(
             mock_NetworkConfig.to_psml())

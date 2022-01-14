@@ -8,31 +8,31 @@ class TestXRef:
     def test_uriid(self):
         assert (
             str(psml.XRef(uriid = self.URIID)) == 
-            f'<xref frag="default" uriid="{self.URIID}"></xref>'
+            f'<xref frag="default" uriid="{self.URIID}"/>'
         )
 
     def test_docid(self):
         assert (
             str(psml.XRef(docid='_test_docid_')) == 
-            '<xref docid="_test_docid_" frag="default"></xref>'
+            '<xref docid="_test_docid_" frag="default"/>'
         )
 
     def test_href(self):
         assert (
             str(psml.XRef(href = '/test/path')) == 
-            '<xref frag="default" href="/test/path"></xref>'
+            '<xref frag="default" href="/test/path"/>'
         )
 
     def test_fragment(self):
         assert (
             str(psml.XRef(self.URIID, frag = 'test_frag')) == 
-            f'<xref frag="test_frag" uriid="{self.URIID}"></xref>'
+            f'<xref frag="test_frag" uriid="{self.URIID}"/>'
         )
 
     def test_attrs(self):
         assert (
             str(psml.XRef(self.URIID, attrs = {'key': 'value'})) == 
-            f'<xref frag="default" key="value" uriid="{self.URIID}"></xref>'
+            f'<xref frag="default" key="value" uriid="{self.URIID}"/>'
         )
 
     def test_string(self):
@@ -103,7 +103,7 @@ class TestProperty:
         assert (
             str(property_XRef) ==
             f'<property datatype="xref" name="{self.NAME}" title="{self.TITLE}">'
-            f'<xref frag="default" uriid="{TestXRef.URIID}"></xref></property>' 
+            f'<xref frag="default" uriid="{TestXRef.URIID}"/></property>' 
         )
 
     def test_Link_string(self, property_Link):

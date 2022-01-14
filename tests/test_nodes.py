@@ -68,7 +68,8 @@ class TestNode:
         assert node.location == node.network.locator.locate({'192.168.0.0', '192.168.0.1'})
 
     def test_serialise(self, node: nodes.Node):
-        assert utils.validatePSML(str(node.to_psml()))
+        print(str(node.to_psml()))
+        assert utils.validatePSML(node.to_psml().encode('utf-8'))
 
 
 class TestDefaultNode:
