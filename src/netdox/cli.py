@@ -96,10 +96,12 @@ def _copy_readmes(nwman: NetworkManager) -> int:
     for plugin in nwman.plugins:
         plugin_path = plugin.module.__file__
         if plugin_path:
+            if not os.path.isdir(plugin_path):
+                plugin_path = os.path.dirname(plugin_path)
             for path in fileFetchRecursive(plugin_path):
                 filename = os.path.basename(path).lower()
                 if 'readme' in filename:
-                    shutil.copyfile(path, 
+                    shutil.copyfile(APPDIR+ path, 
                         os.path.join(dest, f'{plugin.name}_{filename}'))
     return copied
 
