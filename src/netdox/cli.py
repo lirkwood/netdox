@@ -30,6 +30,8 @@ logger.addHandler(streamHandler)
 
 logging.getLogger('charset_normalizer').setLevel(logging.WARNING)
 
+## Misc
+
 def _confirm(message: str, default = False) -> bool:
     """
     Prompts the user to confirm *message* and returns the boolean representation of their answer.
@@ -47,6 +49,7 @@ def _confirm(message: str, default = False) -> bool:
     else:
         return strtobool(resp.lower().strip())
 
+## Init
 
 def init_dirs():
     for path in ('src', 'out', 'logs'):
@@ -62,10 +65,9 @@ def init_dirs():
     if os.path.lexists(APPDIR+ 'cfg'):
         os.remove(APPDIR+ 'cfg')
 
-def _load_config(path: str):
+def _try_load_config(path: str) -> bool:
     """
-    Validates and loads an application config file at *path*. 
-    Returns a bool based on whether the config was valid and successfully loaded.
+    Tries to load config file at *path*. 
 
     :param path: Path to the new config file.
     :type path: str
@@ -75,9 +77,7 @@ def _load_config(path: str):
     if os.path.exists(APPDIR+ 'cfg/config.json'):
         logger.info('Config file already exists in target directory.')
         try:
-            config_args = argparse.Namespace(
-                action = 'load', path = path)
-            config(config_args)
+            _load_config(path)
         except Exception:
             logger.error(f'Failed to load config file in target directory.')
             return False
@@ -96,7 +96,7 @@ def _copy_defaults(nwman: NetworkManager):
     for default_file in os.scandir(APPDIR+ 'src/defaults'):
         file_dest = APPDIR+ 'cfg/'+ default_file.name
         if default_file.name == 'config.json':
-            if not _load_config(file_dest):
+            if not _try_load_config(file_dest):
                 _config_mod.gen_config_template(nwman)
                 logger.info('No application config detected. ' +
                     f'Please populate the template at {file_dest}')
@@ -160,6 +160,37 @@ def init(args: argparse.Namespace):
     
     else: exit(0)
 
+## Config
+
+def _load_config(path: str) -> None:
+    """
+    Loads the config file at *path* as the new app config.
+
+    :param path: Path to the new config file.
+    :type path: str
+    :raises ConnectionError: If the config file cannot be used to connect to PS.
+    """
+    if os.path.exists(CFGPATH):
+        shutil.copyfile(CFGPATH, APPDIR+ 'src/config.old')
+    if os.path.exists(path):
+        encrypt_file(path, CFGPATH)
+        try:
+            assert pageseeder.get_group()
+        except Exception:
+            raise ConnectionError(
+                'Unable to contact or authenticate with the configured PageSeeder instance. '+ 
+                'Please check your configuration and try again.')
+        else:
+            os.remove(path)
+            if os.path.exists(APPDIR+ 'src/config.old'):
+                os.remove(APPDIR+ 'src/config.old')
+            logger.info('Success: configuration is valid.')
+    else:
+        logger.error(f'Unable to find or parse config file at: {path}. Reverting to previous config.')
+        os.remove(CFGPATH)
+        if os.path.exists(APPDIR+ 'src/config.old'):
+            shutil.move(APPDIR+ 'src/config.old', CFGPATH)
+
 def config(args: argparse.Namespace):
     """
     Load a new config file or dump the current one.
@@ -170,37 +201,20 @@ def config(args: argparse.Namespace):
     if args.action == 'load':
         if ((not os.path.exists(CFGPATH)) or
         _confirm('This action will destroy your existing configuration if successful. Continue? [y/n] ')):
-            if os.path.exists(CFGPATH):
-                shutil.copyfile(CFGPATH, APPDIR+ 'src/config.old')
-            if os.path.exists(args.path):
-                encrypt_file(args.path, CFGPATH)
-                try:
-                    assert pageseeder.get_group()
-                except Exception:
-                    raise ConnectionError(
-                        'Unable to contact or authenticate with the configured PageSeeder instance. '+ 
-                        'Please check your configuration and try again.')
-                else:
-                    os.remove(args.path)
-                    if os.path.exists(APPDIR+ 'src/config.old'):
-                        os.remove(APPDIR+ 'src/config.old')
-                    logger.info('Success: configuration is valid.')
-            else:
-                logger.error(f'Unable to find or parse config file at: {args.path}. Reverting to previous config.')
-                os.remove(CFGPATH)
-                if os.path.exists(APPDIR+ 'src/config.old'):
-                    shutil.move(APPDIR+ 'src/config.old', CFGPATH)
-
+            _load_config(args.path)
         else: exit(0)
-    
     else:
         decrypt_file(CFGPATH, args.path)
+
+## Serve
 
 def serve(_):
     """
     Begins serving the web server to listen for webhooks from PageSeeder.
     """
     raise NotImplementedError('Webhooks are not currently usable')
+
+## Refresh
 
 def refresh(args: argparse.Namespace):
     """
@@ -215,6 +229,8 @@ def refresh(args: argparse.Namespace):
     logger.debug('Refresh begins')
 
     _refresh(dry = args.dry_run)
+
+## Crypto
 
 def encrypt(args: argparse.Namespace):
     """
@@ -234,6 +250,7 @@ def decrypt(args: argparse.Namespace):
     """
     decrypt_file(str(args.inpath), str(args.outpath) if args.outpath else None)
 
+## Parsing
 
 def parse_args():
     parser = argparse.ArgumentParser(prog = 'netdox', description = 'Network documentation generator for use with PageSeeder.')
