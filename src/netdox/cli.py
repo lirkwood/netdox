@@ -14,7 +14,7 @@ from cryptography.fernet import Fernet
 
 from netdox import pageseeder, config as _config_mod
 from netdox.refresh import main as _refresh
-from netdox.utils import APPDIR, decrypt_file, encrypt_file, fileFetchRecursive
+from netdox.utils import APPDIR, CFGPATH, decrypt_file, encrypt_file, fileFetchRecursive
 from netdox.utils import config as _config_file
 from netdox import Network, NetworkManager
 from netdox.nwman import PluginWhitelist
@@ -56,32 +56,58 @@ def init_dirs():
     with open(APPDIR+ 'src/.crpt', 'wb') as stream:
         stream.write(Fernet.generate_key())
     
-    if os.path.exists(APPDIR+ 'src/config.bin'):
-        os.remove(APPDIR+ 'src/config.bin')
+    if os.path.exists(CFGPATH):
+        os.remove(CFGPATH)
 
     if os.path.lexists(APPDIR+ 'cfg'):
         os.remove(APPDIR+ 'cfg')
 
-def _load_config():
+def _load_config(path: str):
+    """
+    Validates and loads an application config file at *path*. 
+    Returns a bool based on whether the config was valid and successfully loaded.
+
+    :param path: Path to the new config file.
+    :type path: str
+    :return: True if the file was loaded successfully. False otherwise.
+    :rtype: bool
+    """
     if os.path.exists(APPDIR+ 'cfg/config.json'):
-        print('Config file already exists in target directory.')
+        logger.info('Config file already exists in target directory.')
         try:
             config_args = argparse.Namespace(
-                action = 'load', path = APPDIR+ 'cfg/config.json')
+                action = 'load', path = path)
             config(config_args)
         except Exception:
-            print(f'Failed to load config file in target directory.')
+            logger.error(f'Failed to load config file in target directory.')
             return False
         else:
             return True
     else:
         return False
 
+def _copy_defaults(nwman: NetworkManager):
+    """
+    Copies default config files / templates to dir at *path*.
+
+    :params nwman: NetworkManager object to use to generate app config template.
+    :type nwman: NetworkManager
+    """
+    for default_file in os.scandir(APPDIR+ 'src/defaults'):
+        file_dest = APPDIR+ 'cfg/'+ default_file.name
+        if default_file.name == 'config.json':
+            if not _load_config(file_dest):
+                _config_mod.gen_config_template(nwman)
+                logger.info('No application config detected. ' +
+                    f'Please populate the template at {file_dest}')
+        else:
+            if not os.path.exists(file_dest):
+                shutil.copy(default_file.path, file_dest)
+
 def _copy_readmes(nwman: NetworkManager) -> int:
     """
     Discovers README files from the plugins in *nwman* 
-    and copies them to the a folder in the config directory.
-    
+    and copies them to a folder in the config directory.
 
     :param nwman: The NetworkManager to read plugin data from.
     :type nwman: NetworkManager
@@ -126,21 +152,11 @@ def init(args: argparse.Namespace):
 
         init_dirs()
         os.symlink(os.path.abspath(args.path), APPDIR+ 'cfg', 
-            target_is_directory = True) 
-        logger.debug(f'Copied {_copy_readmes(nwman)} plugin README files')
+            target_is_directory = True)
+        _copy_defaults(nwman) 
 
-        config_loaded = False
-        for default_file in os.scandir(APPDIR+ 'src/defaults'):
-            if default_file.name == 'config.json':
-                config_loaded = _load_config()
-                if not config_loaded:
-                    _config_mod.gen_config_template(nwman)
-            else:
-                if not os.path.exists(APPDIR+ 'cfg/'+ default_file.name):
-                    shutil.copy(default_file.path, APPDIR+ 'cfg/'+ default_file.name)
-            
-        print('Initialisation of directory successful.',
-            'Please provide a config using \'netdox config\'.' if not config_loaded else '')
+        logger.debug(f'Copied {_copy_readmes(nwman)} plugin README files')
+        logger.info('Initialisation of directory successful.')
     
     else: exit(0)
 
@@ -152,12 +168,12 @@ def config(args: argparse.Namespace):
     :type args: argparse.Namespace
     """
     if args.action == 'load':
-        if ((not os.path.exists(APPDIR+ 'src/config.bin')) or
+        if ((not os.path.exists(CFGPATH)) or
         _confirm('This action will destroy your existing configuration if successful. Continue? [y/n] ')):
-            if os.path.exists(APPDIR+ 'src/config.bin'):
-                shutil.copyfile(APPDIR+ 'src/config.bin', APPDIR+ 'src/config.old')
+            if os.path.exists(CFGPATH):
+                shutil.copyfile(CFGPATH, APPDIR+ 'src/config.old')
             if os.path.exists(args.path):
-                encrypt_file(args.path, APPDIR+ 'src/config.bin')
+                encrypt_file(args.path, CFGPATH)
                 try:
                     assert pageseeder.get_group()
                 except Exception:
@@ -168,17 +184,17 @@ def config(args: argparse.Namespace):
                     os.remove(args.path)
                     if os.path.exists(APPDIR+ 'src/config.old'):
                         os.remove(APPDIR+ 'src/config.old')
-                    print('Success: configuration is valid.')
+                    logger.info('Success: configuration is valid.')
             else:
                 logger.error(f'Unable to find or parse config file at: {args.path}. Reverting to previous config.')
-                os.remove(APPDIR+ 'src/config.bin')
+                os.remove(CFGPATH)
                 if os.path.exists(APPDIR+ 'src/config.old'):
-                    shutil.move(APPDIR+ 'src/config.old', APPDIR+ 'src/config.bin')
+                    shutil.move(APPDIR+ 'src/config.old', CFGPATH)
 
         else: exit(0)
     
     else:
-        decrypt_file(APPDIR+ 'src/config.bin', args.path)
+        decrypt_file(CFGPATH, args.path)
 
 def serve(_):
     """

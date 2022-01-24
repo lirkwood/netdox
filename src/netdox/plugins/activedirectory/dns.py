@@ -105,17 +105,13 @@ def parseDN(distinguished_name: str) -> tuple[Optional[str], Optional[str]]:
     for statement in distinguished_name.split(','):
         match = re.match(dc_pattern, statement)
         if match:
-            if match['dc'] == '*':
-                name.append('_wildcard_')
-            else:
-                name.append(match['dc'])
+            name.append('_wildcard_' if match['dc'] == '*' else match['dc'])
         else:
             if name:
                 if name[0] == '@':
                     fqdn = '.'.join(name[1:]).lower()
                     return fqdn, fqdn
-                else:
-                    return '.'.join(name).lower(), '.'.join(name[1:]).lower()
+                return '.'.join(name).lower(), '.'.join(name[1:]).lower()
             else:
                 logger.debug('No hostname parsed from ' + distinguished_name)
                 return None, None
