@@ -10,6 +10,7 @@ build
 .vscode
 .dockerignore
 .coverage
+.scannerwork
 .dmypy.json
 *.code-workspace
 netdox.egg-info
