@@ -170,8 +170,9 @@ def _load_config(path: str) -> None:
     :type path: str
     :raises ConnectionError: If the config file cannot be used to connect to PS.
     """
+    backup = APPDIR+ 'src/config.old'
     if os.path.exists(CFGPATH):
-        shutil.copyfile(CFGPATH, APPDIR+ 'src/config.old')
+        shutil.copyfile(CFGPATH, backup)
     if os.path.exists(path):
         encrypt_file(path, CFGPATH)
         try:
@@ -182,14 +183,14 @@ def _load_config(path: str) -> None:
                 'Please check your configuration and try again.')
         else:
             os.remove(path)
-            if os.path.exists(APPDIR+ 'src/config.old'):
-                os.remove(APPDIR+ 'src/config.old')
+            if os.path.exists(backup):
+                os.remove(backup)
             logger.info('Success: configuration is valid.')
     else:
         logger.error(f'Unable to find or parse config file at: {path}. Reverting to previous config.')
         os.remove(CFGPATH)
-        if os.path.exists(APPDIR+ 'src/config.old'):
-            shutil.move(APPDIR+ 'src/config.old', CFGPATH)
+        if os.path.exists(backup):
+            shutil.move(backup, CFGPATH)
 
 def config(args: argparse.Namespace):
     """
