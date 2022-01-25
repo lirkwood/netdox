@@ -4,6 +4,7 @@ from typing import Iterable, Optional, Union
 
 from bs4 import BeautifulSoup
 from netdox import Domain, Network, utils
+from netdox.psml import PropertiesFragment, Property
 from netdox.plugins.icinga.api import (TEMPLATE_ATTR, createHost,
                                        fetchMonitors, removeHost,
                                        updateHostTemplate)
@@ -26,6 +27,8 @@ class MonitorManager:
     """Dictionary of the generated monitors."""
     overflow: defaultdict[str, list[dict]]
     """Dictionary to hold extra generated monitors for a given domain."""
+    _cache: set[str]
+    """Set of domain names used as a cache while locating domains."""
 
     def __init__(self, network: Network) -> None:
         self.network = network
@@ -204,6 +207,37 @@ class MonitorManager:
 
     ## Miscellaneous
 
+    def _locateDomain(self, domain: Union[Domain, str]) -> Optional[str]:
+        """
+        Returns the location of this domain from it's Node, IPs, or aliases.
+
+        :param domain: A FQDN to locate
+        :type domain: str
+        :return: The location of the domain, or None
+        :rtype: str
+        """
+        if isinstance(domain, str):
+            domain = self.network.domains[domain]
+        
+        node = domain.node
+        if node:
+            node_loc = node.location
+            if node_loc is not None: 
+                return node_loc
+
+        ip_loc = self.network.locator.locate(domain.ips)
+        if ip_loc is not None: 
+            return ip_loc
+
+        for alias in domain.domains:
+            if alias not in self._cache:
+                self._cache.add(alias)
+                alias_loc = self._locateDomain(alias)
+                if alias_loc:
+                    return alias_loc
+
+        return None
+
     def locateDomain(self, domain: Union[Domain, str]) -> Optional[str]:
         """
         Guesses the best location to attribute to a domain name.
@@ -219,21 +253,8 @@ class MonitorManager:
         """
         if isinstance(domain, str):
             domain = self.network.domains[domain]
-        
-        node = domain.node
-        if node:
-            node_loc = node.location
-            if node_loc is not None: return node_loc
-        else:
-            ip_loc = self.network.locator.locate(domain.ips)
-            if ip_loc is not None: 
-                return ip_loc
-            else:
-                for alias in domain.domains: #TODO fix infinite recursion
-                    alias_loc = self.locateDomain(alias)
-                    if alias_loc is not None: return alias_loc
-
-        return None
+        self._cache = set([domain.name])
+        return self._locateDomain(domain)
 
     def addPSMLFooters(self) -> None:
         """
@@ -242,16 +263,11 @@ class MonitorManager:
         for domain in self.network.domains:
             icinga_details = getattr(domain, 'icinga', None)
             if icinga_details:
-                frag = BeautifulSoup(f'''
-                <properties-fragment id="icinga">
-                    <property name="icinga" title="Icinga Instance" value="{icinga_details['icinga']}" />
-                    <property name="template" title="Monitor Template" value="{icinga_details['templates'][0]}" />
-                </properties-fragment>
-                ''', features = 'xml')
-                for service in icinga_details['services']:
-                    frag.find(id='icinga').append(frag.new_tag('property', attrs = {
-                        'name': 'service',
-                        'title': 'Monitor Service',
-                        'value': service
-                    }))
+                frag = PropertiesFragment('icinga', [
+                    Property('icinga', icinga_details['icinga'], 'Icinga Instance'),
+                    Property('template', icinga_details['templates'][0], 'Monitor Template')
+                ] + [
+                    Property('service', service, 'Monitor Service')
+                    for service in icinga_details['services']
+                ])
                 domain.psmlFooter.insert(frag)
