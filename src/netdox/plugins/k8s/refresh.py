@@ -148,14 +148,10 @@ def getClusterNodeIPs(apiClient: client.ApiClient) -> list[str]:
     ips: list[str] = []
     api = client.CoreV1Api(apiClient)
     for node in api.list_node().items:
-        startlen = len(ips)
         for addr in node.status.addresses:
             if addr.type == 'ExternalIP':
                 ips.append(addr.address)
                 continue
-
-        if len(ips) == startlen:
-            logger.warning('Failed to discover ExternalIP for a node')
     return ips
 
 def getApps(network: Network, context: str, namespace: str='default') -> list[App]:
