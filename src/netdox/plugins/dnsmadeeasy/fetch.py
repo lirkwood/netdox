@@ -53,6 +53,7 @@ def fetchDNS(network: Network):
             elif record['type'] == 'PTR':
                 add_PTR(network, record, domain)
 
+SOURCE = 'DNSMadeEasy'
 
 @utils.handle
 def add_A(network: Network, record: dict, root: str):
@@ -69,9 +70,7 @@ def add_A(network: Network, record: dict, root: str):
     subdomain = record['name']
     ip = record['value']
     fqdn = assemble_fqdn(subdomain, root)
-
-    if fqdn not in network.config.exclusions:
-        network.domains[fqdn].link(ip, 'DNSMadeEasy')	
+    network.link(fqdn, ip, SOURCE)
 
 @utils.handle
 def add_CNAME(network: Network, record: dict, root: str):
@@ -89,9 +88,7 @@ def add_CNAME(network: Network, record: dict, root: str):
     value = record['value']
     fqdn = assemble_fqdn(subdomain, root)
     dest = assemble_fqdn(value, root)
-
-    if fqdn not in network.config.exclusions:
-        network.domains[fqdn].link(dest, 'DNSMadeEasy')
+    network.link(fqdn, dest, SOURCE)
 
 @utils.handle
 def add_PTR(network: Network, record: dict, root: str):
@@ -110,9 +107,7 @@ def add_PTR(network: Network, record: dict, root: str):
     value = record['value']
     ip = subnet +'.'+ addr
     fqdn = assemble_fqdn(value, root)
-    
-    if iptools.valid_ip(ip):
-        network.ips[ip].link(fqdn, 'DNSMadeEasy')
+    network.link(ip, fqdn, SOURCE)
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
