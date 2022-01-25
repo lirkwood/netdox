@@ -62,52 +62,39 @@ class EC2Instance(DefaultNode):
                 self.tags[tag['Key']] = tag['Value']
 
     @property
-    def psmlInstanceinf(self) -> Tag:
+    def psmlInstanceinf(self) -> psml.PropertiesFragment:
         """
         Instanceinf fragment of EC2Instance Node document.
 
         :return: A *properties-fragment* bs4 tag.
         :rtype: Tag
         """
-        frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id':'instanceinf'})
-        frag.append(psml.Property(
-            name='instanceId', title='Instance ID', value=self.id
-        ))
-        frag.append(psml.Property(
-            name='mac', title='MAC Address', value=self.mac
-        ))
-        frag.append(psml.Property(
-            name='instanceType', title='Instance Type', value=self.instance_type
-        ))
-        frag.append(psml.Property(
-            name='Monitoring', title='Monitoring', value=self.monitoring
-        ))
-        frag.append(psml.Property(
-            name='availabilityZone', title='Availability Zone', value=self.region
-        ))
-        return frag
+        return psml.PropertiesFragment('instanceinf', [
+            psml.Property('instanceId', self.id, 'Instance ID'),
+            psml.Property('mac', self.mac, 'MAC Address'),
+            psml.Property('instanceType', self.instance_type, 'Instance Type'),
+            psml.Property('monitoring', self.monitoring, 'Monitoring'),
+            psml.Property('availabilityZone', self.region, 'Availability Zone')
+        ])
 
     @property
-    def psmlTags(self) -> Tag:
+    def psmlTags(self) -> psml.PropertiesFragment:
         """
         Tags fragment of EC2Instance Node document.
 
         :return: A *properties-fragment* bs4 tag.
         :rtype: Tag
         """
-        frag = Tag(is_xml = True, name = 'properties-fragment', attrs = {'id':'tags'})
-        for tag, value in self.tags.items():
-            frag.append(psml.Property(
-                name='tag', title=tag, value=value
-            ))
-        return frag
+        return psml.PropertiesFragment('tags', [
+            psml.Property('tag', tag, value) 
+            for tag, value in self.tags.items()
+        ])
 
     @property
-    def psmlBody(self) -> list[Tag]:
-        section = Tag(is_xml=True, name='section', attrs={'id':'body'})
-        section.append(self.psmlInstanceinf)
-        section.append(self.psmlTags)
-        return [section]
+    def psmlBody(self) -> list[psml.Section]:
+        return [
+            psml.Section('body', fragments = [self.psmlInstanceinf, self.psmlTags])
+        ]
 
 ## plugin funcs
 

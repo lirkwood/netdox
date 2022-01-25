@@ -134,14 +134,14 @@ class App(ProxiedNode):
     ## abstract properties
     
     @property
-    def psmlBody(self) -> list[Tag]:
+    def psmlBody(self) -> list[psml.Section]:
         return [self.psmlPodTemplate, self.psmlRunningPods]
 
     ## properties
 
     @property
-    def psmlPodTemplate(self) -> Tag:
-        section = Tag(is_xml=True, name='section', attrs={'id':'template', 'title':'Pod Template'})
+    def psmlPodTemplate(self) -> psml.Section:
+        section = psml.Section('template', 'Pod Template')
         count = 0
         for container in self.template:
             frag = psml.PropertiesFragment(id = 'container_' + str(count), properties = [
@@ -167,17 +167,17 @@ class App(ProxiedNode):
                     )
                 ])
 
-            section.append(frag)
+            section.insert(frag)
             count += 1
         return section
                 
     @property
-    def psmlRunningPods(self) -> Tag:
-        section = Tag(is_xml=True, name='section', attrs={'id':'pods', 'title':'Running Pods'})
+    def psmlRunningPods(self) -> psml.Section:
+        section = psml.Section('pods', 'Running Pods')
         count = 0
         for pod in self.pods:
             workerIp = self.network.find_dns(pod.workerIp)
-            section.append(psml.PropertiesFragment(id = 'pod_' + str(count), properties = [
+            section.insert(psml.PropertiesFragment(id = 'pod_' + str(count), properties = [
                 psml.Property(name = 'pod', title = 'Pod', value = pod.name),
 
                 psml.Property(name = 'ipv4', title = 'Worker IP', 
@@ -189,6 +189,6 @@ class App(ProxiedNode):
                 psml.Property(name = 'worker_node', title = 'Worker Node', 
                     value = (psml.XRef(docid = workerIp.node.docid)
                         if workerIp.node else '—'))
-            ]).tag)
+            ]))
             count += 1
         return section

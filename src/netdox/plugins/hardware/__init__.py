@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup, SoupStrainer, Tag
 from netdox import iptools, pageseeder, utils
 from netdox import Network
 from netdox.nodes import Node
+from netdox.psml import Section
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,8 @@ class HardwareNode(Node):
     """
     A Node built from manual-entry data.
     """
+    psml: Section
+    """The body section copied from the document on PS."""
     origin_doc: str
     """The URI of the document this Node was created from."""
     filename: str
@@ -71,7 +74,7 @@ class HardwareNode(Node):
             ips = ips
         )
 
-        self.psml = psml
+        self.psml = Section.from_tag(psml.section)
         self.origin_doc = origin_doc
         self.filename = filename
 
@@ -82,7 +85,7 @@ class HardwareNode(Node):
         return os.path.normpath(os.path.abspath(utils.APPDIR+ f'out/hardware/{self.filename}'))
 
     @property
-    def psmlBody(self) -> list[Tag]:
+    def psmlBody(self) -> list[Section]:
         return [self.psml]
 
     ## methods

@@ -115,7 +115,7 @@ class VirtualMachine(DefaultNode):
         ])
 
     @property
-    def psmlBody(self) -> list[Tag]:
+    def psmlBody(self) -> list[psml.Section]:
         return [psml.Section('body', fragments = [
             self.psmlCore, self.psmlOS, self.psmlTags])]
 
