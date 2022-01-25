@@ -248,3 +248,16 @@ def staleReport(stale: dict[date, set[str]]) -> str:
             ))
         section.append(frag)
     return str(section)
+
+def validDomain(domain: str) -> bool:
+    """
+    Returns True if the provided string is a valid name for a Netdox Domain.
+    False otherwise.
+
+    :param domain: The domain to test.
+    :type domain: str
+    :return: True if the domain is <89 chars long and matches dns_name_pattern.
+    False otherwise.
+    :rtype: bool
+    """
+    return bool(len(domain) <= 89 and re.fullmatch(dns_name_pattern, domain))

@@ -314,7 +314,7 @@ class Domain(DNSObject):
         :type zone: str, optional
         :raises ValueError: If *name* is not a valid FQDN
         """
-        if re.fullmatch(utils.dns_name_pattern, name):
+        if utils.validDomain(name):
 
             super().__init__(
                 network = network, 
