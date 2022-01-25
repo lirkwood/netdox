@@ -3,6 +3,17 @@
 Releases
 ########
 
+v1.3.1
+======
+Bugfixes, added warning logs to report, using psml Section in more places.
+* Fixed Docker image crashing due to bug with copying plugin READMEs.
+* Fixed Network cache containing all domains, breaking resolveTo.
+* Added a fragment to daily report with warning+ level logs from the refresh.
+* Moved to using psml Section in place of a list of bs4 Tags for node psmlBody.
+* Fixed bug in icinga plugin where locating a domain could recurse infinitely.
+* Changed the default plugin whitelist to wildcard from empty.
+* Fixed incorrect PSMLElement syntax in many places.
+
 v1.3.0
 ======
 Added Plugin dependencies, NodeProxy/ProxiedNode, DNSRecord, ps_k8s plugin.
