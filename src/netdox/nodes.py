@@ -131,8 +131,8 @@ class Node(base.NetworkObject):
         soup = super().to_psml()
 
         body = soup.find('section', id = 'body')
-        for tag in self.psmlBody:
-            body.append(tag)
+        for section in self.psmlBody:
+            body.append(section.tag)
         body.unwrap()
 
         domains = PropertiesFragment('domains', properties = [
