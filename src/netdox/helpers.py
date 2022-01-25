@@ -174,11 +174,11 @@ class LabelDict(dict):
         except Exception:
             logger.error('Failed to retrieve URI labels from PageSeeder.')
             all_uris = {'uris':[]}
-        finally:
-            return cls({ 
-                uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
-                for uri in all_uris['uris'] if 'docid' in uri
-            })
+            
+        return cls({ 
+            uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
+            for uri in all_uris['uris'] if 'docid' in uri
+        })
 
 
 #######################
