@@ -9,7 +9,8 @@ import pickle
 from netdox import iptools, nodes, dns
 from netdox import base, helpers
 from netdox.config import NetworkConfig
-from netdox.utils import APPDIR, Cryptor
+from netdox.utils import APPDIR, Cryptor, validDomain
+from netdox.iptools import valid_ip
 
 
 class DomainSet(dns.DNSObjectContainer[dns.Domain]):
@@ -229,6 +230,37 @@ class Network:
         self.locator = helpers.Locator()
         self.report = helpers.Report()
         self.cache = set()
+
+    def link(self, 
+            origin: Union[str, dns.DNSObject], 
+            dest: Union[str, dns.DNSObject], 
+            source: str
+        ) -> None:
+        """
+        Creates a DNS record from *origin* to *dest* provided by *source*,
+        if both origin and dest are valid DNS objects / DNSObj names.
+
+        :param origin: DNSObject or name of the starting point for the new DNS record.
+        :type origin: Union[str, dns.DNSObject]
+        :param dest: Destination for the new DNS record.
+        :type dest: Union[str, dns.DNSObject]
+        :param source: Name of the plugin that provided this DNS record.
+        :type source: str
+        """
+        if isinstance(origin, str):
+            if (origin not in self.config.exclusions
+                and (valid_ip(origin) or validDomain(origin))
+            ):
+                origin = self.find_dns(origin)
+            else:
+                return
+
+        if isinstance(dest, dns.DNSObject):
+            dest = dest.name
+        if (dest not in self.config.exclusions
+            and (valid_ip(dest) or validDomain(dest))
+        ):
+            origin.link(dest, source)
 
     ## resolving refs
 
