@@ -41,10 +41,10 @@ def runner(network: Network):
             else:
                 license_type = details.get('license-type')
                 org = None
-                if isinstance(details.get('organization'), psml.XRef):
-                    xref = details['organization']
-                    if 'uriid' in xref.attrs:
-                        org = xref['uriid']
+                xref = details.get('organization')
+                if isinstance(xref, psml.XRef):
+                    if 'uriid' in xref.tag.attrs:
+                        org = xref.tag['uriid']
                 try:
                     with warnings.catch_warnings(): #TODO investigate alternatives to this
                         warnings.simplefilter('ignore')
