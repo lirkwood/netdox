@@ -127,15 +127,15 @@ def apply_licenses(
 
             for addr in (dnsobj.node.domains | dnsobj.node.ips):
                 cache |= apply_licenses(dnsobj.network.find_dns(addr),
-                    license_uri, license_type, org_uri, pageseeder_ver, cache)
+                    license_uri, license_type, pageseeder_ver, org_uri, cache)
 
     for backref in dnsobj.backrefs.destinations:
         cache |= apply_licenses(
-            backref, license_uri, license_type, org_uri, pageseeder_ver, cache)
+            backref, license_uri, license_type, pageseeder_ver, org_uri, cache)
 
     for dest in dnsobj.records.destinations:
         cache |= apply_licenses(
-            dest, license_uri, license_type, org_uri, pageseeder_ver, cache)
+            dest, license_uri, license_type, pageseeder_ver, org_uri, cache)
 
     return cache
 
