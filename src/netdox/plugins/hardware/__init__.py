@@ -11,7 +11,7 @@ import time
 import zipfile
 from shutil import rmtree
 from traceback import print_exc
-from typing import Iterable, Optional
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup, SoupStrainer, Tag
@@ -51,7 +51,7 @@ class HardwareNode(Node):
         for property in psml('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
-                if domain and re.fullmatch(utils.dns_name_pattern, domain): 
+                if domain and utils.validDomain(domain): 
                     domains.append(domain)
                 elif domain:
                     logging.warn(f'Failed to add invalid domain \'{domain}\' to HardwareNode \'{filename}\'')

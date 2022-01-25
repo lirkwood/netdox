@@ -1,12 +1,11 @@
 import logging
-from re import fullmatch
 import json
 
 from bs4 import BeautifulSoup
 from netdox import Network, pageseeder, psml
 from netdox.base import NetworkObject
 from netdox.dns import DNSObject
-from netdox.utils import dns_name_pattern
+from netdox.utils import validDomain
 import warnings
 
 logger = logging.getLogger(__name__)
@@ -25,7 +24,7 @@ def runner(network: Network):
             domain = details['domain']
             try:
                 if isinstance(domain, str):
-                    assert fullmatch(dns_name_pattern, domain)
+                    assert validDomain(domain)
                 elif isinstance(domain, psml.XRef):
                     domain = _domain_from_xref(domain)
                 else:
@@ -72,13 +71,13 @@ def _domain_from_xref(input: psml.XRef) -> str:
     if 'unresolved' in input.tag.attrs and bool(input.tag['unresolved']):
         raise AttributeError('Cannot extract domain name from unresolved xref.')
 
-    if 'urititle' in input.tag.attrs and fullmatch(dns_name_pattern, input.tag['urititle']):
+    if 'urititle' in input.tag.attrs and validDomain(input.tag['urititle']):
         return input.tag['urititle']
     
     dest = json.loads(pageseeder.get_uri(input.tag['uriid']))
-    if fullmatch(dns_name_pattern, dest['title']):
+    if validDomain(dest['title']):
         return dest['title']
-    elif fullmatch(dns_name_pattern, dest['displaytitle']):
+    elif validDomain(dest['displaytitle']):
         return dest['displaytitle']
     else:
         raise ValueError('Unable to extract a valid domain name from xref.')
