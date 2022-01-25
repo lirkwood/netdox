@@ -116,11 +116,8 @@ class VirtualMachine(DefaultNode):
 
     @property
     def psmlBody(self) -> list[Tag]:
-        section = Tag(is_xml=True, name='section', attrs={'id':'body'})
-        section.append(self.psmlCore)
-        section.append(self.psmlOS)
-        section.append(self.psmlTags)
-        return [section]
+        return [psml.Section('body', fragments = [
+            self.psmlCore, self.psmlOS, self.psmlTags])]
 
 
 
