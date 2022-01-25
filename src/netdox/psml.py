@@ -139,7 +139,7 @@ class Section(PSMLElement):
             attrs = tag.attrs
         )
 
-class PSMLFragment(PSMLElement): #TODO implement PSMLElement?
+class PSMLFragment(PSMLElement):
     """
     Parent class for the various fragments in PSML.
     """
