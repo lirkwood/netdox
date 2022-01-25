@@ -94,9 +94,13 @@ class Report:
     """
     sections: list[str]
     """A list of section elements to display in the report."""
+    logs: str
+    """A string containing warning+ logs that occurred 
+    while running the refresh for this report."""
 
     def __init__(self) -> None:
         self.sections = []
+        self.logs = ''
 
     def addSection(self, section: str) -> None:
         """
@@ -124,6 +128,10 @@ class Report:
         """
         with open(utils.APPDIR+ 'src/templates/report.psml', 'r') as stream:
             report = BeautifulSoup(stream.read(), 'xml')
+
+        logs = report.new_tag('preformat')
+        logs.string = self.logs
+        report.find('fragment', id = 'logs').append(logs)
 
         for tag in self.sections:
             report.document.append(BeautifulSoup(tag, 'xml'))
@@ -174,7 +182,7 @@ class LabelDict(dict):
         except Exception:
             logger.error('Failed to retrieve URI labels from PageSeeder.')
             all_uris = {'uris':[]}
-            
+
         return cls({ 
             uri['docid']: set(uri['labels'] if 'labels' in uri else []) 
             for uri in all_uris['uris'] if 'docid' in uri
