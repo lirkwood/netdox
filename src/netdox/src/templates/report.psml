@@ -6,10 +6,11 @@
     </uri>
   </documentinfo>
   <section id="title">
-    <fragment id="1">
+    <fragment id="title">
       <heading level="1">Daily Report</heading>
       <para>This document contains noteworthy events that occurred during the last refresh.</para>
     </fragment>
+    <fragment id="logs" />
   </section>
   <toc/>
 </document>
