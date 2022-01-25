@@ -53,7 +53,7 @@ def runner(network: Network):
                     version = None
 
                 cache |= apply_licenses(network.find_dns(domain), 
-                    uri, license_type, org, version, cache)
+                    uri, license_type, version, org, cache)
                     
         except KeyError:
             logger.warning(f'License with uri {uri} missing property \'domain\'.')
