@@ -3,17 +3,18 @@ This module contains the objects that represent a single computer.
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
 from hashlib import sha256
-from typing import TYPE_CHECKING, Iterable, Optional, Union
-import logging
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from netdox import base, iptools, utils, dns
-from netdox.psml import (NODE_TEMPLATE,
-                         PropertiesFragment, Property, XRef)
+
+from netdox import base, dns, iptools, utils
+from netdox.psml import (NODE_TEMPLATE, PropertiesFragment, Property, Section,
+                         XRef)
 
 if TYPE_CHECKING:
     from netdox import Network
@@ -72,12 +73,12 @@ class Node(base.NetworkObject):
     ## abstract properties
 
     @property
-    def psmlBody(self) -> list[Tag]: #TODO move to Section from Tag
+    def psmlBody(self) -> list[Section]:
         """
         Returns a list of section tags to add to the body of this Node's output PSML.
 
-        :return: A list of ``<section />`` BeautifulSoup Tag objects.
-        :rtype: list[Tag]
+        :return: A list of psml Sections.
+        :rtype: list[Section]
         """
         return []
 
