@@ -30,7 +30,7 @@ def runner(network) -> None:
         node.psmlFooter.insert(PropertiesFragment('snmp', [
             Property('oid', f'{oid} = {val}', 'SNMP OID')
             for oid, val in varbinds.items() if val
-        ]).tag)
+        ]))
 
 if __name__ == '__main__':
     net = Network()

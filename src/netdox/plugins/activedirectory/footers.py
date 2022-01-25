@@ -7,6 +7,7 @@ from pypsrp.wsman import WSMan
 from netdox import utils
 from netdox import Domain, Network
 from netdox.nodes import PlaceholderNode
+from netdox.psml import PropertiesFragment, Property
 
 logger = logging.getLogger(__name__)
 
@@ -33,17 +34,20 @@ def addFooters(network: Network) -> None:
             for group in groupsoup('S'):
                 groups.append(group.string.split(',')[0].replace('CN=',''))
 
-            frag = BeautifulSoup(f'''
-            <properties-fragment id="activedirectory">
-                <property name="distinguishedname" title="Distinguished Name" value="{properties['DistinguishedName']}" />
-                
-                <property name="desc" title="Description" 
-                    value="{properties['Description'] if properties['Description'] else '—'}" />
-
-                <property name="groups" title="Groups" multiple="true">
-                    {''.join(['<value>'+ g +'</value>' for g in groups])}
-                </property>
-            </properties-fragment>''', 'xml')
+            frag = PropertiesFragment('activedirectory', [
+                Property(
+                    'distinguishedname', 
+                    properties['DistinguishedName'], 
+                    'Distinguished Name'),
+                Property(
+                    'desc', 
+                    properties['Description'] if properties['Description'] else '—', 
+                    'Description'),
+                Property(
+                    'groups', 
+                    groups, 
+                    'Groups')
+            ])
 
             if properties['DNSHostName'] and properties['DNSHostName'] not in network.domains:
                 Domain(network, properties['DNSHostName'], zone = zone)

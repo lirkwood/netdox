@@ -15,7 +15,7 @@ def runner(network: Network) -> None:
         url = factory.draw(node)
         node.psmlFooter.insert(PropertiesFragment('diagram', properties = [
             Property('diagram', Link(url, string = factory.server), 'PlantUML Diagram')
-        ]).tag)
+        ]))
 
 __stages__ = {'footers': runner}
 __config__ = {
