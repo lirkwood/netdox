@@ -42,7 +42,7 @@ def footers(network: Network) -> None:
                             psml.XRef(docid = docid), 
                             'Backend PageSeeder'
                         ) for docid in ps_docids
-                    ]).tag)
+                    ]))
 
             except Exception:
                 logger.debug('Exception thrown while finding PageSeeder instances for '

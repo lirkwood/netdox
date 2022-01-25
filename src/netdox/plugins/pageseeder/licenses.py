@@ -162,4 +162,4 @@ def add_footer(
         psml.Property('license', psml.XRef(str(license_uri)), 'PageSeeder License'),
         psml.Property('version', version, 'PageSeeder Version'),
         psml.Property('license-type', type, 'License Type')
-    ]).tag)
+    ]))

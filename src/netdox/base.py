@@ -231,7 +231,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         soup.find('section', id = 'footer').replace_with(self.psmlFooter.tag)
         
         if self.organization: 
-            soup.find(attrs={'name':'org'}).append(psml.XRef(self.organization))
+            soup.find(attrs={'name':'org'}).append(psml.XRef(self.organization).tag)
         else:
             org_prop = soup.find(attrs={'name':'org'})
             org_prop['datatype'] = 'string'

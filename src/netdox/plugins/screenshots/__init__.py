@@ -9,9 +9,10 @@ from typing import Iterable, Tuple
 from getpass import getuser
 
 import diffimg
-from bs4 import BeautifulSoup
+from bs4.element import Tag
 from netdox import pageseeder, utils
 from netdox import Domain, Network
+from netdox.psml import Fragment
 from pyppeteer import launch
 from pyppeteer.browser import Page
 from pyppeteer.errors import TimeoutError
@@ -214,11 +215,11 @@ class ScreenshotManager:
         :type filename: str
         """
         filename = filename or os.path.basename(self.placeholder)
-        domain.psmlFooter.insert(BeautifulSoup(f'''
-            <fragment id="screenshot">
-                <para><image src="/ps/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{filename}"
-            </fragment>
-        ''', features = 'xml'))
+        para = Tag(name = 'para')
+        para.append(Tag(name = 'image', attrs = {
+            'src': f'/ps/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/screenshots/{filename}'
+        }))
+        domain.psmlFooter.insert(Fragment('screenshot', [para]))
 
     def sentenceStale(self) -> None:
         """
