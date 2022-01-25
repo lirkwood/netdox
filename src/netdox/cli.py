@@ -94,7 +94,8 @@ def _copy_defaults(nwman: NetworkManager):
     :type nwman: NetworkManager
     """
     for default_file in os.scandir(APPDIR+ 'src/defaults'):
-        file_dest = APPDIR+ 'cfg/'+ default_file.name
+        file_dest = os.path.realpath(
+            os.path.join(APPDIR, 'cfg/', default_file.name))
         if default_file.name == 'config.json':
             if not _try_load_config(file_dest):
                 _config_mod.gen_config_template(nwman)
@@ -222,13 +223,19 @@ def refresh(args: argparse.Namespace):
     Generates a new set of documentation and uploads it to PageSeeder.
     """
     assert _config_file(), 'Config file is empty'
-    fileHandler = logging.FileHandler(APPDIR+ f'/logs/{date.today().isoformat()}.log')
-    fileHandler.setLevel(logging.DEBUG)
-    fileHandler.setFormatter(formatter)
-    logger.addHandler(fileHandler)
+    debugHandler = logging.FileHandler(APPDIR+ f'logs/{date.today().isoformat()}.log')
+    debugHandler.setLevel(logging.DEBUG)
+    debugHandler.setFormatter(formatter)
 
+    warningPath = APPDIR + 'src/warnings.log'
+    if os.path.exists(warningPath): os.remove(warningPath)
+    warningHandler = logging.FileHandler(warningPath)
+    warningHandler.setLevel(logging.WARNING)
+    warningHandler.setFormatter(formatter)
+
+    logger.addHandler(debugHandler)
+    logger.addHandler(warningHandler)
     logger.debug('Refresh begins')
-
     _refresh(dry = args.dry_run)
 
 ## Crypto

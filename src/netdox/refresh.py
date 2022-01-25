@@ -80,6 +80,8 @@ def main(dry: bool = False):
     
     nwman.network.report.addSection(
         utils.staleReport(pageseeder.findStale(utils.OUTDIRS)))
+    with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
+        nwman.network.report.logs = stream.read()
     nwman.network.report.writeReport()
 
     #-------------------------------------------------------------------#
