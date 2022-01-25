@@ -243,6 +243,43 @@ class Network:
         """
         return self.ips[name] if iptools.valid_ip(name) else self.domains[name]
 
+    def _resolvesTo(self, startObj: dns.DNSObject, target: str) -> bool:
+        """
+        Returns a bool based on if *startObj* resolves to *target*.
+
+        :param startObj: The DNSObject to start with.
+        :type startObj: base.DNSObject
+        :param target: The name of the target DNSObject to test.
+        :type target: str
+        :return: A boolean value.
+        :rtype: bool
+        """
+        if isinstance(startObj, str):
+            startObj = self.find_dns(startObj)
+        if isinstance(target, dns.DNSObject):
+            target = target.name
+
+        if startObj in self.cache:
+            return False
+        self.cache.add(startObj)
+        
+        if target in startObj.records.names:
+            return True
+
+        for dest in startObj.records.destinations:
+            if self._resolvesTo(dest, target):
+                return True
+        
+        if isinstance(startObj, dns.IPv4Address):
+            for entry in startObj.NAT:
+                if entry.destination.name == target:
+                    return True
+                    
+                elif self._resolvesTo(entry.destination, target):
+                    return True
+
+        return False
+
     def resolvesTo(self, 
             startObj: Union[dns.DNSObject, str], 
             target: Union[dns.DNSObject, str]
@@ -261,29 +298,9 @@ class Network:
             startObj = self.find_dns(startObj)
         if isinstance(target, dns.DNSObject):
             target = target.name
+        self.cache.clear()
+        return self._resolvesTo(startObj, target)
 
-        if startObj in self.cache:
-            return False
-        self.cache.add(startObj)
-        
-        if target in startObj.records.names:
-            self.cache.clear()
-            return True
-
-        for dest in startObj.records.destinations:
-            if self.resolvesTo(dest, target):
-                return True
-        
-        if isinstance(startObj, dns.IPv4Address):
-            for entry in startObj.NAT:
-                if entry.destination.name == target:
-                    self.cache.clear()
-                    return True
-                    
-                elif self.resolvesTo(entry.destination, target):
-                    return True
-
-        return False
 
     ## Serialisation
 
