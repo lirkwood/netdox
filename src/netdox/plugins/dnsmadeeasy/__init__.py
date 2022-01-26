@@ -8,7 +8,10 @@ import os
 from datetime import datetime
 
 from netdox import utils
+from netdox.plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
 
+__stages__ = {'dns': fetchDNS}
+__config__ = {'api': '', 'secret': ''}
 
 def genheader() -> dict[str, str]:
 	"""
@@ -32,16 +35,6 @@ def genheader() -> dict[str, str]:
 	}
 	
 	return header
-
-
-from netdox.plugins.dnsmadeeasy.create import (create_A, create_CNAME,
-                                               create_PTR)
-from netdox.plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
-
-
-__stages__ = {'dns': fetchDNS}
-__config__ = {'api': '', 'secret': ''}
-
 
 def init() -> None:
 	zones = {}
