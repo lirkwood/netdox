@@ -28,19 +28,23 @@ def genheader() -> dict[str, str]:
 	secret = creds['secret']
 
 	time = datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
-	hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+	hash_digest = hmac.new(
+        key = bytes(secret, 'utf-8'), 
+        msg = time.encode('utf-8'), 
+        digestmod = hashlib.sha1
+    ).hexdigest()
 	
 	header = {
 	"x-dnsme-apiKey" : api,
 	"x-dnsme-requestDate" : time,
-	"x-dnsme-hmac" : hash,
+	"x-dnsme-hmac" : hash_digest,
 	"accept" : 'application/json'
 	}
 	
 	return header
 
 
-def fetchDomains() -> Generator[Tuple[str, str], None, None]:
+def fetch_domains() -> Generator[Tuple[str, str], None, None]:
     """
     Generator which returns a tuple containing one managed domain's ID and name.
 
@@ -56,14 +60,14 @@ def fetchDomains() -> Generator[Tuple[str, str], None, None]:
             yield (record['id'], record['name'])
 
 
-def fetchDNS(network: Network):
+def fetch_dns(network: Network):
     """
     Reads all DNS records from DNSMadeEasy and adds them to a Network object.
 
     :param network: The network.
     :type network: Network
     """
-    for id, domain in fetchDomains():
+    for id, domain in fetch_domains():
         response = requests.get('https://api.dnsmadeeasy.com/V2.0/dns/managed/{0}/records'.format(id), headers=genheader()).text
         records = json.loads(response)['data']
 

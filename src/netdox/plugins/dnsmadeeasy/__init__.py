@@ -5,14 +5,14 @@ import json
 import os
 
 from netdox import utils
-from netdox.plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
+from netdox.plugins.dnsmadeeasy.fetch import fetch_dns, fetch_domains
 
-__stages__ = {'dns': fetchDNS}
+__stages__ = {'dns': fetch_dns}
 __config__ = {'api': '', 'secret': ''}
 
 def init() -> None:
 	zones = {}
-	for id, domain in fetchDomains():
+	for id, domain in fetch_domains():
 		zones[domain] = id
 
 	if not os.path.exists(utils.APPDIR+ 'plugins/dnsmadeeasy/src'):
