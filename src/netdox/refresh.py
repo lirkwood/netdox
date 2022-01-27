@@ -79,7 +79,7 @@ def main(dry: bool = False):
     nwman.runStage('write')
     
     nwman.network.report.addSection(
-        utils.staleReport(pageseeder.findStale(utils.OUTDIRS)))
+        utils.stale_report(pageseeder.findStale(utils.OUTDIRS)))
     with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
         nwman.network.report.logs = stream.read()
     nwman.network.report.writeReport()

@@ -14,7 +14,7 @@ from cryptography.fernet import Fernet
 
 from netdox import pageseeder, config as _config_mod
 from netdox.refresh import main as _refresh
-from netdox.utils import APPDIR, CFGPATH, decrypt_file, encrypt_file, fileFetchRecursive
+from netdox.utils import APPDIR, CFGPATH, decrypt_file, encrypt_file, path_list
 from netdox.utils import config as _config_file
 from netdox import Network, NetworkManager
 from netdox.nwman import PluginWhitelist
@@ -125,7 +125,7 @@ def _copy_readmes(nwman: NetworkManager) -> int:
         if plugin_path:
             if not os.path.isdir(plugin_path):
                 plugin_path = os.path.dirname(plugin_path)
-            for path in fileFetchRecursive(plugin_path):
+            for path in path_list(plugin_path):
                 filename = os.path.basename(path).lower()
                 if 'readme' in filename:
                     shutil.copyfile(APPDIR+ path, 

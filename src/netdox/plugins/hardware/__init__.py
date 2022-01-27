@@ -51,7 +51,7 @@ class HardwareNode(Node):
         for property in psml('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
-                if domain and utils.validDomain(domain): 
+                if domain and utils.valid_domain(domain): 
                     domains.append(domain)
                 elif domain:
                     logging.warn(f'Failed to add invalid domain \'{domain}\' to HardwareNode \'{filename}\'')
@@ -155,7 +155,7 @@ def runner(network: Network) -> None:
         zip.extractall(utils.APPDIR+ 'plugins/hardware/src')
         shutil.rmtree(utils.APPDIR+ 'plugins/hardware/src/META-INF')
 
-    for file in utils.fileFetchRecursive(utils.APPDIR+ 'plugins/hardware/src'):
+    for file in utils.path_list(utils.APPDIR+ 'plugins/hardware/src'):
         filename = os.path.basename(file)
         try:
             if file.endswith('.psml'):

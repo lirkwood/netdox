@@ -236,7 +236,7 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
     group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
     
     if dir in urimap():
-        local = utils.fileFetchRecursive(
+        local = utils.path_list(
             os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)),
             relative = utils.APPDIR + 'out'
         )

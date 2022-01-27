@@ -140,7 +140,7 @@ def handle(func):
 # Miscellaneous convenience functions #
 #######################################
 
-def fileFetchRecursive(dir: str, relative: str = None, extension: str = None) -> list[str]:
+def path_list(dir: str, relative: str = None) -> list[str]:
     """
     Returns a list of paths of all files descended from some directory. 
     By default paths are returned relative to *APPDIR*. 
@@ -158,12 +158,12 @@ def fileFetchRecursive(dir: str, relative: str = None, extension: str = None) ->
     fileset = []
     for file in os.scandir(dir):
         if file.is_dir():
-            fileset += fileFetchRecursive(file.path, relative, extension)
-        elif file.is_file() and not (extension and not file.name.endswith(extension)):
+            fileset += path_list(file.path, relative)
+        elif file.is_file():
             fileset.append(os.path.relpath(file.path, relative))
     return fileset
 
-def rootDomainExtract(fqdn: str) -> str:
+def root_domain(fqdn: str) -> str:
     """
     Returns the root domain and TLD suffix of a FQDN.
     e.g. for subsub.sub.domain.com.au, would return domain.com.au
@@ -180,7 +180,7 @@ def rootDomainExtract(fqdn: str) -> str:
 
 SCHEMA = None
 """PSML XSD schema."""
-def validatePSML(psml: str) -> bool:
+def validate_psml(psml: str) -> bool:
     """
     Validates the PSML against the XSD schema.
 
@@ -199,7 +199,7 @@ def validatePSML(psml: str) -> bool:
     else:
         return True
 
-def staleReport(stale: dict[date, set[str]]) -> str:
+def stale_report(stale: dict[date, set[str]]) -> str:
     """
     Returns a section describing stale network objects for the report.
 
@@ -249,7 +249,7 @@ def staleReport(stale: dict[date, set[str]]) -> str:
         section.append(frag)
     return str(section)
 
-def validDomain(domain: str) -> bool:
+def valid_domain(domain: str) -> bool:
     """
     Returns True if the provided string is a valid name for a Netdox Domain.
     False otherwise.

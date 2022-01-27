@@ -9,7 +9,7 @@ import pickle
 from netdox import iptools, nodes, dns
 from netdox import base, helpers
 from netdox.config import NetworkConfig
-from netdox.utils import APPDIR, Cryptor, validDomain
+from netdox.utils import APPDIR, Cryptor, valid_domain
 from netdox.iptools import valid_ip
 
 
@@ -249,7 +249,7 @@ class Network:
         """
         if isinstance(origin, str):
             if (origin not in self.config.exclusions
-                and (valid_ip(origin) or validDomain(origin))
+                and (valid_ip(origin) or valid_domain(origin))
             ):
                 origin = self.find_dns(origin)
             else:
@@ -258,7 +258,7 @@ class Network:
         if isinstance(dest, dns.DNSObject):
             dest = dest.name
         if (dest not in self.config.exclusions
-            and (valid_ip(dest) or validDomain(dest))
+            and (valid_ip(dest) or valid_domain(dest))
         ):
             origin.link(dest, source)
 
@@ -304,10 +304,10 @@ class Network:
         
         if isinstance(startObj, dns.IPv4Address):
             for entry in startObj.NAT:
-                if entry.destination.name == target:
-                    return True
-                    
-                elif self._resolvesTo(entry.destination, target):
+                if (
+                    entry.destination.name == target or
+                    self._resolvesTo(entry.destination, target)
+                ):
                     return True
 
         return False

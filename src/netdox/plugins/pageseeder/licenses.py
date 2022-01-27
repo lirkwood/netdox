@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from netdox import Network, pageseeder, psml
 from netdox.base import NetworkObject
 from netdox.dns import DNSObject
-from netdox.utils import validDomain
+from netdox.utils import valid_domain
 import warnings
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def runner(network: Network):
             domain = details['domain']
             try:
                 if isinstance(domain, str):
-                    assert validDomain(domain)
+                    assert valid_domain(domain)
                 elif isinstance(domain, psml.XRef):
                     domain = _domain_from_xref(domain)
                 else:
@@ -41,9 +41,8 @@ def runner(network: Network):
                 license_type = details.get('license-type')
                 org = None
                 xref = details.get('organization')
-                if isinstance(xref, psml.XRef):
-                    if 'uriid' in xref.tag.attrs:
-                        org = xref.tag['uriid']
+                if isinstance(xref, psml.XRef) and 'uriid' in xref.tag.attrs:
+                    org = xref.tag['uriid']
                 try:
                     with warnings.catch_warnings(): #TODO investigate alternatives to this
                         warnings.simplefilter('ignore')
@@ -71,13 +70,13 @@ def _domain_from_xref(input: psml.XRef) -> str:
     if 'unresolved' in input.tag.attrs and bool(input.tag['unresolved']):
         raise AttributeError('Cannot extract domain name from unresolved xref.')
 
-    if 'urititle' in input.tag.attrs and validDomain(input.tag['urititle']):
+    if 'urititle' in input.tag.attrs and valid_domain(input.tag['urititle']):
         return input.tag['urititle']
     
     dest = json.loads(pageseeder.get_uri(input.tag['uriid']))
-    if validDomain(dest['title']):
+    if valid_domain(dest['title']):
         return dest['title']
-    elif validDomain(dest['displaytitle']):
+    elif valid_domain(dest['displaytitle']):
         return dest['displaytitle']
     else:
         raise ValueError('Unable to extract a valid domain name from xref.')

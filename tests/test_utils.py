@@ -121,7 +121,7 @@ def test_fileFetchRecursive(mock_dir):
     Tests the ``fileFetchRecursive`` function.
     """
     # relative to cwd
-    assert set(utils.fileFetchRecursive('mockdir', '.')) == {
+    assert set(utils.path_list('mockdir', '.')) == {
         os.path.normpath(path) for path in [
         'mockdir/file.ext1',
         'mockdir/mock_subdir_1/file.ext1',
@@ -131,7 +131,7 @@ def test_fileFetchRecursive(mock_dir):
     ]}
 
     # relative to APPDIR
-    assert set(utils.fileFetchRecursive('mockdir')) == {
+    assert set(utils.path_list('mockdir')) == {
         os.path.relpath(path, utils.APPDIR) for path in [
         'mockdir/file.ext1',
         'mockdir/mock_subdir_1/file.ext1',
@@ -141,37 +141,37 @@ def test_fileFetchRecursive(mock_dir):
     ]}
 
     # restrict extension
-    assert set(utils.fileFetchRecursive('mockdir', '.', 'ext1')) == {
+    assert set(utils.path_list('mockdir', '.', 'ext1')) == {
         os.path.normpath(path) for path in [
         'mockdir/file.ext1',
         'mockdir/mock_subdir_1/file.ext1',
         'mockdir/mock_subdir_2/file.ext1',
     ]}
-    assert set(utils.fileFetchRecursive('mockdir', '.', 'ext2')) == {
+    assert set(utils.path_list('mockdir', '.', 'ext2')) == {
         os.path.normpath(path) for path in [
         'mockdir/mock_subdir_1/file.ext2',
         'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
     ]}
 
 def test_rootDomainExtract():
-    assert utils.rootDomainExtract('domain.com.au') == 'domain.com.au'
-    assert utils.rootDomainExtract('sub.domain.co.uk') == 'domain.co.uk'
-    assert utils.rootDomainExtract('subsub.sub.domain.net') == 'domain.net'
-    assert utils.rootDomainExtract('subsub.sub.domain.gov.au') == 'domain.gov.au'
-    assert utils.rootDomainExtract('domain.faketld') == 'faketld'
+    assert utils.root_domain('domain.com.au') == 'domain.com.au'
+    assert utils.root_domain('sub.domain.co.uk') == 'domain.co.uk'
+    assert utils.root_domain('subsub.sub.domain.net') == 'domain.net'
+    assert utils.root_domain('subsub.sub.domain.gov.au') == 'domain.gov.au'
+    assert utils.root_domain('domain.faketld') == 'faketld'
 
 def test_validatePSML_success():
-    assert utils.validatePSML('<document level="portable" />')
+    assert utils.validate_psml('<document level="portable" />')
 
 def test_validatePSML_failure():
-    assert not utils.validatePSML('<invalid-tag />')
+    assert not utils.validate_psml('<invalid-tag />')
 
 def test_staleReport():
     today = date.today()
     plus_thirty = today + timedelta(days = 30)
-    report = utils.staleReport({
+    report = utils.stale_report({
         today: ['0', '1', '2'],
         plus_thirty: ['3', '4', '5']
     })
 
-    assert utils.validatePSML(report)
+    assert utils.validate_psml(report)

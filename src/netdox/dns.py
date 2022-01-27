@@ -314,12 +314,12 @@ class Domain(DNSObject):
         :type zone: str, optional
         :raises ValueError: If *name* is not a valid FQDN
         """
-        if utils.validDomain(name):
+        if utils.valid_domain(name):
 
             super().__init__(
                 network = network, 
                 name = name, 
-                zone = zone or utils.rootDomainExtract(name),
+                zone = zone or utils.root_domain(name),
                 labels = labels
             )
             
