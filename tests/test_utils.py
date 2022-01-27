@@ -116,9 +116,9 @@ def mock_dir():
 
     shutil.rmtree('mockdir')
 
-def test_fileFetchRecursive(mock_dir):
+def test_path_list(mock_dir):
     """
-    Tests the ``fileFetchRecursive`` function.
+    Tests the ``path_list`` function.
     """
     # relative to cwd
     assert set(utils.path_list('mockdir', '.')) == {
@@ -137,19 +137,6 @@ def test_fileFetchRecursive(mock_dir):
         'mockdir/mock_subdir_1/file.ext1',
         'mockdir/mock_subdir_1/file.ext2',
         'mockdir/mock_subdir_2/file.ext1',
-        'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
-    ]}
-
-    # restrict extension
-    assert set(utils.path_list('mockdir', '.', 'ext1')) == {
-        os.path.normpath(path) for path in [
-        'mockdir/file.ext1',
-        'mockdir/mock_subdir_1/file.ext1',
-        'mockdir/mock_subdir_2/file.ext1',
-    ]}
-    assert set(utils.path_list('mockdir', '.', 'ext2')) == {
-        os.path.normpath(path) for path in [
-        'mockdir/mock_subdir_1/file.ext2',
         'mockdir/mock_subdir_2/mock_sub_subdir/file.ext2'
     ]}
 
