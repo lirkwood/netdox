@@ -373,3 +373,16 @@ def collapse_iplist(iplist: Iterable[str], output = 'ranges') -> list[str]:
             minlist.append(int2cidr(ip))
     
     return minlist
+
+
+def ip_from_rdns_name(dns_name: str) -> str:
+    """
+    Returns a CIDR IPv4 address from a reverse DNS name like
+    0.1.2.3.in-addr.arpa
+
+    :param dns_name: [description]
+    :type dns_name: str
+    :return: [description]
+    :rtype: str
+    """
+    return '.'.join(dns_name.replace('.in-addr.arpa','').split('.')[::-1])
