@@ -67,6 +67,7 @@ class NetworkManager:
         """
         # Initialisation
         self.plugins = set()
+        self.loaded = []
         self.nodemap = {}
         self.enabled = PluginWhitelist(whitelist) if whitelist else self._load_whitelist()
         self.namespace = namespace or importlib.import_module(self.DEFAULT_NAMESPACE)
@@ -116,29 +117,54 @@ class NetworkManager:
         ``importlib.import_module``
         """
         modules = list(pkgutil.iter_modules(getattr(self.namespace, '__path__', ())))
-        names = [module.name for module in modules]
         for module in modules:
             logger.debug(f'Discovered module {module.name}')
-            if module.name in self.enabled:
-                try:
-                    plugin = Plugin(importlib.import_module(
-                        self.namespace.__name__ +'.'+ module.name))
+            if (module.name in self.enabled and 
+                module.name not in self.loaded):
+                self._loadPlugin(module.name)
 
-                    failed = set()
-                    for dep in plugin.dependencies:
-                        if dep not in self.enabled:
-                            failed.add(dep)
-                        elif (dep not in names) and (dep not in self.loaded):
-                            failed.add(dep)
+    def _loadPlugin(self, name: str) -> bool:
+        """
+        Loads a plugin from it's name.
 
-                    if failed:
-                        raise ImportError(
-                            f'Failed to load the following plugin dependecies: ' +
-                            ', '.join(failed))
-                    self.add(plugin)
-                except Exception:
-                    logger.error(
-                        f'Failed to import {plugin.name}:\n{plugin}\n{format_exc()}')
+        :param name: Name of the plugin to load.
+        :type name: str
+        :return: 
+        :rtype: bool
+        """
+        try:
+            plugin = Plugin(importlib.import_module(
+                self.namespace.__name__ +'.'+ name))
+
+            if not self.validate_deps(plugin):
+                raise ImportError(
+                    f'Failed to load dependecies for {plugin.name}')
+
+            self.add(plugin)
+            return True
+
+        except Exception:
+            logger.error(
+                f'Failed to import {name}:\n{format_exc()}')
+        return False
+
+    def validate_deps(self, plugin: Plugin) -> bool:
+        """
+        Returns True if all of the dependencies for *plugin* are present in *names*.
+        False otherwise.
+
+        :param plugin: The plugin to validate the dependencies of.
+        :type plugin: Plugin
+        :param names: A list of names of available plugins.
+        :return: True if plugin can run, else False.
+        :rtype: bool
+        """
+        failed = set()
+        for dep in plugin.dependencies:
+            if dep not in self.enabled and dep not in self.loaded:
+                if not self._loadPlugin(dep):
+                    failed.add(dep)
+        return not bool(failed)
 
     def initPlugins(self) -> None:
         """
