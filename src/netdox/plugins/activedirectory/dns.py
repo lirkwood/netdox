@@ -7,8 +7,8 @@ from pypsrp.powershell import PowerShell, RunspacePool
 from pypsrp.wsman import WSMan
 
 from netdox import utils
+from netdox.iptools import ip_from_rdns_name
 from netdox.containers import Network
-from netdox.dns import DNSObject
 
 logger = logging.getLogger(__name__)
 
@@ -19,33 +19,7 @@ def fetchDNS(network: Network) -> None:
         records = fetchRecords(pool, zones.values())
 
         for record in records:
-            details = record.adapted_properties
-            fqdn, zoneName = parseDN(details['DistinguishedName'])
-            if fqdn is not None and fqdn not in network.config.exclusions:
-                dnsobj: DNSObject
-                if fqdn.endswith('.in-addr.arpa'):
-                    ip = '.'.join(fqdn.replace('.in-addr.arpa','').split('.')[::-1])
-                    dnsobj = network.ips[ip]
-                else:
-                    dnsobj = network.domains[fqdn]
-
-                if details['RecordType'] == 'A':
-                    dnsobj.link(details['RecordData'].adapted_properties['IPv4Address'], 'ActiveDirectory')
-
-                elif details['RecordType'] == 'PTR':
-                    dnsobj.link(details['RecordData'].adapted_properties['PtrDomainName'].strip('.'), 'ActiveDirectory')
-                
-                elif details['RecordType'] == 'CNAME':
-                    value = details['RecordData'].adapted_properties['HostNameAlias']
-                    if value.endswith('.'):
-                        value = value.strip('.')
-                    else:
-                        value = value +'.'+ zoneName
-
-                    if zoneName and zones[zoneName].adapted_properties['IsReverseLookupZone']:
-                        logger.debug('Ignoring CNAME in reverse lookup zone')
-                    else:
-                        dnsobj.link(value, 'ActiveDirectory')
+            processRecord(network, record)
 
 
 def fetchZones(pool: RunspacePool) -> dict[str, GenericComplexObject]:
@@ -116,3 +90,37 @@ def parseDN(distinguished_name: str) -> tuple[Optional[str], Optional[str]]:
                 logger.debug('No hostname parsed from ' + distinguished_name)
                 return None, None
     return None, None
+
+def processRecord(network: Network, record: GenericComplexObject) -> None:
+    """
+    Creates a link in *network* that represents the DNS record *record*.
+
+    :param network: The network to add the link to.
+    :type network: Network
+    :param record: The object that describes the DNS record.
+    :type record: GenericComplexObject
+    """
+    details = record.adapted_properties
+    fqdn, zoneName = parseDN(record.adapted_properties['DistinguishedName'])
+    if fqdn is not None and fqdn not in network.config.exclusions:
+        if fqdn.endswith('.in-addr.arpa'):
+            fqdn = ip_from_rdns_name(fqdn)
+        dnsobj = network.find_dns(fqdn)
+
+        dest = ''
+        record_data = details['RecordData'].adapted_properties
+        if details['RecordType'] == 'A':
+            dest = record_data['IPv4Address']
+        elif details['RecordType'] == 'PTR':
+            dest = record_data['PtrDomainName'].strip('.')
+        elif details['RecordType'] == 'CNAME':
+            dest = record_data['HostNameAlias']
+            if dest.endswith('.in-addr.arpa'):
+                dest = ip_from_rdns_name(dest)
+            elif dest.endswith('.'):
+                dest = dest.strip('.')
+            elif zoneName:
+                dest = dest +'.'+ zoneName
+        
+        if dest:
+            dnsobj.link(dest, 'ActiveDirectory')
