@@ -10,10 +10,34 @@ import json
 from typing import Generator, Tuple
 
 import requests
+from netdox import Network, utils
+from datetime import datetime
+import hmac
+import hashlib
 
-from netdox import iptools, utils
-from netdox import Domain, IPv4Address, Network
-from netdox.plugins.dnsmadeeasy import genheader
+
+def genheader() -> dict[str, str]:
+	"""
+	Generates authentication header for DNSME api
+
+	:return: A dictionary of headers that can be passed to a requests request function.
+	:rtype: dict[str, str]
+	"""
+	creds = utils.config('dnsmadeeasy')
+	api = creds['api']
+	secret = creds['secret']
+
+	time = datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
+	hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
+	
+	header = {
+	"x-dnsme-apiKey" : api,
+	"x-dnsme-requestDate" : time,
+	"x-dnsme-hmac" : hash,
+	"accept" : 'application/json'
+	}
+	
+	return header
 
 
 def fetchDomains() -> Generator[Tuple[str, str], None, None]:

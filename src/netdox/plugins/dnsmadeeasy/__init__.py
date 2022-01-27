@@ -1,40 +1,14 @@
 """
 Used to read and modify DNS records stored in DNSMadeEasy.
 """
-import hashlib
-import hmac
 import json
 import os
-from datetime import datetime
 
 from netdox import utils
 from netdox.plugins.dnsmadeeasy.fetch import fetchDNS, fetchDomains
 
 __stages__ = {'dns': fetchDNS}
 __config__ = {'api': '', 'secret': ''}
-
-def genheader() -> dict[str, str]:
-	"""
-	Generates authentication header for DNSME api
-
-	:return: A dictionary of headers that can be passed to a requests request function.
-	:rtype: dict[str, str]
-	"""
-	creds = utils.config('dnsmadeeasy')
-	api = creds['api']
-	secret = creds['secret']
-
-	time = datetime.utcnow().strftime("%a, %d %b %Y %X GMT")
-	hash = hmac.new(bytes(secret, 'utf-8'), msg=time.encode('utf-8'), digestmod=hashlib.sha1).hexdigest()
-	
-	header = {
-	"x-dnsme-apiKey" : api,
-	"x-dnsme-requestDate" : time,
-	"x-dnsme-hmac" : hash,
-	"accept" : 'application/json'
-	}
-	
-	return header
 
 def init() -> None:
 	zones = {}
