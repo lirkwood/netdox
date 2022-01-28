@@ -56,12 +56,12 @@ class HardwareNode(Node):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
                 if domain and utils.valid_domain(domain): 
-                    self.domains.append(domain)
+                    domains.append(domain)
 
             elif property['name'] == 'ipv4':
                 ip = self._addrFromProperty(property)
                 if ip and iptools.valid_ip(ip): 
-                    self.ips.append(ip)
+                    ips.append(ip)
 
             elif property['name'] == 'name':
                 name = property['value']
