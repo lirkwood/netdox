@@ -65,27 +65,6 @@ def init_dirs():
     if os.path.lexists(APPDIR+ 'cfg'):
         os.remove(APPDIR+ 'cfg')
 
-def _try_load_config(path: str) -> bool:
-    """
-    Tries to load config file at *path*. 
-
-    :param path: Path to the new config file.
-    :type path: str
-    :return: True if the file was loaded successfully. False otherwise.
-    :rtype: bool
-    """
-    if os.path.exists(APPDIR+ 'cfg/config.json'):
-        logger.info('Config file already exists in target directory.')
-        try:
-            _load_config(path)
-        except Exception:
-            logger.error(f'Failed to load config file in target directory.')
-            return False
-        else:
-            return True
-    else:
-        return False
-
 def _copy_defaults(nwman: NetworkManager):
     """
     Copies default config files / templates to dir at *path*.
@@ -97,7 +76,7 @@ def _copy_defaults(nwman: NetworkManager):
         file_dest = os.path.realpath(
             os.path.join(APPDIR, 'cfg/', default_file.name))
         if default_file.name == 'config.json':
-            if not _try_load_config(file_dest):
+            if not _load_config(file_dest):
                 _config_mod.gen_config_template(nwman)
                 logger.info('No application config detected. ' +
                     f'Please populate the template at {file_dest}')
@@ -163,13 +142,15 @@ def init(args: argparse.Namespace):
 
 ## Config
 
-def _load_config(path: str) -> None:
+def _load_config(path: str) -> bool:
     """
+    
     Loads the config file at *path* as the new app config.
 
     :param path: Path to the new config file.
     :type path: str
-    :raises ConnectionError: If the config file cannot be used to connect to PS.
+    :return: Returns True if config file successfully loaded. False otherwise.
+    :rtype: bool
     """
     backup = APPDIR+ 'src/config.old'
     if os.path.exists(CFGPATH):
@@ -179,19 +160,22 @@ def _load_config(path: str) -> None:
         try:
             assert pageseeder.get_group()
         except Exception:
-            raise ConnectionError(
+            logger.error(
                 'Unable to contact or authenticate with the configured PageSeeder instance. '+ 
                 'Please check your configuration and try again.')
+            return False
         else:
             os.remove(path)
             if os.path.exists(backup):
                 os.remove(backup)
             logger.info('Success: configuration is valid.')
+            return True
     else:
         logger.error(f'Unable to find or parse config file at: {path}. Reverting to previous config.')
         os.remove(CFGPATH)
         if os.path.exists(backup):
             shutil.move(backup, CFGPATH)
+        return False
 
 def config(args: argparse.Namespace):
     """
@@ -203,8 +187,9 @@ def config(args: argparse.Namespace):
     if args.action == 'load':
         if ((not os.path.exists(CFGPATH)) or
         _confirm('This action will destroy your existing configuration if successful. Continue? [y/n] ')):
-            _load_config(args.path)
-        else: exit(0)
+            if not _load_config(args.path):
+                exit(1)
+        exit(0)
     else:
         decrypt_file(CFGPATH, args.path)
 
