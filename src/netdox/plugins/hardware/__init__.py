@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 INFO_SECTION = SoupStrainer('section', id = 'info')
 URI_PATTERN: re.Pattern = re.compile(r'<uri\s+id="(?P<id>\d+)"')
+SRCDIR = os.path.join(utils.APPDIR, 'plugins', 'hardware', 'src')
+ZIP_PATH = os.path.join(SRCDIR, 'hardware.zip')
 
 
 class HardwareNode(Node):
@@ -46,22 +48,20 @@ class HardwareNode(Node):
             filename: str
         ) -> None:
 
+        self.origin_doc = origin_doc
+        self.filename = filename
         domains, ips = [], []
         name = None
         for property in psml('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
                 if domain and utils.valid_domain(domain): 
-                    domains.append(domain)
-                elif domain:
-                    logging.warn(f'Failed to add invalid domain \'{domain}\' to HardwareNode \'{filename}\'')
+                    self.domains.append(domain)
 
             elif property['name'] == 'ipv4':
                 ip = self._addrFromProperty(property)
                 if ip and iptools.valid_ip(ip): 
-                    ips.append(ip)
-                elif ip:
-                    logging.warn(f'Failed to add invalid IPv4 \'{ip}\' to HardwareNode \'{filename}\'')
+                    self.ips.append(ip)
 
             elif property['name'] == 'name':
                 name = property['value']
@@ -75,8 +75,6 @@ class HardwareNode(Node):
         )
 
         self.psml = Section.from_tag(psml.section)
-        self.origin_doc = origin_doc
-        self.filename = filename
 
     ## abstract properties
 
@@ -89,6 +87,15 @@ class HardwareNode(Node):
         return [self.psml]
 
     ## methods
+
+    def _consume_addr_property(self, property: Tag) -> None:
+        """
+        Parses a DNS name from the given property and adds it to this node.
+        Only stores the domain/ipv4 if it is a valid DNS name.
+
+        :param property: The property to parse a domain/ipv4 address from.
+        :type property: Tag
+        """
 
     def _addrFromProperty(self, property: Tag) -> Optional[str]:
         """
@@ -116,9 +123,9 @@ global thread
 thread: Optional[Tag] = None
 def init() -> None:
     global thread
-    if os.path.exists(utils.APPDIR+ 'plugins/hardware/src'):
-        rmtree(utils.APPDIR+ 'plugins/hardware/src')
-    os.mkdir(utils.APPDIR+ 'plugins/hardware/src')
+    if os.path.exists(SRCDIR):
+        rmtree(SRCDIR)
+    os.mkdir(SRCDIR)
 
     thread = BeautifulSoup(
         pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True), 
@@ -147,15 +154,15 @@ def runner(network: Network) -> None:
             stream = True
         ) as zipResponse:
             zipResponse.raise_for_status()
-            with open(utils.APPDIR+ 'plugins/hardware/src/hardware.zip', 'wb') as stream:
+            with open(SRCDIR + '/hardware.zip', 'wb') as stream:
                 for chunk in zipResponse.iter_content(8192):
                     stream.write(chunk)
                 
-        zip = zipfile.ZipFile(utils.APPDIR+ 'plugins/hardware/src/hardware.zip')
-        zip.extractall(utils.APPDIR+ 'plugins/hardware/src')
-        shutil.rmtree(utils.APPDIR+ 'plugins/hardware/src/META-INF')
+        zip = zipfile.ZipFile(ZIP_PATH)
+        zip.extractall(SRCDIR)
+        shutil.rmtree(SRCDIR + '/META-INF')
 
-    for file in utils.path_list(utils.APPDIR+ 'plugins/hardware/src'):
+    for file in utils.path_list(SRCDIR):
         filename = os.path.basename(file)
         try:
             if file.endswith('.psml'):
