@@ -120,6 +120,40 @@ class MonitorManager:
             and domain.name not in self.icingas
         )
 
+    def _updateGenerated(self, domain: Domain) -> bool:
+        """
+        Updates the generated monitor on a Domain.
+        Returns True if the monitor was modified.
+        False otherwise.
+
+        :param domain: Domain to update the generated monitor for.
+        :type domain: Domain
+        :param icinga: The Icinga instance
+        :type icinga: str
+        :return: Returns True if the monitor was modified.
+        False otherwise.
+        :rtype: bool
+        """
+        location = self.locateDomain(domain.name)
+        icinga = self.locationIcingas[location] if location in self.locationIcingas else None
+        template = domain.getAttr(TEMPLATE_ATTR)
+        if icinga and template:
+            if domain.name in self.generated:
+                # if location wrong
+                if self.generated[domain.name]['icinga'] != icinga:
+                    removeHost(self.generated[domain.name]['icinga'], domain.name)
+                    createHost(icinga, domain.name, template) # type: ignore
+                    return True
+                # if template wrong
+                elif self.generated[domain.name]['templates'][0] != domain.getAttr(TEMPLATE_ATTR):
+                    updateHostTemplate(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore
+                    return True
+            # if no monitor
+            else:
+                createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore # TODO find mypy fix
+                return True
+        return False
+
     def validateDomain(self, domain: Domain) -> bool:
         """
         Validates the current monitor on a domain. Modifies if necessary.
@@ -137,23 +171,7 @@ class MonitorManager:
             return False
 
         elif requests_monitor and not manual_monitor:
-            location = self.locateDomain(domain.name)
-            icinga = self.locationIcingas[location] if location in self.locationIcingas else None
-            if icinga:
-                if domain.name in self.generated:
-                    # if location wrong
-                    if self.generated[domain.name]['icinga'] != icinga:
-                        removeHost(self.generated[domain.name]['icinga'], domain.name)
-                        createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore
-                        return False
-                    # if template wrong
-                    elif self.generated[domain.name]['templates'][0] != domain.getAttr(TEMPLATE_ATTR):
-                        updateHostTemplate(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore
-                        return False
-                # if no monitor
-                else:
-                    createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore # TODO find mypy fix
-                    return False
+            return self._updateGenerated(domain)
 
         return True
 
