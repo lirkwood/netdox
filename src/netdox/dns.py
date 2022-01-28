@@ -405,6 +405,13 @@ class IPv4Address(DNSObject):
     ## abstract properties
 
     @property
+    def search_terms(self) -> list[str]:
+        tokenized = self.name.split('.')
+        return [
+            '.'.join(tokenized[-1:i:-1]) for i in range(len(tokenized) - 1)
+        ] + super().search_terms
+
+    @property
     def outpath(self) -> str:
         return os.path.normpath(os.path.join(
             utils.APPDIR, 'out/ips', self.subnet.replace("/","_"), self.docid + '.psml'
