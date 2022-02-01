@@ -35,6 +35,8 @@ This dict will be copied to the config template when a new netdox instance is in
 
 To register a Node type as an export from your plugin, use the ``__nodes__`` iterable.
 
+To register your plugin as dependent on another Netdox plugin, add the plugin name to the ``__depends__`` iterable.
+
 
 Default Plugins
 ===============
