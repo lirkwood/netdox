@@ -153,27 +153,29 @@ def _load_config(path: str) -> bool:
     :rtype: bool
     """
     backup = APPDIR+ 'src/config.old'
-    if os.path.exists(CFGPATH):
-        shutil.copyfile(CFGPATH, backup)
     if os.path.exists(path):
-        encrypt_file(path, CFGPATH)
-        try:
-            assert pageseeder.get_group()
-        except Exception:
-            logger.error(
-                'Unable to contact or authenticate with the configured PageSeeder instance. '+ 
-                'Please check your configuration and try again.')
-            return False
-        else:
-            os.remove(path)
-            if os.path.exists(backup):
-                os.remove(backup)
-            logger.info('Success: configuration is valid.')
-            return True
+        if os.path.exists(CFGPATH):
+            shutil.copyfile(CFGPATH, backup)
+            encrypt_file(path, CFGPATH)
+            try:
+                assert pageseeder.get_group()
+            except Exception:
+                logger.error(
+                    'Unable to contact or authenticate with the configured PageSeeder instance. '+ 
+                    'Please check your configuration and try again.')
+                return False
+            else:
+                os.remove(path)
+                if os.path.exists(backup):
+                    os.remove(backup)
+                logger.info('Success: configuration is valid.')
+                return True
     else:
-        logger.error(f'Unable to find or parse config file at: {path}. Reverting to previous config.')
-        os.remove(CFGPATH)
+        logger.error(f'Unable to find or parse config file at: {path}.')
+        if os.path.exists(CFGPATH):
+            os.remove(CFGPATH)
         if os.path.exists(backup):
+            logger.info('Reverting to previous config.')
             shutil.move(backup, CFGPATH)
         return False
 
