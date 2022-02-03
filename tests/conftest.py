@@ -18,7 +18,6 @@ CONFIG = {
         'id': 'API_ID',
         'secret': 'API_SECRET',
         'username': 'USERNAME',
-        'password': 'PASSWORD',
         'host': 'PS_FQDN',
         'group': 'PS_GROUP'
     },
