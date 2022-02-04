@@ -98,6 +98,7 @@ class NodeDiagramFactory:
                 self._node_name = proxy_name
             else:
                 logger.debug(f'No proxy node for {node.identity}')
+                # TODO add placeholder proxy node to fill out diagram in this case
             
         self.markup.append('package dns <<Layout>>{',)
         cache: set[str] = set()
