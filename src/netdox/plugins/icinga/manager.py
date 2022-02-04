@@ -120,17 +120,17 @@ class MonitorManager:
             and domain.name not in self.icingas
         )
 
-    def _updateGenerated(self, domain: Domain) -> bool:
+    def _validateGenerated(self, domain: Domain) -> bool:
         """
-        Updates the generated monitor on a Domain.
-        Returns True if the monitor was modified.
-        False otherwise.
+        Validates the generated monitor on a Domain.
+        Returns False if the monitor was modified.
+        True otherwise.
 
         :param domain: Domain to update the generated monitor for.
         :type domain: Domain
         :param icinga: The Icinga instance
         :type icinga: str
-        :return: Returns True if the monitor was modified.
+        :return: Returns True if the monitor was already valid.
         False otherwise.
         :rtype: bool
         """
@@ -143,16 +143,16 @@ class MonitorManager:
                 if self.generated[domain.name]['icinga'] != icinga:
                     removeHost(self.generated[domain.name]['icinga'], domain.name)
                     createHost(icinga, domain.name, template) # type: ignore
-                    return True
+                    return False
                 # if template wrong
                 elif self.generated[domain.name]['templates'][0] != domain.getAttr(TEMPLATE_ATTR):
                     updateHostTemplate(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore
-                    return True
+                    return False
             # if no monitor
             else:
                 createHost(icinga, domain.name, domain.getAttr(TEMPLATE_ATTR)) # type: ignore # TODO find mypy fix
-                return True
-        return False
+                return False
+        return True
 
     def validateDomain(self, domain: Domain) -> bool:
         """
@@ -171,7 +171,7 @@ class MonitorManager:
             return False
 
         elif requests_monitor and not manual_monitor:
-            return self._updateGenerated(domain)
+            return self._validateGenerated(domain)
 
         return True
 
@@ -247,9 +247,9 @@ class MonitorManager:
         if ip_loc is not None: 
             return ip_loc
 
-        for alias in domain.domains:
-            if alias not in self._cache:
-                self._cache.add(alias)
+        for alias in domain.records.CNAME.destinations:
+            if alias.name not in self._cache:
+                self._cache.add(alias.name)
                 alias_loc = self._locateDomain(alias)
                 if alias_loc:
                     return alias_loc
