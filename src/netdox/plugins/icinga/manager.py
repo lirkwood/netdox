@@ -250,7 +250,8 @@ class MonitorManager:
         for alias in domain.records.CNAME.destinations:
             if alias.name not in self._cache:
                 self._cache.add(alias.name)
-                alias_loc = self._locateDomain(alias)
+                # domain CNAMEs are always Domains
+                alias_loc = self._locateDomain(alias) # type: ignore
                 if alias_loc:
                     return alias_loc
 
