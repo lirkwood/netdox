@@ -85,7 +85,7 @@ def getPodsByLabel(apiClient: client.ApiClient, namespace: str='default') -> dic
     api = client.CoreV1Api(apiClient)
     allPods = api.list_namespaced_pod(namespace)
     for pod in allPods.items:
-        if 'pod-template-hash' in pod.metadata.labels:
+        if pod.metadata.labels and 'pod-template-hash' in pod.metadata.labels:
             _pod = Pod.from_k8s_V1Pod(pod)
             del pod.metadata.labels['pod-template-hash']
             labelHash = hash(json.dumps(pod.metadata.labels, sort_keys=True))
