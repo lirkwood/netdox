@@ -3,6 +3,16 @@
 Releases
 ########
 
+v1.3.2
+======
+Bugfixes, refactors, updated search terms for IPv4s, updated dev scripts.
+
+* Fixed some bugs when initialising the config dir / loading the config for the first time.
+* Fixed icinga not recognising monitors as valid.
+* NetworkManager now uses more efficient dependency evaluation logic.
+* Fixed k8s plugin throwing exception if pod has no labels.
+* Refactored multiple methods to have lower complexity.
+
 v1.3.1
 ======
 Bugfixes, added warning logs to report, add universal link method.
