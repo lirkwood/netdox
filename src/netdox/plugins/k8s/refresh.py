@@ -127,11 +127,11 @@ def getServicePaths(apiClient: client.ApiClient, namespace: str='default') -> di
     :rtype: dict[str, set]
     """
     servicePaths = defaultdict(set)
-    api = client.ExtensionsV1beta1Api(apiClient)
+    api = client.NetworkingV1Api(apiClient)
     for ingress in api.list_namespaced_ingress(namespace).items:
         for rule in ingress.spec.rules:
             for path in rule.http.paths:
-                servicePaths[path.backend.service_name].add(
+                servicePaths[path.backend.service.name].add(
                     rule.host + (path.path if path.path else '/'))
 
     return servicePaths

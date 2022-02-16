@@ -33,19 +33,19 @@ setup(
         "Operating System :: OS Independent"
     ],
     install_requires = [
-        'beautifulsoup4',   # core
-        'lxml',             # core
-        'requests',         # core
-        'tldextract',       # core
-        'websockets',       # xenorchestra
-        'boto3',            # aws
-        'kubernetes',       # k8s
-        'pyppeteer',        # screenshots, pfSense
-        'diffimg',          # screenshots
-        'pypsrp',           # activedirectory
-        'fortiosapi',       # fortigate
-        'pysnmp',           # snmp
-        'plantuml'          # plantuml
+        'beautifulsoup4',       # core
+        'lxml',                 # core
+        'requests',             # core
+        'tldextract',           # core
+        'websockets',           # xenorchestra
+        'boto3',                # aws
+        'kubernetes>=22.6.0',   # k8s
+        'pyppeteer',            # screenshots, pfSense
+        'diffimg',              # screenshots
+        'pypsrp',               # activedirectory
+        'fortiosapi',           # fortigate
+        'pysnmp',               # snmp
+        'plantuml'              # plantuml
     ],
     entry_points = {'console_scripts': ['netdox=netdox.cli:parse_args']}
 )
