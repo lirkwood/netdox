@@ -3,14 +3,16 @@ This module contains any container classes.
 """
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Type, Union
+import logging
 import pickle
+from typing import Iterable, Iterator, Sequence, Type, Union
 
-from netdox import iptools, nodes, dns
-from netdox import base, helpers
+from netdox import base, dns, helpers, iptools, nodes
 from netdox.config import NetworkConfig
-from netdox.utils import APPDIR, Cryptor, valid_domain
 from netdox.iptools import valid_ip
+from netdox.utils import APPDIR, Cryptor, valid_domain
+
+logger = logging.getLogger(__name__)
 
 
 class DomainSet(dns.DNSObjectContainer[dns.Domain]):
@@ -373,9 +375,8 @@ class Network:
         """
         Writes the domains, ips, and nodes of a network to PSML using ``self.writer``.
         """
-        for domain in self.domains:
-            domain.serialise()
-        for ip in self.ips:
-            ip.serialise()
-        for node in self.nodes:
-            node.serialise()
+        for nwobj in (*self.domains, *self.ips, *self.nodes):
+            try:
+                nwobj.serialise()
+            except Exception as exc:
+                logger.exception(exc)

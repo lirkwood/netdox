@@ -213,6 +213,10 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         Serialises this object to PSML and returns a BeautifulSoup object.
         """
+        if len(self.docid) > 100:
+            raise AttributeError(
+                'Cannot serialise object with docid longer than 100 chars.')
+            #TODO add creating dummy document with explanation if this exc is raised
         body = self.TEMPLATE
         for field in re.findall(r'(#![a-zA-Z0-9_]+)', self.TEMPLATE):
             attr = getattr(self, field.replace('#!',''), None)
