@@ -94,6 +94,7 @@ def main(dry: bool = False):
     else:
         logger.warning('Did not upload documents due to --dry-run flag.')
 
+    pageseeder.clear_loading_zone()
     nwman.runStage('cleanup')
 
     logger.info('Done.')
