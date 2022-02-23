@@ -230,11 +230,14 @@ class Node(base.NetworkObject):
                 return cache
 
             elif isinstance(dnsobj.node, ProxiedNode):
-                if dnsobj.node.proxy.node is None:
+                assert dnsobj.node.proxy.node is not None, \
+                    'DEBUG: NodeProxy did not create placeholder node.'
+                if dnsobj.node.proxy.node.type == PlaceholderNode.type:
                     logger.debug(
                         f'Proxy from {dnsobj.name} to {dnsobj.node.proxy.backend.name}'
                         + f' set to {self.name}')
                     dnsobj.node.proxy.node = self
+                
             
             else:
                 return cache
@@ -290,7 +293,7 @@ class ProxiedNode(Node):
             if self.proxy.node and dnsobj.node is self.proxy.node:
                 dnsobj.node = self.proxy # type: ignore
 
-            elif not self.proxy.node:
+            elif self.proxy.node.type == PlaceholderNode.type:
                 logger.debug(
                     f'Proxy from {dnsobj.name} to {self.name}'
                     + f' set to {dnsobj.node.name}')
@@ -316,7 +319,7 @@ class NodeProxy:
     forwarding some of its traffic to a backend Node."""
     backend: Node
     """The Node the proxy forwards its traffic to."""
-    node: Optional[Node]
+    node: Node
     """The Node behaving as the proxy."""
     addresses: set[str]
     """Dict mapping string addresses / paths to Node objects."""
@@ -339,7 +342,7 @@ class NodeProxy:
         :type addresses: Node, optional
         """
         self.backend = backend
-        self.node = proxy
+        self.node = proxy or PlaceholderNode(backend.network, backend.name + '_proxy')
         self.addresses = addresses or set()
     
     def register_address(self, address: str) -> None:
