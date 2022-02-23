@@ -131,11 +131,11 @@ def init() -> None:
         pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True), 
     features = 'xml').thread
 
-    while thread['status'] != 'completed':
+    while thread and thread['status'] != 'completed':
         time.sleep(0.5)
         thread = BeautifulSoup(pageseeder.get_thread_progress(thread['id']), features='xml').thread
-        if thread is None:
-            raise RuntimeError('Thread for hardware download never had status \'completed\'')
+    if thread is None:
+        raise RuntimeError('Thread for hardware download never had status \'completed\'')
 
 
 def runner(network: Network) -> None:

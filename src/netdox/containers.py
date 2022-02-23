@@ -373,7 +373,7 @@ class Network:
 
     def writePSML(self) -> None:
         """
-        Writes the domains, ips, and nodes of a network to PSML using ``self.writer``.
+        Writes the domains, ips, and nodes of a network to PSML.
         """
         for nwobj in (*self.domains, *self.ips, *self.nodes):
             try:
