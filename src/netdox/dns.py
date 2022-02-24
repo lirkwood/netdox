@@ -329,6 +329,13 @@ class Domain(DNSObject):
     ## abstract properties
 
     @property
+    def search_terms(self) -> list[str]:
+        tokenized = self.name.split('.')
+        return tokenized + [
+            '.'.join(tokenized[i + 1:]) for i in range(len(tokenized) - 1)
+        ]
+
+    @property
     def outpath(self) -> str:
         return os.path.normpath(os.path.join(utils.APPDIR, f'out/domains/{self.docid}.psml'))
 
@@ -403,13 +410,6 @@ class IPv4Address(DNSObject):
             raise ValueError('Must provide a valid name for an IPv4Address (some IPv4, in CIDR form)')
 
     ## abstract properties
-
-    @property
-    def search_terms(self) -> list[str]:
-        tokenized = self.name.split('.')
-        return [
-            '.'.join(tokenized[-1:i:-1]) for i in range(len(tokenized) - 1)
-        ] + super().search_terms
 
     @property
     def outpath(self) -> str:
