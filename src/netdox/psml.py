@@ -128,7 +128,7 @@ class Section(PSMLElement):
         if not tag.has_attr('id'):
             raise AttributeError('Section tag missing required attribute \'id\'')
         frags = []
-        for frag_tag in tag.find(True, recursive = False):
+        for frag_tag in tag.find_all(True, recursive = False):
             frag = fragment_from_tag(frag_tag)
             if frag is not None: frags.append(frag)
 
