@@ -214,7 +214,7 @@ class Fragment(PSMLFragment):
         """
         if not tag.has_attr('id'):
             raise AttributeError('Fragment tag missing required attribute \'id\'')
-        return cls(tag['id'], tag.attrs)
+        return cls(tag['id'], tag.contents, tag.attrs)
 
 class PropertiesFragment(PSMLFragment):
     """
