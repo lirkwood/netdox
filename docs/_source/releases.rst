@@ -3,6 +3,15 @@
 Releases
 ########
 
+v1.3.3
+======
+Added validation, fixed loading zone issues, updated docs and search terms.
+
+* Added docid length validation during serialisation.
+* Updated IPv4Address search terms to use better tokens.
+* Added Schematron validation for updated search terms.
+* Refresh now clears the loading zone during initialisation.
+
 v1.3.2
 ======
 Bugfixes, refactors, updated search terms for IPv4s, updated dev scripts.
