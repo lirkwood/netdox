@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import os
-import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union
 
 from bs4 import BeautifulSoup
-from bs4.element import Tag
 
 from netdox import base, containers, iptools, nodes, utils
 from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE,
@@ -56,6 +54,26 @@ class DNSRecord:
             self.source == other.source
         )
 
+    def to_psml(self, id: str, implied: bool) -> PropertiesFragment:
+        """
+        Returns a PropertiesFragment describing this record.
+
+        :param id: ID for the properties fragment.
+        :type id: str
+        :param implied: Whether this is an implied record.
+        :type implied: bool
+        :return: A PropertiesFragment with the given ID.
+        :rtype: PropertiesFragment
+        """
+        title_prefix = 'Implied ' if implied else ''
+        return PropertiesFragment(
+            id = id, 
+            properties = [
+                Property(self.destination.type, XRef(docid = self.destination.docid),
+                    title_prefix + f'{self.type} record'),
+                Property('source', self.source, 'Source Plugin')
+        ])
+
 @dataclass(frozen = True)
 class NATEntry:
     """Represents a NAT entry, linking one IPv4 to another."""
@@ -85,6 +103,25 @@ class NATEntry:
             self.destination.name == other.destination.name and
             self.source == other.source
         )
+
+    def to_psml(self, id: str) -> PropertiesFragment:
+        """
+        Returns a PropertiesFragment describing this entry.
+
+        :param id: ID for the properties fragment.
+        :type id: str
+        :return: A PropertiesFragment with the given ID.
+        :rtype: PropertiesFragment
+        """
+        return PropertiesFragment(
+            id = id, 
+            properties = [
+                Property(
+                    self.destination.type,
+                    XRef(docid = self.destination.docid),
+                    'NAT Entry'),
+                Property('source', self.source, 'Source Plugin')
+        ])
 
 class DNSRecordSet:
     #TODO profile mem usage with instance of this on each dnsobj
@@ -133,15 +170,9 @@ class DNSRecordSet:
         
         for record_type in DNSRecordType:
             for count, record in enumerate(self[record_type]):
-                dest = record.destination
-                root.insert(PropertiesFragment(
-                    id = id_prefix + f'{record_type}_record_{count}', 
-                    properties = [
-                        Property(dest.type, XRef(docid = dest.docid), 
-                            title_prefix + f'{record_type} record'),
-                        Property('source', record.source, 'Source Plugin')
-                ]))
-
+                root.insert(record.to_psml(
+                    id_prefix + f'{record_type}_record_{count}', implied
+                ))
         return root
         
 
@@ -237,7 +268,7 @@ class DNSObject(base.NetworkObject):
             value = XRef(docid = self.node.docid) if self.node else '—'
         ).tag)
 
-        if self.node is not None and isinstance(self.node, nodes.ProxiedNode):
+        if isinstance(self.node, nodes.ProxiedNode):
             proxy_value: Union[str, XRef]
             if self.node.proxy.node:
                 proxy_value = XRef(docid = self.node.proxy.node.docid)
