@@ -3,17 +3,17 @@ from netdox import Network, dns, iptools, nodes, psml
 from fixtures import *
 from lxml import etree
 
-class TestDNSRecord:
+class TestDNSLink:
 
     def test_type_A(self, domain, ipv4):
-        assert dns.DNSRecord(domain, ipv4, '').type == dns.DNSRecordType.A
+        assert dns.DNSLink(domain, ipv4, '').type == dns.DNSRecordType.A
 
     def test_type_PTR(self, domain, ipv4):
-        assert dns.DNSRecord(ipv4, domain, '').type == dns.DNSRecordType.PTR
+        assert dns.DNSLink(ipv4, domain, '').type == dns.DNSRecordType.PTR
 
     def test_type_CNAME(self, domain, ipv4):
-        assert dns.DNSRecord(domain, domain, '').type == dns.DNSRecordType.CNAME
-        assert dns.DNSRecord(ipv4, ipv4, '').type == dns.DNSRecordType.CNAME
+        assert dns.DNSLink(domain, domain, '').type == dns.DNSRecordType.CNAME
+        assert dns.DNSLink(ipv4, ipv4, '').type == dns.DNSRecordType.CNAME
 
 class TestDNSRecordSet:
 
@@ -30,7 +30,7 @@ class TestDNSRecordSet:
     @fixture
     def mock_record_set(self, origin, destination) -> dns.DNSRecordSet:
         set = dns.DNSRecordSet()
-        set.add(dns.DNSRecord(origin, destination, self.SOURCE))
+        set.add(dns.DNSLink(origin, destination, self.SOURCE))
         return set
 
     def test_to_psml(self, mock_record_set: dns.DNSRecordSet, destination: dns.DNSObject):

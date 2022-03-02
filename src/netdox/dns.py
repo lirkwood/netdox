@@ -23,36 +23,62 @@ class DNSRecordType(Enum):
 @dataclass(frozen = True)
 class DNSRecord:
     """Represents a DNS record."""
-    origin: DNSObject
-    """The DNSObject the link points from."""
-    destination: DNSObject
-    """The DNSObject the record points to."""
+    name: str
+    """Name of this DNS record."""
+    value: str
+    """Value returned for this DNS record."""
     source: str
-    """The name of the plugin that provided this record."""
+    """Name of the plugin that provided this record."""
     type: DNSRecordType
     """The type of this DNS record."""
     hash: int
     """Pre-calculated hash of origin/dest name and source. Necessary for pickling."""
 
-    def __init__(self, origin: DNSObject, destination: DNSObject, source: str) -> None:
-        object.__setattr__(self, 'origin', origin)
-        object.__setattr__(self, 'destination', destination)
+    def __init__(self, name: str, value: str, source: str, type: DNSRecordType) -> None:
+        object.__setattr__(self, 'name', name)
+        object.__setattr__(self, 'value', value)
         object.__setattr__(self, 'source', source)
-
-        object.__setattr__(self, 'hash', hash(
-            (origin.name, destination.name, source)))
-        object.__setattr__(self, 'type', 
-            RECORD_TYPE_MAP[(origin.type, destination.type)])
+        object.__setattr__(self, 'type', type)
+        object.__setattr__(self, 'hash', hash((name, value, source)))
 
     def __hash__(self) -> int:
         return self.hash
 
     def __eq__(self, other) -> bool:
-        return (
-            self.origin.name == other.origin.name and
-            self.destination.name == other.destination.name and
-            self.source == other.source
-        )
+        return self.__hash__() == other.__hash__()
+
+    def to_psml(self, id: str, implied: bool) -> PropertiesFragment:
+        """
+        Returns a PropertiesFragment describing this record.
+
+        :param id: ID for the properties fragment.
+        :type id: str
+        :param implied: Whether this is an implied record.
+        :type implied: bool
+        :return: A PropertiesFragment with the given ID.
+        :rtype: PropertiesFragment
+        """
+        title_prefix = 'Implied ' if implied else ''
+        return PropertiesFragment(
+            id = id, 
+            properties = [
+                Property('record', self.value, title_prefix + f'{self.type} record'),
+                Property('source', self.source, 'Source Plugin')
+        ])
+
+@dataclass(frozen = True)
+class DNSLink(DNSRecord):
+    """Represents a DNS record that resolves to another DNSObject."""
+    origin: DNSObject
+    """The DNSObject the link points from."""
+    destination: DNSObject
+    """The DNSObject the record points to."""
+
+    def __init__(self, origin: DNSObject, destination: DNSObject, source: str) -> None:
+        super().__init__(origin.name, destination.name, source, 
+            type = RECORD_TYPE_MAP[(origin.type, destination.type)])
+        object.__setattr__(self, 'origin', origin)
+        object.__setattr__(self, 'destination', destination)
 
     def to_psml(self, id: str, implied: bool) -> PropertiesFragment:
         """
@@ -126,24 +152,24 @@ class NATEntry:
 class DNSRecordSet:
     #TODO profile mem usage with instance of this on each dnsobj
     """Container for DNSRecords."""
-    _set: set[DNSRecord]
+    _set: set[DNSLink]
 
-    def __init__(self, records: Iterable[DNSRecord] = None) -> None:
+    def __init__(self, records: Iterable[DNSLink] = None) -> None:
         self._set = set(records) if records else set()
 
-    def __iter__(self) -> Iterator[DNSRecord]:
+    def __iter__(self) -> Iterator[DNSLink]:
         yield from self._set
 
-    def __contains__(self, key: DNSRecord) -> bool:
+    def __contains__(self, key: DNSLink) -> bool:
         return key in self._set
 
     def __getitem__(self, key: DNSRecordType) -> DNSRecordSet:
         return getattr(self, key.value)
 
-    def add(self, record: DNSRecord) -> None:
+    def add(self, record: DNSLink) -> None:
         self._set.add(record)
 
-    def remove(self, record: DNSRecord) -> None:
+    def remove(self, record: DNSLink) -> None:
         self._set.remove(record)
 
     def union(self, other: DNSRecordSet) -> DNSRecordSet:
@@ -256,8 +282,8 @@ class DNSObject(base.NetworkObject):
         """
         if isinstance(destination, str):
             destination = self.network.find_dns(destination)
-        self.records.add(DNSRecord(self, destination, source))
-        destination.backrefs.add(DNSRecord(destination, self, source))
+        self.records.add(DNSLink(self, destination, source))
+        destination.backrefs.add(DNSLink(destination, self, source))
 
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
