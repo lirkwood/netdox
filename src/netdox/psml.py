@@ -571,6 +571,8 @@ DOMAIN_TEMPLATE = '''
 
         <section id="implied_records" title="Implied DNS Records" lockstructure="true" />
 
+        <section id="txt_records" title="TXT Records" fragmenttype="txt_record" />
+
         <section id="footer" />
 
     </document>
