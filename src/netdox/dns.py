@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import ABC, abstractmethod
 
 import os
 from dataclasses import dataclass
@@ -11,17 +12,25 @@ from netdox import base, containers, iptools, nodes, utils
 from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE,
                          PropertiesFragment, Property, Section, XRef)
 
-
 class DNSRecordType(Enum):
     A = 'A'
     CNAME = 'CNAME'
     PTR = 'PTR'
+    TXT = 'TXT'
 
     def __str__(self) -> str:
         return self.value
 
-@dataclass(frozen = True)
-class DNSRecord:
+    def is_link(self) -> bool:
+        """Returns true if this DNSRecordType can describe a DNSLink."""
+        return self != DNSRecordType.TXT
+
+    @staticmethod
+    def links() -> list[DNSRecordType]:
+        """Returns a list of DNSRecordTypes that can describe DNSLinks."""
+        return [DNSRecordType.A, DNSRecordType.CNAME, DNSRecordType.PTR]
+
+class DNSRecord(ABC):
     """Represents a DNS record."""
     name: str
     """Name of this DNS record."""
@@ -47,28 +56,22 @@ class DNSRecord:
     def __eq__(self, other) -> bool:
         return self.__hash__() == other.__hash__()
 
-    def to_psml(self, id: str, implied: bool) -> PropertiesFragment:
+    @abstractmethod
+    def to_psml(self, id: str) -> PropertiesFragment:
         """
         Returns a PropertiesFragment describing this record.
 
         :param id: ID for the properties fragment.
         :type id: str
-        :param implied: Whether this is an implied record.
-        :type implied: bool
         :return: A PropertiesFragment with the given ID.
         :rtype: PropertiesFragment
         """
-        title_prefix = 'Implied ' if implied else ''
-        return PropertiesFragment(
-            id = id, 
-            properties = [
-                Property('record', self.value, title_prefix + f'{self.type} record'),
-                Property('source', self.source, 'Source Plugin')
-        ])
+        ...
 
 @dataclass(frozen = True)
 class DNSLink(DNSRecord):
-    """Represents a DNS record that resolves to another DNSObject."""
+    """Represents a DNS record that resolves to another DNSObject.
+    Type may be A, CNAME, or PTR."""
     origin: DNSObject
     """The DNSObject the link points from."""
     destination: DNSObject
@@ -80,7 +83,7 @@ class DNSLink(DNSRecord):
         object.__setattr__(self, 'origin', origin)
         object.__setattr__(self, 'destination', destination)
 
-    def to_psml(self, id: str, implied: bool) -> PropertiesFragment:
+    def to_psml(self, id: str) -> PropertiesFragment:
         """
         Returns a PropertiesFragment describing this record.
 
@@ -91,17 +94,61 @@ class DNSLink(DNSRecord):
         :return: A PropertiesFragment with the given ID.
         :rtype: PropertiesFragment
         """
-        title_prefix = 'Implied ' if implied else ''
         return PropertiesFragment(
             id = id, 
             properties = [
-                Property(self.destination.type, XRef(docid = self.destination.docid),
-                    title_prefix + f'{self.type} record'),
+                Property(
+                    self.destination.type, 
+                    XRef(docid = self.destination.docid),
+                    f'{self.type} record'
+                ),
                 Property('source', self.source, 'Source Plugin')
         ])
 
+    def to_psml_implied(self, id_suffix: str) -> PropertiesFragment:
+        """
+        Returns a PropertiesFragment describing this record 
+        from the perspective of the destination object.
+
+        In practice this method simply prefixes the provided ID 
+        and the property titles with the word 'implied'.
+
+        :param id_suffix: ID for the properties fragment.
+        Will be prefixed with 'implied_'
+        :type id_suffix: str
+        :return: _description_
+        :rtype: PropertiesFragment
+        """
+        return PropertiesFragment(
+            id = f'implied_{id_suffix}', 
+            properties = [
+                Property(
+                    self.destination.type, 
+                    XRef(docid = self.destination.docid),
+                    f'Implied {self.type} record'
+                ),
+                Property('source', self.source, 'Source Plugin')
+        ])
+
+class TXTRecord(DNSRecord):
+    "Implementation for TXT DNS records."
+    type = DNSRecordType.TXT
+    zone: str
+    """The domain this record uses as its DNS zone."""
+
+    def __init__(self, name: str, value: str, source: str, type: DNSRecordType) -> None:
+        super().__init__(name, value, source, type)
+        self.zone = '.'.join(name.split('.')[1:])
+
+    def to_psml(self, id: str) -> PropertiesFragment:
+        return PropertiesFragment(id, [
+            Property('txt_name', self.name, 'Name'),
+            Property('txt_value', self.value, 'Value'),
+            Property('source', self.source, 'Source Plugin')
+        ])
+
 @dataclass(frozen = True)
-class NATEntry:
+class NATLink:
     """Represents a NAT entry, linking one IPv4 to another."""
     origin: IPv4Address
     """The IPv4Address the record points from."""
@@ -149,7 +196,7 @@ class NATEntry:
                 Property('source', self.source, 'Source Plugin')
         ])
 
-class DNSRecordSet:
+class DNSLinkSet:
     #TODO profile mem usage with instance of this on each dnsobj
     """Container for DNSRecords."""
     _set: set[DNSLink]
@@ -163,7 +210,7 @@ class DNSRecordSet:
     def __contains__(self, key: DNSLink) -> bool:
         return key in self._set
 
-    def __getitem__(self, key: DNSRecordType) -> DNSRecordSet:
+    def __getitem__(self, key: DNSRecordType) -> DNSLinkSet:
         return getattr(self, key.value)
 
     def add(self, record: DNSLink) -> None:
@@ -172,13 +219,13 @@ class DNSRecordSet:
     def remove(self, record: DNSLink) -> None:
         self._set.remove(record)
 
-    def union(self, other: DNSRecordSet) -> DNSRecordSet:
+    def union(self, other: DNSLinkSet) -> DNSLinkSet:
         """Returns a new DNSRecordSet containing all records from both sets."""
-        return DNSRecordSet(self._set | other._set)
+        return DNSLinkSet(self._set | other._set)
 
-    def difference(self, other: DNSRecordSet) -> DNSRecordSet:
+    def difference(self, other: DNSLinkSet) -> DNSLinkSet:
         """Returns a new DNSRecordSet without any records from the other set."""
-        return DNSRecordSet(self._set - other._set)
+        return DNSLinkSet(self._set - other._set)
 
     def to_psml(self, implied: bool = False) -> Section:
         """
@@ -190,39 +237,45 @@ class DNSRecordSet:
         :return: A PSML section tag.
         :rtype: Tag
         """
-        id_prefix = 'implied_' if implied else ''
-        title_prefix = 'Implied ' if implied else ''
-        root = Section(id_prefix + 'records', title_prefix + 'DNS Records')
+        section_id = 'implied_records' if implied else 'records'
+        section_title = 'Implied DNS Records' if implied else 'DNS Records'
+        root = Section(section_id, section_title)
         
-        for record_type in DNSRecordType:
+        for record_type in DNSRecordType.links():
             for count, record in enumerate(self[record_type]):
-                root.insert(record.to_psml(
-                    id_prefix + f'{record_type}_record_{count}', implied
-                ))
+                frag_id = f'{record_type}_record_{count}'
+                if implied:
+                    root.insert(record.to_psml_implied(frag_id))
+                else:
+                    root.insert(record.to_psml(frag_id))
         return root
         
-
     # Record types
 
     @property
-    def A(self) -> DNSRecordSet:
+    def A(self) -> DNSLinkSet:
         """Returns a new record set with all DNSRecords of type 'A'."""
-        return DNSRecordSet(
+        return DNSLinkSet(
             {record for record in self if record.type == DNSRecordType.A})
 
     @property
-    def PTR(self) -> DNSRecordSet:
+    def PTR(self) -> DNSLinkSet:
         """Returns a new record set with all DNSRecords of type 'PTR'"""
-        return DNSRecordSet(
+        return DNSLinkSet(
             {record for record in self if record.type == DNSRecordType.PTR})
 
     @property
-    def CNAME(self) -> DNSRecordSet:
+    def CNAME(self) -> DNSLinkSet:
         """Returns a new record set with all DNSRecords of type 'CNAME'"""
-        return DNSRecordSet(
+        return DNSLinkSet(
             {record for record in self if record.type == DNSRecordType.CNAME})
 
     # Record attributes
+
+    @property
+    def sources(self) -> set[str]:
+        """Returns all sources in the set."""
+        return {record.source for record in self}
 
     @property
     def destinations(self) -> set[DNSObject]:
@@ -234,11 +287,6 @@ class DNSRecordSet:
         """Returns all destination names in the set."""
         return {record.destination.name for record in self}
 
-    @property
-    def sources(self) -> set[str]:
-        """Returns all sources in the set."""
-        return {record.source for record in self}
-
 
 class DNSObject(base.NetworkObject):
     """
@@ -246,10 +294,10 @@ class DNSObject(base.NetworkObject):
     """
     zone: Optional[str]
     """The DNS zone this object is from."""
-    records: DNSRecordSet
-    """A set of DNSRecords originating from this object."""
-    backrefs: DNSRecordSet
-    """Like records but stores DNSRecords resolving to this object."""
+    links: DNSLinkSet
+    """A set of DNSLinks originating from this object."""
+    implied_links: DNSLinkSet
+    """A set of DNSLinks resolving to this object."""
     _node: Optional[Union[nodes.Node, nodes.NodeProxy]]
     """The node/proxy this DNSObject resolves to."""
 
@@ -259,8 +307,8 @@ class DNSObject(base.NetworkObject):
         super().__init__(network, name, name, labels)
         self.zone = zone.lower() if zone else zone
         self.node = None
-        self.records = DNSRecordSet()
-        self.backrefs = DNSRecordSet()
+        self.links = DNSLinkSet()
+        self.implied_links = DNSLinkSet()
 
     ## abstract properties
 
@@ -282,8 +330,8 @@ class DNSObject(base.NetworkObject):
         """
         if isinstance(destination, str):
             destination = self.network.find_dns(destination)
-        self.records.add(DNSLink(self, destination, source))
-        destination.backrefs.add(DNSLink(destination, self, source))
+        self.links.add(DNSLink(self, destination, source))
+        destination.implied_links.add(DNSLink(destination, self, source))
 
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
@@ -302,9 +350,9 @@ class DNSObject(base.NetworkObject):
                 proxy_value = 'Not Provided'
             header.append(Property('proxy', proxy_value, 'Proxy').tag)
         
-        soup.find('section', id = 'records').replace_with(self.records.to_psml().tag)
+        soup.find('section', id = 'records').replace_with(self.links.to_psml().tag)
         soup.find('section', id = 'implied_records').replace_with(
-            self.backrefs.difference(self.records).to_psml(implied = True).tag)
+            self.implied_links.difference(self.links).to_psml(implied = True).tag)
 
         return soup
 
@@ -315,8 +363,8 @@ class DNSObject(base.NetworkObject):
         """
         if object.name == self.name:
             super().merge(object)
-            self.records = self.records.union(object.records)
-            self.backrefs = self.backrefs.union(object.backrefs)
+            self.links = self.links.union(object.links)
+            self.implied_links = self.implied_links.union(object.implied_links)
             return self
         else:
             raise AttributeError('Cannot merge DNSObjects with different names.')
@@ -337,6 +385,8 @@ class DNSObject(base.NetworkObject):
 
     @node.setter
     def node(self, value: nodes.Node) -> None:
+        #TODO add updating the domains/ips attr on nodes
+        # e.g. self._node.domains.remove(self.name) 
         self._node = value
 
     @node.deleter
@@ -353,6 +403,8 @@ class Domain(DNSObject):
     """
     type = 'domain'
     TEMPLATE = DOMAIN_TEMPLATE
+    txt_records: set[TXTRecord]
+    """A set of TXT records in the zone of this domain."""
     
     ## dunder methods
 
@@ -379,6 +431,7 @@ class Domain(DNSObject):
                 zone = zone or utils.root_domain(name),
                 labels = labels
             )
+            self.txt_records = set()
             
         else:
             raise ValueError('Must provide a valid name for a Domain (some FQDN)')
@@ -398,12 +451,12 @@ class Domain(DNSObject):
 
     @property
     def domains(self) -> set[str]:
-        return (self.records.CNAME.names.union(self.backrefs.CNAME.names)).union(
+        return (self.links.CNAME.names.union(self.implied_links.CNAME.names)).union(
             [self.name])
 
     @property
     def ips(self) -> set[str]:
-        return self.records.A.names.union(self.backrefs.PTR.names)
+        return self.links.A.names.union(self.implied_links.PTR.names)
     
     ## abstract methods
 
@@ -431,6 +484,18 @@ class Domain(DNSObject):
         """Returns a set of IPv4 CIDR 8-bit subnets that this domain resolves to."""
         return {iptools.sort(ip) for ip in self.ips}
 
+    ## methods
+
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        soup.find('section', id = 'txt_records').replace_with(
+            Section('txt_records', 'TXT Records', [
+                record.to_psml(f'{record.type}_record_{count}') 
+                for count, record in enumerate(self.txt_records)
+            ]).tag
+        )
+        return soup
+
 class IPv4Address(DNSObject):
     """
     A single IP address found in the network
@@ -439,7 +504,7 @@ class IPv4Address(DNSObject):
     """The 24 bit CIDR subnet this IP is in."""
     is_private: bool
     """Whether or not this IP is private"""
-    NAT: set[NATEntry]
+    NAT: set[NATLink]
     """A set of NAT entries."""
     type = 'ipv4'
     TEMPLATE = IPV4ADDRESS_TEMPLATE
@@ -476,12 +541,12 @@ class IPv4Address(DNSObject):
 
     @property
     def ips(self) -> set[str]:
-        return (self.records.CNAME.names.union(self.backrefs.CNAME.names)).union(
+        return (self.links.CNAME.names.union(self.implied_links.CNAME.names)).union(
             [self.name])
 
     @property
     def domains(self) -> set[str]:
-        return (self.records.PTR.names.union(self.backrefs.A.names))
+        return (self.links.PTR.names.union(self.implied_links.A.names))
     
     ## abstract methods
 
@@ -499,8 +564,8 @@ class IPv4Address(DNSObject):
         else:
             destObj = destination
         
-        self.NAT.add(NATEntry(self, destObj, source))
-        destObj.NAT.add(NATEntry(destObj, self, source))
+        self.NAT.add(NATLink(self, destObj, source))
+        destObj.NAT.add(NATLink(destObj, self, source))
 
     def _enter(self) -> IPv4Address:
         """
@@ -553,8 +618,8 @@ class IPv4Address(DNSObject):
         True otherwise.
         """
         return not bool(
-            self.records.names or
-            self.backrefs.names or
+            self.links.names or
+            self.implied_links.names or
             self.node
         )
 
