@@ -137,7 +137,7 @@ class NodeDiagramFactory:
             '}'
         ])
 
-        for record in dnsobj.records:
+        for record in dnsobj.links:
             cache |= self._draw_dns(record.destination, cache)
             dest_name = self._class_name(record.destination)
             self._link(class_name, dest_name, record.source)

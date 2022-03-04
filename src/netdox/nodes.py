@@ -249,7 +249,7 @@ class Node(base.NetworkObject):
         else:
             self.ips.add(dnsobj.name)
         
-        for backref in dnsobj.backrefs.destinations:
+        for backref in dnsobj.implied_links.destinations:
             cache |= self._walkBackrefs(backref, cache)
 
         return cache
@@ -307,7 +307,7 @@ class ProxiedNode(Node):
         else:
             dnsobj.node = self.proxy # type: ignore
         
-        for backref in dnsobj.backrefs.destinations:
+        for backref in dnsobj.implied_links.destinations:
             cache |= self._walkBackrefs(backref, cache)
 
         return cache

@@ -28,12 +28,12 @@ class TestDNSRecordSet:
         return ipv4
 
     @fixture
-    def mock_record_set(self, origin, destination) -> dns.DNSRecordSet:
-        set = dns.DNSRecordSet()
+    def mock_record_set(self, origin, destination) -> dns.DNSLinkSet:
+        set = dns.DNSLinkSet()
         set.add(dns.DNSLink(origin, destination, self.SOURCE))
         return set
 
-    def test_to_psml(self, mock_record_set: dns.DNSRecordSet, destination: dns.DNSObject):
+    def test_to_psml(self, mock_record_set: dns.DNSLinkSet, destination: dns.DNSObject):
         record = next(iter(mock_record_set))
         assert (
             str(mock_record_set.to_psml()) ==
@@ -91,16 +91,16 @@ class TestDomain:
         domain.link('192.168.0.1', 'source 1')
         domain.link('test.domain.com', 'source 2')
 
-        assert domain.records.names == {'192.168.0.1', 'test.domain.com'}
-        assert domain.records.sources == {'source 1', 'source 2'}
+        assert domain.links.names == {'192.168.0.1', 'test.domain.com'}
+        assert domain.links.sources == {'source 1', 'source 2'}
 
         ip_dest = domain.network.ips['192.168.0.1']
-        assert ip_dest.backrefs.names == {(domain.name)}
-        assert ip_dest.backrefs.sources == {('source 1')}
+        assert ip_dest.implied_links.names == {(domain.name)}
+        assert ip_dest.implied_links.sources == {('source 1')}
 
         domain_dest = domain.network.domains['test.domain.com']
-        assert domain_dest.backrefs.names == {(domain.name)}
-        assert domain_dest.backrefs.sources == {('source 2')}
+        assert domain_dest.implied_links.names == {(domain.name)}
+        assert domain_dest.implied_links.sources == {('source 2')}
 
         with raises(ValueError):
             domain.link('!& invalid name &!', 'source')
@@ -122,11 +122,11 @@ class TestDomain:
         for name in new_names:
             new.link(name, new_source)
 
-        assert new.records.names == new_names | mock_domain.records.names
-        assert new.records.sources == {(new_source)} | mock_domain.records.sources
+        assert new.links.names == new_names | mock_domain.links.names
+        assert new.links.sources == {(new_source)} | mock_domain.links.sources
 
-        assert new.backrefs.names == {(backref_name)}
-        assert new.backrefs.sources == {(backref_source)}
+        assert new.implied_links.names == {(backref_name)}
+        assert new.implied_links.sources == {(backref_source)}
 
         assert new.psmlFooter == mock_domain.psmlFooter
         assert not new.psmlFooter is mock_domain.psmlFooter
@@ -191,15 +191,15 @@ class TestIPv4Address:
         ipv4.link('test.domain.com', 'source 2')
         ipv4.link('0.0.0.0', 'source 1')
 
-        assert ipv4.records.PTR.names == {('test.domain.com')}
-        assert ipv4.records.PTR.sources == {('source 2')}
-        assert ipv4.records.CNAME.names == {('0.0.0.0')}
-        assert ipv4.records.CNAME.sources == {('source 1')}
+        assert ipv4.links.PTR.names == {('test.domain.com')}
+        assert ipv4.links.PTR.sources == {('source 2')}
+        assert ipv4.links.CNAME.names == {('0.0.0.0')}
+        assert ipv4.links.CNAME.sources == {('source 1')}
 
-        assert ipv4.network.domains['test.domain.com'].backrefs.A.names == {(ipv4.name)}
-        assert ipv4.network.domains['test.domain.com'].backrefs.A.sources == {('source 2')}
-        assert ipv4.network.ips['0.0.0.0'].backrefs.CNAME.names == {(ipv4.name)}
-        assert ipv4.network.ips['0.0.0.0'].backrefs.CNAME.sources == {('source 1')}
+        assert ipv4.network.domains['test.domain.com'].implied_links.A.names == {(ipv4.name)}
+        assert ipv4.network.domains['test.domain.com'].implied_links.A.sources == {('source 2')}
+        assert ipv4.network.ips['0.0.0.0'].implied_links.CNAME.names == {(ipv4.name)}
+        assert ipv4.network.ips['0.0.0.0'].implied_links.CNAME.sources == {('source 1')}
 
         with raises(ValueError):
             ipv4.link('!& invalid name &!', 'source')
@@ -223,16 +223,16 @@ class TestIPv4Address:
         for name in new_names:
             new.link(name, new_source)
 
-        assert new.records.names == new_names | mock_ipv4.records.names
-        assert new.records.sources == {(new_source)} | mock_ipv4.records.sources
+        assert new.links.names == new_names | mock_ipv4.links.names
+        assert new.links.sources == {(new_source)} | mock_ipv4.links.sources
 
-        assert new.backrefs.names == {(backref_name)}
-        assert new.backrefs.sources == {(backref_source)}
+        assert new.implied_links.names == {(backref_name)}
+        assert new.implied_links.sources == {(backref_source)}
 
         assert new.labels == mock_ipv4.labels | new_labels
         assert str(new.psmlFooter) == str(mock_ipv4.psmlFooter)
         assert not new.psmlFooter is mock_ipv4.psmlFooter
-        assert new.NAT == mock_ipv4.NAT | {dns.NATEntry(new, new_nat, new_source)}
+        assert new.NAT == mock_ipv4.NAT | {dns.NATLink(new, new_nat, new_source)}
 
         with raises(AttributeError):
             ipv4.merge(dns.IPv4Address(network, '123.45.67.89'))

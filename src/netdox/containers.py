@@ -297,10 +297,10 @@ class Network:
             return False
         self.cache.add(startObj)
         
-        if target in startObj.records.names:
+        if target in startObj.links.names:
             return True
 
-        for dest in startObj.records.destinations:
+        for dest in startObj.links.destinations:
             if self._resolvesTo(dest, target):
                 return True
         
