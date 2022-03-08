@@ -15,6 +15,8 @@ from datetime import datetime
 import hmac
 import hashlib
 
+from netdox.dns import TXTRecord
+
 
 def genheader() -> dict[str, str]:
 	"""
@@ -81,6 +83,9 @@ def fetch_dns(network: Network):
             elif record['type'] == 'PTR':
                 add_PTR(network, record, domain)
 
+            elif record['type'] == 'TXT':
+                add_TXT(network, record, domain)
+
 SOURCE = 'DNSMadeEasy'
 
 @utils.handle
@@ -136,6 +141,23 @@ def add_PTR(network: Network, record: dict, root: str):
     ip = subnet +'.'+ addr
     fqdn = assemble_fqdn(value, root)
     network.link(ip, fqdn, SOURCE)
+
+@utils.handle
+def add_TXT(network: Network, record: dict, root: str):
+    """
+    Integrates one TXT record into a Network from a dictionary.
+
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about the record.
+    :type record: dict
+    :param root: The root domain this record belongs to.
+    :type root: str
+    """
+    subdomain = record['name']
+    fqdn = assemble_fqdn(subdomain, root)
+    network.domains[root].txt_records.add(
+        TXTRecord(fqdn, record['value'], SOURCE))
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
