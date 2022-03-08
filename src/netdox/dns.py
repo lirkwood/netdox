@@ -136,8 +136,8 @@ class TXTRecord(DNSRecord):
     zone: str
     """The domain this record uses as its DNS zone."""
 
-    def __init__(self, name: str, value: str, source: str, type: DNSRecordType) -> None:
-        super().__init__(name, value, source, type)
+    def __init__(self, name: str, value: str, source: str) -> None:
+        super().__init__(name, value, source, DNSRecordType.TXT)
         self.zone = '.'.join(name.split('.')[1:])
 
     def to_psml(self, id: str) -> PropertiesFragment:
