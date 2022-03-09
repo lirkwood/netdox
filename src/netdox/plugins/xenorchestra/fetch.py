@@ -41,9 +41,6 @@ def runner(network: Network) -> dict[str, dict[str, list[str]]]:
         for pool, hostlist in poolHosts.items()
     }
     
-    # Generate template map for webhooks
-    asyncio.run(template_map(vms))
-    
     return pubdict
 
 async def makeNodes(network: Network) -> tuple[dict, dict[str, list[str]], dict[str, list[str]]]:
@@ -112,7 +109,8 @@ async def makeNodes(network: Network) -> tuple[dict, dict[str, list[str]], dict[
 @utils.handle
 async def template_map(vms: dict):
     """
-    Generates a PSML file of all objects that can be used to create a VM with ``createVM``
+    Generates a PSML file of all objects that can be used to create a VM with ``createVM``.
+    This was for the deprecated webhook functionality.
 
     :param vms: A dictionary of all the VMs, as returned by fetchType
     :type vms: dict

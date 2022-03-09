@@ -195,14 +195,6 @@ def config(args: argparse.Namespace):
     else:
         decrypt_file(CFGPATH, args.path)
 
-## Serve
-
-def serve(_):
-    """
-    Begins serving the web server to listen for webhooks from PageSeeder.
-    """
-    raise NotImplementedError('Webhooks are not currently usable')
-
 ## Refresh
 
 def refresh(args: argparse.Namespace):
@@ -269,9 +261,6 @@ def parse_args():
     )
     config_parser.add_argument('path', type = pathlib.Path, help = 'path to read/write the config file from/to')
     config_parser.set_defaults(func = config)
-
-    serve_parser = subparsers.add_parser('serve', help = 'Begins serving the web server to listen for webhooks from PageSeeder.')
-    serve_parser.set_defaults(func = serve)
 
     refresh_parser = subparsers.add_parser('refresh', help = 'Generates a new set of documentation and uploads it to PageSeeder.')
     refresh_parser.set_defaults(func = refresh)
