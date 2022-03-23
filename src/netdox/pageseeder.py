@@ -38,6 +38,7 @@ def refreshToken(credentials: dict) -> str:
     :return: An access token for use with the PageSeeder API
     :rtype: str
     """
+    #TODO move this off disk
     with open(utils.APPDIR+ 'src/pstoken.json', 'w') as stream:
         url = f'https://{credentials["host"]}/ps/oauth/token'
         refresh_header = {
