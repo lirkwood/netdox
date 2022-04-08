@@ -3,8 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from enum import Enum
-from netdox import Network, DefaultNode, psml
+from functools import cache
 from typing import Iterable, Optional
+import re
+
+from bs4 import BeautifulSoup
+
+from netdox import DefaultNode, Network, psml, utils
+from netdox.plugins.aws.templates import EBS_VOLUME_TEMPLATE
+
 
 class EC2Instance(DefaultNode):
     """A single instance running on AWS EC2."""
@@ -24,6 +31,8 @@ class EC2Instance(DefaultNode):
     """State of the instance at the time of the refresh."""
     billing: AWSBillingMetrics
     """Billing metrics associated with this instance for the current day."""
+    volumes: dict[str, EBSVolume]
+    """Mount points of volumes mapped to volume objects."""
     tags: dict[str, str]
     """Dictionary of tags applied to this instance."""
     NAME_TAG_KEY: str = 'Name'
@@ -40,6 +49,7 @@ class EC2Instance(DefaultNode):
             key_pair: str,
             state: str,
             billing: AWSBillingMetrics,
+            volumes: dict[str, EBSVolume],
             tags: Iterable[dict],
             private_ip: str,
             public_ips: Iterable[str] = None,
@@ -67,16 +77,17 @@ class EC2Instance(DefaultNode):
         self.key_pair = key_pair
         self.state = state
         self.billing = billing
+        self.volumes = volumes
 
     @property
-    def psmlInstanceinf(self) -> psml.PropertiesFragment:
+    def psmlGeneral(self) -> psml.PropertiesFragment:
         """
-        Instanceinf fragment of EC2Instance Node document.
+        General info fragment of EC2Instance Node document.
 
         :return: A *properties-fragment* bs4 tag.
         :rtype: Tag
         """
-        return psml.PropertiesFragment('instanceinf', [
+        return psml.PropertiesFragment('general', [
             psml.Property('instanceId', self.id, 'Instance ID'),
             psml.Property('mac', self.mac, 'MAC Address'),
             psml.Property('instanceType', self.instance_type, 'Instance Type'),
@@ -95,17 +106,114 @@ class EC2Instance(DefaultNode):
         :rtype: Tag
         """
         return psml.PropertiesFragment('tags', [
-            psml.Property('tag', value, tag) 
+            psml.Property('tag', value, f'Tag: {tag}')
             for tag, value in self.tags.items()
         ])
+
+    @property
+    def psmlVolumes(self) -> list[psml.PropertiesFragment]:
+        return  [
+            psml.PropertiesFragment(f'volume_{count}', [
+                psml.Property(
+                    'volume', 
+                    psml.XRef(docid = self.volumes[path].docid), 
+                    'Attached Volume'
+                ),
+                psml.Property('mount_path', path, 'Mount Path')
+            ]) for count, path in enumerate(self.volumes)
+        ]
 
     @property
     def psmlBody(self) -> list[psml.Section]:
         return [
             psml.Section('body', fragments = [
-                self.psmlInstanceinf, self.billing.to_psml(), self.psmlTags
-            ])
+                self.psmlGeneral, 
+                self.billing.to_psml(),
+                self.psmlTags
+            ] + self.psmlVolumes)
         ]
+
+## Volumes
+
+@dataclass(frozen = True)
+class EBSVolume:
+    """A single AWS EBS volume."""
+    id: str
+    """Volume ID."""
+    size: int
+    """Volume size in GiB."""
+    type: str
+    """The EBS volume type."""
+    created: datetime
+    """The date and time this volume was created."""
+    instance_ids: frozenset[str]
+    """IDs of instances this volume is attached to."""
+    multi_attach: bool
+    """Whether this volume can be attached to multiple instances at once."""
+    snapshots: frozenset[EBSSnapshot]
+    """List of snapshots of this volume."""
+
+    NONEXISTENT_ID = 'vol-ffffffff'
+    """ID of a volume that no longer exists."""
+
+    @property
+    def docid(self) -> str:
+        """
+        The docid of this objects PSML document.
+
+        :return: A string valid as a PageSeeder docid.
+        :rtype: str
+        """
+        return f'_nd_aws_volume_{re.sub(utils.docid_invalid_pattern, "_", self.id)}'
+
+    def to_psml(self) -> str:
+        """
+        Returns the PSML document representing this object.
+
+        :return: This document as a PSML document from the template.
+        :rtype: str
+        """
+        #TODO move this into common code
+        doc = str(EBS_VOLUME_TEMPLATE)
+        for field in re.findall(r'(#![a-zA-Z0-9_]+)', EBS_VOLUME_TEMPLATE):
+            attr = getattr(self, field.replace('#!',''), None)
+            #TODO add empty string validation
+            if attr is not None:
+                if not isinstance(attr, str):
+                    try:
+                        attr = str(attr)
+                    except Exception:
+                        continue
+                doc = re.sub(field, attr, doc)
+            else:
+                doc = re.sub(field, '—', doc)
+        
+        soup = BeautifulSoup(doc, 'xml')
+        snapshot_frag = soup.find('section', id = 'details')
+        for count, snapshot in enumerate(self.snapshots):
+            snapshot_frag.append(psml.PropertiesFragment(f'snapshot_{count}', [
+                psml.Property('snapshotId', snapshot.id, 'Snapshot ID'),
+                psml.Property('started', str(snapshot.started), 'Start Time'),
+                psml.Property('description', snapshot.description, 'Description')
+            ]).tag)
+
+        return str(soup)
+
+@dataclass(frozen = True)
+class EBSSnapshot:
+    """A snapshot backup of an EBSVolume."""
+    id: str
+    """Snapshot ID."""
+    size: int
+    """Volume size in GiB."""
+    volume_id: str
+    """ID of the volume this is a snapshot of."""
+    started: datetime
+    """The date and time this snapshot was started."""
+    description: str
+    """Description of this snapshot."""
+
+## Billing
 
 @dataclass(frozen = True)
 class AWSTimePeriod:
@@ -120,15 +228,17 @@ class AWSTimePeriod:
     def __str__(self) -> str:
         start = self.start.isoformat(timespec = 'seconds')
         end = self.end.isoformat(timespec = 'seconds')
-        return (f'From {start} to {end}')
+        return f'From {start} to {end}'
 
     def to_dict(self) -> dict[str, str]:
         """
         Returns a dictionary representing this object, usable in boto3 calls.
         """
         return {
-            self._start_key: self.start.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            self._end_key: self.end.strftime('%Y-%m-%dT%H:%M:%SZ')
+            # self._start_key: self.start.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            # self._end_key: self.end.strftime('%Y-%m-%dT%H:%M:%SZ')
+            self._start_key: self.start.strftime('%Y-%m-%d'),
+            self._end_key: self.end.strftime('%Y-%m-%d')
         }
 
     @classmethod
@@ -153,6 +263,7 @@ class AWSBillingGranularity(Enum):
     DAILY = timedelta(days = 1)
     MONTHLY = timedelta(weeks = 4)
 
+    @cache
     def period(self) -> AWSTimePeriod:
         """
         Returns a AWSTimePeriod object ending at midnight on the current day.
@@ -186,9 +297,9 @@ class AWSBillingMetrics:
     """The names of the billing metrics this class stores."""
 
     def to_psml(self) -> psml.PropertiesFragment:
-        amortized = round(self.AmortizedCost, 2) if self.AmortizedCost is not None else 'None'
-        unblended = round(self.UnblendedCost, 2) if self.UnblendedCost is not None else 'None'
-        usage = round(self.UsageQuantity, 2) if self.UsageQuantity is not None else 'None'
+        amortized = str(round(self.AmortizedCost, 2)) if self.AmortizedCost else 'None'
+        unblended = str(round(self.UnblendedCost, 2)) if self.UnblendedCost else 'None'
+        usage = str(round(self.UsageQuantity, 2)) if self.UsageQuantity else 'None'
 
         return psml.PropertiesFragment('billing', [
             psml.Property('period', str(self.period), 'Billing Period'),
@@ -196,3 +307,37 @@ class AWSBillingMetrics:
             psml.Property('unblended_cost', unblended, 'Unblended Cost (USD)'),
             psml.Property('usage', usage, 'Usage Quantity')
         ])
+
+class AWSBillingReport:
+    granularity: AWSBillingGranularity
+    """Granularity of the billing report."""
+    _metrics: dict[str, AWSBillingMetrics]
+    """Dict mapping resource ID to associated billing metrics."""
+
+    def __init__(self, 
+        granularity: AWSBillingGranularity, 
+        metrics: dict[str, AWSBillingMetrics] = None
+    ) -> None:
+        self.granularity = granularity
+        self._metrics = metrics or {}
+
+    def add_metrics(self, metrics: AWSBillingMetrics) -> None:
+        """
+        Adds billing metrics to the report.
+
+        :param metrics: Billing metrics.
+        :type metrics: AWSBillingMetrics
+        """
+        self._metrics[metrics.id] = metrics
+
+    def get_metrics(self, id: str) -> AWSBillingMetrics:
+        """
+        Get billing metrics for an EC2 instance with the given ID.
+
+        :param id: ID of the instance that is associated with the billing metrics.
+        :type id: str
+        :return: The associated billing metrics.
+        :rtype: AWSBillingMetrics
+        """
+        return self._metrics[id] if id in self._metrics else \
+            AWSBillingMetrics(id, self.granularity.period(), None, None, None)
