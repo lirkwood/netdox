@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from functools import cache
+from math import ceil
 from typing import Iterable, Optional
 import re
 
@@ -116,11 +117,17 @@ class EC2Instance(DefaultNode):
             psml.PropertiesFragment(f'volume_{count}', [
                 psml.Property(
                     'volume', 
-                    psml.XRef(docid = self.volumes[path].docid), 
+                    psml.XRef(docid = volume.docid), 
                     'Attached Volume'
                 ),
-                psml.Property('mount_path', path, 'Mount Path')
-            ]) for count, path in enumerate(self.volumes)
+                psml.Property('mount_path', path, 'Mount Path'),
+                # TODO replace this property with cumulative volume cost in billing frag
+                psml.Property(
+                    'amortized_cost', 
+                    str(volume.get_billing(self.billing.period).AmortizedCost or 0), 
+                    'Amortized Cost'
+                )
+            ]) for count, (path, volume) in enumerate(self.volumes.items())
         ]
 
     @property
@@ -128,12 +135,31 @@ class EC2Instance(DefaultNode):
         return [
             psml.Section('body', fragments = [
                 self.psmlGeneral, 
+                self.psmlTags,
                 self.billing.to_psml(),
-                self.psmlTags
             ] + self.psmlVolumes)
         ]
 
 ## Volumes
+
+@cache
+def _get_volume_pricing() -> dict[str, float]:
+    """
+    Gets the pricing data for EBSVolumes.
+
+    :return: A dict mapping EBSVolume type to price in USD/GB/Hour
+    :rtype: dict[str, int]
+    """
+    #TODO implement
+    return {'gp2': 0.12, 'gp3': 0.096}
+
+class EBSVolumeState(Enum):
+    CREATING = 'creating'
+    AVAILABLE = 'available'
+    IN_USE = 'in-use'
+    DELETING = 'deleting'
+    DELETED = 'deleted'
+    ERROR = 'error'
 
 @dataclass(frozen = True)
 class EBSVolume:
@@ -146,6 +172,8 @@ class EBSVolume:
     """The EBS volume type."""
     created: datetime
     """The date and time this volume was created."""
+    state: EBSVolumeState
+    """Current state of this volume."""
     instance_ids: frozenset[str]
     """IDs of instances this volume is attached to."""
     multi_attach: bool
@@ -155,6 +183,8 @@ class EBSVolume:
 
     NONEXISTENT_ID = 'vol-ffffffff'
     """ID of a volume that no longer exists."""
+    _GiB_TO_GB = 1024**3 / 1000**3
+    """Constant to multiply size in GiB by to acquire size in GB."""
 
     @property
     def docid(self) -> str:
@@ -165,6 +195,31 @@ class EBSVolume:
         :rtype: str
         """
         return f'_nd_aws_volume_{re.sub(utils.docid_invalid_pattern, "_", self.id)}'
+
+    @cache
+    def get_billing(self, period: AWSTimePeriod) -> AWSBillingMetrics:
+        """
+        Calculates the billing metrics for this object over the given period.
+
+        :param period: _description_
+        :type period: AWSTimePeriod
+        :raises AttributeError: _description_
+        :return: _description_
+        :rtype: AWSBillingMetrics
+        """
+        #TODO check if created after period begins
+        # start = max(self.created., period.start)
+        start = period.start
+        hours = ceil((period.end - start).total_seconds() / 3600)
+        size_gb = self.size * self._GiB_TO_GB
+        gb_months = size_gb * hours / 730
+        
+        try:
+            cost = gb_months * _get_volume_pricing()[self.type]
+        except KeyError:
+            raise AttributeError(
+                f'Failed to retrieve pricing data for EBSVolume of type: {self.type}')
+        return AWSBillingMetrics(self.id, period, cost, cost, gb_months)
 
     def to_psml(self) -> str:
         """
@@ -189,9 +244,9 @@ class EBSVolume:
                 doc = re.sub(field, '—', doc)
         
         soup = BeautifulSoup(doc, 'xml')
-        snapshot_frag = soup.find('section', id = 'details')
+        details_section = soup.find('section', id = 'details')
         for count, snapshot in enumerate(self.snapshots):
-            snapshot_frag.append(psml.PropertiesFragment(f'snapshot_{count}', [
+            details_section.append(psml.PropertiesFragment(f'snapshot_{count}', [
                 psml.Property('snapshotId', snapshot.id, 'Snapshot ID'),
                 psml.Property('started', str(snapshot.started), 'Start Time'),
                 psml.Property('description', snapshot.description, 'Description')
