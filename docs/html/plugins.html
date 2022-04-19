@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Plugins &#8212; Netdox 0.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" href="_static/css/style.css" type="text/css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Releases" href="releases.html" />
+    <link rel="prev" title="Webhooks" href="webhooks.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="plugins">
+<span id="id1"></span><h1>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h1>
+<section id="about-plugins">
+<h2>About Plugins<a class="headerlink" href="#about-plugins" title="Permalink to this headline">¶</a></h2>
+<p>Plugins allow Netdox to retrieve data from an arbitrary number of services or tools.
+They are modules or packages placed in the <code class="docutils literal notranslate"><span class="pre">netdox.plugins</span></code> namespace, and will be called by Netdox at a series of hook points,
+known as stages. These stages represent the logical stages within the core code,
+and you should restrict the functionality of each stage of your plugin to the purpose of the stage in order to avoid confusion about the state of the Network object.</p>
+<ul class="simple">
+<li><p>dns: Add DNS objects to the Network.</p></li>
+<li><p>nat: Add NAT / switch info to the DNS objects in the Network.</p></li>
+<li><p>nodes: Add Node objects to the Network.</p></li>
+<li><p>footers: Add fragments to the footers of NetworkObjects in the Network.</p></li>
+<li><p>write: Writing PSML to disk for uploading to PageSeeder.</p></li>
+<li><p>cleanup: Cleanup to perform after the PSML has been uploaded.</p></li>
+</ul>
+</section>
+<section id="plugin-exports">
+<h2>Plugin Exports<a class="headerlink" href="#plugin-exports" title="Permalink to this headline">¶</a></h2>
+<p>Certain variables, if defined at the top level of your plugin, can be used to control the behaviour of Netdox.
+For example, in order to register your plugin for a stage,
+create a dictionary at the top level of your plugin called <code class="docutils literal notranslate"><span class="pre">__stages__</span></code>.
+In this dictionary the key of each item should be the name of the desired stage,
+and the value should be a callable object that takes a single Network object as a positional argument.</p>
+<p>In order to register a label attribute, use the <code class="docutils literal notranslate"><span class="pre">__attrs__</span></code> name for an iterable object containing the
+string names of the attributes to register. For more info see <a class="reference internal" href="config.html#config"><span class="std std-ref">Configuring Netdox</span></a>.</p>
+<p>To register a config object that your plugin will expect to read from the application config (<code class="docutils literal notranslate"><span class="pre">config.json</span></code>),
+use a dictionary named <code class="docutils literal notranslate"><span class="pre">__config__</span></code>.
+This dict will be copied to the config template when a new netdox instance is initialised, under the name of your plugin.</p>
+<p>To register a Node type as an export from your plugin, use the <code class="docutils literal notranslate"><span class="pre">__nodes__</span></code> iterable.</p>
+<p>To register your plugin as dependent on another Netdox plugin, add the plugin name to the <code class="docutils literal notranslate"><span class="pre">__depends__</span></code> iterable.</p>
+</section>
+<section id="default-plugins">
+<h2>Default Plugins<a class="headerlink" href="#default-plugins" title="Permalink to this headline">¶</a></h2>
+<p>A number of plugins are installed with Netdox by default. The source code for these plugins is documented below.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Netdox</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuring Netdox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="webhooks.html">Webhooks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#about-plugins">About Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plugin-exports">Plugin Exports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#default-plugins">Default Plugins</a><ul class="simple">
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="webhooks.html" title="previous chapter">Webhooks</a></li>
+      <li>Next: <a href="releases.html" title="next chapter">Releases</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Linus Kirkwood.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/plugins.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

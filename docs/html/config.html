@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Configuring Netdox &#8212; Netdox 0.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" href="_static/css/style.css" type="text/css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Webhooks" href="webhooks.html" />
+    <link rel="prev" title="About" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="configuring-netdox">
+<span id="config"></span><h1>Configuring Netdox<a class="headerlink" href="#configuring-netdox" title="Permalink to this headline">¶</a></h1>
+<section id="local-configuration">
+<span id="localconf"></span><h2>Local configuration<a class="headerlink" href="#local-configuration" title="Permalink to this headline">¶</a></h2>
+<section id="config-location">
+<h3>Config location<a class="headerlink" href="#config-location" title="Permalink to this headline">¶</a></h3>
+<p>After initialising a configuration directory using <code class="docutils literal notranslate"><span class="pre">netdox</span> <span class="pre">init</span> <span class="pre">&lt;path&gt;</span></code>,
+a collection of templates for config files will be copied there for you to populate.
+Most of the configuration for Netdox lives in one file; It’s template will be named <code class="docutils literal notranslate"><span class="pre">config.json</span></code>.
+It should, when populated, contain all the configuration values for connecting to your PageSeeder instance.
+In addition, this file should contain any values required by your enabled plugins.
+Place them in an object in the <em>plugins</em> dictionary (with the plugin name in lower case as the key).
+Each plugin should document the JSON object it expects, usually in the <code class="docutils literal notranslate"><span class="pre">README.md</span></code>.</p>
+<p>This file will be encrypted when you load it into Netdox, and the unencrypted original deleted automatically.
+For more information about loading the config, use the CLI help (<code class="docutils literal notranslate"><span class="pre">netdox</span> <span class="pre">-h</span></code>, <code class="docutils literal notranslate"><span class="pre">netdox</span> <span class="pre">config</span> <span class="pre">-h</span></code>).</p>
+<p>There is additional configuration available on a per-NetworkObject basis, using document labels in PageSeeder.
+For more, see below.</p>
+</section>
+<section id="location-data">
+<span id="locations"></span><h3>Location data<a class="headerlink" href="#location-data" title="Permalink to this headline">¶</a></h3>
+<p>Location data is an optional part of Netdox, but it provides some additional clarity for networks which span multiple physical locations.
+Each location should be defined by an array of IPv4 subnets using the <em>CIDR</em> notation (e.g. <code class="docutils literal notranslate"><span class="pre">192.168.0.0/16</span></code>) in the <code class="docutils literal notranslate"><span class="pre">locations.json</span></code> file.
+The key of the array will be the canonical name for that location, and will appear in the documents etc.
+The smallest defined subnet an IP is part of will be used to select that IP’s location,
+so that you don’t have to define a location for every possible subnet in your network.</p>
+</section>
+<section id="enabled-plugins">
+<span id="id1"></span><h3>Enabled Plugins<a class="headerlink" href="#enabled-plugins" title="Permalink to this headline">¶</a></h3>
+<p>Plugins are disabled by default and will not run automatically just because they’re installed.
+In order to enable a plugin, add its name to the array in <code class="docutils literal notranslate"><span class="pre">plugins.json</span></code>.</p>
+</section>
+<section id="document-label-attributes">
+<span id="labels"></span><h3>Document Label Attributes<a class="headerlink" href="#document-label-attributes" title="Permalink to this headline">¶</a></h3>
+<p>Netdox allows you to leverage the batch application/removal of document labels to easily configure plugin-level attributes
+on a document-by-document basis. For each label on a document, Netdox will look up the label name in the PageSeeder config file
+(file of type <code class="docutils literal notranslate"><span class="pre">netdox</span></code> with docid <code class="docutils literal notranslate"><span class="pre">_nd_config</span></code>) and apply any attributes defined there to the object the document represents.</p>
+<p>To use the config, create a document matching the stipulations above.
+Each fragment you create in the labels section can be used to configure the attributes of a single document label.
+Each property in the fragment is an attribute key/value pair.
+If multiple labels on the same document provide conflicting values for an attribute,
+the value from the label that was defined first in the file will take precedence.</p>
+<p>This document also has a section titled ‘Exclusions’. Domains in this section will be completely ignored by Netdox.</p>
+<p>Plugins can register attributes using an iterable of strings named <code class="docutils literal notranslate"><span class="pre">__attrs__</span></code>, defined at the module level.
+During a refresh, the template for the config file on PageSeeder will be updated, so that each new ‘label’ fragment created
+contains a property for each attribute registered by a plugin.
+<em>Note</em>: There’s no need to recreate your config file if the registered attributes have changed —
+a new config file will be uploaded with the correct structure, and all your old configuration will be preserved.</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Netdox</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuring Netdox</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#local-configuration">Local configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#config-location">Config location</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#location-data">Location data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#enabled-plugins">Enabled Plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#document-label-attributes">Document Label Attributes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="webhooks.html">Webhooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">About</a></li>
+      <li>Next: <a href="webhooks.html" title="next chapter">Webhooks</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Linus Kirkwood.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/config.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

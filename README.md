@@ -1,6 +1,10 @@
-# Netdox
-[![pipeline status](https://gitlab.allette.com.au/allette/devops/network-documentation/badges/master/pipeline.svg)](https://gitlab.allette.com.au/allette/devops/network-documentation/-/commits/master)  [![coverage report](https://gitlab.allette.com.au/allette/devops/network-documentation/badges/master/coverage.svg)](https://gitlab.allette.com.au/allette/devops/network-documentation/-/commits/master)
+## Public Readme Addendum
+This is a public repo for netdox occasionally updated from the Allette gitlab. The internal documentation link below wont work, so I have added a copy of the documentation in HTML at `./docs/html/`.
 
+If you haven't already, familiarise yourself with [PageSeeder](https://pageseeder.com/), which this app is designed to work directly with.
+
+---
+# Netdox
 Full documentation is available [here](https://netdox.allette.com.au/index.html).
 
 `netdox init` will initialise a directory as the designated config directory. This location will be used to hold any configuration files that do not require encryption. Templates for all config files with also be copied here.

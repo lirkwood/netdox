@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>About &#8212; Netdox 0.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" href="_static/css/style.css" type="text/css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Configuring Netdox" href="config.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="about">
+<span id="id1"></span><h1>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h1>
+<section id="netdox-overview">
+<h2>Netdox Overview<a class="headerlink" href="#netdox-overview" title="Permalink to this headline">¶</a></h2>
+<p>Netdox is a highly modular Python 3 application that generates network documentation in PageSeeder markup language (PSML) for display by PageSeeder.
+The objective of Netdox is to improve the productivity of network administrators by consolidating information from a range of systems.
+This reduces the need for administrators to move between many different interfaces, and minimises the familiarity required with each service.
+The documentation is updated and pruned daily to keep data current and accurate, and can be refreshed at any time.
+Moreover, any changes are preserved in comprehensive versions provided by PageSeeder’s document history functionality.</p>
+<p>Netdox leverages plugins to retrieve data from the services in <em>your</em> environment.
+This allows you to effectively provide your network administrators with a one-stop shop for querying the state of the network.
+This combined with the XRef links between the documents results in a highly connected and transparent visualisation of your network.</p>
+<section id="using-netdox">
+<h3>Using Netdox<a class="headerlink" href="#using-netdox" title="Permalink to this headline">¶</a></h3>
+<p>Quick setup guide can be found here: <span class="xref std std-ref">quickstart</span>.
+More detail on how to correctly configure Netdox is available here: <a class="reference internal" href="config.html#config"><span class="std std-ref">Configuring Netdox</span></a>.</p>
+</section>
+<section id="architecture">
+<h3>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h3>
+<p>The primary objects in Netdox are DNS objects, Nodes and their containing Network.
+DNS objects (domains and IPv4 addresses) represent a single, unique name in the DNS.
+These objects are the primary anchors for the documentation, and are likely what you will find yourself searching for when trying to diagnose an issue.</p>
+<p>Nodes represent a single (physical or virtualised) machine; In other words, a significant endpoint for a DNS record.
+For example, the XenOrchestra plugin will connect to your XenOrchestra instance and retrieve any running VMs.
+It then provides VirtualMachine nodes to the Network object, which will serialise them to PSML and upload them during a refresh.</p>
+<p>Plugins also have the opportunity to generate additional documentation to provide extra context or information.
+In the case of XenOrchestra,
+a PageSeeder publication is generated which allows you to walk through the hierarchy of objects and easily see their relationship to each other,
+from pools to hosts to VMs.</p>
+<p>However the uses for Netdox go beyond simple documentation generation.
+Plugins in Netdox are able to respond to <em>webhooks</em> sent by PageSeeder when a document is updated,
+meaning you are able to use the documentation to trigger automation tools such as Ansible, modify your DNS, alert your network admins, etc.
+More information available here: <a class="reference internal" href="webhooks.html#webhooks"><span class="std std-ref">Webhooks</span></a>.</p>
+</section>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
+<p>Developing plugins for Netdox is extremely simple.
+No configuration is required in Netdox beyond adding the name of the package to a whitelist.
+Everything else can be done from within your python code.
+Each plugin should be a python package in the <code class="docutils literal notranslate"><span class="pre">netdox.plugins</span></code> namespace package,
+and will be loaded and run at the correct stage automatically.
+More detail is available here: <a class="reference internal" href="plugins.html#plugins"><span class="std std-ref">Plugins</span></a>.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuring Netdox</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="config.html#local-configuration">Local configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="config.html#config-location">Config location</a></li>
+<li class="toctree-l3"><a class="reference internal" href="config.html#location-data">Location data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="config.html#enabled-plugins">Enabled Plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="config.html#document-label-attributes">Document Label Attributes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="webhooks.html">Webhooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">Plugins</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#about-plugins">About Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#plugin-exports">Plugin Exports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plugins.html#default-plugins">Default Plugins</a><ul class="simple">
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-3-3">v1.3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-3-2">v1.3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-3-1">v1.3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-3-0">v1.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-2-0">v1.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-0-1">v1.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v1-0-0">v1.0.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v0-1-0">v0.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="releases.html#v0-0-0">v0.0.0</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Netdox</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuring Netdox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="webhooks.html">Webhooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">Plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Releases</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="config.html" title="next chapter">Configuring Netdox</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Linus Kirkwood.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

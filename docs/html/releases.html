@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Releases &#8212; Netdox 0.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" href="_static/css/style.css" type="text/css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Plugins" href="plugins.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="releases">
+<span id="release-notes"></span><h1>Releases<a class="headerlink" href="#releases" title="Permalink to this headline">¶</a></h1>
+<section id="v1-3-3">
+<h2>v1.3.3<a class="headerlink" href="#v1-3-3" title="Permalink to this headline">¶</a></h2>
+<p>Added validation, fixed loading zone issues, updated docs and search terms.</p>
+<ul class="simple">
+<li><p>Added docid length validation during serialisation.</p></li>
+<li><p>Updated IPv4Address search terms to use better tokens.</p></li>
+<li><p>Added Schematron validation for updated search terms.</p></li>
+<li><p>Refresh now clears the loading zone during initialisation.</p></li>
+</ul>
+</section>
+<section id="v1-3-2">
+<h2>v1.3.2<a class="headerlink" href="#v1-3-2" title="Permalink to this headline">¶</a></h2>
+<p>Bugfixes, refactors, updated search terms for IPv4s, updated dev scripts.</p>
+<ul class="simple">
+<li><p>Fixed some bugs when initialising the config dir / loading the config for the first time.</p></li>
+<li><p>Fixed icinga not recognising monitors as valid.</p></li>
+<li><p>NetworkManager now uses more efficient dependency evaluation logic.</p></li>
+<li><p>Fixed k8s plugin throwing exception if pod has no labels.</p></li>
+<li><p>Refactored multiple methods to have lower complexity.</p></li>
+</ul>
+</section>
+<section id="v1-3-1">
+<h2>v1.3.1<a class="headerlink" href="#v1-3-1" title="Permalink to this headline">¶</a></h2>
+<p>Bugfixes, added warning logs to report, add universal link method.</p>
+<ul class="simple">
+<li><p>Fixed Docker image crashing due to bug with copying plugin READMEs.</p></li>
+<li><p>Fixed Network cache containing all domains, breaking resolveTo.</p></li>
+<li><p>Added a fragment to daily report with warning+ level logs from the refresh.</p></li>
+<li><p>Added a link method to Network for a more uniform interface and better exclusion handling.</p></li>
+<li><p>Moved to using psml Section in place of a list of bs4 Tags for node psmlBody.</p></li>
+<li><p>Fixed bug in icinga plugin where locating a domain could recurse infinitely.</p></li>
+<li><p>Changed the default plugin whitelist to wildcard from empty.</p></li>
+<li><p>Fixed incorrect PSMLElement syntax in many places.</p></li>
+</ul>
+</section>
+<section id="v1-3-0">
+<h2>v1.3.0<a class="headerlink" href="#v1-3-0" title="Permalink to this headline">¶</a></h2>
+<p>Added Plugin dependencies, NodeProxy/ProxiedNode, DNSRecord, ps_k8s plugin.</p>
+<ul class="simple">
+<li><p>Plugins can now use the name __depends__ to register a list of plugin names the plugin depends on to run.</p></li>
+<li><p>Added NodeProxy and ProxiedNode to represent a proxy in front of a node, and a node behind a proxy respectively.</p></li>
+<li><p>Added DNSRecord/DNSRecordSet classes to better encapsulate records.</p></li>
+<li><p>Added ps_k8s plugin for discovering PageSeeder-based apps running on K8s.</p></li>
+<li><p>Added Section class to PSML module.</p></li>
+<li><p>PSML objects now proxy a BS4 Tag instead of subclassing.</p></li>
+<li><p>Initialising a config directory now copies plugin README files to the dir.</p></li>
+<li><p>Search terms are now configurable by the NWObj implementation.</p></li>
+</ul>
+</section>
+<section id="v1-2-0">
+<h2>v1.2.0<a class="headerlink" href="#v1-2-0" title="Permalink to this headline">¶</a></h2>
+<p>Added Organizations, PlantUML plugin, dynamic config templates.</p>
+<ul class="simple">
+<li><p>Added PluginWhitelist.</p></li>
+<li><p>Overhauled internal DNS system, replaced RecordSet with DNSRecordSet and DNSRecord.</p></li>
+<li><p>Config file now reads the __config__ attribute on plugins to generate template.</p></li>
+<li><p>Added support for multi-value psml Property.</p></li>
+<li><p>Added tldextract dependency to better validate DNS zones.</p></li>
+</ul>
+</section>
+<section id="v1-1-0">
+<h2>v1.1.0<a class="headerlink" href="#v1-1-0" title="Permalink to this headline">¶</a></h2>
+<p>Added docker image support, moved serialisation into NetworkObjects.</p>
+<ul class="simple">
+<li><p>Removed PSMLWriter, populate.</p></li>
+<li><p>Added dev scripts.</p></li>
+<li><p>Fixed DNS Zone property not being populated.</p></li>
+<li><p>Fixed config not setting its docid.</p></li>
+</ul>
+</section>
+<section id="v1-0-1">
+<h2>v1.0.1<a class="headerlink" href="#v1-0-1" title="Permalink to this headline">¶</a></h2>
+<p>Updated CI/CD and made all code mypy compliant.</p>
+<ul class="simple">
+<li><p>Added XOServer to the XenOrchestra plugin.</p></li>
+<li><p>Removed globals from multiple plugins, as mypy does not work well with them.</p></li>
+<li><p>Added generic types for NetworkObjectContainers.</p></li>
+</ul>
+</section>
+<section id="v1-0-0">
+<h2>v1.0.0<a class="headerlink" href="#v1-0-0" title="Permalink to this headline">¶</a></h2>
+<p>Replaced the roles system with configurable label attributes.</p>
+<ul class="simple">
+<li><p>Replaced roles system with a new config architecture based on document labels.</p></li>
+<li><p>Moved content of objs package into root package.</p></li>
+<li><p>Updated Icinga plugin to use the API instead of SSH.</p></li>
+<li><p>Made PSML classes more robust / flexible.</p></li>
+</ul>
+</section>
+<section id="v0-1-0">
+<h2>v0.1.0<a class="headerlink" href="#v0-1-0" title="Permalink to this headline">¶</a></h2>
+<p>Added certificates, snmp, daily report, and psml helper classes.</p>
+<ul class="simple">
+<li><p>Replaced the docid attribute on Node with a property that should transform the identity.</p></li>
+<li><p>Added PSMLLink and other functionality to psml module.</p></li>
+<li><p>Added certificates plugin.</p></li>
+<li><p>Added SNMP plugin.</p></li>
+<li><p>Added daily report.</p></li>
+</ul>
+</section>
+<section id="v0-0-0">
+<h2>v0.0.0<a class="headerlink" href="#v0-0-0" title="Permalink to this headline">¶</a></h2>
+<p>Initial release. Some parts of Netdox are still likely to change significantly.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Netdox</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuring Netdox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="webhooks.html">Webhooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plugins.html">Plugins</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Releases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-3">v1.3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-2">v1.3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-1">v1.3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-0">v1.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-2-0">v1.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-0-1">v1.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-0-0">v1.0.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v0-1-0">v0.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v0-0-0">v0.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="plugins.html" title="previous chapter">Plugins</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Linus Kirkwood.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/releases.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
