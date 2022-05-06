@@ -226,7 +226,8 @@ def runner(network: Network) -> None:
     for context in utils.config('k8s'):
         for app in getApps(network, context):
             for pod in app.pods:
-                workers[pod.workerIp] = pod.workerName
+                if pod.workerIp:
+                    workers.setdefault(pod.workerName, pod.workerIp)
     
-    for ip, name in workers.items():
+    for name, ip in workers.items():
         PlaceholderNode(network = network, name = name, ips = [ip])

@@ -46,7 +46,7 @@ class Pod:
     workerName: str
     """Name of this pod's host worker."""
     workerIp: str
-    """CIDR IPv4 address of this pod's host worker.'"""
+    """CIDR IPv4 address of this pod's host worker."""
     rancher: Optional[str]
     """Link to this pod on rancher."""
 
