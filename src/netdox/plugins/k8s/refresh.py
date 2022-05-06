@@ -222,7 +222,7 @@ def runner(network: Network) -> None:
     :param network: The network.
     :type network: Network
     """
-    workers = {}
+    workers: dict[str, str] = {}
     for context in utils.config('k8s'):
         for app in getApps(network, context):
             for pod in app.pods:
