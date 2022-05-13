@@ -41,7 +41,7 @@ from netdox.plugins.k8s.pub import genpub
 from netdox.plugins.k8s.refresh import runner
 
 
-def init() -> None:
+def init(_: Network) -> None:
     """
     Some initialisation for the plugin to work correctly
 

@@ -244,7 +244,7 @@ class ScreenshotManager:
         if 'diffimg' in pageseeder.urimap():
             pageseeder.archive(pageseeder.urimap()['diffimg'])
 
-def init() -> None:
+def init(_: Network) -> None:
     if not os.path.exists(utils.APPDIR+ 'plugins/screenshots/base'):
         os.mkdir(utils.APPDIR+ 'plugins/screenshots/base')
     if not os.path.exists(utils.APPDIR+ 'out/screenshot_history'):
@@ -276,7 +276,3 @@ __stages__ = {
     LifecycleStage.INIT: init,    
     LifecycleStage.FOOTERS: runner
 }
-
-if __name__ == '__main__':
-    init()
-    runner(Network.fromDump())

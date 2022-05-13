@@ -20,7 +20,7 @@ EC2_INSTANCE_SERVICE_NAME = 'Amazon Elastic Compute Cloud - Compute'
 EBS_OUTPUT_DIR = os.path.join(utils.APPDIR, 'out', 'aws_ebs')
 """Directory to write EBSVolume documents to."""
 
-def init() -> None:
+def init(_: Network) -> None:
     if not os.path.exists(utils.APPDIR+ 'plugins/aws/src'):
         os.mkdir(utils.APPDIR+ 'plugins/aws/src')
     os.environ['AWS_CONFIG_FILE'] = utils.APPDIR+ 'plugins/aws/src/awsconfig'

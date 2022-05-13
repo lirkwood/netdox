@@ -6,9 +6,10 @@ import os
 
 from netdox import utils
 from netdox.app import LifecycleStage
+from netdox.containers import Network
 from netdox.plugins.dnsmadeeasy.fetch import fetch_dns, fetch_domains
 
-def init() -> None:
+def init(_: Network) -> None:
 	zones = {}
 	for id, domain in fetch_domains():
 		zones[domain] = id

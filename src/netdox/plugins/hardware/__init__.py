@@ -122,7 +122,7 @@ class HardwareNode(Node):
 
 global thread
 thread: Optional[Tag] = None
-def init() -> None:
+def init(_: Network) -> None:
     global thread
     if os.path.exists(SRCDIR):
         rmtree(SRCDIR)
