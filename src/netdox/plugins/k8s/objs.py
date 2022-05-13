@@ -176,19 +176,25 @@ class App(ProxiedNode):
         section = psml.Section('pods', 'Running Pods')
         count = 0
         for pod in self.pods:
-            workerIp = self.network.find_dns(pod.workerIp)
-            section.insert(psml.PropertiesFragment(id = 'pod_' + str(count), properties = [
-                psml.Property(name = 'pod', title = 'Pod', value = pod.name),
+            workerIp = None
+            if pod.workerIp is not None:
+                workerIp = self.network.find_dns(pod.workerIp)
+            section.insert(psml.PropertiesFragment(
+                id = 'pod_' + str(count), 
+                properties = [
+                    psml.Property(name = 'pod', title = 'Pod', value = pod.name),
 
-                psml.Property(name = 'ipv4', title = 'Worker IP', 
-                    value = psml.XRef(docid = workerIp.docid)),
+                    psml.Property(name = 'ipv4', title = 'Worker IP', 
+                        value = (psml.XRef(docid = workerIp.docid)
+                            if workerIp else '—')),
 
-                psml.Property(name = 'rancher', title="Pod on Rancher", 
-                    value = psml.Link(pod.rancher) if pod.rancher else '—'),
+                    psml.Property(name = 'worker_node', title = 'Worker Node', 
+                        value = (psml.XRef(docid = workerIp.node.docid)
+                            if workerIp and workerIp.node else '—')),
 
-                psml.Property(name = 'worker_node', title = 'Worker Node', 
-                    value = (psml.XRef(docid = workerIp.node.docid)
-                        if workerIp.node else '—'))
-            ]))
+                    psml.Property(name = 'rancher', title="Pod on Rancher", 
+                        value = psml.Link(pod.rancher) if pod.rancher else '—')
+                ]
+            ))
             count += 1
         return section

@@ -6,8 +6,10 @@ from textwrap import dedent
 
 import boto3
 from netdox import Network, utils
-from netdox.plugins.aws.objs import (AWSBillingGranularity, AWSBillingMetrics, AWSBillingReport,
-                                     AWSTimePeriod, EBSSnapshot, EBSVolume, EBSVolumeState, EC2Instance)
+from netdox.plugins.aws.objs import (FORTNIGHT, AWSBillingGranularity,
+                                     AWSBillingMetrics, AWSBillingReport,
+                                     AWSTimePeriod, EBSSnapshot, EBSVolume,
+                                     EBSVolumeState, EC2Instance)
 
 logger = logging.getLogger(__name__)
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -44,7 +46,7 @@ def runner(network: Network) -> None:
     snapshots = _get_snapshots()
     volumes = _get_volumes(snapshots)
 
-    _create_instances(network, _get_billing(AWSBillingGranularity.DAILY), volumes)
+    _create_instances(network, _get_billing(AWSBillingGranularity.MONTHLY), volumes)
 
 
 #TODO find alternative to global var
@@ -70,11 +72,13 @@ def _get_billing(granularity: AWSBillingGranularity) -> AWSBillingReport:
     """
     logger.debug('Fetching billing data.')
     logger.debug(f'Granularity: {granularity.name}')
-    logger.debug(f'Period: {granularity.period()}')
+
+    period = (min(granularity.period(), FORTNIGHT))
+    logger.debug(f'Period: {period}')
 
     billing = boto3.client('ce').get_cost_and_usage_with_resources(
-        TimePeriod = granularity.period().to_dict(),
-        Granularity = granularity.name,
+        TimePeriod = period.to_dict(),
+        Granularity = 'MONTHLY',
         Filter = {'Dimensions': {
             'Key': 'SERVICE', 'Values': [EC2_INSTANCE_SERVICE_NAME]
         }},
@@ -89,10 +93,17 @@ def _get_billing(granularity: AWSBillingGranularity) -> AWSBillingReport:
     period = AWSTimePeriod.from_dict(billing['ResultsByTime'][-1]['TimePeriod'])
     logger.debug('Received billing data.')
 
-    for resource in billing['ResultsByTime'][-1]['Groups']:
-        report.add_metrics(AWSBillingMetrics(
-            id = resource['Keys'][0],
-            period = period,
+    result = None
+    result_period = None
+    for _result in billing['ResultsByTime']:
+        _result_period = AWSTimePeriod.from_dict(_result['TimePeriod'])
+        if result is None or _result_period > result_period:
+            result = _result
+            result_period = _result_period
+
+    for resource in result['Groups']:
+        report.add_metrics(resource['Keys'][0], AWSBillingMetrics(
+            period = result_period,
             AmortizedCost = float(resource['Metrics']['AmortizedCost']['Amount']),
             UnblendedCost = float(resource['Metrics']['UnblendedCost']['Amount']),
             UsageQuantity = float(resource['Metrics']['UsageQuantity']['Amount'])

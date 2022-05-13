@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+from dateutil.tz import tzutc
 from enum import Enum
-from functools import cache
+from functools import cache, total_ordering
 from math import ceil
 from typing import Iterable, Optional
 import re
@@ -36,8 +37,15 @@ class EC2Instance(DefaultNode):
     """Mount points of volumes mapped to volume objects."""
     tags: dict[str, str]
     """Dictionary of tags applied to this instance."""
+
     NAME_TAG_KEY: str = 'Name'
     """Tag key that should be mapped to instance name."""
+    COMINED_BILLING_DESC: str = 'Billing for EC2 instance + all volumes.'
+    """Description for combined billing fragment."""
+    INSTANCE_BILLING_DESC: str = 'Billing for EC2 instance.'
+    """Description for instance billing fragment."""
+    VOLUME_BILLING_DESC: str = 'Billing for all volumes attached to this instance.'
+    """Description for volume billing fragment."""
     type: str = 'ec2'
 
     def __init__(self, 
@@ -81,6 +89,20 @@ class EC2Instance(DefaultNode):
         self.volumes = volumes
 
     @property
+    def volumeBilling(self) -> AWSBillingMetrics:
+        """
+        Returns a billing metrics object for the bills incurred by
+        volumes attached to this instance.
+
+        :return: Billing metrics.
+        :rtype: AWSBillingMetrics
+        """
+        billing = AWSBillingMetrics(self.billing.period, 0, 0, 0)
+        for volume in self.volumes.values():
+            billing = billing + volume.get_billing(billing.period)
+        return billing
+
+    @property
     def psmlGeneral(self) -> psml.PropertiesFragment:
         """
         General info fragment of EC2Instance Node document.
@@ -120,24 +142,24 @@ class EC2Instance(DefaultNode):
                     psml.XRef(docid = volume.docid), 
                     'Attached Volume'
                 ),
-                psml.Property('mount_path', path, 'Mount Path'),
-                # TODO replace this property with cumulative volume cost in billing frag
-                psml.Property(
-                    'amortized_cost', 
-                    str(volume.get_billing(self.billing.period).AmortizedCost or 0), 
-                    'Amortized Cost'
-                )
+                psml.Property('mount_path', path, 'Mount Path')
             ]) for count, (path, volume) in enumerate(self.volumes.items())
         ]
 
     @property
     def psmlBody(self) -> list[psml.Section]:
+        volumeBilling = self.volumeBilling
+        combinedBilling = self.billing + volumeBilling
         return [
             psml.Section('body', fragments = [
                 self.psmlGeneral, 
                 self.psmlTags,
-                self.billing.to_psml(),
-            ] + self.psmlVolumes)
+            ] + self.psmlVolumes),
+            psml.Section('billing', fragments = [
+                combinedBilling.to_psml('combined_billing', self.COMINED_BILLING_DESC),
+                self.billing.to_psml('instance_billing', self.INSTANCE_BILLING_DESC),
+                volumeBilling.to_psml('volume_billing', self.VOLUME_BILLING_DESC)
+            ])
         ]
 
 ## Volumes
@@ -207,9 +229,7 @@ class EBSVolume:
         :return: _description_
         :rtype: AWSBillingMetrics
         """
-        #TODO check if created after period begins
-        # start = max(self.created., period.start)
-        start = period.start
+        start = max(self.created, period.start)
         hours = ceil((period.end - start).total_seconds() / 3600)
         size_gb = self.size * self._GiB_TO_GB
         gb_months = size_gb * hours / 730
@@ -219,7 +239,7 @@ class EBSVolume:
         except KeyError:
             raise AttributeError(
                 f'Failed to retrieve pricing data for EBSVolume of type: {self.type}')
-        return AWSBillingMetrics(self.id, period, cost, cost, gb_months)
+        return AWSBillingMetrics(period, cost, cost, gb_months)
 
     def to_psml(self) -> str:
         """
@@ -270,9 +290,11 @@ class EBSSnapshot:
 
 ## Billing
 
+@total_ordering
 @dataclass(frozen = True)
 class AWSTimePeriod:
-    """Object for parsing/serialising to TimePeriod format used in boto3."""
+    """Object for parsing/serialising to TimePeriod format used in boto3.
+    All timezones default to UTC."""
     start: datetime
     """Start of the time period — inclusive."""
     end: datetime
@@ -280,10 +302,25 @@ class AWSTimePeriod:
     _start_key: str = 'Start'
     _end_key: str = 'End'
 
+    def __post_init__(self) -> None:
+        """
+        Adds a UTC timezone to the start and end datetimes if they are naive.
+        """
+        if self.start.tzinfo is None:
+            object.__setattr__(self, 'start', self.start.replace(tzinfo = tzutc()))
+        if self.end.tzinfo is None:
+            object.__setattr__(self, 'end', self.end.replace(tzinfo = tzutc()))
+
     def __str__(self) -> str:
         start = self.start.isoformat(timespec = 'seconds')
         end = self.end.isoformat(timespec = 'seconds')
         return f'From {start} to {end}'
+
+    def __eq__(self, other) -> bool:
+        return (other.start == self.start) & (other.end == self.end)
+
+    def __lt__(self, other) -> bool:
+        return (other.start - other.end) < (self.start - self.end)
 
     def to_dict(self) -> dict[str, str]:
         """
@@ -310,6 +347,10 @@ class AWSTimePeriod:
             start = datetime.fromisoformat(period[cls._start_key].strip('Z')),
             end = datetime.fromisoformat(period[cls._end_key].strip('Z'))
         )
+
+now = datetime.now()
+FORTNIGHT = AWSTimePeriod(now - timedelta(weeks = 2), now)
+"""AWSTimePeriod representing 2 weeks/14 days (maximum billing period)."""
     
 class AWSBillingGranularity(Enum):
     """Represents the granularity of an AWS billing report.
@@ -334,15 +375,13 @@ class AWSBillingGranularity(Enum):
 @dataclass(frozen = True)
 class AWSBillingMetrics:
     """Stores the billing metrics for an AWS resource."""
-    id: str
-    """Resource ID these metrics are associated with."""
     period: AWSTimePeriod
     """The time period over which the metrics were measured."""
-    AmortizedCost: Optional[float]
+    AmortizedCost: float
     """Unblended cost combined with amortized reservation cost."""
-    UnblendedCost: Optional[float]
+    UnblendedCost: float
     """Usage costs charged during the relevant period."""
-    UsageQuantity: Optional[float]
+    UsageQuantity: float
     """Amount the associated resource was used during the relevant period."""
     METRICS: tuple[str, str, str] = (
         'AmortizedCost', 
@@ -351,17 +390,51 @@ class AWSBillingMetrics:
     )
     """The names of the billing metrics this class stores."""
 
-    def to_psml(self) -> psml.PropertiesFragment:
+    def __post_init__(self) -> None:
+        """
+        Ensures that all the float fields are of the correct type.
+        """
+        object.__setattr__(self, 'AmortizedCost', 
+            float(self.AmortizedCost) if self.AmortizedCost is not None else 0.0)
+        object.__setattr__(self, 'UnblendedCost', 
+            float(self.UnblendedCost) if self.UnblendedCost is not None else 0.0)
+        object.__setattr__(self, 'UsageQuantity', 
+            float(self.UsageQuantity) if self.UsageQuantity is not None else 0.0)
+
+    def to_psml(self, fragment_id: str = 'billing', description: str = None) -> psml.PropertiesFragment:
+        """
+        Serialises this object to PSMl.
+
+        :param fragment_id: ID to give the returned properties-fragment, defaults to 'billing'
+        :type fragment_id: str, optional
+        :param description: Plain english description of what this is billing for.
+        :type billed_odescriptionbjects: str, optional
+        :return: A properties-fragment object describing the billing metrics.
+        :rtype: psml.PropertiesFragment
+        """
         amortized = str(round(self.AmortizedCost, 2)) if self.AmortizedCost else 'None'
         unblended = str(round(self.UnblendedCost, 2)) if self.UnblendedCost else 'None'
         usage = str(round(self.UsageQuantity, 2)) if self.UsageQuantity else 'None'
 
-        return psml.PropertiesFragment('billing', [
+        return psml.PropertiesFragment(fragment_id, [
             psml.Property('period', str(self.period), 'Billing Period'),
             psml.Property('amortized_cost', amortized, 'Amortized Cost (USD)'),
             psml.Property('unblended_cost', unblended, 'Unblended Cost (USD)'),
             psml.Property('usage', usage, 'Usage Quantity')
-        ])
+        ] + [psml.Property('desc', description, 'Description')] 
+            if description is not None else []
+        )
+
+    def __add__(self, other: AWSBillingMetrics) -> AWSBillingMetrics:
+        if self.period != other.period: raise AttributeError(
+            'Cannot add metrics with different periods.')
+
+        return AWSBillingMetrics(
+            self.period, 
+            self.AmortizedCost + other.AmortizedCost,
+            self.UnblendedCost + other.UnblendedCost,
+            self.UsageQuantity + other.UsageQuantity
+        )
 
 class AWSBillingReport:
     granularity: AWSBillingGranularity
@@ -376,14 +449,16 @@ class AWSBillingReport:
         self.granularity = granularity
         self._metrics = metrics or {}
 
-    def add_metrics(self, metrics: AWSBillingMetrics) -> None:
+    def add_metrics(self, resource_id: str, metrics: AWSBillingMetrics) -> None:
         """
         Adds billing metrics to the report.
 
+        :param resource_id: ID of the resource these billing metrics are associated with.
+        :type resource_id: str
         :param metrics: Billing metrics.
         :type metrics: AWSBillingMetrics
         """
-        self._metrics[metrics.id] = metrics
+        self._metrics[resource_id] = metrics
 
     def get_metrics(self, id: str) -> AWSBillingMetrics:
         """
@@ -395,4 +470,4 @@ class AWSBillingReport:
         :rtype: AWSBillingMetrics
         """
         return self._metrics[id] if id in self._metrics else \
-            AWSBillingMetrics(id, self.granularity.period(), None, None, None)
+            AWSBillingMetrics(self.granularity.period(), 0, 0, 0)
