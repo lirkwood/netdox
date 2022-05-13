@@ -289,10 +289,10 @@ class PluginManager:
         :type stage: LifecycleStage, optional
         """
         try:
-            logger.debug(f'Running plugin {plugin.name} stage {stage}')
+            logger.debug(f'Running plugin {plugin.name} stage {stage.name}')
             plugin.stages[stage](network)
         except Exception:
-            logger.error(f'{plugin.name} threw an exception during stage {stage}: \n{format_exc()}')
+            logger.error(f'{plugin.name} threw an exception during stage {stage.name}: \n{format_exc()}')
 
     def runStage(self, network: containers.Network, stage: LifecycleStage) -> None:
         """
@@ -303,7 +303,7 @@ class PluginManager:
         :param stage: The stage to check for plugins
         :type stage: LifecycleStage
         """
-        logger.info(f'Starting stage: {stage}')
+        logger.info(f'Starting stage: {stage.name}')
         for plugin in self.plugins:
             if stage in plugin.stages:
                 self.runPlugin(network, plugin, stage)
