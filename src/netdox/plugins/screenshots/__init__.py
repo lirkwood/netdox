@@ -12,6 +12,7 @@ import diffimg
 from bs4.element import Tag
 from netdox import pageseeder, utils
 from netdox import Domain, Network
+from netdox.app import LifecycleStage
 from netdox.psml import Fragment
 from pyppeteer import launch
 from pyppeteer.browser import Page
@@ -271,7 +272,10 @@ def runner(network: Network) -> None:
     mngr.sentenceStale()
 
 
-__stages__ = {'footers': runner}
+__stages__ = {
+    LifecycleStage.INIT: init,    
+    LifecycleStage.FOOTERS: runner
+}
 
 if __name__ == '__main__':
     init()

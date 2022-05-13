@@ -18,6 +18,7 @@ from bs4 import BeautifulSoup, SoupStrainer, Tag
 
 from netdox import iptools, pageseeder, utils
 from netdox import Network
+from netdox.app import LifecycleStage
 from netdox.nodes import Node
 from netdox.psml import Section
 
@@ -188,6 +189,7 @@ def runner(network: Network) -> None:
             print_exc()
 
 __stages__ = {
-    'nodes': runner
+    LifecycleStage.INIT: init,
+    LifecycleStage.NODES: runner
 }
 __nodes__ = [HardwareNode]

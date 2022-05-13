@@ -13,11 +13,10 @@ from distutils.util import strtobool
 from cryptography.fernet import Fernet
 
 from netdox import pageseeder, config as _config_mod
-from netdox.refresh import main as _refresh
 from netdox.utils import APPDIR, CFGPATH, decrypt_file, encrypt_file, path_list
 from netdox.utils import config as _config_file
-from netdox import Network, NetworkManager
-from netdox.nwman import PluginWhitelist
+from netdox import Network
+from netdox.app import PluginManager, PluginWhitelist, App
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -47,7 +46,7 @@ def _confirm(message: str, default = False) -> bool:
     if not resp:
         return default
     else:
-        return strtobool(resp.lower().strip())
+        return bool(strtobool(resp.lower().strip()))
 
 ## Init
 
@@ -65,12 +64,12 @@ def init_dirs():
     if os.path.lexists(APPDIR+ 'cfg'):
         os.remove(APPDIR+ 'cfg')
 
-def _copy_defaults(nwman: NetworkManager):
+def _copy_defaults(nwman: PluginManager):
     """
     Copies default config files / templates to dir at *path*.
 
-    :params nwman: NetworkManager object to use to generate app config template.
-    :type nwman: NetworkManager
+    :params nwman: PluginManager object to use to generate app config template.
+    :type nwman: PluginManager
     """
     for default_file in os.scandir(APPDIR+ 'src/defaults'):
         file_dest = os.path.realpath(
@@ -84,13 +83,13 @@ def _copy_defaults(nwman: NetworkManager):
             if not os.path.exists(file_dest):
                 shutil.copy(default_file.path, file_dest)
 
-def _copy_readmes(nwman: NetworkManager) -> int:
+def _copy_readmes(nwman: PluginManager) -> int:
     """
     Discovers README files from the plugins in *nwman* 
     and copies them to a folder in the config directory.
 
-    :param nwman: The NetworkManager to read plugin data from.
-    :type nwman: NetworkManager
+    :param nwman: The PluginManager to read plugin data from.
+    :type nwman: PluginManager
     :return: The number of README files successfully copied.
     :rtype: int
     """
@@ -126,8 +125,7 @@ def init(args: argparse.Namespace):
         nwman_logger = logging.getLogger('netdox.nwman')
         nwman_level = nwman_logger.level
         nwman_logger.setLevel(logging.ERROR)
-        nwman = NetworkManager(whitelist = PluginWhitelist.WILDCARD, 
-            network = Network())
+        nwman = PluginManager(whitelist = PluginWhitelist.WILDCARD)
         nwman_logger.setLevel(nwman_level)
 
         init_dirs()
@@ -215,7 +213,7 @@ def refresh(args: argparse.Namespace):
     logger.addHandler(debugHandler)
     logger.addHandler(warningHandler)
     logger.debug('Refresh begins')
-    _refresh(dry = args.dry_run)
+    App().refresh(dry = args.dry_run)
 
 ## Crypto
 

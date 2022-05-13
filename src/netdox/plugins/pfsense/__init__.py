@@ -6,6 +6,7 @@ import logging
 from getpass import getuser
 
 from netdox import Network, utils
+from netdox.app import LifecycleStage
 from pyppeteer import launch
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ async def pfsenseScrapeNat() -> dict:
     await browser.close()
     return nat
 
-__stages__ = {'nat': runner}
+__stages__ = {LifecycleStage.NAT: runner}
 __config__ = {
     'username': '',
     'password': '',

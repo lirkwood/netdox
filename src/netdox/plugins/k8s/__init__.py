@@ -13,6 +13,7 @@ from kubernetes import config
 from kubernetes.client import ApiClient
 from netdox import psml, utils
 from netdox import Network
+from netdox.app import LifecycleStage
 
 logging.getLogger('kubernetes').setLevel(logging.INFO)
 
@@ -110,9 +111,10 @@ def domainapps(network: Network) -> None:
         )
 
 __stages__ = {
-    'nodes': runner,
-    'footers': domainapps,
-    'write': genpub
+    LifecycleStage.INIT: init,
+    LifecycleStage.NODES: runner,
+    LifecycleStage.FOOTERS: domainapps,
+    LifecycleStage.WRITE: genpub
 }
 
 __nodes__ = [App]

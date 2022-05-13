@@ -10,6 +10,7 @@ from typing import Any
 
 import requests
 from netdox import Network, psml
+from netdox.app import LifecycleStage
 from netdox.plugins.k8s import App
 
 logger = logging.getLogger(__name__)
@@ -75,5 +76,5 @@ def get_pageseeder_info(node: App) -> list[Any]:
     return responses
 
 __stages__ = {
-    'footers': footers
+    LifecycleStage.FOOTERS: footers
 }

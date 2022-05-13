@@ -6,6 +6,7 @@ from textwrap import dedent
 
 import boto3
 from netdox import Network, utils
+from netdox.app import LifecycleStage
 from netdox.plugins.aws.objs import (FORTNIGHT, AWSBillingGranularity,
                                      AWSBillingMetrics, AWSBillingReport,
                                      AWSTimePeriod, EBSSnapshot, EBSVolume,
@@ -214,8 +215,9 @@ def _create_instances(
 ## metadata
 
 __stages__ = {
-    'nodes': runner,
-    'write': write
+    LifecycleStage.INIT: init,
+    LifecycleStage.NODES: runner,
+    LifecycleStage.WRITE: write
 }
 __nodes__ = [EC2Instance]
 __config__ = {

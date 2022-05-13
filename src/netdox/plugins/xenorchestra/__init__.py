@@ -7,6 +7,7 @@ import logging
 import os
 
 from netdox import Network
+from netdox.app import LifecycleStage
 from netdox.utils import APPDIR
 
 logging.getLogger('websockets').setLevel(logging.INFO)
@@ -30,8 +31,9 @@ def init():
         os.mkdir(APPDIR + 'plugins/xenorchestra/src')
 
 __stages__ = {
-    'nodes': nodes,
-    'write': _write
+    LifecycleStage.INIT: init,
+    LifecycleStage.NODES: nodes,
+    LifecycleStage.WRITE: _write
 }
 
 __nodes__ = [VirtualMachine]
