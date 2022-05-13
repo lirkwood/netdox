@@ -352,7 +352,7 @@ class Network:
             nw.write(Cryptor().encrypt(network) if encrypt else network)
 
     @classmethod
-    def fromDump(cls: Type[Network], inpath: str = APPDIR + 'src/network.bin', encrypted = True) -> Network:
+    def from_dump(cls: Type[Network], inpath: str = APPDIR + 'src/network.bin', encrypted = True) -> Network:
         """
         Instantiates a Network from a pickled dump.
 

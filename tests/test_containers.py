@@ -46,4 +46,4 @@ class TestNetwork:
 
     def test_serialise(self, network: Network):
         network.dump()
-        Network.fromDump()
+        Network.from_dump()

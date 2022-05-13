@@ -155,4 +155,4 @@ if __name__ == '__main__':
     logger.addHandler(logging.StreamHandler(stdout))
     logger.setLevel(logging.DEBUG)
     logger.debug('foo')
-    genreport(Network.fromDump())
+    genreport(Network.from_dump())

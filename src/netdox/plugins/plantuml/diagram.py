@@ -177,7 +177,7 @@ class NodeDiagramFactory:
 
 
 if __name__ == '__main__':
-    net = Network.fromDump()
+    net = Network.from_dump()
     factory = NodeDiagramFactory()
     for node in net.nodes:
         print(factory.draw(node))

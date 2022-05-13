@@ -67,4 +67,4 @@ def addFooters(network: Network) -> None:
 
 
 if __name__ == '__main__':
-    addFooters(Network.fromDump())
+    addFooters(Network.from_dump())
