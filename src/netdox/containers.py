@@ -2,12 +2,14 @@
 This module contains any container classes.
 """
 from __future__ import annotations
+from datetime import datetime
 
 import logging
 import pickle
 from typing import Iterable, Iterator, Sequence, Type, Union
 
-from netdox import base, dns, helpers, iptools, nodes
+from netdox import base, dns, helpers, iptools, nodes, pageseeder
+from netdox import utils
 from netdox.config import NetworkConfig
 from netdox.iptools import valid_ip
 from netdox.utils import APPDIR, Cryptor, valid_domain
@@ -370,6 +372,13 @@ class Network:
                 Cryptor().decrypt(nw.read())
                 if encrypted else nw.read()
             )
+
+    @classmethod
+    def from_pageseeder(cls: Type[Network]) -> Network:
+        start_time = datetime.now()
+        thread = pageseeder.export({
+            'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website'
+        }, True)
 
     def writePSML(self) -> None:
         """
