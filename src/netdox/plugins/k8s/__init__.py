@@ -119,6 +119,8 @@ __stages__ = {
 
 __nodes__ = [App]
 
+__output__ = ['k8spub.psml']
+
 __config__ = {
     "cluster_name": {
         "proxies": [''],

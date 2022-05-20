@@ -23,6 +23,7 @@ logging.getLogger('pyppeteer').setLevel(logging.WARNING)
 
 SCREENSHOT_ATTR = 'screenshot'
 __attrs__ = {SCREENSHOT_ATTR}
+__output__ = {'screenshots', 'screenshot_history', 'diffimg'}
 
 
 class ScreenshotManager:

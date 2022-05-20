@@ -38,6 +38,8 @@ __stages__ = {
 
 __nodes__ = [VirtualMachine]
 
+__output__ = ['xopub.psml']
+
 __config__ = {
     'username': '',
     'password': '',

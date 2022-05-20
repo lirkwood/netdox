@@ -225,3 +225,4 @@ __config__ = {
     'aws_access_key_id': '',
     'aws_secret_access_key': ''
 }
+__output__ = {'aws_ebs'}

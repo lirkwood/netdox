@@ -193,3 +193,4 @@ __stages__ = {
     LifecycleStage.NODES: runner
 }
 __nodes__ = [HardwareNode]
+__output__ = {'hardware'}
