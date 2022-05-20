@@ -15,6 +15,7 @@ class TestLocator:
 
     def test_locate(self):
         locator = helpers.Locator()
+        assert locator.locate('192.168.0.0') == 'Subnet0'
         assert locator.locate(['192.168.0.0']) == 'Subnet0'
         assert locator.locate(['192.168.0.0', '192.168.0.255']) == 'Subnet0'
 
