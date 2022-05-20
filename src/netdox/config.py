@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from lxml import etree
 from requests import Response
 
-from netdox import pageseeder, psml, utils, nwman
+from netdox import app, pageseeder, psml, utils
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +218,7 @@ def update_template(attrs: set[str]) -> Response:
 
 # Local config
 
-def gen_config_template(nwman: nwman.NetworkManager):
+def gen_config_template(nwman: app.PluginManager):
     """
     Generates a template config file from the plugins discovered by *nwman*.
 
