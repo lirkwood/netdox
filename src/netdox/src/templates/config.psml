@@ -1,13 +1,13 @@
 <document type="netdox" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
     <t:fragment type="label" title="New label">
-      <properties-fragment>
+      <properties-fragment id="label">
         <property name="label" title="Label Name" value="" />
       </properties-fragment>
     </t:fragment>
 
     <t:fragment type="organizations" title="New organization">
-      <properties-fragment>
+      <properties-fragment id="org">
         <property name="label" title="Label Name" value="" />
         <property name="organization" title="Organization" datatype="xref" />
       </properties-fragment>
