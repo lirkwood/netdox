@@ -380,10 +380,11 @@ class App:
                 psml = BeautifulSoup(stream.read(), 'xml')
             dns.Domain.from_psml(net, psml)
         
-        for ipv4_file in os.scandir(download_dir + '/ips'):
-            with open(ipv4_file, 'r') as stream:
-                psml = BeautifulSoup(stream.read(), 'xml')
-            dns.IPv4Address.from_psml(net, psml)
+        for ipv4_subnet in os.scandir(download_dir + '/ips'):
+            for ipv4_file in os.scandir(ipv4_subnet):
+                with open(ipv4_file, 'r') as stream:
+                    psml = BeautifulSoup(stream.read(), 'xml')
+                dns.IPv4Address.from_psml(net, psml)
 
         for node_file in os.scandir(download_dir + '/nodes'):
             with open(node_file, 'r') as stream:
