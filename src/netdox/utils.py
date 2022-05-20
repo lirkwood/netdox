@@ -25,12 +25,11 @@ logger = logging.getLogger(__name__)
 
 APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
 """Absolute path to the directory containing the running source code."""
+OUTDIR = os.path.join(APPDIR, 'out')
+"""Absolute path to the directory to be used for output."""
 CFGPATH = os.path.join(APPDIR, 'src', 'config.bin')
 """Absolute path to the encrypted application config file."""
 
-OUTDIRS = ('domains', 'ips', 'nodes')
-"""Tuple of directories documents will be written to. 
-Relative to the output directory / PageSeeder website context."""
 
 ## Regex patterns
 
