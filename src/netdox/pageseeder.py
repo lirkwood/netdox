@@ -15,6 +15,7 @@ from functools import cache, wraps
 from inspect import signature
 from time import sleep
 from typing import Iterable
+from zipfile import ZipFile
 
 import requests
 from bs4 import BeautifulSoup
@@ -323,6 +324,65 @@ def loading_zone_upload(path, params={}, host='', group='', header={}):
     r = requests.put(url, headers=header, params=params, data=payload)
     return r.text
 
+@auth
+def member_resource(file: str, host='', group='', header='') -> requests.Response:
+    """
+    Returns a streamed response object containing a ZIP file found on PageSeeder.
+    """
+    url = f'https://{utils.config()["pageseeder"]["host"]}/ps/member-resource/{group}/{file}'
+    return requests.get(url, headers=header, stream=True)
+
+@auth
+def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
+    """
+    Downloads a directory from PageSeeder to the local machine.
+    Times out after *timeout* milliseconds.
+
+    :param path: Path on PageSeeder to download, relative to the group root.
+    :type path: str
+    :param outpath: Where to unzip the downloaded directory on the local machine.
+    :type outpath: str
+    :param timeout: Number of milliseconds to timeout after, defaults to 5000
+    :type timeout: int, optional
+    :return: The path to the downloaded directory
+    :rtype: str
+    """
+    max_time = datetime.now() + timedelta(milliseconds = timeout)
+    _thread = export({
+        'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/{path}'
+    }, directory = True)
+    thread = BeautifulSoup(_thread, 'xml').thread
+    last_thread = thread
+    try:
+        while thread['status'] != 'completed':
+            last_thread = thread
+            thread = BeautifulSoup(get_thread_progress(thread['id']), 'xml').thread
+            # if max_time < datetime.now():
+            #     raise TimeoutError('Failed to export the directory from PageSeeder.'
+            #         + f' Timed out after {timeout}ms')
+    except KeyError:
+        raise AttributeError('Download thread never had status "complete".\n' + str(thread))
+    except TypeError:
+        assert thread is None, 'Strange fail state: TypeError when accessing thread like dict.'
+        raise AttributeError('Download thread never had status "complete" (thread is None).\n'
+            + str(last_thread))
+
+    if os.path.exists(outpath) and not os.path.isdir(outpath):
+        raise FileExistsError('File object exists at output path, is not a directory.')
+    elif not os.path.exists(outpath):
+        os.mkdir(outpath)
+
+    zip_path = outpath + '.zip'
+    with member_resource(thread.zip.text) as zip:
+        zip.raise_for_status()
+        with open(zip_path, 'wb') as stream:
+            for chunk in zip.iter_content(8192):
+                stream.write(chunk)
+
+    ZipFile(zip_path).extractall(outpath)
+    # os.remove(zip_path)
+                
+    return outpath
 
 ###########################
 # PageSeeder API Services #
@@ -395,15 +455,6 @@ def export(params={}, directory = False, host='', member='', header={}):
     service = f'/members/~{member}/export' if directory else f'/members/~{member}/uris/{params["uri"]}/export'
     r = requests.get(host+service, headers=header, params=params)
     return r.text
-
-
-@auth
-def member_resource(zip, host='', group='', header='') -> requests.Response:
-    """
-    Returns a streamed response object containing a ZIP file found on PageSeeder.
-    """
-    service = f'/member-resource/~{group}/{zip}'
-    return requests.get(host+service, headers=header, stream=True)
 
 
 @auth
