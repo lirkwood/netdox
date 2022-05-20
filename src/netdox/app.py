@@ -9,129 +9,21 @@ from enum import Enum
 import shutil
 from traceback import format_exc
 from types import ModuleType
-from typing import Callable, Iterator, Optional
+from typing import Callable, Iterator, Optional, Type
+from zipfile import ZipFile
 
-from netdox import config, containers, utils
-from netdox.helpers import LabelDict
+from bs4 import BeautifulSoup
+
+from netdox import config, containers, dns, utils
+from netdox import helpers
+from netdox import nodes
+from netdox.helpers import LabelDict, Report
 from netdox.nodes import Node
 from netdox import pageseeder
 
 logger = logging.getLogger(__name__)
 
-class LifecycleStage(Enum):
-    INIT = 0
-    DNS = 1
-    NAT = 2
-    NODES = 3
-    FOOTERS = 4
-    WRITE = 5
-    CLEANUP = 6
-
-class App:
-    
-    def init(self) -> None:
-        """
-        Removes old, populated output directories and recreates them.
-        """
-        pageseeder.clear_loading_zone()
-
-        if not os.path.exists(utils.APPDIR+ 'out'):
-            os.mkdir(utils.APPDIR+ 'out')
-        # remove old output files
-        for folder in os.scandir(utils.APPDIR+ 'out'):
-            if folder.is_dir():
-                shutil.rmtree(folder)
-            else:
-                os.remove(folder)
-        
-        for outfolder in utils.OUTDIRS:
-            os.mkdir(utils.APPDIR+ 'out'+ os.sep+ outfolder)
-
-    def _valid_config(self, plugin_attrs: set[str]) -> config.NetworkConfig:
-        """
-        Fetches the config from PageSeeder, but performs some validation
-        before returning it.
-
-        If the config has incorrect attributes specified for a label,
-        the template will be updated, and a valid config created.
-        This config will be serialised for the upload.
-
-        :param plugin_attrs: Set of attributes that should be configured for each label.
-        :type plugin_attrs: set[str]
-        :return: _description_
-        :rtype: config.NetworkConfig
-        """
-        cfg = config.NetworkConfig.from_pageseeder()
-        # TODO find solution for config vals being dropped when the plugin is disabled
-        if cfg.is_empty or (not cfg.normal_attrs) or (plugin_attrs - cfg.attrs):
-            logger.warning('Updating config template on PageSeeder.')
-            config.update_template(plugin_attrs)
-            cfg.update_attrs(plugin_attrs)
-            with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
-                stream.write(cfg.to_psml())
-        return cfg
-
-    def refresh(self, dry: bool = False) -> None:
-
-        if dry: logger.info('Refresh running as dry run: no documents will be uploaded.')
-
-        # Initialisation                                                    #
-
-        self.init()
-        plugin_mgr = PluginManager()
-        network = containers.Network(
-            config = self._valid_config(plugin_mgr.pluginAttrs), 
-            labels = LabelDict.from_pageseeder()
-        )
-
-        plugin_mgr.runStage(network, LifecycleStage.INIT)
-
-        #-------------------------------------------------------------------#
-        # Primary data-gathering stages                                     #
-        #-------------------------------------------------------------------#
-        
-        plugin_mgr.runStage(network, LifecycleStage.DNS)
-        plugin_mgr.runStage(network, LifecycleStage.NAT)
-        plugin_mgr.runStage(network, LifecycleStage.NODES)
-
-        #-------------------------------------------------------------------#
-        # Generate objects for unused private IPs in used subnets,          #
-        # run any pre-write plugins                                         #
-        #-------------------------------------------------------------------#
-
-        network.ips.fillSubnets()
-        plugin_mgr.runStage(network, LifecycleStage.FOOTERS)
-
-        #-------------------------------------------------------------------#
-        # Write domains, ips, and nodes to pickle and psml,                 #
-        # scan for stale files and generate report,                         #
-        # and run any post-write plugins                                    #
-        #-------------------------------------------------------------------#
-
-        network.dump()
-        network.writePSML()
-        plugin_mgr.runStage(network, LifecycleStage.WRITE)
-        
-        network.report.addSection(
-            utils.stale_report(pageseeder.findStale(utils.OUTDIRS)))
-        with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
-            network.report.logs = stream.read()
-        network.report.writeReport()
-
-        #-------------------------------------------------------------------#
-        # Zip, upload, and cleanup                                          #
-        #-------------------------------------------------------------------#
-
-        zip = shutil.make_archive(utils.APPDIR+ 'src/netdox-psml', 'zip', utils.APPDIR + 'out')
-        if not dry:
-            pageseeder.zip_upload(zip, 'website')
-        else:
-            logger.warning('Did not upload documents due to --dry-run flag.')
-
-        plugin_mgr.runStage(network, LifecycleStage.CLEANUP)
-
-        logger.info('Done.')
-
+## Plugins
 
 class PluginManager:
     """
@@ -322,6 +214,20 @@ class PluginManager:
             } for attr in getattr(plugin, '__attrs__', ())
         }
 
+    @property
+    def output(self) -> set[str]:
+        """
+        Returns a set of the names of files and directories the running plugins will output to.
+        """
+        return { file for plugin in self.plugins for file in plugin.output }
+
+    @property
+    def nodes(self) -> set[Type[Node]]:
+        """
+        Returns a set of the types of all the Node subclasses exported by the running plugins.
+        """
+        return { node for plugin in self.plugins for node in plugin.node_types }
+
     def _load_whitelist(self) -> PluginWhitelist:
         """
         Returns a PluginWhitelist from the config file or a wildcard.
@@ -370,17 +276,201 @@ class Plugin:
     Will be used in the config template."""
     dependencies: set[str]
     """A set of plugin names this plugin depends on."""
-    node_types: list[type]
+    node_types: list[Type[Node]]
     """A list of the Node subclasses that this plugin exports."""
+    output: set[str]
+    """A set of the files and directory names this plugin writes output to."""
 
     def __init__(self, module: ModuleType) -> None:
         self.module = module
         self.name = module.__name__.split('.')[-1]
         self.stages = getattr(module, '__stages__')
         self.config = getattr(module, '__config__', None)
-        self.dependencies = getattr(module, '__depends__', set())
-        self.node_types = getattr(module, '__nodes__', [])
+        self.dependencies = set(getattr(module, '__depends__', set()))
+        self.node_types = list(getattr(module, '__nodes__', []))
+        self.output = set(getattr(module, '__output__', []))
 
     def init(self) -> None:
         """Performs any required initialisation for the plugin."""
         getattr(self.module, 'init', lambda: None)()
+
+
+## App
+
+class LifecycleStage(Enum):
+    INIT = 0
+    DNS = 1
+    NAT = 2
+    NODES = 3
+    FOOTERS = 4
+    WRITE = 5
+    CLEANUP = 6
+
+class App:
+    plugin_mgr: PluginManager
+    """The PluginManager object."""
+    APP_OUTDIRS = ('domains', 'ips', 'nodes')
+    """Tuple of directories documents will be written to. 
+    Relative to the output directory / PageSeeder website context."""
+    REPORT_OUTPATH = ''
+
+    def __init__(self) -> None:
+        self.plugin_mgr = PluginManager()
+
+    @property
+    def output(self) -> set[str]:
+        """Returns a set of names of all the files and directories written to by the app as output.
+        Relative to the output dir."""
+        return set(self.APP_OUTDIRS) | self.plugin_mgr.output | {
+            os.path.relpath(Report.DEFAULT_OUTPATH, utils.OUTDIR)}
+    
+    def output_clean(self) -> None:
+        """
+        Removes old, populated output directories and recreates them.
+        """
+        pageseeder.clear_loading_zone()
+
+        if not os.path.exists(utils.APPDIR+ 'out'):
+            os.mkdir(utils.APPDIR+ 'out')
+        # remove old output files
+        for folder in os.scandir(utils.APPDIR+ 'out'):
+            if folder.is_dir():
+                shutil.rmtree(folder)
+            else:
+                os.remove(folder)
+        
+        for outfolder in self.APP_OUTDIRS:
+            os.mkdir(utils.APPDIR+ 'out'+ os.sep+ outfolder)
+
+    def _valid_config(self, plugin_attrs: set[str]) -> config.NetworkConfig:
+        """
+        Fetches the config from PageSeeder, but performs some validation
+        before returning it.
+
+        If the config has incorrect attributes specified for a label,
+        the template will be updated, and a valid config created.
+        This config will be serialised for the upload.
+
+        :param plugin_attrs: Set of attributes that should be configured for each label.
+        :type plugin_attrs: set[str]
+        :return: _description_
+        :rtype: config.NetworkConfig
+        """
+        cfg = config.NetworkConfig.from_pageseeder()
+        # TODO find solution for config vals being dropped when the plugin is disabled
+        if cfg.is_empty or (not cfg.normal_attrs) or (plugin_attrs - cfg.attrs):
+            logger.warning('Updating config template on PageSeeder.')
+            config.update_template(plugin_attrs)
+            cfg.update_attrs(plugin_attrs)
+            with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
+                stream.write(cfg.to_psml())
+        return cfg
+
+    def _pull_network(self) -> containers.Network:
+        net = containers.Network(
+            config = config.NetworkConfig.from_pageseeder(), 
+            labels = helpers.LabelDict.from_pageseeder()
+        )
+        
+        download_dir = utils.APPDIR + 'src/download'
+        pageseeder.download_dir('website', download_dir)
+
+        for domain_file in os.scandir(download_dir + '/domains'):
+            with open(domain_file, 'r') as stream:
+                psml = BeautifulSoup(stream.read(), 'xml')
+            dns.Domain.from_psml(net, psml)
+        
+        for ipv4_file in os.scandir(download_dir + '/ips'):
+            with open(ipv4_file, 'r') as stream:
+                psml = BeautifulSoup(stream.read(), 'xml')
+            dns.IPv4Address.from_psml(net, psml)
+
+        for node_file in os.scandir(download_dir + '/nodes'):
+            with open(node_file, 'r') as stream:
+                psml = BeautifulSoup(stream.read(), 'xml')
+            nodes.Node.from_psml(net, psml, self.plugin_mgr.nodes)
+
+        return net
+
+    def zip_output(self, outpath: str = None) -> ZipFile:
+        """
+        Creates a ZIP from the output directories and writes it to *outpath*.
+
+        :param outpath: The absolute path to output the zip file to, 
+        defaults to '$APPDIR/src/netdox-psml.zip'
+        :type outpath: str, optional
+        :return: The closed ZipFile.
+        :rtype: ZipFile
+        """
+        outpath = outpath or os.path.join(
+            utils.APPDIR, 'src', 'netdox-psml.zip')
+        with ZipFile(outpath, mode = 'w') as zip:
+            for file in self.output:
+                abspath = os.path.join(utils.OUTDIR, file)
+                if os.path.isdir(abspath):
+                    for child in utils.path_list(abspath, utils.OUTDIR):
+                        zip.write(os.path.join(utils.OUTDIR, child), child)
+                else:
+                    zip.write(abspath, file)
+        return zip
+
+    def refresh(self, dry: bool = False) -> None:
+
+        if dry: logger.info('Refresh running as dry run: no documents will be uploaded.')
+
+        # Initialisation                                                    #
+
+        self.output_clean()
+        network = containers.Network(
+            config = self._valid_config(self.plugin_mgr.pluginAttrs), 
+            labels = LabelDict.from_pageseeder()
+        )
+
+        self.plugin_mgr.runStage(network, LifecycleStage.INIT)
+
+        #-------------------------------------------------------------------#
+        # Primary data-gathering stages                                     #
+        #-------------------------------------------------------------------#
+        
+        self.plugin_mgr.runStage(network, LifecycleStage.DNS)
+        self.plugin_mgr.runStage(network, LifecycleStage.NAT)
+        self.plugin_mgr.runStage(network, LifecycleStage.NODES)
+
+        #-------------------------------------------------------------------#
+        # Generate objects for unused private IPs in used subnets,          #
+        # run any pre-write plugins                                         #
+        #-------------------------------------------------------------------#
+
+        network.ips.fillSubnets()
+        self.plugin_mgr.runStage(network, LifecycleStage.FOOTERS)
+
+        #-------------------------------------------------------------------#
+        # Write Network to pickle and psml,                                 #
+        # scan for stale files and generate report,                         #
+        # and run any post-write plugins                                    #
+        #-------------------------------------------------------------------#
+
+        network.dump()
+        network.writePSML()
+        self.plugin_mgr.runStage(network, LifecycleStage.WRITE)
+        
+        network.report.addSection(
+            utils.stale_report(pageseeder.findStale(self.output)))
+        with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
+            network.report.logs = stream.read()
+        network.report.writeReport()
+
+        #-------------------------------------------------------------------#
+        # Zip, upload, and cleanup                                          #
+        #-------------------------------------------------------------------#
+
+        # zip = shutil.make_archive(utils.APPDIR+ 'src/netdox-psml', 'zip', utils.APPDIR + 'out')
+        zip = self.zip_output()
+        if not dry:
+            pageseeder.zip_upload(zip, 'website')
+        else:
+            logger.warning('Did not upload documents due to --dry-run flag.')
+
+        self.plugin_mgr.runStage(network, LifecycleStage.CLEANUP)
+
+        logger.info('Done.')
