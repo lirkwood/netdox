@@ -116,7 +116,7 @@ class DNSLink(DNSRecord):
         :param id_suffix: ID for the properties fragment.
         Will be prefixed with 'implied_'
         :type id_suffix: str
-        :return: _description_
+        :return: A PropertiesFragment with the given ID suffix.
         :rtype: PropertiesFragment
         """
         return PropertiesFragment(
@@ -146,6 +146,11 @@ class TXTRecord(DNSRecord):
             Property('txt_value', self.value, 'Value'),
             Property('source', self.source, 'Source Plugin')
         ])
+
+    @classmethod
+    def from_psml(cls, psml: PropertiesFragment) -> TXTRecord:
+        record = psml.to_dict()
+        return cls(record['txt_name'], record['txt_value'], record['source'])
 
 @dataclass(frozen = True)
 class NATLink:
@@ -496,6 +501,33 @@ class Domain(DNSObject):
         )
         return soup
 
+    @classmethod
+    def from_psml(cls, network: containers.Network, psml: BeautifulSoup) -> Domain:
+        assert psml.document['type'] == cls.type, f'Document type does not match "{cls.type}"'
+
+        header = PropertiesFragment.from_tag(psml.find('properties-fragment', id = 'header')).to_dict()
+        footer = Section.from_tag(psml.find('section', id = 'footer'))
+        txt_records = Section.from_tag(psml.find('section', id = 'txt_records'))
+        dns_records = Section.from_tag(psml.find('section', id = 'records'))
+        
+        domain = cls(network, header['name'], header['zone'], psml.find('labels').text.split(','))
+        domain.psmlFooter = footer
+        txts = set()
+        for _txt in txt_records:
+            txts.add(TXTRecord.from_psml(PropertiesFragment.from_tag(_txt.tag)))
+
+        for _record in dns_records:
+            if _record.tag.name != 'properties-fragment':
+                raise NameError(f'Section "dns_records" contains illegal element: {_record.tag.name}')
+            record = PropertiesFragment.from_tag(_record.tag).to_dict()
+            source: str = record.pop('source')
+            xref: XRef = next(iter(record.values()))
+            if not 'urititle' in xref.tag.attrs:
+                raise AttributeError('Cannot instantiate Domain from PSML that has not been processed.')
+            domain.link(xref.tag['urititle'], source)
+
+        return domain
+
 class IPv4Address(DNSObject):
     """
     A single IP address found in the network
@@ -593,6 +625,29 @@ class IPv4Address(DNSObject):
             ]).tag)
 
         return soup
+
+    @classmethod
+    def from_psml(cls, network: containers.Network, psml: BeautifulSoup) -> IPv4Address:
+        assert psml.document['type'] == cls.type, f'Document type does not match "{cls.type}"'
+
+        header = PropertiesFragment.from_tag(psml.find('properties-fragment', id = 'header')).to_dict()
+        footer = Section.from_tag(psml.find('section', id = 'footer'))
+        dns_records = Section.from_tag(psml.find('section', id = 'records'))
+        
+        ipv4 = cls(network, header['name'], psml.find('labels').text.split(','))
+        ipv4.psmlFooter = footer
+
+        for _record in dns_records:
+            if _record.tag.name != 'properties-fragment':
+                raise NameError(f'Section "dns_records" contains illegal element: {_record.tag.name}')
+            record = PropertiesFragment.from_tag(_record.tag).to_dict()
+            source: str = record.pop('source')
+            xref: XRef = next(iter(record.values()))
+            if not 'urititle' in xref.tag.attrs:
+                raise AttributeError('Cannot instantiate IPv4 from PSML that has not been processed.')
+            ipv4.link(xref.tag['urititle'], source)
+
+        return ipv4
 
     def merge(self, ip: IPv4Address) -> IPv4Address: # type: ignore
         """

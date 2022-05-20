@@ -7,7 +7,7 @@ import logging
 import os
 import re
 from hashlib import sha256
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, Optional, Type
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -160,6 +160,10 @@ class Node(base.NetworkObject):
         header.append(ips.tag)
 
         return soup
+
+    @classmethod
+    def from_psml(cls, network: Network, psml: BeautifulSoup, subclass_types: Iterable[Type[Node]] = ()) -> Node:
+        ... #TODO implement
 
     def merge(self, node: Node) -> Node: # type: ignore
         super().merge(node)

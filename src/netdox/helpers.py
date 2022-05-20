@@ -8,6 +8,7 @@ import json
 import logging
 from datetime import datetime
 from collections import namedtuple
+import os
 from typing import Iterable, Iterator, Optional, no_type_check
 from functools import cache
 
@@ -97,6 +98,8 @@ class Report:
     logs: str
     """A string containing warning+ logs that occurred 
     while running the refresh for this report."""
+    DEFAULT_OUTPATH: str = os.path.join(utils.APPDIR, 'out', 'report.psml')
+    """Absolute path to the default serialisation location of this object."""
 
     def __init__(self) -> None:
         self.sections = []
@@ -136,8 +139,7 @@ class Report:
         for tag in self.sections:
             report.document.append(BeautifulSoup(tag, 'xml'))
 
-        path = path or utils.APPDIR+ 'out/report.psml'
-        with open(path, 'w') as stream:
+        with open(path or self.DEFAULT_OUTPATH, 'w') as stream:
             stream.write(str(report))
 
 

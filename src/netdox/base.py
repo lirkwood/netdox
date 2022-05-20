@@ -243,6 +243,18 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
         return soup
 
+    @abstractmethod
+    def from_psml(self, network: Network, psml: BeautifulSoup):
+        """
+        Instantiates an object from its psml representation.
+
+        :param network: The network to create this object inside of.
+        :type network: Network
+        :param psml: The PSML object this object was serialised to initially.
+        :type psml: BeautifulSoup
+        """
+        ...
+
     def serialise(self) -> None:
         """
         Serialises this object to PSML and writes it to the outpath.
