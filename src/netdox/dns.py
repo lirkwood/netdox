@@ -507,14 +507,16 @@ class Domain(DNSObject):
 
         header = PropertiesFragment.from_tag(psml.find('properties-fragment', id = 'header')).to_dict()
         footer = Section.from_tag(psml.find('section', id = 'footer'))
-        txt_records = Section.from_tag(psml.find('section', id = 'txt_records'))
         dns_records = Section.from_tag(psml.find('section', id = 'records'))
         
         domain = cls(network, header['name'], header['zone'], psml.find('labels').text.split(','))
         domain.psmlFooter = footer
-        txts = set()
-        for _txt in txt_records:
-            txts.add(TXTRecord.from_psml(PropertiesFragment.from_tag(_txt.tag)))
+        
+        txt_records = psml.find('section', id = 'txt_records')
+        if txt_records is not None:
+            txts = set()
+            for _txt in Section.from_tag(txt_records):
+                txts.add(TXTRecord.from_psml(PropertiesFragment.from_tag(_txt.tag)))
 
         for _record in dns_records:
             if _record.tag.name != 'properties-fragment':
@@ -628,7 +630,7 @@ class IPv4Address(DNSObject):
 
     @classmethod
     def from_psml(cls, network: containers.Network, psml: BeautifulSoup) -> IPv4Address:
-        assert psml.document['type'] == cls.type, f'Document type does not match "{cls.type}"'
+        # assert psml.document['type'] == cls.type, f'Document type does not match "{cls.type}"'
 
         header = PropertiesFragment.from_tag(psml.find('properties-fragment', id = 'header')).to_dict()
         footer = Section.from_tag(psml.find('section', id = 'footer'))
