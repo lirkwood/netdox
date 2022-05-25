@@ -30,6 +30,7 @@ class DNSRecordType(Enum):
         """Returns a list of DNSRecordTypes that can describe DNSLinks."""
         return [DNSRecordType.A, DNSRecordType.CNAME, DNSRecordType.PTR]
 
+@dataclass(frozen = True)
 class DNSRecord(ABC):
     """Represents a DNS record."""
     name: str
@@ -68,7 +69,6 @@ class DNSRecord(ABC):
         """
         ...
 
-@dataclass(frozen = True)
 class DNSLink(DNSRecord):
     """Represents a DNS record that resolves to another DNSObject.
     Type may be A, CNAME, or PTR."""
@@ -138,7 +138,7 @@ class TXTRecord(DNSRecord):
 
     def __init__(self, name: str, value: str, source: str) -> None:
         super().__init__(name, value, source, DNSRecordType.TXT)
-        self.zone = '.'.join(name.split('.')[1:])
+        object.__setattr__(self, 'zone', '.'.join(name.split('.')[1:]))
 
     def to_psml(self, id: str) -> PropertiesFragment:
         return PropertiesFragment(id, [
@@ -152,7 +152,6 @@ class TXTRecord(DNSRecord):
         record = psml.to_dict()
         return cls(record['txt_name'], record['txt_value'], record['source'])
 
-@dataclass(frozen = True)
 class NATLink:
     """Represents a NAT entry, linking one IPv4 to another."""
     origin: IPv4Address
