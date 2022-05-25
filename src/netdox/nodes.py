@@ -127,6 +127,14 @@ class Node(base.NetworkObject):
 
         return self
 
+    def merge(self, node: Node) -> Node: # type: ignore
+        super().merge(node)
+        self.domains |= node.domains
+        self.ips |= node.ips
+        return self
+
+    # serialisation
+
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
 
@@ -162,14 +170,81 @@ class Node(base.NetworkObject):
         return soup
 
     @classmethod
-    def from_psml(cls, network: Network, psml: BeautifulSoup, subclass_types: Iterable[Type[Node]] = ()) -> Node:
-        ... #TODO implement
+    def _type_from_psml(cls, psml: BeautifulSoup) -> str:
+        """
+        Returns the Node type from the PSML representation of a Node.
 
-    def merge(self, node: Node) -> Node: # type: ignore
-        super().merge(node)
-        self.domains |= node.domains
-        self.ips |= node.ips
-        return self
+        :param psml: The PSML representation of a Node.
+        :type psml: BeautifulSoup
+        :return: A string containing the Node type of the object that was serialised to PSML.
+        :rtype: str
+        """
+        psml_type_prop = psml.find('property', title = 'Node Type')
+        if psml_type_prop is None: raise ValueError('Failed to find property with title "Node Type".')
+        return psml_type_prop['value']
+
+    @classmethod
+    def _from_psml(cls, network: Network, psml: BeautifulSoup) -> Node:
+        """
+        Does the actual instantiation of a Node from PSML.
+
+        :param network: The network to create the Node inside of.
+        :type network: Network
+        :param psml: The PSML to read from.
+        :type psml: BeautifulSoup
+        :return: The Node object that was serialised to PSML.
+        :rtype: Node
+        """
+        header = PropertiesFragment.from_tag(psml.find('properties-fragment', id = 'header')).to_dict()
+        label_tag = psml.find('labels')
+        labels = label_tag.string.split(',') if label_tag is not None else []
+        footer = psml.find('section', id = 'footer')
+
+        domains_xrefs = PropertiesFragment.from_tag(
+            psml.find('properties-fragment', id = 'domains')
+        ).to_dict().get('domain', ())
+
+        if not isinstance(domains_xrefs, Iterable):
+            domains_xrefs = (domains_xrefs,)
+        domains = [xref.tag['urititle'] for xref in domains_xrefs]
+
+        ips_xrefs = PropertiesFragment.from_tag(
+            psml.find('properties-fragment', id = 'ips')
+        ).to_dict().get('ipv4', ())
+
+        if not isinstance(ips_xrefs, Iterable):
+            ips_xrefs = (ips_xrefs,)
+        ips = [xref.tag['urititle'] for xref in ips_xrefs]
+
+        node = cls(network, header['name'], header['identity'], domains, ips, labels)
+        if footer is not None: node.psmlFooter = Section.from_tag(footer)
+
+        return node
+
+    @classmethod
+    def from_psml(cls, network: Network, psml: BeautifulSoup, subclass_types: Iterable[Type[Node]] = ()) -> Node:
+        """
+        Instantiates a Node from its psml representation.
+        Uses the types in *subclass_types* to recreate plugin-provided Node subclasses.
+
+        :param network: The network to create this Node inside of.
+        :type network: Network
+        :param psml: The PSML representation of a Node.
+        :type psml: BeautifulSoup
+        :param subclass_types: Some types that may have been the type of the object originally serialised, 
+        defaults to ()
+        :type subclass_types: Iterable[Type[Node]], optional
+        :return: A Node, or Node subclass if the correct type is present in *subclass_types*.
+        :rtype: Node
+        """
+        psml_type = cls._type_from_psml(psml)
+        type_map = {subcls.type: subcls for subcls in subclass_types} | {Node.type: Node}
+        if psml_type in type_map:
+            return type_map[psml_type]._from_psml(network, psml)
+        else:
+            logger.error(f'Failed to find matching Node subclass for type {psml_type}.'
+                + ' Creating plain Node instead. Some data may be lost.')
+            return Node._from_psml(network, psml)
 
     ## properties
 
