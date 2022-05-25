@@ -30,7 +30,7 @@ class DNSRecordType(Enum):
         """Returns a list of DNSRecordTypes that can describe DNSLinks."""
         return [DNSRecordType.A, DNSRecordType.CNAME, DNSRecordType.PTR]
 
-@dataclass(frozen = True)
+@dataclass(frozen = True) # type: ignore
 class DNSRecord(ABC):
     """Represents a DNS record."""
     name: str
