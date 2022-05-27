@@ -6,17 +6,16 @@ from __future__ import annotations
 import os
 import re
 from abc import ABC, ABCMeta, abstractmethod
-from functools import cache
+from functools import lru_cache
 from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type,
                     TypeVar, Union)
 
 from bs4 import BeautifulSoup
-from bs4.element import Tag
+from xml.sax.saxutils import escape
 from netdox import psml
 
 if TYPE_CHECKING:
-    from netdox import Network, helpers
-    from netdox.nodes import Node
+    from netdox import Network
 
 ###########
 # Objects #
@@ -56,6 +55,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A PSML section to be inserted at the footer of the document."""
     labels: set[str]
     """A set of labels to apply to this object's output document."""
+    _notes: str
+    """A string of content that is editable on the remote server."""
     DEFAULT_LABELS = ['show-reversexrefs', 'netdox-default']
     """A set of labels to apply to this object upon instantiation."""
     type: str
@@ -67,7 +68,13 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, identity: str, labels: Iterable[str] = None) -> None:
+    def __init__(self, 
+        network: Network, 
+        name: str, 
+        identity: str, 
+        labels: Iterable[str] = None, 
+        notes: str = None
+    ) -> None:
         """
         Sets the instances attributes to the values provided, and adds itself to *network*.
 
@@ -98,6 +105,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.labels = self.network.labels[self.docid]
         self.labels.update(self.DEFAULT_LABELS)
         if labels: self.labels |= set(labels)
+        self.notes = notes or ""
 
     def __str__(self) -> str:
         cls = self.__class__
@@ -151,6 +159,24 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         tokenized = self.name.split('.')
         return ['.'.join(tokenized[i + 1:]) for i in range(len(tokenized) - 1)]
+
+    @property
+    def notes(self) -> str:
+        """
+        The notes that have been written for this object, escaped for XML.
+
+        :return: A string that is safe as XML text.
+        :rtype: str
+        """
+        return escape(self._notes)
+
+    @notes.setter
+    def notes(self, val: str) -> None:
+        self._notes = val
+
+    @notes.deleter
+    def notes(self) -> None:
+        self._notes = ""
 
     @property
     @abstractmethod
@@ -272,9 +298,16 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         self.psmlFooter.extend(object.psmlFooter)
         self.labels |= object.labels
+
+        new_notes = object.notes.strip()
+        if bool(self.notes.strip()) & bool(new_notes):
+            self.notes += "\n\n" + new_notes
+        elif new_notes:
+            self.notes = new_notes
+
         return self
 
-    @cache
+    @lru_cache(maxsize = None)
     def getAttr(self, attr: str) -> Union[str, None]: # TODO rename get_attr
         """
         Returns the value of *attr* for the first label on this object that it is configured on.
