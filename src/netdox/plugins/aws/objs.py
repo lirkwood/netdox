@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from dateutil.tz import tzutc
 from enum import Enum
-from functools import cache, total_ordering
+from functools import lru_cache, total_ordering
 from math import ceil
-from typing import Iterable, Optional
+from typing import Iterable
 import re
 
 from bs4 import BeautifulSoup
@@ -164,7 +164,7 @@ class EC2Instance(DefaultNode):
 
 ## Volumes
 
-@cache
+@lru_cache(maxsize = None)
 def _get_volume_pricing() -> dict[str, float]:
     """
     Gets the pricing data for EBSVolumes.
@@ -218,7 +218,7 @@ class EBSVolume:
         """
         return f'_nd_aws_volume_{re.sub(utils.docid_invalid_pattern, "_", self.id)}'
 
-    @cache
+    @lru_cache(maxsize = None)
     def get_billing(self, period: AWSTimePeriod) -> AWSBillingMetrics:
         """
         Calculates the billing metrics for this object over the given period.
@@ -359,7 +359,7 @@ class AWSBillingGranularity(Enum):
     DAILY = timedelta(days = 1)
     MONTHLY = timedelta(weeks = 4)
 
-    @cache
+    @lru_cache(maxsize = None)
     def period(self) -> AWSTimePeriod:
         """
         Returns a AWSTimePeriod object ending at midnight on the current day.

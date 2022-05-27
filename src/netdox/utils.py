@@ -8,7 +8,8 @@ import json
 import logging
 import os
 import re
-from functools import cache, wraps
+from functools import lru_cache, wraps
+from sys import maxsize
 from traceback import format_exc
 from tldextract import extract
 from datetime import date, timedelta
@@ -93,7 +94,7 @@ def decrypt_file(inpath: str, outpath: str = None) -> str:
 # Config loaders #
 ##################
 
-@cache
+@lru_cache(maxsize = None)
 def config(plugin: str = None) -> dict:
     """
     Loads the encrypted config file if it exists.

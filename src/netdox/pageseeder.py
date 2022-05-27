@@ -11,8 +11,9 @@ import os
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from functools import cache, wraps
+from functools import lru_cache, wraps
 from inspect import signature
+from sys import maxsize
 from time import sleep
 from typing import Iterable
 from zipfile import ZipFile
@@ -144,7 +145,7 @@ def uri_from_path(path: str) -> int:
 
     raise FileNotFoundError(f"Failed to find object at path: '{path}'")
 
-@cache
+@lru_cache(maxsize = None)
 def urimap(
         path: str = 'website', 
         type: str = 'folder', 
