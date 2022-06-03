@@ -157,10 +157,11 @@ def _load_config(path: str) -> bool:
         encrypt_file(path, CFGPATH)
         try:
             assert pageseeder.get_group()
-        except Exception:
+        except Exception as exc:
             logger.error(
                 'Unable to contact or authenticate with the configured PageSeeder instance. '+ 
                 'Please check your configuration and try again.')
+            logger.exception(exc)
             return False
         else:
             os.remove(path)
