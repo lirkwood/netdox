@@ -77,7 +77,7 @@ def _copy_defaults(nwman: PluginManager):
         if default_file.name == 'config.json':
             if not _load_config(file_dest):
                 _config_mod.gen_config_template(nwman)
-                logger.info('No application config detected. ' +
+                logger.info('No valid application config detected. ' +
                     f'Please populate the template at {file_dest}')
         else:
             if not os.path.exists(file_dest):
