@@ -231,14 +231,15 @@ class Node(base.NetworkObject):
         :type network: Network
         :param psml: The PSML representation of a Node.
         :type psml: BeautifulSoup
-        :param subclass_types: Some types that may have been the type of the object originally serialised, 
-        defaults to ()
+        :param subclass_types: Some types that may have been the type of the object originally serialised.
+        Not necessary if you are instantiating directly with the correct subclass. Defaults to ()
         :type subclass_types: Iterable[Type[Node]], optional
         :return: A Node, or Node subclass if the correct type is present in *subclass_types*.
         :rtype: Node
         """
         psml_type = cls._type_from_psml(psml)
-        type_map = {subcls.type: subcls for subcls in subclass_types} | {Node.type: Node}
+        type_map = {subcls.type: subcls for subcls in subclass_types
+            } | {Node.type: Node, cls.type: cls}
         if psml_type in type_map:
             return type_map[psml_type]._from_psml(network, psml)
         else:
