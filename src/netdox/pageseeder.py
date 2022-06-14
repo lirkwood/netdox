@@ -265,7 +265,8 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
             elif commonpath not in local:
                 if expiry and expiry <= today:
                     archive(uri)
-                    logger.info(f"Archiving document '{file['title']}' as it is >=30 days stale.")
+                    title = file['title'] if 'title' in file else f'(URI={file["id"]})'
+                    logger.info(f"Archiving document '{title}' as it is >=30 days stale.")
                 elif expiry is not None:
                     stale[expiry].append(uri)
                 else:
