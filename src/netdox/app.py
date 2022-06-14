@@ -468,7 +468,7 @@ class App:
         # zip = shutil.make_archive(utils.APPDIR+ 'src/netdox-psml', 'zip', utils.APPDIR + 'out')
         zip = self.zip_output()
         if not dry:
-            pageseeder.zip_upload(zip, 'website')
+            pageseeder.zip_upload(zip.filename, 'website')
         else:
             logger.warning('Did not upload documents due to --dry-run flag.')
 
