@@ -84,6 +84,17 @@ class Section(PSMLElement):
     def __iter__(self) -> Iterator[PSMLFragment]:
         yield from self._frags.values()
 
+    def get(self, fragment_id: str) -> PSMLFragment:
+        """
+        Gets a fragment with the given id.
+
+        :param fragment_id: The ID of the fragment to return.
+        :type fragment_id: str
+        :return: The specified fragment object.
+        :rtype: PSMLFragment
+        """
+        return self._frags[fragment_id]
+
     def insert(self, fragment: PSMLFragment, index: int = None) -> None:
         """
         Inserts a new fragment at the specified index.
@@ -269,6 +280,21 @@ class PropertiesFragment(PSMLFragment):
 
     ## methods 
 
+    def get(self, property_name: str) -> Optional[Property]:
+        """
+        Gets a property from its name.
+        None if no property with that name.
+
+        :param property_name: Name of the property to return.
+        :type property_name: str
+        :return: The property in this fragment with the given name, or None.
+        :rtype: Optional[Property]
+        """
+        for property in self.properties:
+            if property.name == property_name:
+                return property
+        return None
+
     def to_dict(self) -> dict:
         """
         Returns a dictionary of child properties names mapped to values.
@@ -331,13 +357,17 @@ class Property(PSMLElement):
     """
     PSML Property element.
     """
+    name: str
+    """Name of this property."""
+    title: Optional[str]
+    """Title of this property"""
     value: Union[PSMLLink, Iterable[str], str]
     """Value of this property."""
 
     def __init__(self, 
         name: str,
         value: Union[PSMLLink, Iterable[str], str],
-        title: str = None,
+        title: Optional[str] = None,
         attrs: Mapping[str, Any] = {}
     ) -> None:
         """
@@ -359,6 +389,8 @@ class Property(PSMLElement):
             attrs = _attrs | attrs
         )
         
+        self.name = name
+        self.title = title
         self.value = value
         if value:
             if isinstance(value, str):
@@ -576,7 +608,7 @@ DOMAIN_TEMPLATE = '''
         <section id="footer" />
 
         <section id="notes">
-            <fragment id="notes">#!notes</fragment>
+            <fragment id="notes"><para>#!notes</para></fragment>
         </section>
 
     </document>
@@ -621,7 +653,7 @@ IPV4ADDRESS_TEMPLATE = '''
         <section id="footer" />
 
         <section id="notes">
-            <fragment id="notes">#!notes</fragment>
+            <fragment id="notes"><para>#!notes</para></fragment>
         </section>
 
     </document>
@@ -666,7 +698,7 @@ NODE_TEMPLATE = '''
         <section id="footer" />
 
         <section id="notes">
-            <fragment id="notes">#!notes</fragment>
+            <fragment id="notes"><para>#!notes</para></fragment>
         </section>
 
     </document>
