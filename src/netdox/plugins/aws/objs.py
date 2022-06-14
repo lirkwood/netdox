@@ -6,14 +6,14 @@ from dateutil.tz import tzutc
 from enum import Enum
 from functools import lru_cache, total_ordering
 from math import ceil
-from typing import Iterable
+from typing import Iterable, cast
 import re
 
 from bs4 import BeautifulSoup
 
-from netdox import DefaultNode, Network, psml, utils
+from netdox import DefaultNode, Node, Network, utils
+from netdox.psml import Property, Section, PropertiesFragment, XRef
 from netdox.plugins.aws.templates import EBS_VOLUME_TEMPLATE
-
 
 class EC2Instance(DefaultNode):
     """A single instance running on AWS EC2."""
@@ -103,64 +103,125 @@ class EC2Instance(DefaultNode):
         return billing
 
     @property
-    def psmlGeneral(self) -> psml.PropertiesFragment:
+    def psmlGeneral(self) -> PropertiesFragment:
         """
         General info fragment of EC2Instance Node document.
 
         :return: A *properties-fragment* bs4 tag.
         :rtype: Tag
         """
-        return psml.PropertiesFragment('general', [
-            psml.Property('instanceId', self.id, 'Instance ID'),
-            psml.Property('mac', self.mac, 'MAC Address'),
-            psml.Property('instanceType', self.instance_type, 'Instance Type'),
-            psml.Property('monitoring', self.monitoring, 'Monitoring'),
-            psml.Property('availabilityZone', self.region, 'Availability Zone'),
-            psml.Property('key_pair', self.key_pair, 'Key Pair'),
-            psml.Property('state', self.state, 'State')
+        return PropertiesFragment('general', [
+            Property('instanceId', self.id, 'Instance ID'),
+            Property('mac', self.mac, 'MAC Address'),
+            Property('instanceType', self.instance_type, 'Instance Type'),
+            Property('monitoring', self.monitoring, 'Monitoring'),
+            Property('availabilityZone', self.region, 'Availability Zone'),
+            Property('key_pair', self.key_pair, 'Key Pair'),
+            Property('state', self.state, 'State')
         ])
 
     @property
-    def psmlTags(self) -> psml.PropertiesFragment:
+    def psmlTags(self) -> PropertiesFragment:
         """
         Tags fragment of EC2Instance Node document.
 
         :return: A *properties-fragment* bs4 tag.
         :rtype: Tag
         """
-        return psml.PropertiesFragment('tags', [
-            psml.Property('tag', value, f'Tag: {tag}')
+        return PropertiesFragment('tags', [
+            Property('tag', value, f'Tag: {tag}')
             for tag, value in self.tags.items()
         ])
 
     @property
-    def psmlVolumes(self) -> list[psml.PropertiesFragment]:
+    def psmlVolumes(self) -> list[PropertiesFragment]:
         return  [
-            psml.PropertiesFragment(f'volume_{count}', [
-                psml.Property(
+            PropertiesFragment(f'volume_{count}', [
+                Property(
                     'volume', 
-                    psml.XRef(docid = volume.docid), 
+                    XRef(docid = volume.docid), 
                     'Attached Volume'
                 ),
-                psml.Property('mount_path', path, 'Mount Path')
+                Property('mount_path', path, 'Mount Path')
             ]) for count, (path, volume) in enumerate(self.volumes.items())
         ]
 
     @property
-    def psmlBody(self) -> list[psml.Section]:
+    def psmlBody(self) -> list[Section]:
         volumeBilling = self.volumeBilling
         combinedBilling = self.billing + volumeBilling
         return [
-            psml.Section('body', fragments = [
+            Section('body', fragments = [
                 self.psmlGeneral, 
                 self.psmlTags,
             ] + self.psmlVolumes),
-            psml.Section('billing', fragments = [
+            Section('billing', fragments = [
                 combinedBilling.to_psml('combined_billing', self.COMINED_BILLING_DESC),
                 self.billing.to_psml('instance_billing', self.INSTANCE_BILLING_DESC),
                 volumeBilling.to_psml('volume_billing', self.VOLUME_BILLING_DESC)
             ])
         ]
+
+    @staticmethod
+    def _matches_volfrag_id(id: str) -> bool:
+        return id.startswith('volume_')
+
+    @staticmethod
+    def _volumes_from_psml(psml: BeautifulSoup) -> dict[str, EBSVolume]:
+        """
+        Deserialises EBSVolumes from the psml of an EC2Instance.
+        Assumes the psml for the EBSVolumes is downloaded.
+
+        :param psml: Soup of the EC2Instance to get volumes from.
+        :type psml: BeautifulSoup
+        :return: A dict mapping mount point to volume objects.
+        :rtype: dict[str, EBSVolume]
+        """
+        volumes: dict[str, EBSVolume] = {}
+        for frag in psml.find_all(
+            name = 'properties-fragment', 
+            id = EC2Instance._matches_volfrag_id
+        ):
+            # TODO implement reading volumes!
+            ...
+        return volumes
+
+    @classmethod
+    def _from_psml(cls, network: Network, psml: BeautifulSoup) -> EC2Instance:
+        base = Node._from_psml(network, psml)
+        body = Section.from_tag(psml.find('section', id = 'body'))
+        general = cast(PropertiesFragment, body.get('general')).to_dict()
+        tags = [
+            { 'Key': prop.title[5:], 'Value': prop.value } # type: ignore
+            for prop in cast(PropertiesFragment, body.get('tags')).properties
+        ]
+
+        _billing = Section.from_tag(psml.find('section', id = 'billing'))
+        billing = cast(PropertiesFragment, _billing.get('instance_billing')).to_dict()
+        metrics = AWSBillingMetrics(
+            period = AWSTimePeriod.from_str(billing['period']),
+            AmortizedCost = billing['amortized_cost'],
+            UnblendedCost = billing['unblended_cost'],
+            UsageQuantity = billing['usage']
+        )
+
+        return cls(
+            network = base.network,
+            id = general['instanceId'],
+            mac = general['mac'],
+            instance_type = general['instanceType'],
+            monitoring = general['monitoring'],
+            region = general['availabilityZone'],
+            key_pair = general['key_pair'],
+            state = general['state'],
+            billing = metrics,
+            volumes = cls._volumes_from_psml(psml),
+            tags = tags,
+            private_ip = base.identity,
+            public_ips = (base.ips - {base.identity}),
+            domains = base.domains
+        )
+
 
 ## Volumes
 
@@ -266,10 +327,10 @@ class EBSVolume:
         soup = BeautifulSoup(doc, 'xml')
         details_section = soup.find('section', id = 'details')
         for count, snapshot in enumerate(self.snapshots):
-            details_section.append(psml.PropertiesFragment(f'snapshot_{count}', [
-                psml.Property('snapshotId', snapshot.id, 'Snapshot ID'),
-                psml.Property('started', str(snapshot.started), 'Start Time'),
-                psml.Property('description', snapshot.description, 'Description')
+            details_section.append(PropertiesFragment(f'snapshot_{count}', [
+                Property('snapshotId', snapshot.id, 'Snapshot ID'),
+                Property('started', str(snapshot.started), 'Start Time'),
+                Property('description', snapshot.description, 'Description')
             ]).tag)
 
         return str(soup)
@@ -321,6 +382,17 @@ class AWSTimePeriod:
 
     def __lt__(self, other) -> bool:
         return (other.start - other.end) < (self.start - self.end)
+
+    def to_str(self) -> str:
+        return str(self)
+
+    @classmethod
+    def from_str(cls, string: str) -> AWSTimePeriod:
+        bounds = string.strip().split()
+        return cls(
+            datetime.fromisoformat(bounds[1]), 
+            datetime.fromisoformat(bounds[3])
+        )
 
     def to_dict(self) -> dict[str, str]:
         """
@@ -401,27 +473,27 @@ class AWSBillingMetrics:
         object.__setattr__(self, 'UsageQuantity', 
             float(self.UsageQuantity) if self.UsageQuantity is not None else 0.0)
 
-    def to_psml(self, fragment_id: str = 'billing', description: str = None) -> psml.PropertiesFragment:
+    def to_psml(self, fragment_id: str = 'billing', description: str = None) -> PropertiesFragment:
         """
-        Serialises this object to PSMl.
+        Serialises this object to 
 
         :param fragment_id: ID to give the returned properties-fragment, defaults to 'billing'
         :type fragment_id: str, optional
         :param description: Plain english description of what this is billing for.
         :type billed_odescriptionbjects: str, optional
         :return: A properties-fragment object describing the billing metrics.
-        :rtype: psml.PropertiesFragment
+        :rtype: PropertiesFragment
         """
         amortized = str(round(self.AmortizedCost, 2)) if self.AmortizedCost else 'None'
         unblended = str(round(self.UnblendedCost, 2)) if self.UnblendedCost else 'None'
         usage = str(round(self.UsageQuantity, 2)) if self.UsageQuantity else 'None'
 
-        return psml.PropertiesFragment(fragment_id, [
-            psml.Property('period', str(self.period), 'Billing Period'),
-            psml.Property('amortized_cost', amortized, 'Amortized Cost (USD)'),
-            psml.Property('unblended_cost', unblended, 'Unblended Cost (USD)'),
-            psml.Property('usage', usage, 'Usage Quantity')
-        ] + [psml.Property('desc', description, 'Description')] 
+        return PropertiesFragment(fragment_id, [
+            Property('period', str(self.period), 'Billing Period'),
+            Property('amortized_cost', amortized, 'Amortized Cost (USD)'),
+            Property('unblended_cost', unblended, 'Unblended Cost (USD)'),
+            Property('usage', usage, 'Usage Quantity')
+        ] + [Property('desc', description, 'Description')] 
             if description is not None else []
         )
 
