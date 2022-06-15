@@ -349,7 +349,6 @@ def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
     :return: The path to the downloaded directory
     :rtype: str
     """
-    max_time = datetime.now() + timedelta(milliseconds = timeout)
     _thread = export({
         'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/{path}'
     }, directory = True)
@@ -359,9 +358,6 @@ def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
         while thread['status'] != 'completed':
             last_thread = thread
             thread = BeautifulSoup(get_thread_progress(thread['id']), 'xml').thread
-            # if max_time < datetime.now():
-            #     raise TimeoutError('Failed to export the directory from PageSeeder.'
-            #         + f' Timed out after {timeout}ms')
     except KeyError:
         raise AttributeError('Download thread never had status "complete".\n' + str(thread))
     except TypeError:
@@ -382,7 +378,7 @@ def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
                 stream.write(chunk)
 
     ZipFile(zip_path).extractall(outpath)
-    # os.remove(zip_path)
+    os.remove(zip_path)
                 
     return outpath
 
