@@ -196,10 +196,14 @@ class EC2Instance(DefaultNode):
             for prop in cast(PropertiesFragment, body.get('tags')).properties
         ]
 
-        _billing = Section.from_tag(psml.find('section', id = 'billing'))
-        billing = cast(PropertiesFragment, _billing.get('instance_billing')).to_dict()
+        billing_section = Section.from_tag(psml.find('section', id = 'billing'))
+        billing_frag = cast(PropertiesFragment, billing_section.get('instance_billing'))
+        billing = {
+            key: val if str(val) != 'None' else None 
+            for key, val in billing_frag.to_dict().items()
+        }
         metrics = AWSBillingMetrics(
-            period = AWSTimePeriod.from_str(billing['period']),
+            AWSTimePeriod.from_str(billing['period']),
             AmortizedCost = billing['amortized_cost'],
             UnblendedCost = billing['unblended_cost'],
             UsageQuantity = billing['usage']
