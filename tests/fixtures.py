@@ -1,6 +1,7 @@
 from pytest import fixture
 from netdox import Network, utils, nodes, dns
 from netdox.config import NetworkConfig
+from netdox.app import PluginManager
 from lxml import etree
 
 @fixture
@@ -57,3 +58,8 @@ def node(network: Network):
 @fixture
 def psml_schema():
     return etree.XMLSchema(file = utils.APPDIR+ 'src/psml.xsd')
+
+
+@fixture
+def plugin_mgr():
+    return PluginManager()

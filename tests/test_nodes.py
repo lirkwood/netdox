@@ -1,8 +1,8 @@
 from gc import collect, get_referrers
+from bs4 import BeautifulSoup
 
-from lxml import etree
 from netdox import Network, nodes, utils, dns
-from netdox.psml import Fragment, Section
+from netdox.psml import Fragment
 from pytest import fixture, raises
 from fixtures import *
 
@@ -67,8 +67,20 @@ class TestNode:
         del node.location
         assert node.location == node.network.locator.locate({'192.168.0.0', '192.168.0.1'})
 
-    def test_serialise(self, node: nodes.Node):
+    def test_to_psml(self, node: nodes.Node):
         assert utils.validate_psml(node.to_psml().encode('utf-8'))
+
+    def test_from_psml(self):
+        with open('resources/node.psml', 'r') as stream:
+            soup = BeautifulSoup(stream.read(), 'xml')
+        node = nodes.Node.from_psml(Network(), soup)
+
+        assert node.name == 'prod.01.www.oxforddigital.com.au'
+        assert node.identity == '10.0.0.120'
+        assert node.type == nodes.Node.type
+        assert node.domains == {'oxforddigital.com.au'}
+        assert node.ips == {'54.79.82.213', '10.0.0.120'}
+        assert node.notes == 'Node notes...'
 
     def test_organization_node(self, node: nodes.Node, org_label: str, org: str):
         assert node.organization == None
