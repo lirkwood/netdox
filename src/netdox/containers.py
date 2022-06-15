@@ -338,6 +338,21 @@ class Network:
         self.cache.clear()
         return self._resolvesTo(startObj, target)
 
+    def _notes_from_network(self, network: Network) -> None:
+        """
+        Replaces the notes in this network with those from the given network.
+
+        :param network: The network to import notes from.
+        :type network: Network
+        """
+        for domain in network.domains:
+            self.domains[domain.name].notes = domain.notes
+        for ipv4 in network.ips:
+            self.ips[ipv4.name].notes = ipv4.notes
+        for node in network.nodes:
+            nodes.PlaceholderNode(
+                self, node.name, node.domains, node.ips, node.labels
+            ).notes = node.notes
 
     ## Serialisation
 
@@ -375,26 +390,40 @@ class Network:
         net = cls(config = config)
 
         for domain_file in os.scandir(os.path.join(dir, 'domains')):
-            print(domain_file)
-            with open(domain_file, 'r') as stream:
-                domain = dns.Domain.from_psml(net, 
-                    psml = BeautifulSoup(stream.read(), 'xml'))
-            net.labels[domain.docid] = (
-                domain.labels - set(domain.DEFAULT_LABELS))
+            try:
+                with open(domain_file, 'r') as stream:
+                    domain = dns.Domain.from_psml(net, 
+                        psml = BeautifulSoup(stream.read(), 'xml'))
+                net.labels[domain.docid] = (
+                    domain.labels - set(domain.DEFAULT_LABELS))
+            except Exception as exc:
+                logger.error(
+                    f'Failed to deserialise Domain object at "{domain_file.path}"')
+                logger.exception(exc)
 
         for subnet in os.scandir(os.path.join(dir, 'ips')):
             for ipv4_file in os.scandir(subnet):
-                with open(ipv4_file, 'r') as stream:
-                    ipv4 = dns.IPv4Address.from_psml(net, 
-                        psml = BeautifulSoup(stream.read(), 'xml'))
-                net.labels[ipv4.docid] = (
-                    ipv4.labels - set(ipv4.DEFAULT_LABELS))
+                try:
+                    with open(ipv4_file, 'r') as stream:
+                        ipv4 = dns.IPv4Address.from_psml(net, 
+                            psml = BeautifulSoup(stream.read(), 'xml'))
+                    net.labels[ipv4.docid] = (
+                        ipv4.labels - set(ipv4.DEFAULT_LABELS))
+                except Exception as exc:
+                    logger.error(
+                        f'Failed to deserialise IPv4 object at "{ipv4_file.path}"')
+                    logger.exception(exc)
 
         for node_file in os.scandir(os.path.join(dir, 'nodes')):
-            with open(node_file, 'r') as stream:
-                node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
-                    psml = BeautifulSoup(stream.read(), 'xml'))
-            net.labels[node.docid] = node.labels - set(node.DEFAULT_LABELS)
+            try:
+                with open(node_file, 'r') as stream:
+                    node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
+                        psml = BeautifulSoup(stream.read(), 'xml'))
+                net.labels[node.docid] = node.labels - set(node.DEFAULT_LABELS)
+            except Exception as exc:
+                logger.error(
+                    f'Failed to deserialise Node object at "{node_file.path}"')
+                logger.exception(exc)
 
         return net
 
