@@ -354,7 +354,7 @@ def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
     thread = BeautifulSoup(_thread, 'xml').thread
     last_thread = thread
     try:
-        while thread['status'] == 'inprogress':
+        while thread['status'] in ('initialised', 'inprogress'):
             last_thread = thread
             thread = BeautifulSoup(get_thread_progress(thread['id']), 'xml').thread
     except KeyError:
