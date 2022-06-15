@@ -541,7 +541,9 @@ class PlaceholderNode(Node):
             node = self.network.ips[ip].node
             if node: nodes.add(node)
             
-        assert len(nodes) <= 1, 'Placeholder cannot be consumed by more than one node.'
+        if len(nodes) > 1:
+            raise RuntimeError('Placeholder cannot be consumed by more than one node. ' +
+                str([node.identity for node in nodes]))
         if nodes:
             self.network.nodes.addRef(nodes.pop(), self.identity)
 
