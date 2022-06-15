@@ -13,7 +13,6 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from functools import lru_cache, wraps
 from inspect import signature
-from sys import maxsize
 from time import sleep
 from typing import Iterable
 from zipfile import ZipFile
@@ -355,15 +354,28 @@ def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
     thread = BeautifulSoup(_thread, 'xml').thread
     last_thread = thread
     try:
-        while thread['status'] != 'completed':
+        while thread['status'] == 'inprogress':
             last_thread = thread
             thread = BeautifulSoup(get_thread_progress(thread['id']), 'xml').thread
     except KeyError:
-        raise AttributeError('Download thread never had status "complete".\n' + str(thread))
+        raise AttributeError('Download thread never had status "completed".\n' + str(thread))
     except TypeError:
         assert thread is None, 'Strange fail state: TypeError when accessing thread like dict.'
-        raise AttributeError('Download thread never had status "complete" (thread is None).\n'
+        raise AttributeError('Download thread never had status "completed" (thread is None).\n'
             + str(last_thread))
+    
+    if thread['status'] == 'failed':
+        try:
+            message = thread.message.string
+        except Exception:
+            message = '[ERROR MSG NOT FOUND]'
+        finally:
+            raise RuntimeError(f'Failed to export directory at "{path}" from PageSeeder.'
+                + f' Message: "{message}"')
+
+    elif thread['status'] != 'completed':
+        logger.warning('Unknown thread final thread status while downloading '
+            + f'directory at "{path}" from PageSeeder: "{thread["status"]}"')
 
     if os.path.exists(outpath) and not os.path.isdir(outpath):
         raise FileExistsError('File object exists at output path, is not a directory.')
