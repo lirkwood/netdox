@@ -367,31 +367,21 @@ class App:
         return cfg
 
     def _pull_network(self) -> containers.Network:
-        net = containers.Network(
-            config = config.NetworkConfig.from_pageseeder(), 
-            labels = helpers.LabelDict.from_pageseeder()
-        )
-        
-        download_dir = utils.APPDIR + 'src/download'
+        """
+        Downloads the network from the remote server and returns it.
+
+        :return: A Network object instantiated from PSML.
+        :rtype: containers.Network
+        """
+        download_dir = utils.APPDIR + 'src/remote'
+        if os.path.exists(download_dir):
+            if os.path.isdir(download_dir):
+                shutil.rmtree(download_dir)
+            else:
+                os.remove(download_dir)
+
         pageseeder.download_dir('website', download_dir)
-
-        for domain_file in os.scandir(download_dir + '/domains'):
-            with open(domain_file, 'r') as stream:
-                psml = BeautifulSoup(stream.read(), 'xml')
-            dns.Domain.from_psml(net, psml)
-        
-        for ipv4_subnet in os.scandir(download_dir + '/ips'):
-            for ipv4_file in os.scandir(ipv4_subnet):
-                with open(ipv4_file, 'r') as stream:
-                    psml = BeautifulSoup(stream.read(), 'xml')
-                dns.IPv4Address.from_psml(net, psml)
-
-        for node_file in os.scandir(download_dir + '/nodes'):
-            with open(node_file, 'r') as stream:
-                psml = BeautifulSoup(stream.read(), 'xml')
-            nodes.Node.from_psml(net, psml, self.plugin_mgr.nodes)
-
-        return net
+        return containers.Network.from_psml(download_dir, self.plugin_mgr.nodes)
 
     def zip_output(self, outpath: str = None) -> ZipFile:
         """
@@ -417,8 +407,6 @@ class App:
 
     def refresh(self, dry: bool = False) -> None:
 
-        if dry: logger.info('Refresh running as dry run: no documents will be uploaded.')
-
         # Initialisation                                                    #
 
         self.output_clean()
@@ -426,6 +414,15 @@ class App:
             config = self._valid_config(self.plugin_mgr.pluginAttrs), 
             labels = LabelDict.from_pageseeder()
         )
+
+        if dry: 
+            logger.info('Refresh running as dry run: no documents will be uploaded.')
+        else:
+            logger.debug('Downloading network from remote.')
+            remote_network = self._pull_network()
+            logger.debug('Copying notes from remote network.')
+            network._notes_from_network(remote_network)
+            
 
         self.plugin_mgr.runStage(network, LifecycleStage.INIT)
 
