@@ -347,12 +347,14 @@ class Network:
         """
         for domain in network.domains:
             self.domains[domain.name].notes = domain.notes
+
         for ipv4 in network.ips:
             self.ips[ipv4.name].notes = ipv4.notes
+
         for node in network.nodes:
-            nodes.PlaceholderNode(
-                self, node.name, node.domains, node.ips, node.labels
-            ).notes = node.notes
+            note_holder = nodes.PlaceholderNode(self, node.identity)
+            self.nodes.addRef(note_holder, node.identity)
+            note_holder.notes = node.notes
 
     ## Serialisation
 
