@@ -216,8 +216,11 @@ class Node(base.NetworkObject):
             ips_xrefs = (ips_xrefs,)
         ips = [xref.tag['urititle'] for xref in ips_xrefs]
 
-        node = cls(network, header['name'], header['identity'], domains, ips, labels)
+        node = Node(network, header['name'], header['identity'], domains, ips, labels)
+
         if footer is not None: node.psmlFooter = Section.from_tag(footer)
+        notes = psml.find('section', id='notes').find('fragment', id='notes').para.string
+        if notes and notes != '—': node.notes = notes
 
         return node
 
@@ -239,7 +242,7 @@ class Node(base.NetworkObject):
         """
         psml_type = cls._type_from_psml(psml)
         type_map = {subcls.type: subcls for subcls in subclass_types
-            } | {Node.type: Node, cls.type: cls}
+            } | {cls.type: cls} | BUILTIN_NODES
         if psml_type in type_map:
             return type_map[psml_type]._from_psml(network, psml)
         else:
@@ -358,6 +361,12 @@ class ProxiedNode(Node):
             super().__init__(network, name, identity, domains, ips, labels)
             self.proxy = NodeProxy(self, proxy_node, 
                 {addr for addrset in (domains, ips) for addr in addrset})
+
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        soup.find('properties-fragment', id = 'header').append(
+            Property('proxy', XRef(docid=self.proxy.node.docid), 'Proxy Node').tag)
+        return soup
 
     def _walkBackrefs(self, dnsobj: dns.DNSObject, cache: set[str] = None) -> set[str]:
         if not cache:
@@ -593,3 +602,9 @@ class PlaceholderNode(Node):
             self.network.nodes[alias] = node
 
         return node
+
+BUILTIN_NODES = {
+    Node.type: Node, 
+    ProxiedNode.type: ProxiedNode, 
+    PlaceholderNode.type: PlaceholderNode
+}

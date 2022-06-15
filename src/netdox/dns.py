@@ -510,6 +510,9 @@ class Domain(DNSObject):
         
         domain = cls(network, header['name'], header['zone'], psml.find('labels').text.split(','))
         domain.psmlFooter = footer
+
+        notes = psml.find('section', id='notes').find('fragment', id='notes').para.string
+        if notes and notes != '—': domain.notes = notes
         
         txt_records = psml.find('section', id = 'txt_records')
         if txt_records is not None:
@@ -637,6 +640,9 @@ class IPv4Address(DNSObject):
         
         ipv4 = cls(network, header['name'], psml.find('labels').text.split(','))
         ipv4.psmlFooter = footer
+
+        notes = psml.find('section', id='notes').find('fragment', id='notes').para.string
+        if notes and notes != '—': ipv4.notes = notes
 
         for _record in dns_records:
             if _record.tag.name != 'properties-fragment':
