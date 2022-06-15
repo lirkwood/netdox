@@ -4,8 +4,11 @@ This module contains any container classes.
 from __future__ import annotations
 
 import logging
+import os
 import pickle
 from typing import Iterable, Iterator, Type, Union
+
+from bs4 import BeautifulSoup
 
 from netdox import base, dns, helpers, iptools, nodes
 from netdox.config import NetworkConfig
@@ -342,7 +345,8 @@ class Network:
         """
         Pickles the Network object and saves it to *path*, encrypted.
 
-        :param outpath: The path to save dump the network to, defaults to 'src/network.bin' within *APPDIR*.
+        :param outpath: The path to save dump the network to, 
+        defaults to 'src/network.bin' within *APPDIR*.
         :type outpath: str, optional
         :param encrypt: Whether or not to encrypt the dump, defaults to True
         :type encrypt: bool, optional
@@ -352,7 +356,52 @@ class Network:
             nw.write(Cryptor().encrypt(network) if encrypt else network)
 
     @classmethod
-    def from_dump(cls: Type[Network], inpath: str = APPDIR + 'src/network.bin', encrypted = True) -> Network:
+    def from_psml(
+        cls, dir: str, node_subclasses: Iterable[Type[nodes.Node]] = ()
+    ) -> Network:
+        """
+        Instantiates a Network from its psml representation in the given dir.
+
+        :param dir: Aboslute path to the directory the network was serialised to.
+        :type dir: str
+        :param node_subclasses: A list of subclasses of Node to attempt to use to
+        deserialise Node instances. Defaults to ()
+        :type node_subclasses: Iterable[Type[nodes.Node]]
+        :return: The Network described by the psml.
+        :rtype: Network
+        """
+        with open(os.path.join(dir, 'config.psml'), 'r') as stream:
+            config = NetworkConfig.from_psml(stream.read())
+        net = cls(config = config)
+
+        for domain_file in os.scandir(os.path.join(dir, 'domains')):
+            print(domain_file)
+            with open(domain_file, 'r') as stream:
+                domain = dns.Domain.from_psml(net, 
+                    psml = BeautifulSoup(stream.read(), 'xml'))
+            net.labels[domain.docid] = (
+                domain.labels - set(domain.DEFAULT_LABELS))
+
+        for subnet in os.scandir(os.path.join(dir, 'ips')):
+            for ipv4_file in os.scandir(subnet):
+                with open(ipv4_file, 'r') as stream:
+                    ipv4 = dns.IPv4Address.from_psml(net, 
+                        psml = BeautifulSoup(stream.read(), 'xml'))
+                net.labels[ipv4.docid] = (
+                    ipv4.labels - set(ipv4.DEFAULT_LABELS))
+
+        for node_file in os.scandir(os.path.join(dir, 'nodes')):
+            with open(node_file, 'r') as stream:
+                node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
+                    psml = BeautifulSoup(stream.read(), 'xml'))
+            net.labels[node.docid] = node.labels - set(node.DEFAULT_LABELS)
+
+        return net
+
+    @classmethod
+    def from_dump(
+        cls, inpath: str = APPDIR + 'src/network.bin', encrypted = True
+    ) -> Network:
         """
         Instantiates a Network from a pickled dump.
 
