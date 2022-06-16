@@ -3,6 +3,16 @@
 Releases
 ########
 
+v1.4.0
+======
+Generalised DNS, AWS overhaul, added recreating Network from psml, added persistent notes.
+
+* Now support TXT DNS records.
+* AWS now includes billing, volume and snapshot data.
+* AWS instance names are now correctly set.
+* Can now recreate Network from directory of PSML exported from PageSeeder (not all node types working yet.)
+* Added notes concept; each network object has fragment with single para. Changes made here persist.
+
 v1.3.3
 ======
 Added validation, fixed loading zone issues, updated docs and search terms.
