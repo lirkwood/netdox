@@ -393,7 +393,7 @@ class Network:
 
         for domain_file in os.scandir(os.path.join(dir, 'domains')):
             try:
-                with open(domain_file, 'r') as stream:
+                with open(domain_file, 'r', encoding='utf-8') as stream:
                     domain = dns.Domain.from_psml(net, 
                         psml = BeautifulSoup(stream.read(), 'xml'))
                 net.labels[domain.docid] = (
@@ -406,7 +406,7 @@ class Network:
         for subnet in os.scandir(os.path.join(dir, 'ips')):
             for ipv4_file in os.scandir(subnet):
                 try:
-                    with open(ipv4_file, 'r') as stream:
+                    with open(ipv4_file, 'r', encoding='utf-8') as stream:
                         ipv4 = dns.IPv4Address.from_psml(net, 
                             psml = BeautifulSoup(stream.read(), 'xml'))
                     net.labels[ipv4.docid] = (
@@ -418,7 +418,7 @@ class Network:
 
         for node_file in os.scandir(os.path.join(dir, 'nodes')):
             try:
-                with open(node_file, 'r') as stream:
+                with open(node_file, 'r', encoding='utf-8') as stream:
                     node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
                         psml = BeautifulSoup(stream.read(), 'xml'))
                 net.labels[node.docid] = node.labels - set(node.DEFAULT_LABELS)
