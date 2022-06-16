@@ -338,7 +338,7 @@ class Network:
         self.cache.clear()
         return self._resolvesTo(startObj, target)
 
-    def _notes_from_network(self, network: Network) -> None:
+    def copy_notes(self, network: Network) -> None:
         """
         Replaces the notes in this network with those from the given network.
 

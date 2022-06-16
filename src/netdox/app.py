@@ -366,7 +366,7 @@ class App:
                 stream.write(cfg.to_psml())
         return cfg
 
-    def _pull_network(self) -> containers.Network:
+    def download_network(self) -> containers.Network:
         """
         Downloads the network from the remote server and returns it.
 
@@ -419,10 +419,9 @@ class App:
             logger.info('Refresh running as dry run: no documents will be uploaded.')
         else:
             logger.debug('Downloading network from remote.')
-            remote_network = self._pull_network()
+            remote_network = self.download_network()
             logger.debug('Copying notes from remote network.')
-            network._notes_from_network(remote_network)
-            
+            network.copy_notes(remote_network)
 
         self.plugin_mgr.runStage(network, LifecycleStage.INIT)
 
@@ -462,7 +461,13 @@ class App:
         # Zip, upload, and cleanup                                          #
         #-------------------------------------------------------------------#
 
-        # zip = shutil.make_archive(utils.APPDIR+ 'src/netdox-psml', 'zip', utils.APPDIR + 'out')
+        logger.debug('Network metrics: ' +
+            f'\n\t{len(network.domains.objects)} Domains' +
+            f'\n\t{len(network.ips.objects)} IPv4Address' +
+            f'\n\t{len(network.nodes.objects)} Nodes' +
+            f'\n\t{len(self.plugin_mgr.enabled)} Enabled plugins'
+        )
+
         zip = self.zip_output()
         if not dry:
             pageseeder.zip_upload(zip.filename, 'website')
