@@ -119,7 +119,7 @@ class TestPlaceholderNode:
 
         dns.Domain(network, 'sub1.domain.com').node = nodes.DefaultNode(network, 'node1', '10.0.0.1')
         dns.Domain(network, 'sub2.domain.com').node = nodes.DefaultNode(network, 'node2', '10.0.0.2')
-        with raises(AssertionError):
+        with raises(RuntimeError):
             nodes.PlaceholderNode(network, 'name', domains = ['sub1.domain.com','sub2.domain.com'])
 
     def test_merge(self, network: Network):
