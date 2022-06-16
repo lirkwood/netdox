@@ -50,22 +50,22 @@ class TestNetwork:
         network.dump()
         Network.from_dump()
 
-    @fixture
-    def network_from_psml(self, plugin_mgr: PluginManager) -> Network:
-        return Network.from_psml('resources/network', plugin_mgr.nodes)
+    # @fixture
+    # def network_from_psml(self, plugin_mgr: PluginManager) -> Network:
+    #     return Network.from_psml('resources/network', plugin_mgr.nodes)
 
-    def test_network_nodes(self, network_from_psml: Network):
-        nodes = network_from_psml.nodes
-        domains = network_from_psml.domains
+    # def test_network_nodes(self, network_from_psml: Network):
+    #     nodes = network_from_psml.nodes
+    #     domains = network_from_psml.domains
 
-        assert nodes['192.168.13.104'].ips == {
-            '192.168.13.104', '103.127.18.104'}
+    #     assert nodes['192.168.13.104'].ips == {
+    #         '192.168.13.104', '103.127.18.104'}
 
-        assert domains['netdox.allette.com.au'].node is \
-            nodes['production_netdox-allette-com-au']
+    #     assert domains['netdox.allette.com.au'].node is \
+    #         nodes['production_netdox-allette-com-au']
 
-        assert nodes['production_netdox-allette-com-au'].domains == {
-            'netdox.allette.com.au'}
+    #     assert nodes['production_netdox-allette-com-au'].domains == {
+    #         'netdox.allette.com.au'}
 
-        assert nodes['production_netdox-allette-com-au'].notes == \
-            'These are some notes!'
+    #     assert nodes['production_netdox-allette-com-au'].notes == \
+    #         'These are some notes!'
