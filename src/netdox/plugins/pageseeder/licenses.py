@@ -11,8 +11,7 @@ import warnings
 logger = logging.getLogger(__name__)
 
 def runner(network: Network):
-    # TODO change from ps to ps-licenses
-    urimap = pageseeder.urimap('website/ps', 'document')
+    urimap = pageseeder.urimap('website/ps-licenses', 'document')
     cache: set[str] = set()
     for uri in urimap.values():
         try:
