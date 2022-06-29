@@ -650,7 +650,7 @@ def clear_loading_zone(params={}, host='', group='', member='', header={}):
 
 @auth
 def zip_upload(path, uploadpath, host='', group='', header={}):
-    loading_zone_upload(path, params={'file':'netdox-psml.zip'}, host='https://ps-netdox.allette.com.au', group=group, header=header)
+    loading_zone_upload(path, params={'file':'netdox-psml.zip'}, host=host, group=group, header=header)
     logger.info('File sent successfully.')
     thread = BeautifulSoup(unzip_loading_zone('netdox-psml.zip', params={'deleteoriginal':'true'}), features = 'xml').thread
     while thread and thread['status'] != 'completed':
