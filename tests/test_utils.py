@@ -72,7 +72,9 @@ def test_config(hide_file):
     """
     Tests the output of ``utils.config()``.
     """
-    assert utils.config() == CONFIG
+    with open('resources/dummy-config.json', 'r') as stream:
+        dummy_config = json.loads(stream.read())
+    assert utils.config() == dummy_config
 
     with pytest.raises(AttributeError):
         utils.config('fake plugin')

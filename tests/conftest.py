@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import shutil
 import sys
@@ -7,22 +8,13 @@ from string import ascii_letters
 
 from cryptography.fernet import Fernet
 from netdox import utils
+from netdox.pageseeder import get_group as ps_test
 from pytest import fixture
+
+logger = logging.getLogger(__name__)
 
 global CRYPTO_KEY
 CRYPTO_KEY = ''
-
-global CONFIG
-CONFIG = {
-    'pageseeder': {
-        'id': 'API_ID',
-        'secret': 'API_SECRET',
-        'username': 'USERNAME',
-        'host': 'PS_FQDN',
-        'group': 'PS_GROUP'
-    },
-    'plugins': {}
-}
 
 global LOCATIONS
 LOCATIONS = {
@@ -66,10 +58,18 @@ def setupenv():
         stream.write(CRYPTO_KEY)
 
     # copy fake files
-    with open(utils.APPDIR+ 'src/config.bin', 'wb') as stream:
-        stream.write(utils.Cryptor().encrypt(
-            bytes(json.dumps(CONFIG), encoding = sys.getdefaultencoding())
-        ))
+    test_config = os.path.abspath('resources/test-config.json')
+    try:
+        utils.encrypt_file(test_config, utils.CFGPATH)
+        assert ps_test()
+    except FileNotFoundError:
+        utils.encrypt_file('resources/dummy-config.json', utils.CFGPATH)
+    except AssertionError:
+        logger.error(f'Test config invalid. ({test_config})')
+        utils.encrypt_file('resources/dummy-config.json', utils.CFGPATH)
+    except Exception:
+        logger.error(f'Failed to read or use test config. ({test_config})')
+        utils.encrypt_file('resources/dummy-config.json', utils.CFGPATH)
         
     with open(utils.APPDIR+ 'cfg/locations.json', 'w') as stream:
         stream.write(json.dumps(LOCATIONS))
