@@ -123,13 +123,12 @@ class IPv4AddressSet(dns.DNSObjectContainer[dns.IPv4Address]):
 
     def fillSubnets(self) -> None:
         """
-        Iterates over each unique private subnet this set has IP addresses in, 
+        Iterates over each public 8-bit subnet this set has IP addresses in, 
         and generates IPv4Addresses for each IP in the subnet not already in the set.
         """
-        for subnet in self.subnets:
-            for ip in iptools.subn_iter(subnet):
-                self[ip]
-
+        for subnet in self.network.config.subnets:
+            for ipv4 in iptools.subn_iter(subnet):
+                self[ipv4]
 
 class NodeSet(base.NetworkObjectContainer[nodes.Node]):
     """
