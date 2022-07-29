@@ -670,5 +670,18 @@ def zip_upload(path, uploadpath, host='', group='', header={}):
         'validate': 'false'
         })
 
+
+@auth
+def get_uri_history(uri='', params={}, host='', group='', header={}):
+    service = f'/groups/{group}/uris/{uri}/history'
+    r = requests.get(host+service, params=params, headers=header)
+    return r.text
+
+@auth
+def get_uris_history(params={}, host='', group='', header={}):
+    service = f'/groups/{group}/uris/history'
+    r = requests.get(host+service, params=params, headers=header)
+    return r.text
+
 if __name__ == '__main__':
     urimap()
