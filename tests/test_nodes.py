@@ -1,7 +1,7 @@
 from gc import collect, get_referrers
 from bs4 import BeautifulSoup
 
-from netdox import Network, nodes, utils, dns
+from netdox import Network, nodes, utils, dns, iptools
 from netdox.psml import Fragment
 from pytest import fixture, raises
 from fixtures import *
@@ -49,23 +49,42 @@ class TestNode:
         assert new.psmlFooter == node.psmlFooter
 
 
-    def test_location(self, node: nodes.Node):
+    def test_location(self, node: nodes.Node, eg_subnet: str, eg_location: str):
         """
         Tests that the location property returns the correct value.
         """
-        assert node.location == node.network.locator.locate(node.ips)
+        # No ips
+        del node.location
 
         node.ips = set()
         assert node.location == '—'
 
-        node.location = 'test value'
-        assert node.location == 'test value'
+        node.location = eg_location
+        assert node.location == eg_location
 
-        node.ips = {'192.168.0.0', '192.168.0.1'}
-        assert node.location == 'test value'
+        
+        config_subnet = next(iter(node.network.config.subnets))
 
+        # All ips outside of configured subnets
         del node.location
-        assert node.location == node.network.locator.locate({'192.168.0.0', '192.168.0.1'})
+
+        node.ips = {'0.0.0.0', '255.255.255.255'}
+        assert all([(not iptools.subn_contains(config_subnet, ip)) for ip in node.ips])
+        assert node.location == '—'
+
+        node.location = eg_location
+        assert node.location == eg_location
+        
+        # Ip(s) inside configured subnet
+        del node.location
+
+        ip_iter = iter(iptools.subn_iter(config_subnet))
+        node.ips = {next(ip_iter), next(ip_iter)}
+        assert all([(iptools.subn_contains(config_subnet, ip)) for ip in node.ips])
+        assert node.location == eg_location
+
+        node.location = 'different_location'
+        assert node.location == 'different_location'
 
     def test_to_psml(self, node: nodes.Node):
         assert utils.validate_psml(node.to_psml().encode('utf-8'))
@@ -82,17 +101,17 @@ class TestNode:
         assert node.ips == {'54.79.82.213', '10.0.0.120'}
         assert node.notes == 'Node notes...'
 
-    def test_organization_node(self, node: nodes.Node, org_label: str, org: str):
+    def test_organization_node(self, node: nodes.Node, eg_org_label: str, eg_org: str):
         assert node.organization == None
 
-        node.organization = org
-        assert node.organization == org
+        node.organization = eg_org
+        assert node.organization == eg_org
 
         del node.organization
         assert node.organization == None
 
-        node.labels.add(org_label)
-        assert node.organization == org
+        node.labels.add(eg_org_label)
+        assert node.organization == eg_org
 
 
 class TestDefaultNode:

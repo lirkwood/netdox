@@ -7,14 +7,9 @@ from os import remove
 from lxml import etree
 
 class TestLocator:
-    
-    def test_constructor(self, hide_file):
-        assert helpers.Locator().location_map == LOCATIONS
-        hide_file(utils.APPDIR + 'cfg/locations.json')
-        assert helpers.Locator().location_map == {}
 
     def test_locate(self):
-        locator = helpers.Locator()
+        locator = helpers.Locator(LOCATIONS)
         assert locator.locate('192.168.0.0') == 'Subnet0'
         assert locator.locate(['192.168.0.0']) == 'Subnet0'
         assert locator.locate(['192.168.0.0', '192.168.0.255']) == 'Subnet0'

@@ -2,6 +2,7 @@ from typing import cast
 from conftest import randstr
 from fixtures import *
 from netdox import IPv4Address, Network
+from netdox import iptools
 from netdox.iptools import subn_iter
 from netdox.nodes import Node, ProxiedNode
 from netdox.app import PluginManager
@@ -14,9 +15,9 @@ class TestIPv4AddressSet:
         """
         Tests that the fillSubnets method correctly populates existing subnets.
         """
-        IPv4Address(network, '192.168.0.0')
         network.ips.fillSubnets()
-        assert set(network.ips.objects) == {ip for ip in subn_iter('192.168.0.0/24')}
+        assert set(network.ips.objects) == {
+            ip for subnet in network.config.subnets for ip in subn_iter(subnet)}
 
 
 class TestNodeSet:

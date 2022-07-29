@@ -4,12 +4,11 @@ import shutil
 from random import choices
 from string import ascii_letters
 from sys import getdefaultencoding
-from bs4 import BeautifulSoup
 from datetime import date, timedelta
 
 import pytest
-from conftest import CONFIG, hide_file
-from netdox import utils, psml
+from conftest import hide_file
+from netdox import utils
 
 
 def test_cryptor():
@@ -72,10 +71,6 @@ def test_config(hide_file):
     """
     Tests the output of ``utils.config()``.
     """
-    with open('resources/dummy-config.json', 'r') as stream:
-        dummy_config = json.loads(stream.read())
-    assert utils.config() == dummy_config
-
     with pytest.raises(AttributeError):
         utils.config('fake plugin')
 
