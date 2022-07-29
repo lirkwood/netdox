@@ -342,29 +342,39 @@ class App:
         for outfolder in self.APP_OUTDIRS:
             os.mkdir(utils.APPDIR+ 'out'+ os.sep+ outfolder)
 
-    def _valid_config(self, plugin_attrs: set[str]) -> config.NetworkConfig:
+    def fetch_config(self) -> config.NetworkConfig:
         """
-        Fetches the config from PageSeeder, but performs some validation
-        before returning it.
+        Fetches the config from PageSeeder, and updates it with 
+        respect to the currently loaded plugins if necessary.
 
-        If the config has incorrect attributes specified for a label,
-        the template will be updated, and a valid config created.
-        This config will be serialised for the upload.
-
-        :param plugin_attrs: Set of attributes that should be configured for each label.
-        :type plugin_attrs: set[str]
-        :return: _description_
+        :return: The up-to-date config object.
         :rtype: config.NetworkConfig
         """
         cfg = config.NetworkConfig.from_pageseeder()
-        # TODO find solution for config vals being dropped when the plugin is disabled
+        plugin_attrs = self.plugin_mgr.pluginAttrs
         if cfg.is_empty or (not cfg.normal_attrs) or (plugin_attrs - cfg.attrs):
-            logger.warning('Updating config template on PageSeeder.')
-            config.update_template(plugin_attrs)
-            cfg.update_attrs(plugin_attrs)
-            with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
-                stream.write(cfg.to_psml())
+            self._update_config_attrs(cfg, plugin_attrs)
         return cfg
+
+    def _update_config_attrs(self, cfg: config.NetworkConfig, plugin_attrs: set[str]) -> None:
+        """
+        Updates the attributes available on the labels in the config 
+        and the config template on PageSeeder using *plugin_attrs*.
+
+        Modifies *cfg* in place.
+
+        :param cfg: Config to update.
+        :type cfg: config.NetworkConfig
+        :param plugin_attrs: Names of the attributes that should be available to 
+        configure on each label in the config.
+        :type plugin_attrs: set[str]
+        """
+        # TODO find solution for config vals being dropped when the plugin is disabled
+        logger.warning('Updating config template on PageSeeder.')
+        config.update_template(plugin_attrs)
+        cfg.update_attrs(plugin_attrs)
+        with open(utils.APPDIR+ 'out/config.psml', 'w') as stream:
+            stream.write(cfg.to_psml())
 
     def download_network(self) -> containers.Network:
         """
@@ -410,9 +420,23 @@ class App:
         # Initialisation                                                    #
 
         self.output_clean()
+        
+        try:
+            location_path = os.path.join(utils.APPDIR, 'cfg', 'locations.json')
+            with open(location_path, 'r') as stream:
+                locations = json.loads(stream.read())
+            for key in locations:
+                locations[key] = set(locations[key])
+        except FileNotFoundError:
+            locations = {}
+        except Exception as exc:
+            logger.exception('Failed to read location config.', exc_info = exc)
+            locations = {}
+
         network = containers.Network(
-            config = self._valid_config(self.plugin_mgr.pluginAttrs), 
-            labels = LabelDict.from_pageseeder()
+            config = self.fetch_config(), 
+            labels = LabelDict.from_pageseeder(),
+            locations = locations
         )
 
         if dry: 
