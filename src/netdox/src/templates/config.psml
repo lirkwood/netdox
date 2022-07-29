@@ -1,5 +1,12 @@
 <document type="netdox" level="portable" xmlns:t="http://pageseeder.com/psml/template">
 
+    <t:fragment type="subnet" title="New Subnet">
+      <properties-fragment id="subnet">
+        <property name="subnet" title="Subnet" value="" />
+        <property name="location" title="Location" value="" />
+      </properties-fragment>
+    </t:fragment>
+
     <t:fragment type="label" title="New label">
       <properties-fragment id="label">
         <property name="label" title="Label Name" value="" />
@@ -20,8 +27,15 @@
     <section id="title" fragmenttype="title">
         <fragment id="title" type="title">
             <heading level="1">Config</heading>
-            <para>In this document you may configure attributes associated with a document label.
-In order to apply those attributes to a document, simply label it with the specified label.</para>
+            <para>In this document you may configure the behaviour of netdox.</para>
+        </fragment>
+    </section>
+
+    <section id="subnets" fragmenttype="subnet">
+        <fragment id="subnets_title" type="subnet">
+            <heading level="2">Subnets</heading>
+            <preformat>Define any public IPv4 subnets you control here.
+The location property will be inherited by NetworkObjects using an IP in the subnet.</preformat>
         </fragment>
     </section>
   
