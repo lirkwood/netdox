@@ -30,14 +30,9 @@ class Locator:
     location_map: dict
     location_pivot: dict
 
-    def __init__(self) -> None:
-        try:
-            with open(utils.APPDIR+ 'cfg/locations.json', 'r') as stream:
-                self.location_map = json.load(stream)
-        except Exception:
-            self.location_map = {}
+    def __init__(self, locations: dict[str, set[str]]) -> None:
+        self.location_map = locations
         self.location_pivot = {}
-
         for location in self.location_map:
             for subnet in self.location_map[location]:
                 self.location_pivot[subnet] = location
