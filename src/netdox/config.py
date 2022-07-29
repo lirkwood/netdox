@@ -32,21 +32,27 @@ class NetworkConfig:
     """ID of the labels section in PSML."""
     ORG_SECTION_ID = 'organizations'
     """ID of the organization section in PSML."""
+    SUBNET_SECTION_ID = 'subnets'
+    """ID of the subnets section in PSML."""
     exclusions: set[str]
     """Set of FQDNs to exclude from the network."""
     labels: dict[str, dict]
     """A dictionary mapping document label names to a map of attributes."""
     organizations: dict[str, set[str]]
     """A dictionary mapping organization document URIIDs to their assigned labels."""
+    subnets: dict[str, str]
+    """A dictionary mapping subnets to a location string."""
 
     def __init__(self, 
             exclusions: Iterable[str] = [],
             labels: dict[str, dict] = None,
-            organizations: dict[str, set[str]] = None
+            organizations: dict[str, set[str]] = None,
+            subnets: dict[str, str] = None
         ) -> None:
         self.exclusions = set(exclusions)
         self.labels = labels or {}
         self.organizations = organizations or {}
+        self.subnets = subnets or {}
 
     @property
     def is_empty(self) -> bool:
@@ -122,9 +128,17 @@ class NetworkConfig:
                 org_prop.xref.has_attr('uriid') and
                 label_prop['value']
             ):
-                orgs[org_prop.xref['uriid']].add(label_prop['value'])
+                orgs[int(org_prop.xref['uriid'])].add(label_prop['value'])
 
-        return cls(exclusions, labels, orgs)
+        subnets = {}
+        subnetSection = soup.find('section', id = cls.SUBNET_SECTION_ID)
+        for frag in subnetSection('properties-fragment'):
+            subnet = frag.find(attrs = {'name':'subnet'})
+            location = frag.find(attrs = {'name':'location'})
+            if subnet:
+                subnets[subnet['value']] = location['value']
+
+        return cls(exclusions, labels, orgs, subnets)
 
     def to_psml(self) -> str:
         """
@@ -167,6 +181,13 @@ class NetworkConfig:
                     psml.Property('organization', psml.XRef(uriid), 'Organization')
                 ]).tag)
 
+        configSection = soup.find('section', id = self.SUBNET_SECTION_ID)
+        for count, (subnet, location) in enumerate(self.subnets.items()):
+            configSection.append(psml.PropertiesFragment(f'subnet_{count}', [
+                psml.Property('subnet', subnet),
+                psml.Property('location', location)
+            ]).tag)
+
         return str(soup)
 
     @classmethod
@@ -184,7 +205,7 @@ class NetworkConfig:
 
 def generate_template(attrs: set[str]) -> str:
     """
-    Generates a new template from a provided set of attributes.
+    Generates a new config template from a provided set of attributes.
 
     :param attrs: A set of attributes that can be configured for each label.
     :type attrs: Iterable[str]
@@ -192,7 +213,7 @@ def generate_template(attrs: set[str]) -> str:
     with open(utils.APPDIR+ 'src/templates/config.psml') as stream:
         soup = BeautifulSoup(stream.read(), 'xml')
 
-    tFragment = soup.find('t:fragment')
+    tFragment = soup.find('t:fragment', attrs = {'type':'label'})
     tFragment.findChild('properties-fragment').decompose()
     tFragment.append(psml.PropertiesFragment('', 
         [psml.Property('label', '', 'Label Name')] + [
