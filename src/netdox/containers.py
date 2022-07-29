@@ -209,7 +209,8 @@ class Network:
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
             config: NetworkConfig = None,
-            labels: helpers.LabelDict = None
+            labels: helpers.LabelDict = None,
+            locations: dict[str, set[str]] = None
         ) -> None:
         """
         Instantiate a Network object.
@@ -222,6 +223,8 @@ class Network:
         :type nodes: NodeSet, optional
         :param config: A NetworkConfig object.
         :type config: dict, optional
+        :param locations: A dict mapping locations to a list of associated subnets.
+        :type locations: dict[str, str], optional
         """
 
         self.domains = domains or DomainSet(network = self)
@@ -231,7 +234,13 @@ class Network:
         self.config = config or NetworkConfig()
         self.labels = labels or helpers.LabelDict()
         
-        self.locator = helpers.Locator()
+        locations = locations or {}
+        for subnet, location in self.config.subnets.items():
+            if location not in locations:
+                locations[location] = set()
+            locations[location].add(subnet)
+        
+        self.locator = helpers.Locator(locations)
         self.report = helpers.Report()
         self.cache = set()
 
