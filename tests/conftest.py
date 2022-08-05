@@ -37,6 +37,8 @@ def setupenv():
     os.chdir(os.path.dirname(__file__))
 
     # backup files
+    if os.path.exists('srcbkp'): 
+        raise FileExistsError('Already a backup of the config in the testing area. Aborting...')
     shutil.copytree(utils.APPDIR+ 'src/', 'srcbkp')
 
     cfg_location = None
