@@ -203,6 +203,8 @@ class Network:
     """A helper class to report network changes."""
     cache: set
     """A set of cached names. Used when resolving long record chains."""
+    counter: helpers.Counter
+    """Object used to count many facets of the network."""
 
     def __init__(self, 
             domains: DomainSet = None, 
@@ -243,6 +245,7 @@ class Network:
         self.locator = helpers.Locator(locations)
         self.report = helpers.Report()
         self.cache = set()
+        self.counter = helpers.Counter()
 
     def link(self, 
             origin: Union[str, dns.DNSObject], 
@@ -274,6 +277,7 @@ class Network:
             and (valid_ip(dest) or valid_domain(dest))
         ):
             origin.link(dest, source)
+            self.counter.inc_facet(helpers.CountedFacets.DNSLink)
 
     ## resolving refs
 

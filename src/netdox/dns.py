@@ -9,6 +9,7 @@ from typing import Generic, Iterable, Iterator, Optional, TypeVar, Union
 from bs4 import BeautifulSoup
 
 from netdox import base, containers, iptools, nodes, utils
+from netdox.helpers import CountedFacets
 from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE,
                          PropertiesFragment, Property, Section, XRef)
 
@@ -479,6 +480,7 @@ class Domain(DNSObject):
             self.network.domains[self.name] = self.merge(self.network.domains[self.name])
         else:
             self.network.domains[self.name] = self
+            self.network.counter.inc_facet(CountedFacets.DNSObject)
         return self
 
     ## properties
@@ -614,6 +616,7 @@ class IPv4Address(DNSObject):
             self.network.ips[self.name] = self.merge(self.network.ips[self.name])
         else:
             self.network.ips[self.name] = self
+            self.network.counter.inc_facet(CountedFacets.DNSObject)
         if self.is_private:
             self.network.ips.subnets.add(self.subnetFromMask())
         return self

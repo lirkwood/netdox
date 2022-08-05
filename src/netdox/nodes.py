@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from netdox import base, dns, iptools, utils
+from netdox.helpers import CountedFacets
 from netdox.psml import (NODE_TEMPLATE, PropertiesFragment, Property, Section,
                          XRef)
 
@@ -122,6 +123,7 @@ class Node(base.NetworkObject):
             self.network.nodes[self.identity] = self.merge(self.network.nodes[self.identity])
         else:
             self.network.nodes[self.identity] = self
+            self.network.counter.inc_facet(CountedFacets.Node)
 
         self.resolveDNS()
 

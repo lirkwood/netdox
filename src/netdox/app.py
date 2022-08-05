@@ -12,12 +12,8 @@ from types import ModuleType
 from typing import Callable, Iterator, Optional, Type
 from zipfile import ZipFile
 
-from bs4 import BeautifulSoup
-
-from netdox import config, containers, dns, utils
-from netdox import helpers
-from netdox import nodes
-from netdox.helpers import LabelDict, Report
+from netdox import config, containers, utils
+from netdox.helpers import Counter, LabelDict, Report
 from netdox.nodes import Node
 from netdox import pageseeder
 
@@ -479,6 +475,7 @@ class App:
             utils.stale_report(pageseeder.findStale(self.output)))
         with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
             network.report.logs = stream.read()
+        network.report.addSection(network.counter.generate_report())
         network.report.writeReport()
 
         #-------------------------------------------------------------------#
