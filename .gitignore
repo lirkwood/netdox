@@ -17,7 +17,7 @@ netdox.egg-info
 coverage.xml
 src/netdox/out
 src/netdox/logs
-tests/resources/
+tests/resources/test-config.json
 
 **/src/*
 !src/netdox/

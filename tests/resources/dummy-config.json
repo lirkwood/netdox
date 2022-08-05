@@ -1,0 +1,10 @@
+{
+    "pageseeder": {
+        "id": "API_ID",
+        "secret": "API_SECRET",
+        "username": "USERNAME",
+        "host": "PS_FQDN",
+        "group": "PS_GROUP"
+    },
+    "plugins": {}
+}
