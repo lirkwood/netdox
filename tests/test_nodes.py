@@ -89,17 +89,18 @@ class TestNode:
     def test_to_psml(self, node: nodes.Node):
         assert utils.validate_psml(node.to_psml().encode('utf-8'))
 
-    def test_from_psml(self):
-        with open('resources/node.psml', 'r') as stream:
-            soup = BeautifulSoup(stream.read(), 'xml')
-        node = nodes.Node.from_psml(Network(), soup)
+    # TODO reactivate with safe node example
+    # def test_from_psml(self):
+    #     with open('resources/node.psml', 'r') as stream:
+    #         soup = BeautifulSoup(stream.read(), 'xml')
+    #     node = nodes.Node.from_psml(Network(), soup)
 
-        assert node.name == 'prod.01.www.oxforddigital.com.au'
-        assert node.identity == '10.0.0.120'
-        assert node.type == nodes.Node.type
-        assert node.domains == {'oxforddigital.com.au'}
-        assert node.ips == {'54.79.82.213', '10.0.0.120'}
-        assert node.notes == 'Node notes...'
+    #     assert node.name == 'prod.01.www.oxforddigital.com.au'
+    #     assert node.identity == '10.0.0.120'
+    #     assert node.type == nodes.Node.type
+    #     assert node.domains == {'oxforddigital.com.au'}
+    #     assert node.ips == {'54.79.82.213', '10.0.0.120'}
+    #     assert node.notes == 'Node notes...'
 
     def test_organization_node(self, node: nodes.Node, eg_org_label: str, eg_org: str):
         assert node.organization == None
