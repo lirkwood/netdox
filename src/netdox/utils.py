@@ -9,7 +9,6 @@ import logging
 import os
 import re
 from functools import lru_cache, wraps
-from sys import maxsize
 from traceback import format_exc
 from tldextract import extract
 from datetime import date, timedelta
