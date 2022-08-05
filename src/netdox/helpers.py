@@ -3,14 +3,12 @@ This module contains some essential helper classes.
 """
 from __future__ import annotations
 from dataclasses import dataclass
+from enum import Enum
 
 import json
 import logging
-from datetime import datetime
-from collections import namedtuple
 import os
 from typing import Iterable, Iterator, Optional, no_type_check
-from functools import cache
 
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -220,3 +218,72 @@ class Organization:
             raise ValueError('Failed to parse essential attribute from PSML.')
         else:
             return cls(*[str(attr) for attr in attrs])
+
+###################
+# Counting Helper #
+###################
+
+class CountedFacets(Enum):
+    DNSObject = 'dnsobject'
+    Node = 'node'
+    DNSLink = 'dnslink'
+
+@dataclass(frozen = True)
+class Counter:
+    _counts: dict[CountedFacets, int]
+    """Maps facet to its counted occurences."""
+    DEFAULT_COUNTS = {facet: 0 for facet in CountedFacets}
+    """Default dict of counts."""
+
+    def __init__(self) -> None:
+        object.__setattr__(self, '_counts', dict(self.DEFAULT_COUNTS))
+
+    def inc_facet(self, facet: CountedFacets) -> int:
+        """
+        Increments the count of a facet.
+
+        :param facet: Facet to increment the count for.
+        :type facet: Any
+        :return: The new count for the facet.
+        :rtype: int
+        """
+        try:
+            count = self._counts[facet] + 1
+        except KeyError:
+            count = 1
+        finally:
+            self._counts[facet] = count
+            return count
+
+    def dec_facet(self, facet: CountedFacets) -> int:
+        """
+        Decrements the count of a facet.
+        If count is zero then the count will be unchanged.
+
+        :param facet: Facet to decrement the count for.
+        :type facet: Any
+        :return: The new count for the facet.
+        :rtype: int
+        """
+        try:
+            count = self._counts[facet] - 1
+            if count < 0: count = 0
+        except KeyError:
+            count = 0
+        finally:
+            self._counts[facet] = count
+            return count
+
+    @property
+    def counts(self) -> dict[CountedFacets, int]:
+        """Maps facets to their current counts."""
+        return self.DEFAULT_COUNTS | self._counts
+
+    def generate_report(self) -> psml.Section:
+        counts = self.counts
+        return psml.Section('counts', 'Counted Facets', [
+            psml.PropertiesFragment(f'{facet.value}_counts', [
+                psml.Property('facet', facet.name, 'Facet Name'),
+                psml.Property(facet.name, counts[facet], 'Value')
+            ]) for facet in counts
+        ])
