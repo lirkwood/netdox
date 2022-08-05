@@ -101,3 +101,23 @@ class TestOrganization:
                     </properties-fragment>
                 </section>
             </document>''')
+
+
+class TestCounter:
+
+    @fixture
+    def mock_counter(self) -> helpers.Counter:
+        return helpers.Counter()
+
+    def test_inc_facet(self, mock_counter: helpers.Counter):
+        assert mock_counter.counts == helpers.Counter.DEFAULT_COUNTS
+
+        mock_counter.inc_facet(helpers.CountedFacets.DNSLink)
+        assert mock_counter.counts[helpers.CountedFacets.DNSLink] == 1
+
+        mock_counter.dec_facet(helpers.CountedFacets.DNSLink)
+        assert mock_counter.counts[helpers.CountedFacets.DNSLink] == 0
+
+        mock_counter.dec_facet(helpers.CountedFacets.DNSLink)
+        assert mock_counter.counts[helpers.CountedFacets.DNSLink] == 0
+
