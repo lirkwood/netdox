@@ -246,7 +246,7 @@ class Node(base.NetworkObject):
         type_map = {subcls.type: subcls for subcls in subclass_types
             } | {cls.type: cls} | BUILTIN_NODES
         if psml_type in type_map:
-            return type_map[psml_type]._from_psml(network, psml)
+            return type_map[psml_type]._from_psml(network, psml) # type: ignore #TODO investigate
         else:
             logger.error(f'Failed to find matching Node subclass for type {psml_type}.'
                 + ' Creating plain Node instead. Some data may be lost.')

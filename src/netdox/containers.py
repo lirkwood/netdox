@@ -386,7 +386,7 @@ class Network:
 
     @classmethod
     def from_psml(
-        cls, dir: str, node_subclasses: Iterable[Type[nodes.Node]] = ()
+        cls, dir: str, node_subclasses: Iterable[Type[nodes.Node]] = () # type: ignore
     ) -> Network:
         """
         Instantiates a Network from its psml representation in the given dir.

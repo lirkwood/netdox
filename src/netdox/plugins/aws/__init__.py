@@ -102,7 +102,10 @@ def _get_billing(granularity: AWSBillingGranularity) -> AWSBillingReport:
             result = _result
             result_period = _result_period
 
-    for resource in result['Groups']:
+    if not (result and result_period):
+        raise ValueError("Failed to parse billing from response.")
+
+    for resource in result['Groups']: # type: ignore #TODO get boto3 typing
         report.add_metrics(resource['Keys'][0], AWSBillingMetrics(
             period = result_period,
             AmortizedCost = float(resource['Metrics']['AmortizedCost']['Amount']),
