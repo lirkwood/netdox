@@ -128,7 +128,7 @@ class NetworkConfig:
                 org_prop.xref.has_attr('uriid') and
                 label_prop['value']
             ):
-                orgs[int(org_prop.xref['uriid'])].add(label_prop['value'])
+                orgs[str(org_prop.xref['uriid'])].add(str(label_prop['value']))
 
         subnets = {}
         subnetSection = soup.find('section', id = cls.SUBNET_SECTION_ID)
@@ -138,7 +138,7 @@ class NetworkConfig:
             if subnet:
                 subnets[subnet['value']] = location['value']
 
-        return cls(exclusions, labels, orgs, subnets)
+        return cls(exclusions, labels, dict(orgs), subnets)
 
     def to_psml(self) -> str:
         """

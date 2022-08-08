@@ -284,6 +284,6 @@ class Counter:
         return psml.Section('counts', 'Counted Facets', [
             psml.PropertiesFragment(f'{facet.value}_counts', [
                 psml.Property('facet', facet.name, 'Facet Name'),
-                psml.Property(facet.name, counts[facet], 'Value')
+                psml.Property(facet.name, str(counts[facet]), 'Value')
             ]) for facet in counts
         ])

@@ -475,7 +475,7 @@ class App:
             utils.stale_report(pageseeder.findStale(self.output)))
         with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
             network.report.logs = stream.read()
-        network.report.addSection(network.counter.generate_report())
+        network.report.addSection(str(network.counter.generate_report()))
         network.report.writeReport()
 
         #-------------------------------------------------------------------#
