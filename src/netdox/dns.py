@@ -481,7 +481,7 @@ class Domain(DNSObject):
             self.network.domains[self.name] = self.merge(self.network.domains[self.name])
         else:
             self.network.domains[self.name] = self
-            self.network.counter.inc_facet(CountedFacets.DNSObject)
+            self.network.counter.inc_facet(CountedFacets.Domain)
         return self
 
     ## properties
@@ -618,7 +618,7 @@ class IPv4Address(DNSObject):
             self.network.ips[self.name] = self.merge(self.network.ips[self.name])
         else:
             self.network.ips[self.name] = self
-            self.network.counter.inc_facet(CountedFacets.DNSObject)
+            self.network.counter.inc_facet(CountedFacets.IPv4)
         if self.is_private:
             self.network.ips.subnets.add(self.subnetFromMask())
         return self

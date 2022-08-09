@@ -224,7 +224,8 @@ class Organization:
 ###################
 
 class CountedFacets(Enum):
-    DNSObject = 'dnsobject'
+    Domain = 'domain'
+    IPv4 = 'ipv4'
     Node = 'node'
     DNSLink = 'dnslink'
     NATLink = 'natlink'
