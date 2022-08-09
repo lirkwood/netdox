@@ -337,6 +337,7 @@ class DNSObject(base.NetworkObject):
             destination = self.network.find_dns(destination)
         self.links.add(DNSLink(self, destination, source))
         destination.implied_links.add(DNSLink(destination, self, source))
+        self.network.counter.inc_facet(CountedFacets.DNSLink)
 
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
@@ -604,6 +605,7 @@ class IPv4Address(DNSObject):
         
         self.NAT.add(NATLink(self, destObj, source))
         destObj.NAT.add(NATLink(destObj, self, source))
+        self.network.counter.inc_facet(CountedFacets.NATLink)
 
     def _enter(self) -> IPv4Address:
         """

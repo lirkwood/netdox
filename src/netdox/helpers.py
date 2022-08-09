@@ -227,6 +227,7 @@ class CountedFacets(Enum):
     DNSObject = 'dnsobject'
     Node = 'node'
     DNSLink = 'dnslink'
+    NATLink = 'natlink'
 
 @dataclass(frozen = True)
 class Counter:
