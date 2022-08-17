@@ -15,6 +15,5 @@ def test_generate_template():
 class TestNetworkConfig:
 
     def test_psml_roundtrip(self, network_config: config.NetworkConfig):
-        print(network_config.to_psml())
         assert network_config == config.NetworkConfig.from_psml(
             network_config.to_psml())
