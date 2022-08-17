@@ -66,16 +66,16 @@ def fetchRecords(pool: RunspacePool, zones: Iterable[GenericComplexObject]) -> l
 
 dc_pattern = re.compile(r'DC\s*=\s*(?P<dc>.*)$', re.IGNORECASE)
 
-def parseDN(distinguished_name: str) -> tuple[Optional[str], Optional[str]]:
+def parseDN(distinguished_name: str) -> Optional[str]:
     """
     Parses a DistinguishedName as they appear in ActiveDirectory.
 
     :param distinguished_name: The DN of a DNS record
     :type distinguished_name: str
-    :return: The FQDN and its parent DNS zone.
-    :rtype: tuple[str, str]
+    :return: The FQDN.
+    :rtype: str
     """
-    name = []
+    name: list[str] = []
     for statement in distinguished_name.split(','):
         match = re.match(dc_pattern, statement)
         if match:
@@ -84,12 +84,15 @@ def parseDN(distinguished_name: str) -> tuple[Optional[str], Optional[str]]:
             if name:
                 if name[0] == '@':
                     fqdn = '.'.join(name[1:]).lower()
-                    return fqdn, fqdn
-                return '.'.join(name).lower(), '.'.join(name[1:]).lower()
+                    return fqdn
+                elif name[0].endswith(name[1]):
+                    #TODO investigate why this happens (dc=ausdi.allette.com.au,dc=allette.com.au)
+                    return name[0]
+                else:
+                    return '.'.join(name).lower()
             else:
                 logger.debug('No hostname parsed from ' + distinguished_name)
-                return None, None
-    return None, None
+    return None
 
 def processRecord(network: Network, record: GenericComplexObject) -> None:
     """
@@ -101,26 +104,34 @@ def processRecord(network: Network, record: GenericComplexObject) -> None:
     :type record: GenericComplexObject
     """
     details = record.adapted_properties
-    fqdn, zoneName = parseDN(record.adapted_properties['DistinguishedName'])
+    fqdn = parseDN(details['DistinguishedName'])
+    
     if fqdn is not None and fqdn not in network.config.exclusions:
         if fqdn.endswith('.in-addr.arpa'):
             fqdn = ip_from_rdns_name(fqdn)
-        dnsobj = network.find_dns(fqdn)
-
-        dest = ''
-        record_data = details['RecordData'].adapted_properties
-        if details['RecordType'] == 'A':
-            dest = record_data['IPv4Address']
-        elif details['RecordType'] == 'PTR':
-            dest = record_data['PtrDomainName'].strip('.')
-        elif details['RecordType'] == 'CNAME':
-            dest = record_data['HostNameAlias']
-            if dest.endswith('.in-addr.arpa'):
-                dest = ip_from_rdns_name(dest)
-            elif dest.endswith('.'):
-                dest = dest.strip('.')
-            elif zoneName:
-                dest = dest +'.'+ zoneName
-        
-        if dest:
-            dnsobj.link(dest, 'ActiveDirectory')
+            
+        try:
+            dnsobj = network.find_dns(fqdn)
+        except ValueError:
+            logger.error(f'Received bad FQDN as name of DNS record: {fqdn}')
+        else:
+            dest = ''
+            record_data = details['RecordData'].adapted_properties
+            if details['RecordType'] == 'A':
+                dest = record_data['IPv4Address']
+            elif details['RecordType'] == 'PTR':
+                dest = record_data['PtrDomainName'].strip('.')
+            elif details['RecordType'] == 'CNAME':
+                dest = record_data['HostNameAlias']
+                if dest.endswith('.in-addr.arpa'):
+                    dest = ip_from_rdns_name(dest)
+                elif dest.endswith('.'):
+                    dest = dest.strip('.')
+                elif dnsobj.zone:
+                    dest = dest +'.'+ dnsobj.zone
+            
+            if dest:
+                try:
+                    dnsobj.link(dest, 'ActiveDirectory')
+                except ValueError:
+                    logger.error(f'Received bad FQDN as value of DNS record: {fqdn}')
