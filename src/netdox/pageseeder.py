@@ -137,7 +137,7 @@ def uri_from_path(path: str) -> int:
         'filters': f'pstype:folder,psfilename:{filename},' +
                     f'psfolder:/ps/{group.replace("-","/")}{folder}'
     }))
-    if dirCheck['results']['result']:
+    if dirCheck['results']['totalResults'] > 0:
         for field in dirCheck['results']['result'][0]['fields']:
             if field['name'] == 'psid':
                 return int(field['value'])
