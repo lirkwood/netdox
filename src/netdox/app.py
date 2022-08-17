@@ -483,10 +483,6 @@ class App:
         #-------------------------------------------------------------------#
 
         logger.debug('Network metrics: ' +
-            f'\n\t{len(network.domains.objects)} Domains' +
-            f'\n\t{len(network.ips.objects)} IPv4Address' +
-            f'\n\t{len(network.nodes.objects)} Nodes' +
-            f'\n\t{len(self.plugin_mgr.enabled)} Enabled plugins\n' +
             json.dumps(
                 {str(k): str(v) for k, v in network.counter.counts.items()}, 
             indent = 2)
