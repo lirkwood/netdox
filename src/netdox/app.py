@@ -482,11 +482,9 @@ class App:
         # Zip, upload, and cleanup                                          #
         #-------------------------------------------------------------------#
 
-        logger.debug('Network metrics: ' +
-            json.dumps(
-                {str(k): str(v) for k, v in network.counter.counts.items()}, 
-            indent = 2)
-        )
+        logger.debug('Network metrics: ' + json.dumps(
+            {str(k): str(v) for k, v in network.counter.counts.items()}, 
+        indent = 2))
 
         zip = self.zip_output()
         if not dry:
