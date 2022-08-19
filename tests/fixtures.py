@@ -17,8 +17,8 @@ def attr_label_attrs() -> dict:
     return {'attr1': 'value1'}
 
 @fixture
-def eg_org() -> int:
-    return 94549
+def eg_org() -> str:
+    return '94549'
 
 @fixture
 def eg_org_label() -> str:
