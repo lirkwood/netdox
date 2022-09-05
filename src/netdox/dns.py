@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 from netdox import base, containers, iptools, nodes, utils
 from netdox.helpers import CountedFacets
-from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE,
+from netdox.psml import (DOMAIN_TEMPLATE, IPV4ADDRESS_TEMPLATE, Fragment,
                          PropertiesFragment, Property, Section, XRef)
 
 class DNSRecordType(Enum):
@@ -514,8 +514,8 @@ class Domain(DNSObject):
         domain = cls(network, header['name'], header['zone'], psml.find('labels').text.split(','))
         domain.psmlFooter = footer
 
-        notes = psml.find('section', id='notes').find('fragment', id='notes').para.string
-        if notes and notes != '—': domain.notes = notes
+        notes = footer.tag.find('fragment', id='notes')
+        if notes: domain.notes = Fragment.from_tag(notes)
         
         txt_records = psml.find('section', id = 'txt_records')
         if txt_records is not None:
@@ -646,8 +646,8 @@ class IPv4Address(DNSObject):
         ipv4 = cls(network, header['name'], psml.find('labels').text.split(','))
         ipv4.psmlFooter = footer
 
-        notes = psml.find('section', id='notes').find('fragment', id='notes').para.string
-        if notes and notes != '—': ipv4.notes = notes
+        notes = footer.tag.find('fragment', id='notes')
+        if notes: ipv4.notes = Fragment.from_tag(notes)
 
         for _record in dns_records:
             if _record.tag.name != 'properties-fragment':

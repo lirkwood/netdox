@@ -14,8 +14,8 @@ from bs4.element import Tag
 
 from netdox import base, dns, iptools, utils
 from netdox.helpers import CountedFacets
-from netdox.psml import (NODE_TEMPLATE, PropertiesFragment, Property, Section,
-                         XRef)
+from netdox.psml import (NODE_TEMPLATE, Fragment, PropertiesFragment, Property,
+                         Section, XRef)
 
 if TYPE_CHECKING:
     from netdox import Network
@@ -221,8 +221,9 @@ class Node(base.NetworkObject):
         node = Node(network, header['name'], header['identity'], domains, ips, labels)
 
         if footer is not None: node.psmlFooter = Section.from_tag(footer)
-        notes = psml.find('section', id='notes').find('fragment', id='notes').para.string
-        if notes and notes != '—': node.notes = notes
+
+        notes = footer.find('fragment', id='notes')
+        if notes: node.notes = Fragment.from_tag(notes)
 
         return node
 
