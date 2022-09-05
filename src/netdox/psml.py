@@ -607,9 +607,7 @@ DOMAIN_TEMPLATE = '''
 
         <section id="footer" />
 
-        <section id="notes">
-            <fragment id="notes"><para>#!notes</para></fragment>
-        </section>
+        <section id="notes" />
 
     </document>
 '''
@@ -652,9 +650,7 @@ IPV4ADDRESS_TEMPLATE = '''
         
         <section id="footer" />
 
-        <section id="notes">
-            <fragment id="notes"><para>#!notes</para></fragment>
-        </section>
+        <section id="notes" />
 
     </document>
 '''
@@ -697,9 +693,7 @@ NODE_TEMPLATE = '''
 
         <section id="footer" />
 
-        <section id="notes">
-            <fragment id="notes"><para>#!notes</para></fragment>
-        </section>
+        <section id="notes" />
 
     </document>
 '''
