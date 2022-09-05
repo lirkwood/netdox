@@ -55,10 +55,12 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A PSML section to be inserted at the footer of the document."""
     labels: set[str]
     """A set of labels to apply to this object's output document."""
-    _notes: str
-    """A string of content that is editable on the remote server."""
     DEFAULT_LABELS = ['show-reversexrefs', 'netdox-default']
     """A set of labels to apply to this object upon instantiation."""
+    _notes: psml.Fragment
+    """A string of content that is editable on the remote server."""
+    DEFAULT_NOTES = '<fragment id="notes"><para>—</para></fragment>'
+    """String form of the default notes content."""
     type: str
     """A string unique to each subclass of NetworkObject."""
     TEMPLATE: str
@@ -73,7 +75,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         name: str, 
         identity: str, 
         labels: Iterable[str] = None, 
-        notes: str = None
+        notes: psml.Fragment = None
     ) -> None:
         """
         Sets the instances attributes to the values provided, and adds itself to *network*.
@@ -105,7 +107,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.labels = self.network.labels[self.docid]
         self.labels.update(self.DEFAULT_LABELS)
         if labels: self.labels |= set(labels)
-        self.notes = notes or ""
+        self.notes = notes or psml.Fragment.from_tag(
+            BeautifulSoup(self.DEFAULT_NOTES, 'xml').fragment)
 
     def __str__(self) -> str:
         cls = self.__class__
@@ -161,22 +164,24 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         return ['.'.join(tokenized[i + 1:]) for i in range(len(tokenized) - 1)]
 
     @property
-    def notes(self) -> str:
+    def notes(self) -> psml.Fragment:
         """
         The notes that have been written for this object, escaped for XML.
 
         :return: A string that is safe as XML text.
         :rtype: str
         """
-        return escape(self._notes)
+        return self._notes
 
     @notes.setter
-    def notes(self, val: str) -> None:
+    def notes(self, val: psml.Fragment) -> None:
+        assert isinstance(val, psml.Fragment), f'Set notes to "{str(val)}"'
         self._notes = val
 
     @notes.deleter
     def notes(self) -> None:
-        self._notes = ""
+        self._notes = psml.Fragment.from_tag(
+            BeautifulSoup(self.DEFAULT_NOTES, 'xml').fragment)
 
     @property
     @abstractmethod
@@ -259,6 +264,15 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         soup = BeautifulSoup(body, features = 'xml')
         soup.find('labels').string = ','.join(self.labels)
         soup.find('section', id = 'footer').replace_with(self.psmlFooter.tag)
+        try:
+            soup.find('section', id = 'notes').append(self.notes.tag)
+        except ValueError as exc:
+            print(self.name)
+            print(type(self.notes))
+            print('-'*80)
+            print(self.notes.tag)
+            print('-'*80)
+            raise exc
         
         if self.organization: 
             soup.find(attrs={'name':'org'}).append(psml.XRef(self.organization).tag)
@@ -299,11 +313,19 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.psmlFooter.extend(object.psmlFooter)
         self.labels |= object.labels
 
-        new_notes = object.notes.strip()
-        if bool(self.notes.strip()) & bool(new_notes):
-            self.notes += "\n\n" + new_notes
-        elif new_notes:
-            self.notes = new_notes
+        if str(self.notes) == self.DEFAULT_NOTES:
+            if not isinstance(object.notes, psml.Fragment):
+                print('-'*80)
+                print(self.name)
+                print(object.name)
+                print('-'*80)
+                print(type(self._notes))
+                print(self._notes)
+                print('-'*80)
+                print(type(object.notes))
+                print(object.notes)
+                print('-'*80)
+            self.notes = object.notes
 
         return self
 
