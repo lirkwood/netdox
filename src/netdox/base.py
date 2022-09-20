@@ -314,17 +314,6 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.labels |= object.labels
 
         if str(self.notes) == self.DEFAULT_NOTES:
-            if not isinstance(object.notes, psml.Fragment):
-                print('-'*80)
-                print(self.name)
-                print(object.name)
-                print('-'*80)
-                print(type(self._notes))
-                print(self._notes)
-                print('-'*80)
-                print(type(object.notes))
-                print(object.notes)
-                print('-'*80)
             self.notes = object.notes
 
         return self
