@@ -66,6 +66,7 @@ class Node(base.NetworkObject):
         """
         self.identity = identity.lower()
         self._location = None
+        print(f'Node created: {labels}')
         super().__init__(network, name, identity, labels)
 
         self._domains = {d.lower() for d in domains} if domains else set()
