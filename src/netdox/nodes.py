@@ -66,7 +66,6 @@ class Node(base.NetworkObject):
         """
         self.identity = identity.lower()
         self._location = None
-        print(f'Node created: {labels}')
         super().__init__(network, name, identity, labels)
 
         self._domains = {d.lower() for d in domains} if domains else set()
@@ -223,7 +222,7 @@ class Node(base.NetworkObject):
 
         if footer is not None: node.psmlFooter = Section.from_tag(footer)
 
-        notes = footer.find('fragment', id='notes')
+        notes = psml.find('fragment', id='notes')
         if notes: node.notes = Fragment.from_tag(notes)
 
         return node
@@ -386,10 +385,11 @@ class ProxiedNode(Node):
             if self.proxy.node and dnsobj.node is self.proxy.node:
                 dnsobj.node = self.proxy # type: ignore
 
-            elif self.proxy.node.type == PlaceholderNode.type:
+            elif isinstance(self.proxy.node, PlaceholderNode):
                 logger.debug(
                     f'Proxy from {dnsobj.name} to {self.name}'
                     + f' set to {dnsobj.node.name}')
+                self.proxy.node.destroy()
                 self.proxy.node = dnsobj.node
                 dnsobj.node = self.proxy # type: ignore
 
@@ -527,6 +527,7 @@ class PlaceholderNode(Node):
         hash.update(bytes(name, 'utf-8'))
         hash.update(bytes(str(sorted(set(domains))), 'utf-8'))
         hash.update(bytes(str(sorted(set(ips))), 'utf-8'))
+        logger.debug(f"Placeholder created! {name}")
 
         super().__init__(
             network = network, 
@@ -550,6 +551,9 @@ class PlaceholderNode(Node):
                 str([node.identity for node in nodes]))
         if nodes:
             self.network.nodes.addRef(nodes.pop(), self.identity)
+
+    def __del__(self):
+        logger.debug(f'Placeholder destroyed! {self.name}')
 
     ## abstract properties
 
@@ -592,9 +596,11 @@ class PlaceholderNode(Node):
         :return: The *node* argument.
         :rtype: Node
         """
+        logger.debug(f'Placeholder being consumed by: {node.name}')
         node.domains |= self.domains
         node.ips |= self.ips
         node.psmlFooter.extend(self.psmlFooter)
+        if str(node.notes) == self.DEFAULT_NOTES: node.notes = self.notes
 
         for domain in self.domains:
             if self.network.domains[domain].node is self:
@@ -604,10 +610,17 @@ class PlaceholderNode(Node):
             if self.network.ips[ip].node is self:
                 self.network.ips[ip].node = node
 
-        for alias in self.aliases:
-            self.network.nodes[alias] = node
-
+        self.destroy()
         return node
+
+    def destroy(self) -> None:
+        """
+        Destroys this placeholder node and removes it from the network.
+        """
+        del self.network.nodes[self.identity]
+        for alias in self.aliases:
+            del self.network.nodes[alias]
+        del self
 
 BUILTIN_NODES = {
     Node.type: Node, 
