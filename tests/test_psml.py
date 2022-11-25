@@ -1,3 +1,4 @@
+import bs4
 from netdox import psml
 from fixtures import *
 from pytest import fixture
@@ -191,3 +192,20 @@ class TestPropertiesFragment:
     def test_from_tag(self, mock_PropertiesFragment: psml.PropertiesFragment):
         assert mock_PropertiesFragment == psml.PropertiesFragment.from_tag(
             mock_PropertiesFragment.tag)
+        
+        
+class TestFragment:
+    
+    @fixture
+    def mock_Fragment(self) -> psml.Fragment:
+        content = bs4.Tag(name = 'para', is_xml = True)
+        content.string = 'Test string :)'
+        return psml.Fragment(
+            'test_id',
+            [content],
+            {'attr1': 'value1'}
+        )
+    
+    def test_from_tag(self, mock_Fragment: psml.Fragment):
+        assert str(mock_Fragment.tag) == str(psml.Fragment.from_tag(
+            mock_Fragment.tag).tag)
