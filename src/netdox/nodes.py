@@ -601,9 +601,9 @@ class PlaceholderNode(Node):
             if self.network.ips[ip].node is self:
                 self.network.ips[ip].node = node
 
-        for alias in self.network.nodes.nodes.values():
-            if alias is self:
-                self.network.nodes[alias.identity] = node
+        for alias, alias_node in self.network.nodes.nodes.items():
+            if alias_node is self:
+                self.network.nodes[alias] = node
         return node
 
 BUILTIN_NODES = {
