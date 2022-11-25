@@ -160,18 +160,3 @@ class TestPlaceholderNode:
         assert node.domains == set(['test.domain.com'])
         assert node.ips == set(['10.0.0.0'])
         assert node.psmlFooter == placeholder.psmlFooter
-
-
-    def test_aliases(self, network: Network):
-        """
-        Tests that the aliases property correctly returns all names the node is referenced as in the NodeSet.
-        """
-        node = nodes.PlaceholderNode(network, 'name')
-        network.nodes.addRef(node, 'test_alias_1')
-        network.nodes.objects['test_alias_2'] = node
-        assert node.aliases == {node.identity, 'test_alias_1', 'test_alias_2'}
-
-        for alias in node.aliases:
-            del network.nodes[alias]
-        collect()
-        assert not get_referrers(node)
