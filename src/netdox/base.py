@@ -2,9 +2,11 @@
 This module contains the abstract base classes for most of the other classes in the objs package.
 """
 from __future__ import annotations
+import logging
 
 import os
 import re
+import copy
 from abc import ABC, ABCMeta, abstractmethod
 from functools import lru_cache
 from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type,
@@ -16,6 +18,8 @@ from netdox import psml
 
 if TYPE_CHECKING:
     from netdox import Network
+    
+logger = logging.getLogger(__name__)
 
 ###########
 # Objects #
@@ -248,7 +252,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
             raise AttributeError(
                 'Cannot serialise object with docid longer than 100 chars.')
             #TODO add creating dummy document with explanation if this exc is raised
-        body = self.TEMPLATE
+        body = copy.copy(self.TEMPLATE)
         for field in re.findall(r'(#![a-zA-Z0-9_]+)', self.TEMPLATE):
             attr = getattr(self, field.replace('#!',''), None)
             if attr:
@@ -264,15 +268,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         soup = BeautifulSoup(body, features = 'xml')
         soup.find('labels').string = ','.join(self.labels)
         soup.find('section', id = 'footer').replace_with(self.psmlFooter.tag)
-        try:
-            soup.find('section', id = 'notes').append(self.notes.tag)
-        except ValueError as exc:
-            print(self.name)
-            print(type(self.notes))
-            print('-'*80)
-            print(self.notes.tag)
-            print('-'*80)
-            raise exc
+        soup.find('section', id = 'notes').append(self.notes.tag)
         
         if self.organization: 
             soup.find(attrs={'name':'org'}).append(psml.XRef(self.organization).tag)
@@ -300,8 +296,13 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         Serialises this object to PSML and writes it to the outpath.
         """
         os.makedirs(os.path.dirname(self.outpath), exist_ok = True)
-        with open(self.outpath, 'w', encoding = 'utf-8') as stream:
-            stream.write(str(self.to_psml()))
+        try:
+            outsoup = self.to_psml()
+        except Exception as exc:
+            logger.error(f"NWObj {self.identity} failed to write to psml: {exc}")
+        else:
+            with open(self.outpath, 'w', encoding = 'utf-8') as stream:
+                stream.write(str(self.to_psml()))
 
     def merge(self, object: NetworkObject) -> NetworkObject:
         """
@@ -314,7 +315,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.labels |= object.labels
 
         if str(self.notes) == self.DEFAULT_NOTES:
-            self.notes = object.notes
+            self.notes = psml.Fragment.from_tag(copy.copy(object.notes.tag))
 
         return self
 
