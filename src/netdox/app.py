@@ -408,13 +408,15 @@ class App:
                     for child in utils.path_list(abspath, utils.OUTDIR):
                         zip.write(os.path.join(utils.OUTDIR, child), child)
                 else:
-                    zip.write(abspath, file)
+                    try:
+                        zip.write(abspath, file)
+                    except FileNotFoundError:
+                        logger.error(f'Output item does not exist: {abspath}')
         return zip
 
     def refresh(self, dry: bool = False) -> None:
 
         # Initialisation                                                    #
-
         self.output_clean()
         
         try:
