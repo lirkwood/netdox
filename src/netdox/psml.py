@@ -167,7 +167,7 @@ class PSMLFragment(PSMLElement):
         """
         return self.tag.attrs['id']
 
-    def insert(self, element: Tag, index: int = None) -> None:
+    def insert(self, element: PageElement, index: Optional[int] = None) -> None:
         """
         Inserts a Tag into the PSMLFragment at the given index (or the end),
         only if it is valid content.
