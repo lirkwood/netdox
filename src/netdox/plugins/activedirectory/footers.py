@@ -51,16 +51,21 @@ def addFooters(network: Network) -> None:
 
             if properties['DNSHostName'] and properties['DNSHostName'] not in network.domains:
                 Domain(network, properties['DNSHostName'], zone = zone)
-
+            
+            name = None
+            for item in properties['DistinguishedName'].split(','):
+                if item.startswith('CN=') and len(item) > 3:
+                    name = item[3:]
+                    break
+                
             try:
-                identity = PlaceholderNode(
-                    network = network,
-                    name = properties['Name'],
-                    domains = [properties['DNSHostName']] if properties['DNSHostName'] else [],
-                    ips = [properties['IPv4Address']] if properties['IPv4Address'] else [],
-                ).identity
-
-                network.nodes[identity].psmlFooter.insert(frag)
+                domains = [properties['DNSHostName']] if properties['DNSHostName'] else []               
+                ips = [properties['IPv4Address']] if properties['IPv4Address'] else []
+                consumed = False
+                for dns in domains + ips:
+                    node = network.find_dns(dns).node
+                    if node is not None:
+                        node.psmlFooter.insert(frag)
             except AssertionError:
                 logger.warning(f'Computer \'{properties["Name"]}\' has addresses that resolve to different nodes.'\
                     + ' This can be caused by ambiguous DNS records or misconfiguration in ActiveDirectory.')
