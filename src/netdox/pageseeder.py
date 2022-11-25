@@ -238,10 +238,14 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
     group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
     
     if dir in urimap():
-        local = utils.path_list(
-            os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)),
-            relative = utils.APPDIR + 'out'
-        )
+        try:
+            local = utils.path_list(
+                os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)),
+                relative = utils.APPDIR + 'out'
+            )
+        except FileNotFoundError:
+            logger.error(f'No such directory locally to detect stale items in: {dir}')
+            return {}
         remote = json.loads(get_uris(urimap()[dir], params={
             'type': 'document',
             'relationship': 'descendants'
@@ -357,7 +361,8 @@ def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
         while thread['status'] in ('initialised', 'inprogress'):
             last_thread = thread
             thread = BeautifulSoup(get_thread_progress(thread['id']), 'xml').thread
-    except KeyError:
+    except KeyError as err:
+        print(err)
         raise AttributeError('Download thread never had status "completed".\n' + str(thread))
     except TypeError:
         assert thread is None, 'Strange fail state: TypeError when accessing thread like dict.'
