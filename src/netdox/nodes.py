@@ -130,10 +130,13 @@ class Node(base.NetworkObject):
         return self
 
     def merge(self, node: Node) -> Node: # type: ignore
-        super().merge(node)
-        self.domains |= node.domains
-        self.ips |= node.ips
-        return self
+        if isinstance(node, PlaceholderNode):
+            return node.merge(self)
+        else:
+            super().merge(node)
+            self.domains |= node.domains
+            self.ips |= node.ips
+            return self
 
     # serialisation
 
@@ -314,6 +317,12 @@ class Node(base.NetworkObject):
                     f'{self.name} consuming placeholder node from {dnsobj.name}')
                 dnsobj.node.merge(self)
                 return cache
+                
+            elif self.type == PlaceholderNode.type:
+                logger.debug(
+                    f'{self.name} consumed by node from {dnsobj.name}')
+                self.merge(dnsobj.node)
+                return cache
 
             elif isinstance(dnsobj.node, ProxiedNode):
                 assert dnsobj.node.proxy.node is not None, \
@@ -322,8 +331,9 @@ class Node(base.NetworkObject):
                     logger.debug(
                         f'Proxy from {dnsobj.name} to {dnsobj.node.proxy.backend.name}'
                         + f' set to {self.name}')
+                    dnsobj.node.proxy.node.merge(self)
                     dnsobj.node.proxy.node = self
-                
+               
             
             else:
                 return cache
@@ -389,7 +399,7 @@ class ProxiedNode(Node):
                 logger.debug(
                     f'Proxy from {dnsobj.name} to {self.name}'
                     + f' set to {dnsobj.node.name}')
-                self.proxy.node.destroy()
+                self.proxy.node.merge(dnsobj.node)
                 self.proxy.node = dnsobj.node
                 dnsobj.node = self.proxy # type: ignore
 
@@ -524,11 +534,9 @@ class PlaceholderNode(Node):
         """
 
         hash = sha256(usedforsecurity = False)
-        hash.update(bytes(name, 'utf-8'))
+        hash.update(bytes(name.lower().strip(), 'utf-8'))
         hash.update(bytes(str(sorted(set(domains))), 'utf-8'))
         hash.update(bytes(str(sorted(set(ips))), 'utf-8'))
-        logger.debug(f"Placeholder created! {name}")
-
         super().__init__(
             network = network, 
             name = name, 
@@ -552,9 +560,6 @@ class PlaceholderNode(Node):
         if nodes:
             self.network.nodes.addRef(nodes.pop(), self.identity)
 
-    def __del__(self):
-        logger.debug(f'Placeholder destroyed! {self.name}')
-
     ## abstract properties
 
     @property
@@ -566,19 +571,6 @@ class PlaceholderNode(Node):
         :rtype: Iterable[Tag]
         """
         return []
-
-    ## properties
-
-    @property
-    def aliases(self) -> set[str]:
-        """
-        Returns all the refs to this node in the containing NodeSet.
-        This is useful for guaranteeing this objects removal after consumption.
-
-        :return: A set of refs to this node.
-        :rtype: set[str]
-        """
-        return {ref for ref, node in self.network.nodes.nodes.items() if node is self}
 
     ## methods
 
@@ -596,7 +588,6 @@ class PlaceholderNode(Node):
         :return: The *node* argument.
         :rtype: Node
         """
-        logger.debug(f'Placeholder being consumed by: {node.name}')
         node.domains |= self.domains
         node.ips |= self.ips
         node.psmlFooter.extend(self.psmlFooter)
@@ -610,20 +601,14 @@ class PlaceholderNode(Node):
             if self.network.ips[ip].node is self:
                 self.network.ips[ip].node = node
 
-        self.destroy()
+        for alias in self.network.nodes.nodes.values():
+            if alias is self:
+                self.network.nodes[alias.identity] = node
         return node
-
-    def destroy(self) -> None:
-        """
-        Destroys this placeholder node and removes it from the network.
-        """
-        del self.network.nodes[self.identity]
-        for alias in self.aliases:
-            del self.network.nodes[alias]
-        del self
 
 BUILTIN_NODES = {
     Node.type: Node, 
+    DefaultNode.type: DefaultNode,
     ProxiedNode.type: ProxiedNode, 
     PlaceholderNode.type: PlaceholderNode
 }
