@@ -12,7 +12,7 @@ import logging
 
 from netdox import iptools, utils
 from netdox import IPv4Address, Network
-from netdox.nodes import PlaceholderNode
+from netdox.nodes import DefaultNode, PlaceholderNode
 from netdox.plugins.xenorchestra.objs import XOServer, VirtualMachine
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ async def makeNodes(network: Network) -> tuple[dict, dict[str, list[str]], dict[
     for host in hosts.values():
         hostVMs[host['uuid']] = []
         poolHosts[poolNames[host['$pool']]].append(host['address'])
-        PlaceholderNode(network, name = host['name_label'], ips = [host['address']])
+        DefaultNode(network, name = host['name_label'], private_ip = host['address'])
 
 
     # VMs
