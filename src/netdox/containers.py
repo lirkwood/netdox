@@ -2,6 +2,7 @@
 This module contains any container classes.
 """
 from __future__ import annotations
+import copy
 
 import logging
 import os
@@ -10,7 +11,7 @@ from typing import Iterable, Iterator, Type, Union
 
 from bs4 import BeautifulSoup
 
-from netdox import base, dns, helpers, iptools, nodes
+from netdox import base, dns, helpers, iptools, nodes, psml
 from netdox.config import NetworkConfig
 from netdox.iptools import valid_ip
 from netdox.utils import APPDIR, Cryptor, valid_domain
@@ -358,16 +359,21 @@ class Network:
         :type network: Network
         """
         for domain in network.domains:
-            self.domains[domain.name].notes = domain.notes
+            if 'stale' not in domain.labels:
+                self.domains[domain.name].notes = psml.Fragment.from_tag(copy.copy(domain.notes.tag))
 
         for ipv4 in network.ips:
-            self.ips[ipv4.name].notes = ipv4.notes
-
+            if 'stale' not in ipv4.labels:
+                self.ips[ipv4.name].notes = psml.Fragment.from_tag(copy.copy(ipv4.notes.tag))
+            
         for node in network.nodes:
-            note_holder = nodes.PlaceholderNode(self, node.identity)
-            self.nodes.addRef(note_holder, node.identity)
-            note_holder.notes = node.notes
-
+            if 'stale' not in node.labels:
+                note_holder = nodes.PlaceholderNode(self, 
+                    node.name if node.name else node.identity, 
+                )
+                self.nodes.addRef(note_holder, copy.copy(node.identity))
+                note_holder.notes = psml.Fragment.from_tag(copy.copy(node.notes.tag))
+                
     ## Serialisation
 
     def dump(self, outpath: str = APPDIR + 'src/network.bin', encrypt = True) -> None:
