@@ -18,11 +18,15 @@ before_script:
 
 tox:
   stage: test
+  only:
+    - tags
   script: 
     - tox -- --cov
 
 mypy:
   stage: test
+  only:
+    - tags
   allow_failure: true
   script:
     - mypy --install-types --non-interactive src/netdox
