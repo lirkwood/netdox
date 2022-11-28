@@ -3,6 +3,15 @@
 Releases
 ########
 
+v1.5.0
+======
+Added notes, moved away from placeholder node.
+
+* No longer using placeholder node where it is possible to avoid it due to large numbers of duplicate documents.
+* Updated placeholder node identity logic to increase collisions.
+* Added the notes section which contains a fragment of persistent content.
+* Added counted facets for debugging and sanity checks.
+
 v1.4.0
 ======
 Generalised DNS, AWS overhaul, added recreating Network from psml, added persistent notes.
