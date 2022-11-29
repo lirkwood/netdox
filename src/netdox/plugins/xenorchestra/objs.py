@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from typing import Iterable, Optional
 
-from bs4 import Tag
+import ssl
+import certifi
 from netdox import DefaultNode, IPv4Address, Network, psml
 from websockets import client
 from websockets.exceptions import WebSocketException
@@ -143,7 +144,12 @@ class XOServer:
         self._socket = None
 
     async def __aenter__(self) -> XOServer:
-        self._socket = await client.connect(self.url, max_size = 3000000)
+        ssl_context = ssl.create_default_context(cadata = certifi.contents())
+        self._socket = await client.connect(
+            self.url, 
+            max_size = 3000000, 
+            ssl = ssl_context
+        )
 
         if 'error' in await self.call('session.signInWithPassword', {
             'email': self._user, 
