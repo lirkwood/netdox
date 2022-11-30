@@ -612,6 +612,12 @@ class NoteHolder(PlaceholderNode):
     """
     type = 'notes'
 
+    def to_psml(self) -> BeautifulSoup:
+        """Purpose of this node is to provide notes if consumed.
+        Therefore it is never serialised."""
+        logger.debug(f'Note holder never consumed: {self.name}')
+        pass
+
 BUILTIN_NODES = {
     Node.type: Node, 
     DefaultNode.type: DefaultNode,
