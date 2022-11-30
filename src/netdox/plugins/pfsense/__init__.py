@@ -30,14 +30,10 @@ async def pfsenseScrapeNat() -> dict:
     await (await page.J('#passwordfld')).type(config['password'])
     await page.click('.btn-sm')
 
-    await page.goto(gateway + 'firewall_nat_1to1.php', waitUntil = 'networkidle0')
-    if await page.Jeval('.panel-title', 'title => title.textContent') == 'NAT 1:1 Mappings':
-        rows = await page.JJ('tr.ui-sortable-handle')
-        for row in rows:
-            columns = await row.JJeval('td', 'columns => columns.map(column => column.textContent.trim())')
-            nat[columns[3]] = columns[4]
-    else:
-        logger.error('Failed to navigate to pfSense NAT page')
+    rows = await page.JJ('tr.ui-sortable-handle')
+    for row in rows:
+        columns = await row.JJeval('td', 'columns => columns.map(column => column.textContent.trim())')
+        nat[columns[3]] = columns[4]
     
     await page.close()
     await browser.close()
