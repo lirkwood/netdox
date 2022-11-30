@@ -368,7 +368,7 @@ class Network:
             
         for node in network.nodes:
             if 'stale' not in node.labels:
-                note_holder = nodes.PlaceholderNode(self, 
+                note_holder = nodes.NoteHolder(self, 
                     node.name if node.name else node.identity, 
                 )
                 self.nodes.addRef(note_holder, copy.copy(node.identity))
