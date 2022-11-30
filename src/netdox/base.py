@@ -302,7 +302,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
             logger.error(f"NWObj {self.identity} failed to write to psml: {exc}")
         else:
             with open(self.outpath, 'w', encoding = 'utf-8') as stream:
-                stream.write(str(self.to_psml()))
+                stream.write(str(outsoup))
 
     def merge(self, object: NetworkObject) -> NetworkObject:
         """
