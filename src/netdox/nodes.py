@@ -606,9 +606,16 @@ class PlaceholderNode(Node):
                 self.network.nodes[alias] = node
         return node
 
+class NoteHolder(PlaceholderNode):
+    """
+    Placeholder node specifically for containing notes from the remote network.
+    """
+    type = 'notes'
+
 BUILTIN_NODES = {
     Node.type: Node, 
     DefaultNode.type: DefaultNode,
     ProxiedNode.type: ProxiedNode, 
-    PlaceholderNode.type: PlaceholderNode
+    PlaceholderNode.type: PlaceholderNode,
+    NoteHolder.type: NoteHolder
 }
