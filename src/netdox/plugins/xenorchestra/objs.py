@@ -54,8 +54,6 @@ class VirtualMachine(DefaultNode):
         self.hostIp = self.network.ips[host]
         self.pool = pool.strip().lower()
         self.tags = set(tags)
-        
-        self.network.nodes.addRef(self, self.uuid)
     
     @property
     def psmlCore(self) -> psml.PropertiesFragment:
