@@ -8,6 +8,7 @@ import os
 import re
 from hashlib import sha256
 from typing import TYPE_CHECKING, Iterable, Optional, Type
+import copy
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -588,6 +589,8 @@ class PlaceholderNode(Node):
         :return: The *node* argument.
         :rtype: Node
         """
+        if node.type == NoteHolder.type:
+            return node.merge(self)
         node.domains |= self.domains
         node.ips |= self.ips
         node.psmlFooter.extend(self.psmlFooter)
@@ -612,12 +615,17 @@ class NoteHolder(PlaceholderNode):
     """
     type = 'notes'
 
-    def to_psml(self) -> BeautifulSoup:
-        """Purpose of this node is to provide notes if consumed.
-        Therefore it is never serialised."""
-        logger.debug(f'Note holder never consumed: {self.name}')
+    def serialise(self) -> None:
+        """Note holders are never serialised."""
         pass
-
+        
+    def merge(self, node: Node) -> Node:
+        if str(node.notes) == self.DEFAULT_NOTES:
+            node.notes = Fragment.from_tag(copy.copy(self.notes.tag))
+        else:
+            node.notes.extend(self.notes.tag.contents)
+        return node
+    
 BUILTIN_NODES = {
     Node.type: Node, 
     DefaultNode.type: DefaultNode,
