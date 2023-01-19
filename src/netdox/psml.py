@@ -333,8 +333,29 @@ class PropertiesFragment(PSMLFragment):
                     'Could not instantiate a Property from a value of: '+ str(value))
         return pfrag
 
+class MediaFragment(PSMLFragment):
+
+    def __init__(self, id: str, attrs: Mapping[str, Any] = None, content: PageElement = None) -> None:
+        attrs = dict(attrs) if attrs else {}
+        self.tag = Tag(
+            name = 'media-fragment',
+            is_xml = True,
+            can_be_empty_element = True,
+            attrs = {'id': id} | attrs
+        )
+        
+        if content is not None:
+            self.insert(content)
+
+    @classmethod
+    def from_tag(cls, fragment: Tag) -> MediaFragment:
+        if len(fragment.contents) == 1:
+            return cls(fragment['id'], fragment.attrs, fragment.contents[0])
+        else:
+            return cls(fragment['id'], fragment.attrs)
+
 FRAGMENT_NAMES: dict[str, type[PSMLFragment]] = {
-    'fragment': Fragment, 'properties-fragment': PropertiesFragment 
+    'fragment': Fragment, 'properties-fragment': PropertiesFragment, 'media-fragment': MediaFragment
 }
 """Maps the tag name of fragment types to their respective classes."""
 
