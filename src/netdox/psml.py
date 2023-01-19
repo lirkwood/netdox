@@ -335,8 +335,16 @@ class PropertiesFragment(PSMLFragment):
 
 class MediaFragment(PSMLFragment):
 
-    def __init__(self, id: str, attrs: Mapping[str, Any] = None, content: PageElement = None) -> None:
+    def __init__(self, 
+        id: str, 
+        attrs: Mapping[str, Any] = None, 
+        mediatype: str = None, 
+        content: PageElement = None
+    ) -> None:
         attrs = dict(attrs) if attrs else {}
+        if mediatype is not None:
+            attrs['mediatype'] = mediatype
+            
         self.tag = Tag(
             name = 'media-fragment',
             is_xml = True,
