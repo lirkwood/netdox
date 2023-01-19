@@ -106,7 +106,11 @@ class PSMLTranslator(SphinxTranslator):
 
     # Default behaviour
     def unknown_visit(self, node: nodes.Node) -> None:
-        raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
+        if node.__class__.__name__ == 'problematic':
+            print('Skipping "problematic" node.')
+            raise nodes.SkipDeparture
+        else:
+            raise NotImplementedError(f'Node {node.__class__.__name__} has not been implemented yet.')
 
     ## Structural elements ##
 
@@ -365,6 +369,8 @@ class PSMLTranslator(SphinxTranslator):
     
     # Code/Monospace
     def visit_literal(self, node: nodes.Node = None) -> None:
+        if not self.in_textelem:
+            self.visit_paragraph(node)
         self.body += '<monospace>'
     
     def depart_literal(self, node: nodes.Node = None) -> None:
