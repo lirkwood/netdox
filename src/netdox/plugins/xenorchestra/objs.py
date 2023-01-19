@@ -146,8 +146,7 @@ class XOServer:
         self._socket = await client.connect(
             self.url, 
             max_size = 3000000, 
-            ssl = ssl_context,
-            open_timeout = 30
+            ssl = ssl_context
         )
 
         if 'error' in await self.call('session.signInWithPassword', {
