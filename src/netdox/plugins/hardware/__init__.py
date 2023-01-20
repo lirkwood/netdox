@@ -24,7 +24,6 @@ from netdox.psml import Section
 
 logger = logging.getLogger(__name__)
 
-INFO_SECTION = SoupStrainer('section', id = 'info')
 URI_PATTERN: re.Pattern = re.compile(r'<uri\s+id="(?P<id>\d+)"')
 SRCDIR = os.path.join(utils.APPDIR, 'plugins', 'hardware', 'src')
 ZIP_PATH = os.path.join(SRCDIR, 'hardware.zip')
@@ -53,7 +52,16 @@ class HardwareNode(Node):
         self.filename = filename
         domains, ips = [], []
         name = None
-        for property in psml('property'):
+
+        header_section = psml.find('section', id = 'header')
+        if header_section is None:
+            raise ValueError(f'Hardware document {origin_doc} is missing the header section.')
+        header_frag = header_section.find('properties-fragment', id = 'header')
+        if header_frag is None:
+            raise ValueError(f'Hardware document {origin_doc} is missing the header fragment.')
+
+
+        for property in header_frag('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
                 if domain and utils.valid_domain(domain): 
@@ -67,6 +75,9 @@ class HardwareNode(Node):
             elif property['name'] == 'name':
                 name = property['value']
 
+        if not name:
+            logger.warn(f'Hardware document {origin_doc} is missing name property.')
+
         super().__init__(
             network = network, 
             name = name if name else filename, 
@@ -75,7 +86,12 @@ class HardwareNode(Node):
             ips = ips
         )
 
-        self.psml = Section.from_tag(psml.section)
+        try:
+            info = psml.find('section', id = 'info').extract()
+            if info is not None:
+                self.psml = Section.from_tag(info)
+        except AttributeError:
+            raise ValueError('Hardware document is missing the info section.')
 
     ## abstract properties
 
@@ -85,18 +101,9 @@ class HardwareNode(Node):
 
     @property
     def psmlBody(self) -> list[Section]:
-        return [self.psml]
+        return [] if self.psml is None else [self.psml]
 
     ## methods
-
-    def _consume_addr_property(self, property: Tag) -> None:
-        """
-        Parses a DNS name from the given property and adds it to this node.
-        Only stores the domain/ipv4 if it is a valid DNS name.
-
-        :param property: The property to parse a domain/ipv4 address from.
-        :type property: Tag
-        """
 
     def _addrFromProperty(self, property: Tag) -> Optional[str]:
         """
@@ -173,7 +180,7 @@ def runner(network: Network) -> None:
             if file.endswith('.psml'):
                 with open(utils.APPDIR+ file, 'r', encoding = 'utf-8') as stream: # type: ignore # ???
                     content = stream.read()
-                soup = BeautifulSoup(content, features = 'xml', parse_only = INFO_SECTION)
+                soup = BeautifulSoup(content, features = 'xml')
                 uri = re.search(URI_PATTERN, content)
                 assert uri is not None, 'Failed to parse URIID from hardware document '+ filename
 
