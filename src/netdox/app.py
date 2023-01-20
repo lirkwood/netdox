@@ -418,6 +418,10 @@ class App:
 
         # Initialisation                                                    #
         self.output_clean()
+
+        # Allow BS4 PageElements to be pickled (plantuml SVGs)
+        import sys
+        sys.setrecursionlimit(10000)
         
         try:
             location_path = os.path.join(utils.APPDIR, 'cfg', 'locations.json')
