@@ -123,12 +123,14 @@ class NetworkConfig:
         for frag in orgSection('properties-fragment'):
             org_prop = frag.find(attrs = {'name':'organization'})
             label_prop = frag.find(attrs = {'name':'label'})
-            if (
-                org_prop.find('xref') and 
-                org_prop.xref.has_attr('uriid') and
-                label_prop['value']
-            ):
-                orgs[str(org_prop.xref['uriid'])].add(str(label_prop['value']))
+            for xref in org_prop('xref'):
+                if (
+                    org_prop.xref.has_attr('uriid') and
+                    label_prop['value']
+                ):
+                    orgs[str(org_prop.xref['uriid'])].add(str(label_prop['value']))
+                else:
+                    logger.warn(f'Organization label is misconfigured in main config file: Missing XREF to organization.')
 
         subnets = {}
         subnetSection = soup.find('section', id = cls.SUBNET_SECTION_ID)
