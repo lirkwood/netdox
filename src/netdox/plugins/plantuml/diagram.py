@@ -6,6 +6,7 @@ from netdox.base import NetworkObject
 from netdox.dns import DNSObject, IPv4Address
 from netdox.nodes import ProxiedNode
 from plantuml import deflate_and_encode
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +54,16 @@ class NodeDiagramFactory:
 
     def draw(self, node: Node) -> str:
         """
-        Generate diagram for the given node and return the url.
+        Generate diagram for the given node and return the SVG.
 
         :param node: The node to draw.
         :type node: Node
-        :return: A URL.
+        :return: An SVG.
         :rtype: str
         """
-        return f'{self.scheme}://{self.server}/svg/{deflate_and_encode(self._build_markup(node))}'
+        return requests.get(
+            f'{self.scheme}://{self.server}/svg/{deflate_and_encode(self._build_markup(node))}'
+        ).content.decode('utf-8')
 
     def _build_markup(self, node: Node) -> str:
         """
