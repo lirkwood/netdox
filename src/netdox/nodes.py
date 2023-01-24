@@ -65,7 +65,6 @@ class Node(base.NetworkObject):
         PageSeeder document, defaults to None
         :type labels: Iterable[str], optional
         """
-        self.identity = identity.lower()
         self._location = None
         super().__init__(network, name, identity, labels)
 
