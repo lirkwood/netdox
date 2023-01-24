@@ -396,6 +396,8 @@ class Property(PSMLElement):
     """Name of this property."""
     title: Optional[str]
     """Title of this property"""
+    datatype: str
+    """Datatype of this property. Defaults to string."""
     value: Union[PSMLLink, Iterable[str], str, None]
     """Value of this property."""
 
@@ -403,6 +405,7 @@ class Property(PSMLElement):
         name: str,
         value: Union[PSMLLink, Iterable[str], str, None],
         title: Optional[str] = None,
+        datatype: Optional[str] = None,
         attrs: Mapping[str, Any] = {}
     ) -> None:
         """
@@ -415,7 +418,9 @@ class Property(PSMLElement):
         :param title: Value for the title attribute. Defaults to name.
         :type title: str
         """
-        _attrs = {'name': name, 'title': title or name}
+        if datatype is None:
+            datatype = 'string'
+        _attrs = {'name': name, 'title': title or name, 'datatype': datatype}
         
         self.tag = Tag(
             name = 'property', 
@@ -427,6 +432,7 @@ class Property(PSMLElement):
         self.name = name
         self.title = title
         self.value = value
+        self.datatype = datatype
         if value:
             if isinstance(value, str):
                 self.tag.attrs['value'] = value
@@ -439,8 +445,6 @@ class Property(PSMLElement):
                     val_tag = Tag(name = 'value')
                     val_tag.string = str(val)
                     self.tag.append(val_tag)
-        else:
-            self.tag.attrs['value'] = ''
 
     @classmethod
     def from_tag(cls, property: Tag) -> Property:
@@ -450,6 +454,7 @@ class Property(PSMLElement):
                 property['name'], 
                 property['value'], 
                 title, 
+                'string',
                 property.attrs
             )
         
@@ -461,6 +466,7 @@ class Property(PSMLElement):
                         property['name'], 
                         PROPERTY_DATATYPES[property['datatype']].from_tag(child),
                         title,
+                        property['datatype'],
                         property.attrs
                     )
                 else:
@@ -468,6 +474,7 @@ class Property(PSMLElement):
                         property['name'],
                         None,
                         title,
+                        property['datatype'],
                         property.attrs
                     )
                 
@@ -476,6 +483,7 @@ class Property(PSMLElement):
                     property['name'], 
                     [val.string for val in property('value')], 
                     title,
+                    'string',
                     property.attrs
                 )
 
