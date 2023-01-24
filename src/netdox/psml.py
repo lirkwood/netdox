@@ -226,6 +226,12 @@ class Fragment(PSMLFragment):
         if not tag.has_attr('id'):
             raise AttributeError('Fragment tag missing required attribute \'id\'')
         return cls(tag['id'], tag.contents, tag.attrs)
+    
+def image_fragment(id: str, path: str) -> Fragment:
+    """ Creates a fragment containing a image located at the given path."""
+    para = Tag(name = 'para', is_xml = True)
+    para.append(Tag(name = 'image', is_xml = True, attrs = {'src': path}))
+    return Fragment(id, [para])
 
 class PropertiesFragment(PSMLFragment):
     """
@@ -390,12 +396,12 @@ class Property(PSMLElement):
     """Name of this property."""
     title: Optional[str]
     """Title of this property"""
-    value: Union[PSMLLink, Iterable[str], str]
+    value: Union[PSMLLink, Iterable[str], str, None]
     """Value of this property."""
 
     def __init__(self, 
         name: str,
-        value: Union[PSMLLink, Iterable[str], str],
+        value: Union[PSMLLink, Iterable[str], str, None],
         title: Optional[str] = None,
         attrs: Mapping[str, Any] = {}
     ) -> None:
@@ -449,14 +455,22 @@ class Property(PSMLElement):
         
         elif property.children:
             if property.has_attr('datatype') and property['datatype'] in PROPERTY_DATATYPES:
-                return cls(
-                    property['name'], 
-                    PROPERTY_DATATYPES[property['datatype']].from_tag(
-                        property.find(property['datatype'])
-                    ),
-                    title,
-                    property.attrs
-                )
+                child = property.find(property['datatype'])
+                if child is not None:
+                    return cls(
+                        property['name'], 
+                        PROPERTY_DATATYPES[property['datatype']].from_tag(child),
+                        title,
+                        property.attrs
+                    )
+                else:
+                    return cls(
+                        property['name'],
+                        None,
+                        title,
+                        property.attrs
+                    )
+                
             elif property.has_attr('multiple'):
                 return cls(
                     property['name'], 
