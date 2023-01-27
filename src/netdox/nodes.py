@@ -618,7 +618,7 @@ class NoteHolder(PlaceholderNode):
         """Note holders are never serialised."""
         pass
         
-    def merge(self, node: Node) -> Node:
+    def merge(self, node: Node) -> Node: # type: ignore
         if str(node.notes) == self.DEFAULT_NOTES:
             node.notes = Fragment.from_tag(copy.copy(self.notes.tag))
         else:
