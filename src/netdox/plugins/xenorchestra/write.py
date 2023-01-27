@@ -90,8 +90,9 @@ def genreport(network: Network) -> None:
         ])}))
 
     report = BeautifulSoup(REPORT, 'xml')
-    newfrag = report.find('fragment', id='xovms_new')
-    oldfrag = report.find('fragment', id='xovms_old')
+    empty = 0
+    newfrag: Tag = report.find('fragment', id='xovms_new')
+    oldfrag: Tag = report.find('fragment', id='xovms_old')
     for frag, results in (
         (newfrag, started_search), 
         (oldfrag, stopped_search)
@@ -105,8 +106,13 @@ def genreport(network: Network) -> None:
                     'frag': 'default',
                     'uriid': uriid
             }))
+        
+        if len(results['results']['result']) < 1:
+            frag.decompose()
+            empty += 1
     
-    network.report.addSection(str(report))
+    if empty < 2:
+        network.report.addSection(str(report))
 
 def _parse_uriid(result: dict) -> Optional[str]:
     """
