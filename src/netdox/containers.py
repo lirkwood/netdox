@@ -279,6 +279,57 @@ class Network:
         ):
             origin.link(dest, source)
             self.counter.inc_facet(helpers.CountedFacets.DNSLink)
+            
+    def dns_report(self) -> str:
+        """Generates a report on DNS records in the network."""
+        section = psml.Section('dns', 'Problematic DNS Records')
+        
+        count = 0
+        for domain in self.domains:
+            for link in domain.implied_links:
+                if (
+                    (link not in link.destination.links) & 
+                    (link.destination.type == dns.IPv4Address.type)
+                ):
+                    dest_name = link.destination.name
+                    str_link = f'{dest_name} -> {domain.name}'
+                    section.insert(psml.PropertiesFragment(f'domain_{count}', [
+                        psml.Property('link', str_link, 'Problematic Link'),
+                        psml.Property(
+                            'issue', 
+                            'IPv4 points at domain but domain does not point back.', 
+                            'Issue with Link'),
+                        psml.Property(
+                            'suggestion', 
+                            f'Create A record from {domain.name} to {dest_name}, or remove PTR, in {link.source}.',
+                            'Suggested Fix'
+                        )
+                    ]))
+                    count += 1
+            
+        count = 0
+        for ipv4 in self.ips:
+            for link in ipv4.implied_links:
+                if (
+                    (link not in link.destination.links) & 
+                    (link.destination.type == dns.Domain.type)
+                ):
+                    str_link = f'{link.destination.name} -> {ipv4.name}'
+                    section.insert(psml.PropertiesFragment(f'ipv4_{count}', [
+                        psml.Property('link', str_link, 'Problematic Link'),
+                        psml.Property(
+                            'issue', 
+                            'Domain points at IPv4 but IPv4 does not point back.', 
+                            'Issue with Link'),
+                        psml.Property(
+                            'suggestion', 
+                            f'Create PTR from {ipv4.name} to {link.destination.name} in {link.source}.',
+                            'Suggested Fix'
+                        )
+                    ]))
+                    count += 1
+        
+        return str(section)
 
     ## resolving refs
 
@@ -359,20 +410,16 @@ class Network:
         :type network: Network
         """
         for domain in network.domains:
-            if 'stale' not in domain.labels:
+            if domain.name in self.domains:
                 self.domains[domain.name].notes = psml.Fragment.from_tag(copy.copy(domain.notes.tag))
 
         for ipv4 in network.ips:
-            if 'stale' not in ipv4.labels:
+            if ipv4.name in self.ips:
                 self.ips[ipv4.name].notes = psml.Fragment.from_tag(copy.copy(ipv4.notes.tag))
             
         for node in network.nodes:
-            if 'stale' not in node.labels:
-                note_holder = nodes.NoteHolder(self, 
-                    node.name if node.name else node.identity, 
-                )
-                self.nodes.addRef(note_holder, copy.copy(node.identity))
-                note_holder.notes = psml.Fragment.from_tag(copy.copy(node.notes.tag))
+            if node.identity in self.nodes:
+                self.nodes[node.identity].notes = psml.Fragment.from_tag(copy.copy(node.notes.tag))
                 
     ## Serialisation
 

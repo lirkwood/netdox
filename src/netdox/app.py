@@ -39,8 +39,8 @@ class PluginManager:
     """List of plugins enabled by the user."""
 
     def __init__(self, 
-            namespace: ModuleType = None, 
-            whitelist: list[str] = None
+            namespace:Optional[ModuleType] = None, 
+            whitelist: Optional[list[str]] = None
         ) -> None:
         """
         Constructor.
@@ -389,7 +389,7 @@ class App:
         pageseeder.download_dir('website', download_dir)
         return containers.Network.from_psml(download_dir, self.plugin_mgr.nodes)
 
-    def zip_output(self, outpath: str = None) -> ZipFile:
+    def zip_output(self, outpath: Optional[str] = None) -> ZipFile:
         """
         Creates a ZIP from the output directories and writes it to *outpath*.
 
@@ -419,10 +419,6 @@ class App:
         # Initialisation                                                    #
         self.output_clean()
 
-        # Allow BS4 PageElements to be pickled (plantuml SVGs)
-        import sys
-        sys.setrecursionlimit(10000)
-        
         try:
             location_path = os.path.join(utils.APPDIR, 'cfg', 'locations.json')
             with open(location_path, 'r') as stream:
@@ -443,11 +439,10 @@ class App:
 
         if dry: 
             logger.info('Refresh running as dry run: no documents will be uploaded.')
+            remote_network = None
         else:
             logger.debug('Downloading network from remote.')
             remote_network = self.download_network()
-            logger.debug('Copying notes from remote network.')
-            network.copy_notes(remote_network)
 
         self.plugin_mgr.runStage(network, LifecycleStage.INIT)
 
@@ -476,13 +471,17 @@ class App:
         network.dump()
         network.writePSML()
         self.plugin_mgr.runStage(network, LifecycleStage.WRITE)
-        
+        network.report.addSection(network.dns_report())
         network.report.addSection(
             utils.stale_report(pageseeder.findStale(self.output)))
         with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
             network.report.logs = stream.read()
         network.report.addSection(str(network.counter.generate_report()))
         network.report.writeReport()
+        
+        if remote_network is not None:
+            logger.debug('Copying notes from remote network.')
+            network.copy_notes(remote_network)
 
         #-------------------------------------------------------------------#
         # Zip, upload, and cleanup                                          #
