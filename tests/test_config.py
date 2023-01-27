@@ -9,7 +9,7 @@ def test_generate_template():
         template.find('t:fragment', type = 'label').find('properties-fragment')
     )
 
-    assert {'label': ''} | dict.fromkeys(attrs, '') == frag_dict.to_dict()
+    assert {'label': None} | dict.fromkeys(attrs, None) == frag_dict.to_dict()
 
 
 class TestNetworkConfig:
