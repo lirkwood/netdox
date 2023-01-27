@@ -53,15 +53,8 @@ class HardwareNode(Node):
         domains, ips = [], []
         name = None
 
-        header_section = psml.find('section', id = 'header')
-        if header_section is None:
-            raise ValueError(f'Hardware document {origin_doc} is missing the header section.')
-        header_frag = header_section.find('properties-fragment', id = 'header')
-        if header_frag is None:
-            raise ValueError(f'Hardware document {origin_doc} is missing the header fragment.')
-
-
-        for property in header_frag('property'):
+                
+        for property in psml.find_all('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
                 if domain and utils.valid_domain(domain): 
@@ -72,16 +65,16 @@ class HardwareNode(Node):
                 if ip and iptools.valid_ip(ip): 
                     ips.append(ip)
 
-            elif property['name'] == 'name':
-                name = property['value']
-
+            elif property['name'] == 'name' and property.parent['id'] == 'header':
+                    name = property['value']
+            
         if not name:
             logger.warn(f'Hardware document {origin_doc} is missing name property.')
 
         super().__init__(
             network = network, 
             name = name if name else filename, 
-            identity = os.path.splitext(filename)[0],
+            identity = f'_nd_hardware_{os.path.splitext(filename)[0]}',
             domains = domains,
             ips = ips
         )
