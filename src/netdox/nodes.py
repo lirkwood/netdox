@@ -588,8 +588,6 @@ class PlaceholderNode(Node):
         :return: The *node* argument.
         :rtype: Node
         """
-        if node.type == NoteHolder.type:
-            return node.merge(self)
         node.domains |= self.domains
         node.ips |= self.ips
         node.psmlFooter.extend(self.psmlFooter)
@@ -608,27 +606,9 @@ class PlaceholderNode(Node):
                 self.network.nodes[alias] = node
         return node
 
-class NoteHolder(PlaceholderNode):
-    """
-    Placeholder node specifically for containing notes from the remote network.
-    """
-    type = 'notes'
-
-    def serialise(self) -> None:
-        """Note holders are never serialised."""
-        pass
-        
-    def merge(self, node: Node) -> Node: # type: ignore
-        if str(node.notes) == self.DEFAULT_NOTES:
-            node.notes = Fragment.from_tag(copy.copy(self.notes.tag))
-        else:
-            node.notes.extend(self.notes.tag.contents)
-        return node
-    
 BUILTIN_NODES = {
     Node.type: Node, 
     DefaultNode.type: DefaultNode,
     ProxiedNode.type: ProxiedNode, 
     PlaceholderNode.type: PlaceholderNode,
-    NoteHolder.type: NoteHolder
 }
