@@ -74,7 +74,7 @@ class HardwareNode(Node):
         super().__init__(
             network = network, 
             name = name if name else filename, 
-            identity = f'_nd_hardware_{os.path.splitext(filename)[0]}',
+            identity = os.path.splitext(filename)[0],
             domains = domains,
             ips = ips
         )
