@@ -1,7 +1,9 @@
 import logging
+import shutil
 from typing import Optional
-
-from netdox import Network, Node
+import os
+    
+from netdox import Network, Node, utils
 from netdox.base import NetworkObject
 from netdox.dns import DNSObject, IPv4Address
 from netdox.nodes import ProxiedNode
@@ -9,6 +11,9 @@ from plantuml import deflate_and_encode
 import requests
 
 logger = logging.getLogger(__name__)
+
+FAILED_IMG = os.path.join(utils.APPDIR, 'plugins', 'plantuml', 'failed.svg')
+OUTDIR = os.path.join(utils.OUTDIR, 'diagrams')
 
 class NodeDiagramFactory:
     server: str
@@ -52,19 +57,23 @@ class NodeDiagramFactory:
         """Returns the UML class definition line for a given class name."""
         return f'class "{name}" {f"#{color}" if color else ""} {{'
 
-    def draw(self, node: Node) -> str:
+    def draw(self, node: Node) -> None:
         """
-        Generate diagram for the given node and return the SVG.
+        Generate diagram for the given node and copy the SVG to the output directory.
 
         :param node: The node to draw.
         :type node: Node
-        :return: An SVG.
-        :rtype: str
         """
-        return requests.get(
-            f'{self.scheme}://{self.server}/svg/{deflate_and_encode(self._build_markup(node))}'
-        ).content.decode('utf-8')
-
+        outpath = os.path.join(OUTDIR, f'{node.docid}.svg')
+        if (len(node.domains) + len(node.ips)) > 15:
+            shutil.copyfile(FAILED_IMG, outpath)
+        else:
+            with open(outpath, 'wb') as stream:
+                data = requests.get(
+                    f'{self.scheme}://{self.server}/svg/{deflate_and_encode(self._build_markup(node))}'
+                ).content                
+                stream.write(data)
+                
     def _build_markup(self, node: Node) -> str:
         """
         Generate markup for the diagram of the given node.
@@ -144,7 +153,7 @@ class NodeDiagramFactory:
             cache |= self._draw_dns(record.destination, cache)
             dest_name = self._class_name(record.destination)
             self._link(class_name, dest_name, record.source)
-
+            
         if isinstance(dnsobj, IPv4Address):
             for entry in dnsobj.NAT:
                 cache |= self._draw_dns(entry.destination, cache)
@@ -161,7 +170,7 @@ class NodeDiagramFactory:
     def _link(self, 
             origin: str, 
             destination: str = None, 
-            annotation: str = None
+            annotation: str = None,
         ) -> None:
         """
         Links from the UML class at *origin* to the current node, 
@@ -183,5 +192,5 @@ if __name__ == '__main__':
     net = Network.from_dump()
     factory = NodeDiagramFactory()
     for node in net.nodes:
-        print(factory.draw(node))
+        factory.draw(node)
         exit(0)

@@ -26,6 +26,9 @@ setup(
         ],
         "netdox.plugins.screenshots": [
             "placeholder.jpg"
+        ],
+        "netdox.plugins.plantuml" : [
+            "failed.svg"
         ]
     },
     classifiers = [
