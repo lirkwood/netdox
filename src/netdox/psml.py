@@ -396,14 +396,14 @@ class Property(PSMLElement):
     """Name of this property."""
     title: Optional[str]
     """Title of this property"""
-    datatype: str
+    datatype: Optional[str]
     """Datatype of this property. Defaults to string."""
     value: Union[PSMLLink, Iterable[str], str, None]
     """Value of this property."""
 
     def __init__(self, 
         name: str,
-        value: Union[PSMLLink, Iterable[str], str, None],
+        value: Union[PSMLLink, Iterable[str], str, None] = None,
         title: Optional[str] = None,
         datatype: Optional[str] = None,
         attrs: Mapping[str, Any] = {}
@@ -418,9 +418,9 @@ class Property(PSMLElement):
         :param title: Value for the title attribute. Defaults to name.
         :type title: str
         """
-        if datatype is None:
-            datatype = 'string'
-        _attrs = {'name': name, 'title': title or name, 'datatype': datatype}
+        _attrs = {'name': name, 'title': title or name}
+        if datatype is not None and datatype != 'string':
+            _attrs['datatype'] = datatype
         
         self.tag = Tag(
             name = 'property', 
@@ -448,55 +448,52 @@ class Property(PSMLElement):
 
     @classmethod
     def from_tag(cls, property: Tag) -> Property:
-        title = property['title'] if 'title' in property.attrs else None
+        assert 'name' in property.attrs, 'Property missing name attribute.'
+        name = str(property['name'])
+        title = str(property['title']) if 'title' in property.attrs else None
+        
         if property.has_attr('value'):
             return cls(
-                property['name'], 
+                name,
                 property['value'], 
                 title, 
-                'string',
-                property.attrs
+                attrs = property.attrs
             )
         
-        elif property.children:
+        elif any(True for _ in property.children): # hack to check emptiness of iterator
             if property.has_attr('datatype') and property['datatype'] in PROPERTY_DATATYPES:
                 child = property.find(property['datatype'])
                 if child is not None:
                     return cls(
-                        property['name'], 
+                        name,
                         PROPERTY_DATATYPES[property['datatype']].from_tag(child),
                         title,
-                        property['datatype'],
+                        str(property['datatype']),
                         property.attrs
                     )
                 else:
                     return cls(
-                        property['name'],
+                        name,
                         None,
                         title,
-                        property['datatype'],
+                        str(property['datatype']),
                         property.attrs
                     )
                 
             elif property.has_attr('multiple'):
                 return cls(
-                    property['name'], 
+                    name,
                     [val.string for val in property('value')], 
                     title,
-                    'string',
-                    property.attrs
+                    attrs = property.attrs
                 )
 
             else:
                 raise NotImplementedError(
                     'Failed to parse property from the following tag: '+ str(property))
 
-        elif property.has_attr('name'):
-            return cls(property['name'], '')
-
         else:
-            raise AttributeError(
-                'Cannot create Property from tag with no value, children, or name.')
+            return cls(name)
 
 
 class PSMLLink(PSMLElement):
