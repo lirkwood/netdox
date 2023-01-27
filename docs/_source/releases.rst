@@ -3,6 +3,16 @@
 Releases
 ########
 
+.. _v1_6_0:
+v1.6.0
+======
+Made PlantUML diagrams more accessible, added report on dangling DNS records.
+
+* PlantUML diagrams are now written to disk as SVG and uploaded in package.
+* Diagrams are now included in documents rather than linked to.
+* Added a report section for DNS records which are missing their reciprocal record.
+* Hardened XenOrchestra plugin and stopped writing it's report if there is nothing new.
+
 .. _v1_5_0:
 v1.5.0
 ======
