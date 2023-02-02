@@ -14,14 +14,14 @@
         </properties>
     </metadata>
 
-    <section id="title">
+    <section id="title" lockstructure="true">
       <fragment id="title">
         <heading level="2">Hardware Node</heading>
         <heading level="1"><t:value name="ps.title"/></heading>
       </fragment>
    </section>
     
-    <section id="header">
+    <section id="header" lockstructure="true">
         
         <properties-fragment id="header">
           <property name="name" title="Name" value="${name}" />
