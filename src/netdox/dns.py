@@ -57,7 +57,7 @@ class DNSRecord(ABC):
 
     def __eq__(self, other) -> bool:
         return self.__hash__() == other.__hash__()
-
+    
     @abstractmethod
     def to_psml(self, id: str) -> PropertiesFragment:
         """
@@ -217,6 +217,9 @@ class DNSLinkSet:
 
     def __getitem__(self, key: DNSRecordType) -> DNSLinkSet:
         return getattr(self, key.value)
+    
+    def __len__(self) -> int:
+        return len(self._set)
 
     def add(self, record: DNSLink) -> None:
         self._set.add(record)
