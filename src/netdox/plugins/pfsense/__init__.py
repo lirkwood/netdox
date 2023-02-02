@@ -28,7 +28,10 @@ async def pfsenseScrapeNat() -> dict:
 
     await (await page.J('#usernamefld')).type(config['username'])
     await (await page.J('#passwordfld')).type(config['password'])
-    await page.click('.btn-sm')
+    await asyncio.gather(
+        page.waitForNavigation(),
+        page.click('.btn-sm'),
+    )
 
     rows = await page.JJ('tr.ui-sortable-handle')
     for row in rows:
