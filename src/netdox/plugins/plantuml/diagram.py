@@ -5,7 +5,7 @@ import os
     
 from netdox import Network, Node, utils
 from netdox.base import NetworkObject
-from netdox.dns import DNSObject, IPv4Address
+from netdox.dns import DNSObject, DNSRecordType, IPv4Address
 from netdox.nodes import ProxiedNode
 from plantuml import deflate_and_encode
 import requests
@@ -164,6 +164,12 @@ class NodeDiagramFactory:
                 node_class_name = self._class_name(dnsobj.node)
                 if self._class_definition(node_class_name) in self.markup:
                     self._link(class_name, node_class_name)
+                    
+        # domain with no records and a node
+        elif len(dnsobj.links) == 0 and dnsobj.node is not None:
+            node_class_name = self._class_name(dnsobj.node)
+            if self._class_definition(node_class_name) in self.markup:
+                self._link(class_name, node_class_name)
 
         return cache
 
