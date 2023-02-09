@@ -228,6 +228,7 @@ class ScreenshotManager:
         Sentence any stale screenshots on PageSeeder.
         Also clears the sentence of any screenshots wrongfully marked as stale.
         """
+        # TODO remove this method
         for file in self.existingScreens:
             if file.replace('_','.')[:-4] not in self.domains:
                 info = json.loads(pageseeder.get_uri(self.urimap[file]))
