@@ -178,8 +178,9 @@ def urimap(
 # Sentencing #
 ##############
 
-def sentence_uri(uri: str) -> date:
+def sentence_uri(uri: str) -> date: # TODO remove this function
     """
+    DEPRECATED
     Adds two labels to the document on PageSeeder with the given URI,
     which indicates that the object has been sentenced and when.
     After 30 days of being sentenced the document will be archived.
@@ -209,8 +210,22 @@ def sentence_uri(uri: str) -> date:
         patch_uri(uri, {'labels':','.join(labels)})
         return plus_thirty
 
-def clear_sentence(uri: str) -> None:
+def sentence_uris(uris: list[str], assignee: str) -> None:
+    """Sentences documents with URIs in the list to be archived, after approval."""
+    filter = ''
+    for uri in uris:
+        filter += f'psid:{uri},'
+        
+    batch_document_action('addworkflow', {
+        'filters': filter,
+        'action.assignedto': assignee,
+        'action.due': str(date.today() + timedelta(days = 30)),
+        'action.status': 'Initiated'
+    })
+
+def clear_sentence(uri: str) -> None: # TODO remove this function
     """
+    DEPRECATED
     Remove the sentence from the document with the given URI.
 
     :param uri: The URI of the document to clear the sentence of.
@@ -226,6 +241,19 @@ def clear_sentence(uri: str) -> None:
                 labels.remove(label)
         patch_uri(uri, {'labels':labels})
 
+def clear_sentences(uris: list[str]) -> None:
+    """Removes the sentences from documents with URIs in the list."""
+    filter = ''
+    for uri in uris:
+        filter += f'psid:{uri},'
+
+    batch_document_action('addworkflow', {
+        'filters': filter,
+        'action.assignedto': '',
+        'action.due': '',
+        'action.status': 'Terminated'
+    })    
+
 
 def sentenceStale(dir: str) -> dict[date, list[str]]:
     """
@@ -237,8 +265,8 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
     :rtype: dict[date, list[str]]
     """
     stale = defaultdict(list)
-    today = date.today()
     group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
+    member = json.loads(get_self())
     
     if dir in urimap():
         try:
@@ -249,35 +277,38 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
         except FileNotFoundError:
             logger.error(f'No such directory locally to detect stale items in: {dir}')
             return {}
-        remote = json.loads(get_uris(urimap()[dir], params={
-            'type': 'document',
-            'relationship': 'descendants'
-        }))
+        remote = search_parsed(params = {
+            'filters': f'pstype:document,psancestor:{group_path}/website/{dir}',
+            'facets': 'psstatus,psassignedto'
+        })
 
-        for file in remote["uris"]:
-            uri = file["id"]
-            labels = file['labels'] if 'labels' in file else []
-            commonpath = os.path.normpath(file["decodedpath"].split(f"{group_path}/website/")[-1])
+        sentence = []
+        clear = []
+        for file in remote:
+            uri = file["psid"]
+            status = file['psstatus'] if (
+                'psstatus' in file and
+                'psassignedto' in file and 
+                file['psassignedto'] == 'netdox service'
+            ) else None
+            commonpath = os.path.normpath(file["decodedpath"].split(f"{group_path}/website/", 1)[-1])
 
-            expiry = None
-            for label in labels:
-                match = re.fullmatch(utils.expiry_date_pattern, label)
-                if match:
-                    expiry = date.fromisoformat(match['date'])
-            
-            if commonpath in local and expiry is not None:
-                clear_sentence(uri)
+            if commonpath in local and status in ('Initiated', 'Approved'):
+                clear.append(uri)
 
             elif commonpath not in local:
-                if expiry and expiry <= today:
+                if status == 'Approved':
                     archive(uri)
                     title = file['title'] if 'title' in file else f'(URI={file["id"]})'
-                    logger.info(f"Archiving document '{title}' as it is >=30 days stale.")
-                elif expiry is not None:
-                    stale[expiry].append(uri)
-                else:
-                    stale[sentence_uri(uri)].append(uri)
-                    
+                    logger.info(f"Archiving document '{title}' as it has been approved.")
+
+                elif status is None:
+                    sentence.append(uri)
+        if len(clear) > 0:
+            clear_sentences(clear)
+        if len(sentence) > 0:
+            sentence_uris(sentence, member['id'])
+
     return stale
 
 def findStale(dirs: Iterable[str]) -> dict[date, set[str]]:
@@ -413,6 +444,12 @@ def get_version(host, **kwargs):
     soup = BeautifulSoup(
         requests.get(f'https://{host}/ps/service/version', **kwargs).text, 'xml')
     return soup.find('version')['string']
+
+@auth
+def get_self(host = '', header={}):
+    """Returns details of the currently authenticated member."""
+    r = requests.get(host+'/self', headers=header)
+    return r.text
 
 @auth
 def get_uri(locator, params={}, forurl=False, host='', group='', header={}):
@@ -721,7 +758,7 @@ def get_uris_history(params={}, host='', group='', header={}):
 @auth
 def batch_document_action(action, params={}, host='', group='', member='', header={}):
     service = f'/members/{member}/groups/{group}/batch/uri/{action}/search'
-    r = requests.get(host+service, params=params, headers=header)
+    r = requests.post(host+service, params=params, headers=header)
     return r.text
 
 if __name__ == '__main__':
