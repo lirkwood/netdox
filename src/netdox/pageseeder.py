@@ -718,5 +718,11 @@ def get_uris_history(params={}, host='', group='', header={}):
     r = requests.get(host+service, params=params, headers=header)
     return r.text
 
+@auth
+def batch_document_action(action, params={}, host='', group='', member='', header={}):
+    service = f'/members/{member}/groups/{group}/batch/uri/{action}/search'
+    r = requests.get(host+service, params=params, headers=header)
+    return r.text
+
 if __name__ == '__main__':
     urimap()
