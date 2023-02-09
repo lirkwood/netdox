@@ -667,7 +667,6 @@ def search_parsed(params={}, host='', group='', header={}) -> list[dict[str, str
         if 'page' not in params:
             current_page = int(resp['results']['page'])
             while int(resp['results']['totalPages']) > current_page:
-                print(str(resp['results']['totalPages']) + ' > ' + str(current_page))
                 current_page += 1
                 resp = json.loads(search(params | {'page': current_page}, host=host, group=group, header=header))
                 results.extend(resp['results']['result'])
