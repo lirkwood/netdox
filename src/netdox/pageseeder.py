@@ -619,6 +619,33 @@ def search(params={}, host='', group='', header={}):
     r = requests.get(host+service, headers=header, params=params)
     return r.text
 
+@auth
+def search_parsed(params={}, host='', group='', header={}) -> list[dict[str, str]]:
+    """
+    Like search but parses each result into a map of its fields.
+    """
+    resp = json.loads(search(params=params, host=host, group=group, header=header))
+    try:
+        results: list[dict] = resp['results']['result']
+        if 'page' not in params:
+            current_page = int(resp['results']['page'])
+            while int(resp['results']['totalPages']) > current_page:
+                print(str(resp['results']['totalPages']) + ' > ' + str(current_page))
+                current_page += 1
+                resp = json.loads(search(params | {'page': current_page}, host=host, group=group, header=header))
+                results.extend(resp['results']['result'])
+        parsed_results = []
+        for result in results:
+            parsed_result = {}
+            for field in result['fields']:
+                parsed_result[field['name']] = field['value']
+            parsed_results.append(parsed_result)
+
+        return parsed_results
+                
+    except KeyError:
+        raise ValueError('Bad response from search; failed to parse results.')
+
 
 @auth
 def resolve_group_refs(params={}, host='', group='', member='', header={}):
