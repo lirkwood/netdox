@@ -24,7 +24,7 @@
     <section id="header" lockstructure="true">
         
         <properties-fragment id="header">
-          <property name="name" title="Name" value="${name}" />
+          <property name="name" title="Name" value="{$name}" />
           <property name="identity" title="Identity" value="" />
           <property name="type" title="Node Type" value="hardware" />
           <property name="location" title="Location" value="" />
