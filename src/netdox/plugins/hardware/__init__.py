@@ -80,11 +80,13 @@ class HardwareNode(Node):
         )
 
         try:
-            info = psml.find('section', id = 'info').extract()
-            if info is not None:
-                self.psml = Section.from_tag(info)
+            info_raw = psml.find('section', id = 'info').extract()
+            if not info_raw.has_attr('title'):
+                info_raw['title'] = 'Editable Content'
+            info = Section.from_tag(info_raw)
         except AttributeError:
-            raise ValueError('Hardware document is missing the info section.')
+            info = Section('info', 'Editable Content')
+        self.psml = info
 
     ## abstract properties
 
