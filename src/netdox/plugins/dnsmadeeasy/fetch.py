@@ -15,7 +15,7 @@ from datetime import datetime
 import hmac
 import hashlib
 
-from netdox.dns import TXTRecord
+from netdox.dns import TXTRecord, CAARecord
 
 
 def genheader() -> dict[str, str]:
@@ -85,6 +85,9 @@ def fetch_dns(network: Network):
 
             elif record['type'] == 'TXT':
                 add_TXT(network, record, domain)
+            
+            elif record['type'] == 'CAA':
+                add_CAA(network, record, domain)
 
 SOURCE = 'DNSMadeEasy'
 
@@ -158,6 +161,23 @@ def add_TXT(network: Network, record: dict, root: str):
     fqdn = assemble_fqdn(subdomain, root)
     network.domains[root].txt_records.add(
         TXTRecord(fqdn, record['value'], SOURCE))
+
+@utils.handle
+def add_CAA(network: Network, record: dict, root: str):
+    """
+    Integrates one CAA regord into a network from a dictionary.
+
+    :param network: The network.
+    :type network: Network
+    :param record: A dictionary containing some information about the record.
+    :type record: dict
+    :param root: The root domain this record belongs to.
+    :type root: str
+    """
+    subdomain = record['name']
+    fqdn = assemble_fqdn(subdomain, root)
+    network.domains[fqdn].caa_records.add(
+        CAARecord(fqdn, record['value'], record['type'], SOURCE))
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
