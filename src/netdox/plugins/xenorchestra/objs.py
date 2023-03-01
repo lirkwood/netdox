@@ -243,7 +243,7 @@ class XOServer:
         raise WebSocketException(
             f"Exhausted inbound messages from server, failed to match ID '{id}'")
 
-    async def fetchObjs(self, filter: dict[str, str]) -> dict:
+    async def fetchObjs(self, filter: dict[str, str] = None) -> dict:
         """
         Returns a dict of all objects on the server that match *filter*.
 
@@ -252,4 +252,7 @@ class XOServer:
         :return: The "result" object in the JSON returned by the server.
         :rtype: dict
         """
-        return (await self.call('xo.getAllObjects', {'filter': filter}))['result']
+        return (await self.call('xo.getAllObjects', {'filter': filter or {}}))['result']
+
+    async def fetchJobs(self, filter: dict[str, str] = None) -> dict:
+        return (await self.call('backupNg.getAllJobs', {'filter': filter or {}}))['result']
