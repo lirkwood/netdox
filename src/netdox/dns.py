@@ -467,6 +467,7 @@ class Domain(DNSObject):
                 labels = labels
             )
             self.txt_records = set()
+            self.caa_records = set()
             
         else:
             raise ValueError('Must provide a valid name for a Domain (some FQDN)')
@@ -530,6 +531,12 @@ class Domain(DNSObject):
                 for count, record in enumerate(self.txt_records)
             ]).tag
         )
+        soup.find('section', id = 'caa_records').replace_with(
+            Section('caa_records', 'CAA Records', [
+                record.to_psml(f'{record.type}_record_{count}') 
+                for count, record in enumerate(self.caa_records)
+            ]).tag
+        )
         return soup
 
     @classmethod
@@ -551,6 +558,12 @@ class Domain(DNSObject):
             txts = set()
             for _txt in Section.from_tag(txt_records):
                 txts.add(TXTRecord.from_psml(PropertiesFragment.from_tag(_txt.tag)))
+
+        caa_records = psml.find('section', id = 'caa_records')
+        if caa_records is not None:
+            caas = set()
+            for _caa in Section.from_tag(caa_records):
+                caas.add(CAARecord.from_psml(PropertiesFragment.from_tag(_caa.tag)))
 
         for _record in dns_records:
             if _record.tag.name != 'properties-fragment':
