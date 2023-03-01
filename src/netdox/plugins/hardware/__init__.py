@@ -39,6 +39,8 @@ class HardwareNode(Node):
     """The URI of the document this Node was created from."""
     filename: str
     """The filename to give this Node."""
+    title: str
+    """The document title for this Node."""
     type: str = 'hardware'
 
     def __init__(self, 
@@ -53,7 +55,6 @@ class HardwareNode(Node):
         domains, ips = [], []
         name = None
 
-                
         for property in psml.find_all('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
@@ -78,6 +79,12 @@ class HardwareNode(Node):
             domains = domains,
             ips = ips
         )
+
+        try:
+            title = psml.find('uri')['title']
+        except AttributeError:
+            title = None
+        self.title = title or self.name
 
         try:
             info_raw = psml.find('section', id = 'info').extract()
@@ -120,6 +127,12 @@ class HardwareNode(Node):
         ):
             return property.xref['urititle']
         return None
+    
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        soup.find('uri')['title'] = self.title
+        soup.find('fragment', id = 'title').find('heading', level = '1').string = self.title
+        return soup
 
 
 global thread
