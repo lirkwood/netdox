@@ -132,7 +132,7 @@ class EC2Instance(DefaultNode):
         """
         return PropertiesFragment('tags', [
             Property(
-                re.sub(self.TAG_NAME_PATTERN, "", tag.lstrip('-')), 
+                'awstag_' + re.sub(self.TAG_NAME_PATTERN, "", tag.lstrip('-')), 
                 value, 
                 f'Tag: {tag}'
             )
