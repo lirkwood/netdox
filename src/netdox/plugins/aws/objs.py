@@ -46,7 +46,7 @@ class EC2Instance(DefaultNode):
     """Description for instance billing fragment."""
     VOLUME_BILLING_DESC: str = 'Billing for all volumes attached to this instance.'
     """Description for volume billing fragment."""
-    TAG_NAME_PATTERNL: re.Pattern = re.compile('[^a-zA-Z0-9_-')
+    TAG_NAME_PATTERN: re.Pattern = re.compile('[^a-zA-Z0-9_-]')
     """Regex pattern matching invalid characters for a tag name."""
     type: str = 'ec2'
 
