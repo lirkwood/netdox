@@ -18,13 +18,14 @@ class DNSRecordType(Enum):
     CNAME = 'CNAME'
     PTR = 'PTR'
     TXT = 'TXT'
+    CAA = 'CAA'
 
     def __str__(self) -> str:
         return self.value
 
     def is_link(self) -> bool:
         """Returns true if this DNSRecordType can describe a DNSLink."""
-        return self != DNSRecordType.TXT
+        return self != DNSRecordType.TXT & self != DNSRecordType.CAA
 
     @staticmethod
     def links() -> list[DNSRecordType]:
@@ -152,6 +153,29 @@ class TXTRecord(DNSRecord):
     def from_psml(cls, psml: PropertiesFragment) -> TXTRecord:
         record = psml.to_dict()
         return cls(record['txt_name'], record['txt_value'], record['source'])
+
+class CAARecord(DNSRecord):
+    "Implementation for CAA DNS records."
+    type = DNSRecordType.CAA
+    caa_type: str
+    """Type of the CAA record."""
+
+    def __init__(self, name: str, value: str, type: str, source: str) -> None:
+        super().__init__(name, value, source, DNSRecordType.TXT)
+        object.__setattr__(self, 'caa_type', type)
+
+    def to_psml(self, id: str) -> PropertiesFragment:
+        return PropertiesFragment(id, [
+            Property('caa_name', self.name, 'Name'),
+            Property('caa_value', self.value, 'Value'),
+            Property('caa_type', self.caa_type, 'Type'),
+            Property('source', self.source, 'Source Plugin')
+        ])
+
+    @classmethod
+    def from_psml(cls, psml: PropertiesFragment) -> TXTRecord:
+        record = psml.to_dict()
+        return cls(record['caa_name'], record['caa_value'], record['caa_type'], record['source'])
 
 class NATLink:
     """Represents a NAT entry, linking one IPv4 to another."""
@@ -414,6 +438,8 @@ class Domain(DNSObject):
     TEMPLATE = DOMAIN_TEMPLATE
     txt_records: set[TXTRecord]
     """A set of TXT records in the zone of this domain."""
+    caa_records: set[CAARecord]
+    """A set of CAA records on this domain."""
     
     ## dunder methods
 
