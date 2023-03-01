@@ -8,7 +8,7 @@ import certifi
 from netdox import DefaultNode, IPv4Address, Network, psml
 from websockets import client
 from websockets.exceptions import WebSocketException
-
+from datetime import datetime
 
 class VirtualMachine(DefaultNode):
     """
@@ -28,6 +28,8 @@ class VirtualMachine(DefaultNode):
     """Set of tags assigned in XenOrchestra."""
     hostIp: IPv4Address
     """The IPv4 address of the node this VM is hosted on."""
+    snapshots: list[datetime]
+    """Date and time of each snapshot for this VM."""
     type: str = 'xovm'
 
     def __init__(self, 
@@ -39,6 +41,7 @@ class VirtualMachine(DefaultNode):
             os: dict,
             host: str, 
             pool: str,
+            snapshots: list[datetime],
             private_ip: str,
             public_ips: Iterable[str] = [],
             domains: Iterable[str] = [],
@@ -114,9 +117,22 @@ class VirtualMachine(DefaultNode):
         ])
 
     @property
+    def psmlSnapshots(self) -> psml.PropertiesFragment:
+        """
+        Snapshots fragment of the VirtualMachine Node document
+
+        :return: A PropertiesFragment        
+        :rtype: psml.PropertiesFragment
+        """
+        return psml.PropertiesFragment('snapshots', [
+            psml.Property('snapshot', str(dt), 'Snapshot Date', 'date')
+            for dt in self.snapshots
+        ])
+
+    @property
     def psmlBody(self) -> list[psml.Section]:
         return [psml.Section('body', fragments = [
-            self.psmlCore, self.psmlOS, self.psmlTags])]
+            self.psmlCore, self.psmlOS, self.psmlTags, self.psmlSnapshots])]
 
 
 
