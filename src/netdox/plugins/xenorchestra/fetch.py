@@ -14,6 +14,7 @@ from netdox import iptools, utils
 from netdox import IPv4Address, Network
 from netdox.nodes import DefaultNode, PlaceholderNode
 from netdox.plugins.xenorchestra.objs import XOServer, VirtualMachine
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,7 @@ async def makeNodes(network: Network) -> tuple[dict, dict[str, list[str]], dict[
         pools = await xo.fetchObjs({'type': 'pool'})
         hosts = await xo.fetchObjs({'type': 'host'})
         vms = await xo.fetchObjs({'type': 'VM'})
+        snapshots = await xo.fetchObjs({'type': 'VM-snapshot'})
         
     # Pools
     poolNames: dict[str, str] = {}
@@ -83,6 +85,11 @@ async def makeNodes(network: Network) -> tuple[dict, dict[str, list[str]], dict[
 
                     hostVMs[vm['$container']].append(vm['uuid'])
 
+                    snapshot_dts = []
+                    if 'snapshots' in vm:
+                        for snapshot_id in vm['snapshots']:
+                            snapshot_dts.append(datetime.fromtimestamp(snapshots[snapshot_id]['snapshot_time']))
+
                     VirtualMachine(
                         network = network,
                         name = vm['name_label'],
@@ -92,6 +99,7 @@ async def makeNodes(network: Network) -> tuple[dict, dict[str, list[str]], dict[
                         os = vm['os_version'],
                         host = hosts[vm['$container']]['address'],
                         pool = poolNames[vm['$pool']],
+                        snapshots = snapshot_dts,
                         private_ip = vm['mainIpAddress'],
                         tags = vm['tags']
                     )
