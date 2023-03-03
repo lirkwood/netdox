@@ -25,7 +25,7 @@ class DNSRecordType(Enum):
 
     def is_link(self) -> bool:
         """Returns true if this DNSRecordType can describe a DNSLink."""
-        return self != DNSRecordType.TXT & self != DNSRecordType.CAA
+        return (self != DNSRecordType.TXT) & (self != DNSRecordType.CAA)
 
     @staticmethod
     def links() -> list[DNSRecordType]:
@@ -173,7 +173,7 @@ class CAARecord(DNSRecord):
         ])
 
     @classmethod
-    def from_psml(cls, psml: PropertiesFragment) -> TXTRecord:
+    def from_psml(cls, psml: PropertiesFragment) -> CAARecord:
         record = psml.to_dict()
         return cls(record['caa_name'], record['caa_value'], record['caa_type'], record['source'])
 
