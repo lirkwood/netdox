@@ -57,6 +57,7 @@ class VirtualMachine(DefaultNode):
         self.hostIp = self.network.ips[host]
         self.pool = pool.strip().lower()
         self.tags = set(tags)
+        self.snapshots = snapshots
     
     @property
     def psmlCore(self) -> psml.PropertiesFragment:
