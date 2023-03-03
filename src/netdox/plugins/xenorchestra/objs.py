@@ -9,6 +9,27 @@ from netdox import DefaultNode, IPv4Address, Network, psml
 from websockets import client
 from websockets.exceptions import WebSocketException
 from datetime import datetime
+from dataclasses import dataclass
+
+@dataclass
+class Pool:
+    uuid: str
+    """uuid of the pool"""
+    name: str
+    """name of the pool"""
+    hosts: dict[str, Host]
+    """Maps host uuids to object"""
+
+@dataclass
+class Host:
+    uuid: str
+    """uuid of the host"""
+    name: str
+    """name of the hose"""
+    node: DefaultNode
+    """node object describing host"""
+    vms: dict[str, VirtualMachine]
+    """Maps vm uuids to object"""
 
 class VirtualMachine(DefaultNode):
     """
