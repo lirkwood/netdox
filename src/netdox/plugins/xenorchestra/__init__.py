@@ -13,17 +13,17 @@ from netdox.utils import APPDIR
 logging.getLogger('websockets').setLevel(logging.INFO)
 
 from netdox.plugins.xenorchestra.fetch import runner
-from netdox.plugins.xenorchestra.objs import VirtualMachine
+from netdox.plugins.xenorchestra.objs import VirtualMachine, Pool
 from netdox.plugins.xenorchestra.write import genpub, genreport
 
-global pubdict
-pubdict: dict = {}
+global pools
+pools: list[Pool] = []
 def nodes(network: Network) -> None:
-    global pubdict
-    pubdict = runner(network)
+    global pools
+    pools = runner(network)
 
-def _write(network: Network) -> None:
-    genpub(network, pubdict)
+def write(network: Network) -> None:
+    genpub(network, pools)
     genreport(network)
 
 def init(_: Network):
@@ -33,7 +33,7 @@ def init(_: Network):
 __stages__ = {
     LifecycleStage.INIT: init,
     LifecycleStage.NODES: nodes,
-    LifecycleStage.WRITE: _write
+    LifecycleStage.WRITE: write
 }
 
 __nodes__ = [VirtualMachine]
