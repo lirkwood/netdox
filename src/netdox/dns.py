@@ -139,7 +139,7 @@ class TXTRecord(DNSRecord):
     """The domain this record uses as its DNS zone."""
 
     def __init__(self, name: str, value: str, source: str) -> None:
-        super().__init__(name, value, source, DNSRecordType.TXT)
+        super().__init__(name, value, source, self.type)
         object.__setattr__(self, 'zone', '.'.join(name.split('.')[1:]))
 
     def to_psml(self, id: str) -> PropertiesFragment:
@@ -161,7 +161,7 @@ class CAARecord(DNSRecord):
     """Type of the CAA record."""
 
     def __init__(self, name: str, value: str, type: str, source: str) -> None:
-        super().__init__(name, value, source, DNSRecordType.TXT)
+        super().__init__(name, value, source, self.type)
         object.__setattr__(self, 'caa_type', type)
 
     def to_psml(self, id: str) -> PropertiesFragment:
