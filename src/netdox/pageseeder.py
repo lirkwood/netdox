@@ -49,14 +49,17 @@ def refreshToken(credentials: dict) -> str:
         }
 
         r = requests.post(url, params=refresh_header)
-        token = json.loads(r.text)['access_token']
-        issued = datetime.isoformat(datetime.now())
-        stream.write(json.dumps({
-            'token': token,
-            'issued': str(issued)
-        }, indent=2))
-
-    return token
+        try:
+            token = json.loads(r.text)['access_token']
+        except KeyError:
+            raise ValueError(f'Unexpected response when requesting token: {r.text}')
+        else:
+            issued = datetime.isoformat(datetime.now())
+            stream.write(json.dumps({
+                'token': token,
+                'issued': str(issued)
+            }, indent=2))
+            return token
 
 def token(credentials: dict) -> str:
     """
@@ -289,9 +292,11 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
             status = file['psstatus'] if (
                 'psstatus' in file and
                 'psassignedto' in file and 
-                file['psassignedto'] == 'netdox service'
+                file['psassignedto'] == 'netdox service' #TODO get this info from config
             ) else None
-            commonpath = os.path.normpath(file["decodedpath"].split(f"{group_path}/website/", 1)[-1])
+            commonpath = os.path.normpath(os.path.join(
+                file['psfolder'].split(f"{group_path}/website/", 1)[-1], file['psfilename']
+            ))
 
             if commonpath in local and status in ('Initiated', 'Approved'):
                 clear.append(uri)
