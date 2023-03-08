@@ -103,7 +103,7 @@ class HardwareNode(Node):
 
     @property
     def psmlBody(self) -> list[Section]:
-        return [] if self.psml is None else [self.psml]
+        return [self.psml]
 
     ## methods
 
