@@ -177,7 +177,7 @@ def add_CAA(network: Network, record: dict, root: str):
     subdomain = record['name']
     fqdn = assemble_fqdn(subdomain, root)
     network.domains[fqdn].caa_records.add(
-        CAARecord(fqdn, record['value'], record['type'], SOURCE))
+        CAARecord(fqdn, record['value'], record['caaType'], SOURCE))
 
 
 def assemble_fqdn(subdomain: str, root: str) -> str:
