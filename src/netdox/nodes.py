@@ -8,7 +8,6 @@ import os
 import re
 from hashlib import sha256
 from typing import TYPE_CHECKING, Iterable, Optional, Type
-import copy
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -340,10 +339,12 @@ class Node(base.NetworkObject):
         else:
             dnsobj.node = self
 
-        if isinstance(dnsobj, dns.Domain):
-            self.domains.add(dnsobj.name)
-        else:
+        if isinstance(dnsobj, dns.IPv4Address):
             self.ips.add(dnsobj.name)
+            for link in dnsobj.NAT:
+                cache |= self._walkBackrefs(link.destination)
+        else:
+            self.domains.add(dnsobj.name)
         
         for backref in dnsobj.implied_links.destinations:
             cache |= self._walkBackrefs(backref, cache)
@@ -412,6 +413,10 @@ class ProxiedNode(Node):
         
         for backref in dnsobj.implied_links.destinations:
             cache |= self._walkBackrefs(backref, cache)
+        
+        if isinstance(dnsobj, dns.IPv4Address):
+            for link in dnsobj.NAT:
+                cache |= self._walkBackrefs(link.destination)
 
         return cache
 
