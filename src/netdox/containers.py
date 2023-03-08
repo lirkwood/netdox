@@ -456,41 +456,50 @@ class Network:
             config = NetworkConfig.from_psml(stream.read())
         net = cls(config = config)
 
-        for domain_file in os.scandir(os.path.join(dir, 'domains')):
-            try:
-                with open(domain_file, 'r', encoding='utf-8') as stream:
-                    domain = dns.Domain.from_psml(net, 
-                        psml = BeautifulSoup(stream.read(), 'xml'))
-                net.labels[domain.docid] = (
-                    domain.labels - set(domain.DEFAULT_LABELS))
-            except Exception as exc:
-                logger.error(
-                    f'Failed to deserialise Domain object at "{domain_file.path}"')
-                logger.exception(exc)
-
-        for subnet in os.scandir(os.path.join(dir, 'ips')):
-            for ipv4_file in os.scandir(subnet):
+        try:
+            for domain_file in os.scandir(os.path.join(dir, 'domains')):
                 try:
-                    with open(ipv4_file, 'r', encoding='utf-8') as stream:
-                        ipv4 = dns.IPv4Address.from_psml(net, 
+                    with open(domain_file, 'r', encoding='utf-8') as stream:
+                        domain = dns.Domain.from_psml(net, 
                             psml = BeautifulSoup(stream.read(), 'xml'))
-                    net.labels[ipv4.docid] = (
-                        ipv4.labels - set(ipv4.DEFAULT_LABELS))
+                    net.labels[domain.docid] = (
+                        domain.labels - set(domain.DEFAULT_LABELS))
                 except Exception as exc:
                     logger.error(
-                        f'Failed to deserialise IPv4 object at "{ipv4_file.path}"')
+                        f'Failed to deserialise Domain object at "{domain_file.path}"')
                     logger.exception(exc)
+        except FileNotFoundError:
+            logger.warning('No domains directory found in remote network.')
 
-        for node_file in os.scandir(os.path.join(dir, 'nodes')):
-            try:
-                with open(node_file, 'r', encoding='utf-8') as stream:
-                    node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
-                        psml = BeautifulSoup(stream.read(), 'xml'))
-                net.labels[node.docid] = node.labels - set(node.DEFAULT_LABELS)
-            except Exception as exc:
-                logger.error(
-                    f'Failed to deserialise Node object at "{node_file.path}"')
-                logger.exception(exc)
+        try:
+            for subnet in os.scandir(os.path.join(dir, 'ips')):
+                for ipv4_file in os.scandir(subnet):
+                    try:
+                        with open(ipv4_file, 'r', encoding='utf-8') as stream:
+                            ipv4 = dns.IPv4Address.from_psml(net, 
+                                psml = BeautifulSoup(stream.read(), 'xml'))
+                        net.labels[ipv4.docid] = (
+                            ipv4.labels - set(ipv4.DEFAULT_LABELS))
+                    except Exception as exc:
+                        logger.error(
+                            f'Failed to deserialise IPv4 object at "{ipv4_file.path}"')
+                        logger.exception(exc)        
+        except FileNotFoundError:
+            logger.warning('No ips directory found in remote network.')
+
+        try:
+            for node_file in os.scandir(os.path.join(dir, 'nodes')):
+                try:
+                    with open(node_file, 'r', encoding='utf-8') as stream:
+                        node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
+                            psml = BeautifulSoup(stream.read(), 'xml'))
+                    net.labels[node.docid] = node.labels - set(node.DEFAULT_LABELS)
+                except Exception as exc:
+                    logger.error(
+                        f'Failed to deserialise Node object at "{node_file.path}"')
+                    logger.exception(exc)
+        except FileNotFoundError:
+            logger.warning('No nodes directory found in remote network.')
 
         return net
 
