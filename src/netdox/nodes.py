@@ -342,7 +342,7 @@ class Node(base.NetworkObject):
         if isinstance(dnsobj, dns.IPv4Address):
             self.ips.add(dnsobj.name)
             for link in dnsobj.NAT:
-                cache |= self._walkBackrefs(link.destination)
+                cache |= self._walkBackrefs(link.destination, cache)
         else:
             self.domains.add(dnsobj.name)
         
@@ -416,7 +416,7 @@ class ProxiedNode(Node):
         
         if isinstance(dnsobj, dns.IPv4Address):
             for link in dnsobj.NAT:
-                cache |= self._walkBackrefs(link.destination)
+                cache |= self._walkBackrefs(link.destination, cache)
 
         return cache
 
