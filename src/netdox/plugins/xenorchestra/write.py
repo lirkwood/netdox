@@ -2,17 +2,20 @@ import json
 import logging
 import shutil
 from datetime import date, timedelta
-from typing import Optional, cast
+from typing import Optional
+import os
 
 from bs4 import BeautifulSoup, Tag
 from lxml import etree
 from netdox import pageseeder
 from netdox import Network
-from netdox.plugins.xenorchestra.objs import VirtualMachine, Pool
-from netdox.utils import APPDIR
+from netdox.plugins.xenorchestra.objs import VirtualMachine, Pool, VMBackup
+from netdox.utils import APPDIR, OUTDIR
+from netdox.psml import Section
 
 logger = logging.getLogger(__name__)
 
+BACKUP_DIR = os.path.join(OUTDIR, 'xobackup')
 
 def genpub(network: Network, pools: list[Pool]) -> None:
     """
@@ -34,7 +37,9 @@ def genpub(network: Network, pools: list[Pool]) -> None:
 
         xfrag = pub.new_tag(name = 'xref-fragment', id = f'pool_{poolnum}')
         for host in pool.hosts.values():
-            xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = host.node.docid))
+            # Host nodes are created as placeholders. This lookup returns the node that replaced them, if any.
+            host_node = network.nodes[host.node.identity]
+            xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = host_node.docid))
 
             for vm in host.vms.values():
                 xfrag.append(pub.new_tag('blockxref', frag = 'default', type = 'embed', docid = vm.docid, level = 1))
@@ -55,6 +60,82 @@ def genpub(network: Network, pools: list[Pool]) -> None:
         shutil.copyfile(APPDIR + 'plugins/xenorchestra/src/xopub.psml',
             APPDIR + 'out/xopub.psml')
 
+def write_backups(network: Network) -> None:
+    """
+    Writes documents that describe the VM backups.
+
+    :param network: The network.
+    :type network: Network
+    """
+    for node in network.nodes:
+        if isinstance(node, VirtualMachine):
+            if len(node.backups) == 0:
+                continue
+
+            bkp_buffer: list[VMBackup] = []
+            month = node.backups[0].month()
+            for backup in node.backups:
+                _month = backup.month()
+                if _month != month:
+                    write_month_backups(node, bkp_buffer)
+                    bkp_buffer = []
+                    month = _month
+
+                bkp_buffer.append(backup)
+
+            if len(bkp_buffer) > 0:
+                write_month_backups(node, bkp_buffer)
+
+def write_month_backups(vm: VirtualMachine, month_backups: list[VMBackup]) -> None:
+    """
+    Writes a document that describes a month of backups for a VM.
+
+    :param vm: VM that backups are of.
+    :type vm: VirtualMachine
+    :param month_backups: List of backups that were all performed in one month, sorted by date/time.
+    :type month_backups: list[VMBackup]
+    """
+    if len(month_backups) == 0:
+        return
+
+    first_bkp = month_backups[0]
+    month_str = f'{first_bkp.timestamp.year}-{first_bkp.timestamp.month}'
+    template = MONTH_BACKUPS\
+        .replace('#!title', f'Backups for {vm.name} in {month_str}')\
+        .replace('#!docid', first_bkp.docid)
+    soup = BeautifulSoup(template, 'xml')
+
+    bkp_buffer: list[VMBackup] = []
+    day = month_backups[0].timestamp.day
+    for backup in month_backups:
+        _day = backup.timestamp.day
+        if _day != day:
+            write_day_backups(soup, bkp_buffer)
+            bkp_buffer = []
+            day = _day
+        
+        bkp_buffer.append(backup)
+
+    if len(bkp_buffer) > 0:
+        write_day_backups(soup, bkp_buffer)
+
+    outpath = os.path.join(BACKUP_DIR, f'{backup.docid}.psml')    
+    with open(outpath, 'w', encoding = 'utf-8') as stream:
+        stream.write(str(soup))
+
+def write_day_backups(soup: BeautifulSoup, backups: list[VMBackup]) -> None:
+    """
+    Writes a section to the soup that describes one day of backups for a VM.
+
+    :param soup: The document to write a section to.
+    :type soup: BeautifulSoup
+    :param backups: List of backups that were all performed in one day, sorted by date/time.
+    :type backups: list[VMBackup]
+    """
+    date = backups[0].timestamp.date().isoformat()
+    soup.find('document').append(Section(date, f'Backups on {date}', [
+        backup.to_frag() for backup in backups
+    ]).tag)
 
 def genreport(network: Network) -> None:
     """
@@ -135,6 +216,20 @@ PUB = '''
 
     <section id="pools" />
     
+</document>
+'''
+
+MONTH_BACKUPS = '''
+<document level="portable" type="xobackup">
+    <documentinfo>
+        <uri docid="#!docid" title="#!title" />
+    </documentinfo>
+
+    <section id="title">
+        <fragment id="1">
+            <heading level="1">#!title</heading>
+        </fragment>
+    </section>
 </document>
 '''
 
