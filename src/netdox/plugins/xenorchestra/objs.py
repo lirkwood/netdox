@@ -42,7 +42,7 @@ class VMBackup:
 
     @property
     def docid(self) -> str:
-        return f'{self.timestamp.year}-{self.timestamp.month}-{self.vm}'
+        return f'_nd_xobackup_{self.timestamp.year}-{self.timestamp.month}-{self.vm}'
 
     def to_frag(self) -> psml.PropertiesFragment:
         """Returns a psml PropertiesFragment describing this object."""
