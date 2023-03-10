@@ -267,7 +267,7 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
     :return: A dict of date objects mapped to uris which expire on that date.
     :rtype: dict[date, list[str]]
     """
-    stale = defaultdict(list)
+    stale: defaultdict[date, list[str]] = defaultdict(list)
     group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
     member = json.loads(get_self())
     
