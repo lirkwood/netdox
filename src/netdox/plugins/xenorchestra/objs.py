@@ -5,14 +5,58 @@ from typing import Iterable, Optional
 
 import ssl
 import certifi
-from netdox import DefaultNode, IPv4Address, Network, psml
+from netdox import Node, IPv4Address, Network, DefaultNode, psml
 from websockets import client
 from websockets.exceptions import WebSocketException
-from datetime import datetime
+from datetime import datetime, date
 from dataclasses import dataclass
+from math import floor
+
+@dataclass(eq = True, frozen = True)
+class Remote:
+    """A remote filesystem."""
+    uuid: str
+    """uuid of the remote."""
+    name: str
+    """name of the remote."""
+    url: str
+    """URL of the"""
+
+@dataclass(eq = True, frozen = True)
+class VMBackup:
+    """A backup file for a VM."""
+    uuid: str
+    """uuid of the backup."""
+    vm: str
+    """uuid of backed up VM."""
+    mode: str
+    """mode the backup was performed in."""
+    timestamp: datetime
+    """Date and time the backup was performed."""
+    remote: Remote
+    """Remote filesystem this backup is stored on."""
+
+    def month(self) -> date:
+        """Returns a datetime with the year and month this backup was performed."""
+        return date(year = self.timestamp.year, month = self.timestamp.month, day = 1)
+
+    @property
+    def docid(self) -> str:
+        return f'{self.timestamp.year}-{self.timestamp.month}-{self.vm}'
+
+    def to_frag(self) -> psml.PropertiesFragment:
+        """Returns a psml PropertiesFragment describing this object."""
+        return psml.PropertiesFragment(f'{self.timestamp.timestamp()}-{self.remote.uuid}', [
+            psml.Property('uuid', self.uuid, 'Backup UUID'),
+            psml.Property('mode', self.mode, 'Backup Mode'),
+            psml.Property('timestamp', self.timestamp.isoformat(), 'Backup Timestamp', 'datetime'),
+            psml.Property('remote_name', self.remote.name, 'Remote Filesystem Name'),
+            psml.Property('remote_url', self.remote.url, 'Remote Filesystem URL')
+        ])
 
 @dataclass
 class Pool:
+    """A pool of VM hosts."""
     uuid: str
     """uuid of the pool"""
     name: str
@@ -22,11 +66,12 @@ class Pool:
 
 @dataclass
 class Host:
+    """A machine hosting VMs."""
     uuid: str
     """uuid of the host"""
     name: str
     """name of the hose"""
-    node: DefaultNode
+    node: Node
     """node object describing host"""
     vms: dict[str, VirtualMachine]
     """Maps vm uuids to object"""
@@ -51,6 +96,8 @@ class VirtualMachine(DefaultNode):
     """The IPv4 address of the node this VM is hosted on."""
     snapshots: list[datetime]
     """Date and time of each snapshot for this VM."""
+    backups: list[VMBackup]
+    """Backups of this VM, sorted from oldest to newest."""
     type: str = 'xovm'
 
     def __init__(self, 
@@ -63,6 +110,7 @@ class VirtualMachine(DefaultNode):
             host: str, 
             pool: str,
             snapshots: list[datetime],
+            backups: list[VMBackup],
             private_ip: str,
             public_ips: Iterable[str] = [],
             domains: Iterable[str] = [],
@@ -79,6 +127,7 @@ class VirtualMachine(DefaultNode):
         self.pool = pool.strip().lower()
         self.tags = set(tags)
         self.snapshots = snapshots
+        self.backups = backups
     
     @property
     def psmlCore(self) -> psml.PropertiesFragment:
@@ -152,9 +201,33 @@ class VirtualMachine(DefaultNode):
         ])
 
     @property
+    def psmlBackups(self) -> psml.PropertiesFragment:
+        """
+        Monthly backups fragment of the VirtualMachine Node document.
+
+        :return: A PropertiesFragment
+        :rtype: psml.PropertiesFragment
+        """
+        frag = psml.PropertiesFragment('backups', [])
+        if len(self.backups) == 0:
+            return frag
+
+        month = None
+        for bkp in reversed(self.backups):
+            if month is None or bkp.month() != month:
+                month = bkp.month()
+                frag.insert(psml.Property(
+                    name = 'monthly_backup', 
+                    value = psml.XRef(docid = bkp.docid), 
+                    title = f'Backups for {month.year}-{month.month}'
+                ))
+        return frag
+
+    @property
     def psmlBody(self) -> list[psml.Section]:
         return [psml.Section('body', fragments = [
-            self.psmlCore, self.psmlOS, self.psmlTags, self.psmlSnapshots])]
+            self.psmlCore, self.psmlOS, self.psmlTags, self.psmlSnapshots, self.psmlBackups
+        ])]
 
 
 
@@ -276,5 +349,38 @@ class XOServer:
         """
         return (await self.call('xo.getAllObjects', {'filter': filter or {}}))['result']
 
-    async def fetchJobs(self, filter: dict[str, str] = None) -> dict:
-        return (await self.call('backupNg.getAllJobs', {'filter': filter or {}}))['result']
+    async def fetchVMBackups(self) -> dict[str, set[VMBackup]]:
+        """
+        Returns a dict mapping VM uuid to a set of backups of that VM.
+
+        :return: Dict mapping VM uuid to a set of VM backups.
+        :rtype: dict[str, set[VMBackup]]
+        """
+        remotes: dict[str, Remote] = {}
+        for remote_data in (await self.call('remote.getAll'))['result']:
+            remotes[remote_data['id']] = Remote(
+                uuid = remote_data['id'], 
+                name = remote_data['name'], 
+                url = remote_data['url']
+            )
+        
+        vm_backups: dict[str, set[VMBackup]] = {}
+        remote_backup_data = await self.call('backupNg.listVmBackups', {'remotes': list(remotes.keys())})
+        for remote_id, remote_backups in remote_backup_data['result'].items():
+            remote = remotes[remote_id]
+            
+            for vm_id, vm_backup_data in remote_backups.items():
+                if vm_id not in vm_backups:
+                    vm_backups[vm_id] = set()
+
+                backup_set = vm_backups[vm_id]
+                for backup_data in vm_backup_data:
+                    backup_set.add(VMBackup(
+                        uuid = backup_data['id'], 
+                        vm = vm_id, 
+                        mode = backup_data['mode'],
+                        timestamp = datetime.fromtimestamp(floor(backup_data['timestamp'] / 1000)), #??? timestamp wrong
+                        remote = remote
+                    ))
+
+        return vm_backups
