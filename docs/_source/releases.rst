@@ -3,6 +3,21 @@
 Releases
 ########
 
+.. _v1_7_0:
+v1.7.0
+======
+Added backup reporting for XO VMs, CAA records for domains, and switched to workflows for stale docs.
+
+* pfSense plugin is now more reliable.
+* PlantUML diagrams link from DNS names to nodes more reliably.
+* Switched to workflows for sentencing stale documents.
+* Updated hardware parsing logic and document template.
+* Improved XO publication.
+* AWS tag names are now indexed (prefixed with ``aws_tag_``).
+* Added snapshot dates and monthly backup logs for XO VMs.
+* Started capturing CAA records.
+* Fixed node and proxy resolution not considering NAT links.
+
 .. _v1_6_0:
 v1.6.0
 ======
