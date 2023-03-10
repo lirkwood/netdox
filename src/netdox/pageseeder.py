@@ -298,17 +298,21 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
                 file['psfolder'].split(f"{group_path}/website/", 1)[-1], file['psfilename']
             ))
 
+            # File no longer stale and is marked stale
             if commonpath in local and status in ('Initiated', 'Approved'):
                 clear.append(uri)
 
             elif commonpath not in local:
+                # File is stale and has been approved for archival
                 if status == 'Approved':
                     archive(uri)
                     title = file['title'] if 'title' in file else f'(URI={file["id"]})'
                     logger.info(f"Archiving document '{title}' as it has been approved.")
 
+                # File is stale and has no been marked stale yet
                 elif status is None:
                     sentence.append(uri)
+                    
         if len(clear) > 0:
             clear_sentences(clear)
         if len(sentence) > 0:
