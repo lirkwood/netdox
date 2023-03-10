@@ -196,7 +196,7 @@ class VirtualMachine(DefaultNode):
         :rtype: psml.PropertiesFragment
         """
         return psml.PropertiesFragment('snapshots', [
-            psml.Property('snapshot', str(dt), 'Snapshot Date', 'date')
+            psml.Property('snapshot', str(dt), 'Snapshot Date', 'datetime')
             for dt in self.snapshots
         ])
 
