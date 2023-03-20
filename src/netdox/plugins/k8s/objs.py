@@ -15,6 +15,8 @@ class Deployment:
     """Name of this deployment."""
     labels: dict[str, str]
     """Some labels applied to this deployment."""
+    selector: dict[str, str]
+    """Labels that this deployment will match against for pods"""
     containers: list[Container]
     """The containers specified by this deployment."""
 
@@ -37,12 +39,26 @@ class MountedVolume:
     mount_path: str
     """Path to the mount point in container."""
 
+@dataclass
+class Service:
+    """K8s service."""
+    name: str
+    """Name of this service."""
+    labels: dict[str, str]
+    """Some labels applied to this service."""
+    selector: dict[str, str]
+    """Labels that this service will match against for deployments."""
+    paths: set[str]
+    """Some ingress paths that resolve to this service."""
+
 
 @dataclass
 class Pod:
     """K8s pod."""
     name: str
     """Name of this pod."""
+    labels: dict[str, str]
+    """Some labels applied to this pod."""
     workerName: str
     """Name of this pod's host worker."""
     workerIp: str
@@ -54,6 +70,7 @@ class Pod:
     def from_k8s_V1Pod(cls, pod) -> Pod:
         return cls(
             pod.metadata.name,
+            pod.metadata.labels,
             pod.spec.node_name,
             pod.status.host_ip,
             None
@@ -103,10 +120,10 @@ class App(ProxiedNode):
             network: Network,
             name: str, 
             cluster: Cluster, 
-            paths: Iterable[str] = None,
-            labels: dict = None, 
-            pods: Iterable[Pod] = None, 
-            template: Iterable[Container] = None
+            paths: Optional[Iterable[str]] = None,
+            labels: Optional[dict] = None, 
+            pods: Optional[Iterable[Pod]] = None, 
+            template: Optional[Iterable[Container]] = None
         ) -> None:
         domains = {path.split('/')[0] for path in (paths if paths else [])}
         for domain in list(domains):
