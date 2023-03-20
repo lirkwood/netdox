@@ -397,11 +397,16 @@ class ProxiedNode(Node):
                 dnsobj.node = self.proxy # type: ignore
 
             elif isinstance(self.proxy.node, PlaceholderNode):
+                if isinstance(dnsobj.node, ProxiedNode):
+                    proxy = dnsobj.node.proxy.node
+                else:
+                    proxy = dnsobj.node
+                    
                 logger.debug(
                     f'Proxy from {dnsobj.name} to {self.name}'
-                    + f' set to {dnsobj.node.name}')
-                self.proxy.node.merge(dnsobj.node)
-                self.proxy.node = dnsobj.node
+                    + f' set to {proxy.name}')
+                self.proxy.node.merge(proxy)
+                self.proxy.node = proxy
                 dnsobj.node = self.proxy # type: ignore
 
             else:
