@@ -9,6 +9,7 @@ import shutil
 import sys
 from datetime import date
 from distutils.util import strtobool
+from importlib.metadata import version as pkg_version
 
 from cryptography.fernet import Fernet
 
@@ -213,7 +214,7 @@ def refresh(args: argparse.Namespace):
 
     logger.addHandler(debugHandler)
     logger.addHandler(warningHandler)
-    logger.debug('Refresh begins')
+    logger.debug(f'Refresh begins with Netdox version v{pkg_version("netdox")}')
     App().refresh(dry = args.dry_run)
 
 ## Crypto
