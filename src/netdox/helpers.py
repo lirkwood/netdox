@@ -9,6 +9,7 @@ import json
 import logging
 import os
 from typing import Iterable, Iterator, Optional, no_type_check
+from importlib.metadata import version as pkg_version
 
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -123,8 +124,9 @@ class Report:
         :type path: str, optional
         """
         with open(utils.APPDIR+ 'src/templates/report.psml', 'r') as stream:
-            report = BeautifulSoup(stream.read(), 'xml')
-
+            str_report = stream.read().replace('#!version', f'v{pkg_version("netdox")}')
+            report = BeautifulSoup(str_report, 'xml')
+            
         logs = report.new_tag('preformat')
         logs.string = self.logs
         report.find('fragment', id = 'logs').append(logs)

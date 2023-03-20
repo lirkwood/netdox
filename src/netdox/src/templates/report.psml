@@ -8,6 +8,7 @@
   <section id="title">
     <fragment id="title">
       <heading level="1">Daily Report</heading>
+      <preformat>Report written by Netdox #!version</preformat>
       <para>This document contains noteworthy events that occurred during the last refresh.</para>
     </fragment>
     <fragment id="logs" />
