@@ -25,9 +25,7 @@ from netdox.psml import Section
 logger = logging.getLogger(__name__)
 
 URI_PATTERN: re.Pattern = re.compile(r'<uri\s+id="(?P<id>\d+)"')
-SRCDIR = os.path.join(utils.APPDIR, 'plugins', 'hardware', 'src')
-ZIP_PATH = os.path.join(SRCDIR, 'hardware.zip')
-
+DOCS_DIR = os.path.join(utils.APPDIR, 'src', 'remote', 'hardware')
 
 class HardwareNode(Node):
     """
@@ -135,54 +133,11 @@ class HardwareNode(Node):
         return soup
 
 
-global thread
-thread: Optional[Tag] = None
-def init(_: Network) -> None:
-    global thread
-    if os.path.exists(SRCDIR):
-        rmtree(SRCDIR)
-    os.mkdir(SRCDIR)
-
-    thread = BeautifulSoup(
-        pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True), 
-    features = 'xml').thread
-
-    if thread is None:
-        raise RuntimeError('Thread for hardware download was never created.')
-    
-    while thread and thread['status'] != 'completed':
-        time.sleep(0.5)
-        thread = BeautifulSoup(pageseeder.get_thread_progress(thread['id']), features='xml').thread
-        
-    if thread is None:
-        raise RuntimeError('Thread for hardware download never had status \'completed\'')
-
-
 def runner(network: Network) -> None:
-    global thread
-    zip_location = getattr(thread, 'zip', None)
-    if not zip_location or not zip_location.string:
-        raise RuntimeError(
-            'Failed to retrieve exported file location from PageSeeder.')
-    
-    else:
-        ## Downloading and unzipping the archive exported in init
-        psconf = utils.config()["pageseeder"]
-        with requests.get(
-            f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{zip_location.string}',
-            headers = {'authorization': f'Bearer {pageseeder.token(psconf)}'},
-            stream = True
-        ) as zipResponse:
-            zipResponse.raise_for_status()
-            with open(SRCDIR + '/hardware.zip', 'wb') as stream:
-                for chunk in zipResponse.iter_content(8192):
-                    stream.write(chunk)
-                
-        zip = zipfile.ZipFile(ZIP_PATH)
-        zip.extractall(SRCDIR)
-        shutil.rmtree(SRCDIR + '/META-INF')
+    if not os.path.exists(DOCS_DIR):
+        raise RuntimeError('Hardware documents were not downloaded.')    
 
-    for file in utils.path_list(SRCDIR):
+    for file in utils.path_list(DOCS_DIR):
         filename = os.path.basename(file)
         try:
             if file.endswith('.psml'):
@@ -208,7 +163,6 @@ def runner(network: Network) -> None:
             print_exc()
 
 __stages__ = {
-    LifecycleStage.INIT: init,
     LifecycleStage.NODES: runner
 }
 __nodes__ = [HardwareNode]
