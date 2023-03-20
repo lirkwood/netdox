@@ -3,6 +3,16 @@
 Releases
 ########
 
+.. _v1_7_1:
+v1.7.1
+======
+Reworked proxy node resolution, rewrote k8s plugin, streamlined hardware, log package version.
+* Proxied nodes now correctly inherit proxies from sibling proxied nodes.
+* Rewrote Kubernetes plugin refresh code to be much simpler.
+* Hardware documents now use document set downloaded for notes. Will fail on dry run.
+* Began logging Netdox version at start of refresh and at the top of the daily report.
+* Updated type hints for the PropertiesFragment insert/extend methods.
+
 .. _v1_7_0:
 v1.7.0
 ======
