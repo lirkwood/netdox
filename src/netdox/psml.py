@@ -269,13 +269,17 @@ class PropertiesFragment(PSMLFragment):
 
     ## abstract methods
 
-    def insert(self, property: Property, index: int = None) -> None:
-        if index:
-            self.tag.insert(index, property.tag)
-            self.properties.insert(index, property)
-        else:
+    def insert(self, property: Property, index: Optional[int] = None) -> None:
+        if index is None:
             self.tag.append(property.tag)
             self.properties.append(property)
+        else:
+            self.tag.insert(index, property.tag)
+            self.properties.insert(index, property)
+
+    def extend(self, elements: Iterable[Property]) -> None:
+        for elem in elements:
+            self.insert(elem)
 
     @classmethod
     def from_tag(cls, fragment: Tag) -> PropertiesFragment:
