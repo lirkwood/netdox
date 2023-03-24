@@ -312,24 +312,15 @@ class Node(base.NetworkObject):
 
         if dnsobj.node: 
             if dnsobj.node.type == PlaceholderNode.type:
-                logger.debug(
-                    f'{self.name} consuming placeholder node from {dnsobj.name}')
                 dnsobj.node.merge(self)
                 return cache
                 
             elif self.type == PlaceholderNode.type:
-                logger.debug(
-                    f'{self.name} consumed by node from {dnsobj.name}')
                 self.merge(dnsobj.node)
                 return cache
 
             elif isinstance(dnsobj.node, ProxiedNode):
-                assert dnsobj.node.proxy.node is not None, \
-                    'DEBUG: NodeProxy did not create placeholder node.'
-                if dnsobj.node.proxy.node.type == PlaceholderNode.type:
-                    logger.debug(
-                        f'Proxy from {dnsobj.name} to {dnsobj.node.proxy.backend.name}'
-                        + f' set to {self.name}')
+               if dnsobj.node.proxy.node.type == PlaceholderNode.type:
                     dnsobj.node.proxy.node.merge(self)
                     dnsobj.node.proxy.node = self
                
@@ -402,17 +393,10 @@ class ProxiedNode(Node):
                 else:
                     proxy = dnsobj.node
                     
-                logger.debug(
-                    f'Proxy from {dnsobj.name} to {self.name}'
-                    + f' set to {proxy.name}')
                 self.proxy.node.merge(proxy)
                 self.proxy.node = proxy
                 dnsobj.node = self.proxy # type: ignore
 
-            else:
-                logger.debug( #TODO remove warning once properly tested
-                    'False address claim from ProxiedNode '+
-                    f'{self.identity} on {dnsobj.name}')
         else:
             dnsobj.node = self.proxy # type: ignore
         
