@@ -14,7 +14,7 @@ from datetime import date, datetime, timedelta
 from functools import lru_cache, wraps
 from inspect import signature
 from time import sleep
-from typing import Iterable
+from typing import Iterable, Optional
 from zipfile import ZipFile
 
 import requests
@@ -258,6 +258,14 @@ def clear_sentences(uris: list[str]) -> None:
     })    
 
 
+def statusFromFile(file: dict[str, str]) -> Optional[str]:
+    """Returns the workflow status from the dict describing a file 
+    returned by pageseeder from a search, if it is assigned to the correct user."""
+    if 'psstatus' in file:
+        if 'psassignedto' in file and file['psassignedto'] == 'netdox service':
+            return file['psstatus']
+    return None
+
 def sentenceStale(dir: str) -> dict[date, list[str]]:
     """
     Adds stale labels to any files present in *dir* on PageSeeder, but not locally.
@@ -289,11 +297,7 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
         clear = []
         for file in remote:
             uri = file["psid"]
-            status = file['psstatus'] if (
-                'psstatus' in file and
-                'psassignedto' in file and 
-                file['psassignedto'] == 'netdox service' #TODO get this info from config
-            ) else None
+            status = statusFromFile(file)
             commonpath = os.path.normpath(os.path.join(
                 file['psfolder'].split(f"{group_path}/website/", 1)[-1], file['psfilename']
             ))
@@ -311,6 +315,7 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
 
                 # File is stale and has no been marked stale yet
                 elif status is None:
+                    logger.debug(f'Sentencing new file: {file["psfilename"]}')
                     sentence.append(uri)
                     
         if len(clear) > 0:
