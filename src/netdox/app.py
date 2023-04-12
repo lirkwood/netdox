@@ -468,8 +468,6 @@ class App:
         # and run any post-write plugins                                    #
         #-------------------------------------------------------------------#
 
-        network.dump()
-        network.writePSML()
         self.plugin_mgr.runStage(network, LifecycleStage.WRITE)
         network.report.addSection(network.dns_report())
         network.report.addSection(
@@ -482,7 +480,10 @@ class App:
         if remote_network is not None:
             logger.debug('Copying notes from remote network.')
             network.copy_notes(remote_network)
-
+        
+        network.dump()
+        network.writePSML()
+ 
         #-------------------------------------------------------------------#
         # Zip, upload, and cleanup                                          #
         #-------------------------------------------------------------------#
