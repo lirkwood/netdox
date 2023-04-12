@@ -3,6 +3,14 @@
 Releases
 ########
 
+.. _v1_7_2:
+v1.7.2
+======
+Fixed notes being copied after network written to disk.
+* Notes are now copied before network is serialized so they are included in upload.
+* ActiveDirectory plugin now has error handling for computers with invalid domain names.
+* Minor refactor of sentencing logic for readability.
+
 .. _v1_7_1:
 v1.7.1
 ======
