@@ -49,8 +49,13 @@ def addFooters(network: Network) -> None:
                     'Groups')
             ])
 
+            domains = []
             if properties['DNSHostName'] and properties['DNSHostName'] not in network.domains:
-                Domain(network, properties['DNSHostName'], zone = zone)
+                try:
+                    Domain(network, properties['DNSHostName'], zone = zone)
+                    domains.append(properties['DNSHostName'])
+                except ValueError:
+                    logger.error(f'Invalid domain name discovered on node: {properties["DNSHostName"]}')
             
             name = None
             for item in properties['DistinguishedName'].split(','):
@@ -59,9 +64,7 @@ def addFooters(network: Network) -> None:
                     break
                 
             try:
-                domains = [properties['DNSHostName']] if properties['DNSHostName'] else []               
                 ips = [properties['IPv4Address']] if properties['IPv4Address'] else []
-                consumed = False
                 for dns in domains + ips:
                     node = network.find_dns(dns).node
                     if node is not None:
