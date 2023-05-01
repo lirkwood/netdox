@@ -628,13 +628,12 @@ DOMAIN_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="6.4" />
+                <property name="template_version"     title="Template version"   value="6.6" />
             </properties>
         </metadata>
 
         <section id="title" lockstructure="true">
             <fragment id="title">
-                <heading level="2">Domain name</heading>
                 <heading level="1">
                     <link href="https://#!name">#!name</link>
                 </heading>                    
@@ -677,13 +676,12 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="3.4" />
+                <property name="template_version"     title="Template version"   value="3.5" />
             </properties>
         </metadata>
 
         <section id="title" lockstructure="true">
             <fragment id="title">
-                <heading level="2">IP Address</heading>
                 <heading level="1">#!name</heading>
             </fragment>
         </section>
@@ -720,13 +718,12 @@ NODE_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="1.2" />
+                <property name="template_version"     title="Template version"   value="1.3" />
             </properties>
         </metadata>
 
         <section id="title">
             <fragment id="title">
-                <heading level="2">Node</heading>
                 <heading level="1">#!name</heading>                    
             </fragment>
         </section>
