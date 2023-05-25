@@ -6,17 +6,12 @@ from __future__ import annotations
 import logging
 import os
 import re
-import shutil
-import time
-import zipfile
-from shutil import rmtree
 from traceback import print_exc
 from typing import Optional
 
-import requests
-from bs4 import BeautifulSoup, SoupStrainer, Tag
+from bs4 import BeautifulSoup, Tag
 
-from netdox import iptools, pageseeder, utils
+from netdox import iptools, utils
 from netdox import Network
 from netdox.app import LifecycleStage
 from netdox.nodes import Node

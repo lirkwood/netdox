@@ -301,6 +301,7 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
             commonpath = os.path.normpath(os.path.join(
                 file['psfolder'].split(f"{group_path}/website/", 1)[-1], file['psfilename']
             ))
+            logger.debug(f'{file} --- status {status}')
 
             # File no longer stale and is marked stale
             if commonpath in local and status in ('Initiated', 'Approved'):
