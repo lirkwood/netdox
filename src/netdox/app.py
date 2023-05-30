@@ -459,7 +459,8 @@ class App:
         # run any pre-write plugins                                         #
         #-------------------------------------------------------------------#
 
-        network.ips.fillSubnets()
+        logger.warning('Filling subnets is disabled!')
+        # network.ips.fillSubnets()
         self.plugin_mgr.runStage(network, LifecycleStage.FOOTERS)
 
         #-------------------------------------------------------------------#
