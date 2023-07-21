@@ -246,13 +246,14 @@ def clear_sentence(uri: str) -> None: # TODO remove this function
 
 def clear_sentences(uris: list[str]) -> None:
     """Removes the sentences from documents with URIs in the list."""
+    logger.debug(f'Clearing sentences from {len(uris)} documents.')
     filter = ''
     for uri in uris:
         filter += f'psid:{uri},'
 
     batch_document_action('addworkflow', {
         'filters': filter,
-        'action.assignedto': '',
+        'action.assignedto': 'netdox website', #TODO get assignee from config
         'action.due': '',
         'action.status': 'Terminated'
     })    
@@ -261,9 +262,12 @@ def clear_sentences(uris: list[str]) -> None:
 def statusFromFile(file: dict[str, str]) -> Optional[str]:
     """Returns the workflow status from the dict describing a file 
     returned by pageseeder from a search, if it is assigned to the correct user."""
-    if 'psstatus' in file:
-        if 'psassignedto' in file and file['psassignedto'] == 'netdox service':
-            return file['psstatus']
+    if (
+        'psstatus' in file and 'psassignedto' in file and
+        file['psassignedto'] == 'netdox website'
+    ):
+        # TODO get assignee from config file
+        return file['psstatus']
     return None
 
 def sentenceStale(dir: str) -> dict[date, list[str]]:
@@ -289,8 +293,7 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
             logger.error(f'No such directory locally to detect stale items in: {dir}')
             return {}
         remote = search_parsed(params = {
-            'filters': f'pstype:document,psancestor:{group_path}/website/{dir}',
-            'facets': 'psstatus,psassignedto'
+            'filters': f'pstype:document,psancestor:{group_path}/website/{dir}'
         })
 
         sentence = []
