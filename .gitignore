@@ -33,3 +33,4 @@ src/netdox/plugins/screenshots/base/
 
 docs/_build/
 docs/_source/source/
+sonar-scan
