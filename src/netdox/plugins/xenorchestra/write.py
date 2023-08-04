@@ -69,22 +69,22 @@ def write_backups(network: Network) -> None:
     """
     for node in network.nodes:
         if isinstance(node, VirtualMachine):
-            if len(node.backups) == 0:
-                continue
+            write_month_backups(node, node.backups)
 
-            bkp_buffer: list[VMBackup] = []
-            month = node.backups[0].month()
-            for backup in node.backups:
-                _month = backup.month()
-                if _month != month:
-                    write_month_backups(node, bkp_buffer)
-                    bkp_buffer = []
-                    month = _month
+MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+               'July', 'August', 'September', 'October', 'November', 'December']
 
-                bkp_buffer.append(backup)
+def version_backup_file(docid: str):
+    today = date.today()
+    month, year = today.month - 1, today.year
+    if month == 0:
+        month = 12
+        year -= 1
 
-            if len(bkp_buffer) > 0:
-                write_month_backups(node, bkp_buffer)
+    pageseeder.version(docid, {
+        'name': f'{year}-{str(month).zfill(2)}',
+        'description': f'Backups for the month of {MONTH_NAMES[month]} {year}'
+    })
 
 def write_month_backups(vm: VirtualMachine, month_backups: list[VMBackup]) -> None:
     """
@@ -97,12 +97,14 @@ def write_month_backups(vm: VirtualMachine, month_backups: list[VMBackup]) -> No
     """
     if len(month_backups) == 0:
         return
+    if date.today().day == 1:
+        version_backup_file(vm.backup_docid)
 
     first_bkp = month_backups[0]
     month_str = f'{first_bkp.timestamp.year}-{first_bkp.timestamp.month}'
     template = MONTH_BACKUPS\
         .replace('#!title', f'Backups for {vm.name} in {month_str}')\
-        .replace('#!docid', first_bkp.docid)
+        .replace('#!docid', vm.backup_docid)
     soup = BeautifulSoup(template, 'xml')
 
     bkp_buffer: list[VMBackup] = []
@@ -119,7 +121,7 @@ def write_month_backups(vm: VirtualMachine, month_backups: list[VMBackup]) -> No
     if len(bkp_buffer) > 0:
         write_day_backups(soup, bkp_buffer)
 
-    outpath = os.path.join(BACKUP_DIR, f'{backup.docid}.psml')    
+    outpath = os.path.join(BACKUP_DIR, f'{vm.backup_docid}.psml')
     with open(outpath, 'w', encoding = 'utf-8') as stream:
         stream.write(str(soup))
 
