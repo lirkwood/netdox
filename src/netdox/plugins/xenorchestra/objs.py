@@ -42,10 +42,6 @@ class VMBackup:
         """Returns a datetime with the year and month this backup was performed."""
         return date(year = self.timestamp.year, month = self.timestamp.month, day = 1)
 
-    @property
-    def docid(self) -> str:
-        return f'_nd_xobackup_{self.timestamp.year}-{self.timestamp.month}-{self.vm}'
-
     def to_frag(self) -> psml.PropertiesFragment:
         """Returns a psml PropertiesFragment describing this object."""
         return psml.PropertiesFragment(f'{self.timestamp.timestamp()}-{self.remote.uuid}', [
@@ -232,6 +228,9 @@ class VirtualMachine(DefaultNode):
             self.psmlCore, self.psmlOS, self.psmlTags, self.psmlSnapshots, self.psmlBackups
         ])]
 
+    @property
+    def backup_docid(self) -> str:
+       return f'_nd_xobackup_{self.uuid}'
 
 
 class XOServer:
@@ -370,7 +369,8 @@ class XOServer:
         job_names: dict[str, str] = {}
         for job_data in (await self.call('backupNg.getAllJobs'))['result']:
             job_names[job_data['id']] = job_data['name']
-        
+
+        current_month = date.today().month
         vm_backups: dict[str, set[VMBackup]] = {}
         remote_backup_data = await self.call('backupNg.listVmBackups', {'remotes': list(remotes.keys())})
         for remote_id, remote_backups in remote_backup_data['result'].items():
@@ -382,6 +382,10 @@ class XOServer:
 
                 backup_set = vm_backups[vm_id]
                 for backup_data in vm_backup_data:
+                    timestamp = datetime.fromtimestamp(floor(backup_data['timestamp'] / 1000))
+                    if timestamp.month != current_month:
+                        continue
+
                     job_name = job_names[backup_data['jobId']] \
                         if backup_data['jobId'] in job_names else 'Unknown job.'
 
@@ -389,7 +393,7 @@ class XOServer:
                         uuid = backup_data['id'], 
                         vm = vm_id, 
                         mode = backup_data['mode'],
-                        timestamp = datetime.fromtimestamp(floor(backup_data['timestamp'] / 1000)), #??? timestamp wrong
+                        timestamp = timestamp, #??? timestamp wrong
                         remote = remote,
                         job = job_name
                     ))
