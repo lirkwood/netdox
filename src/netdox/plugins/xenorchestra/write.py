@@ -4,6 +4,8 @@ import shutil
 from datetime import date, timedelta
 from typing import Optional
 import os
+import copy
+from calendar import monthrange
 
 from bs4 import BeautifulSoup, Tag
 from lxml import etree
@@ -69,10 +71,13 @@ def write_backups(network: Network) -> None:
     """
     for node in network.nodes:
         if isinstance(node, VirtualMachine):
-            write_month_backups(node, node.backups)
+            write_vm_backups(node)
 
 MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
                'July', 'August', 'September', 'October', 'November', 'December']
+def month_name(month: int) -> str:
+    """Returns name of the month. 1 - January, 12 - December."""
+    return MONTH_NAMES[month - 1]
 
 def version_backup_file(docid: str):
     today = date.today()
@@ -83,10 +88,17 @@ def version_backup_file(docid: str):
 
     pageseeder.version(docid, {
         'name': f'{year}-{str(month).zfill(2)}',
-        'description': f'Backups for the month of {MONTH_NAMES[month]} {year}'
+        'description': f'Backups for the month of {month_name(month)} {year}'
     })
 
-def write_month_backups(vm: VirtualMachine, month_backups: list[VMBackup]) -> None:
+
+def cell(text: str) -> Tag:
+    """Returns a cell tag."""
+    tag = Tag(name = 'cell', is_xml=True)
+    tag.string = text
+    return tag
+
+def write_vm_backups(vm: VirtualMachine) -> None:
     """
     Writes a document that describes a month of backups for a VM.
 
@@ -95,49 +107,45 @@ def write_month_backups(vm: VirtualMachine, month_backups: list[VMBackup]) -> No
     :param month_backups: List of backups that were all performed in one month, sorted by date/time.
     :type month_backups: list[VMBackup]
     """
-    if len(month_backups) == 0:
-        return
-    if date.today().day == 1:
+    today = date.today()
+    if today.day == 1:
         version_backup_file(vm.backup_docid)
 
-    first_bkp = month_backups[0]
-    month_str = f'{first_bkp.timestamp.year}-{first_bkp.timestamp.month}'
     template = MONTH_BACKUPS\
-        .replace('#!title', f'Backups for {vm.name} in {month_str}')\
-        .replace('#!docid', vm.backup_docid)
+        .replace('#!title', f'Backups in {month_name(today.month)} {today.year} for {vm.name}')\
+        .replace('#!docid', vm.backup_docid)\
+        .replace('#!vm-docid', vm.docid)
     soup = BeautifulSoup(template, 'xml')
 
-    bkp_buffer: list[VMBackup] = []
-    day = month_backups[0].timestamp.day
-    for backup in month_backups:
-        _day = backup.timestamp.day
-        if _day != day:
-            write_day_backups(soup, bkp_buffer)
-            bkp_buffer = []
-            day = _day
-        
-        bkp_buffer.append(backup)
+    days: dict[int, list[VMBackup]] = {
+        day: [] for day in range(1, monthrange(today.year, today.month)[1] + 1)
+    }
+    for bkp in vm.backups:
+        days[bkp.timestamp.day].append(bkp)
 
-    if len(bkp_buffer) > 0:
-        write_day_backups(soup, bkp_buffer)
+    table = soup.find('table')
+    for day, bkps in days.items():
+        row = Tag(name = 'row')
+        day_cell = cell(str(day))
+        if len(bkps) == 0:
+            row.append(day_cell)
+            row.append(cell('NO BACKUPS'))
+            table.append(row) # type: ignore
+            continue
 
+        for bkp in bkps:
+            _row = copy.copy(row)
+            _row.append(copy.copy(day_cell))
+            _row.append(cell(bkp.uuid))
+            _row.append(cell(bkp.mode))
+            _row.append(cell(bkp.timestamp.isoformat()))
+            _row.append(cell(bkp.remote.url))
+            table.append(_row) # type: ignore
+
+    logger.debug(f'Writing xobackups for {vm.name}')
     outpath = os.path.join(BACKUP_DIR, f'{vm.backup_docid}.psml')
     with open(outpath, 'w', encoding = 'utf-8') as stream:
         stream.write(str(soup))
-
-def write_day_backups(soup: BeautifulSoup, backups: list[VMBackup]) -> None:
-    """
-    Writes a section to the soup that describes one day of backups for a VM.
-
-    :param soup: The document to write a section to.
-    :type soup: BeautifulSoup
-    :param backups: List of backups that were all performed in one day, sorted by date/time.
-    :type backups: list[VMBackup]
-    """
-    date = backups[0].timestamp.date().isoformat()
-    soup.find('document').append(Section(date, f'Backups on {date}', [
-        backup.to_frag() for backup in backups
-    ]).tag)
 
 def genreport(network: Network) -> None:
     """
@@ -230,6 +238,31 @@ MONTH_BACKUPS = '''
     <section id="title">
         <fragment id="1">
             <heading level="1">#!title</heading>
+        </fragment>
+        <properties-fragment id="vm">
+            <property name="vm" title="VM" datatype="xref">
+                <xref docid="#!vm-docid" frag="default" />
+            </property>
+        </properties-fragment>
+    </section>
+
+    <section id="backups">
+        <fragment id="backup-table">
+            <table>
+                <col part="header"/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+
+                <row part="header">
+                    <cell>Day</cell>
+                    <cell>UUID</cell>
+                    <cell>Mode</cell>
+                    <cell>Timestamp</cell>
+                    <cell>Filesystem URL</cell>
+                </row>
+            </table>
         </fragment>
     </section>
 </document>
