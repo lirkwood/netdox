@@ -195,7 +195,7 @@ class VirtualMachine(DefaultNode):
         :rtype: psml.PropertiesFragment
         """
         return psml.PropertiesFragment('snapshots', [
-            psml.Property('snapshot', str(dt), 'Snapshot Date', 'datetime')
+            psml.Property('snapshot', str(dt.isoformat()), 'Snapshot Date', 'datetime')
             for dt in self.snapshots
         ])
 
@@ -207,20 +207,9 @@ class VirtualMachine(DefaultNode):
         :return: A PropertiesFragment
         :rtype: psml.PropertiesFragment
         """
-        frag = psml.PropertiesFragment('backups', [])
-        if len(self.backups) == 0:
-            return frag
-
-        month = None
-        for bkp in reversed(self.backups):
-            if month is None or bkp.month() != month:
-                month = bkp.month()
-                frag.insert(psml.Property(
-                    name = 'monthly_backup', 
-                    value = psml.XRef(docid = bkp.docid), 
-                    title = f'Backups for {month.year}-{month.month}'
-                ))
-        return frag
+        return psml.PropertiesFragment('backups', [
+            psml.Property('backups', psml.XRef(docid = self.backup_docid), title='Backups')
+        ])
 
     @property
     def psmlBody(self) -> list[psml.Section]:
