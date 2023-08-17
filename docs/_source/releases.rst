@@ -3,6 +3,16 @@
 Releases
 ########
 
+.. _v1_8_0:
+v1.8.0
+======
+Updated XO backup format, stopped filling subnets, bugfixes.
++ XO vms now have one rolling monthly backup document.
++ No longer generating ip documents for all ips in any touched subnets.
++ Fixed pfSense plugin sometimes failing to scrape NAT.
++ Updated stale workflows.
++ Removed level 2 heading with object type from all documents.
+
 .. _v1_7_2:
 v1.7.2
 ======

@@ -11,7 +11,7 @@ setup(
     long_description_content_type = 'text/markdown',
     author = 'Linus Kirkwood',
     author_email = 'linuskirkwood@gmail.com',
-    version = '1.7.2',
+    version = '1.8.0',
     url = 'https://netdox.allette.com.au/',
     download_url = 'https://gitlab.allette.com.au/allette/devops/network-documentation',
     packages = find_namespace_packages(where = 'src'),
