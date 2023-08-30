@@ -3,6 +3,11 @@
 Releases
 ########
 
+.. _v1_8_1:
+v1.8.1
+======
+Updated XO backup format again.
+
 .. _v1_8_0:
 v1.8.0
 ======
