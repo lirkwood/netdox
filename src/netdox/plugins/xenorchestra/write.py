@@ -112,9 +112,10 @@ def write_vm_backups(vm: VirtualMachine) -> None:
         version_backup_file(vm.backup_docid)
 
     template = MONTH_BACKUPS\
-        .replace('#!title', f'Backups in {month_name(today.month)} {today.year} for {vm.name}')\
+        .replace('#!title', f'Backups for {vm.name}')\
         .replace('#!docid', vm.backup_docid)\
-        .replace('#!vm-docid', vm.docid)
+        .replace('#!vm-docid', vm.docid)\
+        .replace('#!month', f'{month_name(today.month)} {today.year}')
     soup = BeautifulSoup(template, 'xml')
 
     days: dict[int, list[VMBackup]] = {
@@ -127,6 +128,13 @@ def write_vm_backups(vm: VirtualMachine) -> None:
     for day, bkps in days.items():
         row = Tag(name = 'row')
         day_cell = cell(str(day))
+
+        if day > today.day:
+            row.append(day_cell)
+            row.append(cell('NO DATA YET'))
+            table.append(row) # type: ignore
+            continue
+
         if len(bkps) == 0:
             row.append(day_cell)
             row.append(cell('NO BACKUPS'))
@@ -239,10 +247,11 @@ MONTH_BACKUPS = '''
         <fragment id="1">
             <heading level="1">#!title</heading>
         </fragment>
-        <properties-fragment id="vm">
+        <properties-fragment id="details">
             <property name="vm" title="VM" datatype="xref">
                 <xref docid="#!vm-docid" frag="default" />
             </property>
+            <property name="month" title="Month" value="#!month" />
         </properties-fragment>
     </section>
 
