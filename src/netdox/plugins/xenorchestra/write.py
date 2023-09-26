@@ -92,10 +92,11 @@ def version_backup_file(docid: str):
     })
 
 
-def cell(text: str) -> Tag:
+def cell(text: Optional[str]) -> Tag:
     """Returns a cell tag."""
     tag = Tag(name = 'cell', is_xml=True)
-    tag.string = text
+    if text is not None:
+        tag.string = text
     return tag
 
 def write_vm_backups(vm: VirtualMachine) -> None:
@@ -132,12 +133,16 @@ def write_vm_backups(vm: VirtualMachine) -> None:
         if day > today.day:
             row.append(day_cell)
             row.append(cell('NO DATA YET'))
+            for _ in range(3):
+                row.append(cell(None))
             table.append(row) # type: ignore
             continue
 
         if len(bkps) == 0:
             row.append(day_cell)
             row.append(cell('NO BACKUPS'))
+            for _ in range(3):
+                row.append(cell(None))
             table.append(row) # type: ignore
             continue
 
