@@ -224,8 +224,11 @@ class Node(base.NetworkObject):
 
         if footer is not None: node.psmlFooter = Section.from_tag(footer)
 
-        notes = psml.find('fragment', id='notes')
-        if notes: node.notes = Fragment.from_tag(notes)
+        notes_section = psml.find('section', id='notes')
+        if notes_section:
+            notes_frag = notes_section.find('fragment', id='notes')
+            if notes_frag:
+                node.notes = Fragment.from_tag(notes_frag)
 
         return node
 

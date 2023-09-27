@@ -691,8 +691,11 @@ class IPv4Address(DNSObject):
         ipv4 = cls(network, header['name'], psml.find('labels').text.split(','))
         ipv4.psmlFooter = footer
 
-        notes = footer.tag.find('fragment', id='notes')
-        if notes: ipv4.notes = Fragment.from_tag(notes)
+        notes_section = psml.find('section', id='notes')
+        if notes_section:
+            notes_frag = notes_section.find('fragment', id='notes')
+            if notes_frag:
+                ipv4.notes = Fragment.from_tag(notes_frag)
 
         for _record in dns_records:
             if _record.tag.name != 'properties-fragment':
