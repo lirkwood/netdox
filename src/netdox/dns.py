@@ -550,8 +550,11 @@ class Domain(DNSObject):
         domain = cls(network, header['name'], header['zone'], psml.find('labels').text.split(','))
         domain.psmlFooter = footer
 
-        notes = footer.tag.find('fragment', id='notes')
-        if notes: domain.notes = Fragment.from_tag(notes)
+        notes_section = psml.find('section', id='notes')
+        if notes_section:
+            notes_frag = notes_section.find('fragment', id='notes')
+            if notes_frag:
+                domain.notes = Fragment.from_tag(notes_frag)
         
         txt_records = psml.find('section', id = 'txt_records')
         if txt_records is not None:
