@@ -3,6 +3,12 @@
 Releases
 ########
 
+.. _v1_8_2:
+v1.8.2
+======
++ Updated XO backup format again.
++ Fixed notes being overwritten during refresh.
+
 .. _v1_8_1:
 v1.8.1
 ======
