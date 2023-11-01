@@ -458,6 +458,8 @@ class Network:
 
         try:
             for domain_file in os.scandir(os.path.join(dir, 'domains')):
+                if not domain_file.path.endswith('.psml') or not domain_file.is_file():
+                    continue
                 try:
                     with open(domain_file, 'r', encoding='utf-8') as stream:
                         domain = dns.Domain.from_psml(net, 
@@ -474,6 +476,8 @@ class Network:
         try:
             for subnet in os.scandir(os.path.join(dir, 'ips')):
                 for ipv4_file in os.scandir(subnet):
+                    if not ipv4_file.path.endswith('.psml') or not ipv4_file.is_file():
+                        continue
                     try:
                         with open(ipv4_file, 'r', encoding='utf-8') as stream:
                             ipv4 = dns.IPv4Address.from_psml(net, 
@@ -489,6 +493,8 @@ class Network:
 
         try:
             for node_file in os.scandir(os.path.join(dir, 'nodes')):
+                if not node_file.path.endswith('.psml') or not node_file.is_file():
+                    continue
                 try:
                     with open(node_file, 'r', encoding='utf-8') as stream:
                         node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
