@@ -3,6 +3,13 @@
 Releases
 ########
 
+.. _v1_8_3:
+v1.8.3
+======
++ Removed hardware documents from upload
++ Added python3 to sonar properties
++ Added checks to allow non psml documents.
+
 .. _v1_8_2:
 v1.8.2
 ======
