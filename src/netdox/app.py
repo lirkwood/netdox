@@ -471,8 +471,10 @@ class App:
 
         self.plugin_mgr.runStage(network, LifecycleStage.WRITE)
         network.report.addSection(network.dns_report())
-        network.report.addSection(
-            utils.stale_report(pageseeder.findStale(self.output)))
+
+        # network.report.addSection(
+        #     utils.stale_report(pageseeder.findStale(self.output)))
+
         with open(utils.APPDIR + 'src/warnings.log', 'r') as stream:
             network.report.logs = stream.read()
         network.report.addSection(str(network.counter.generate_report()))
