@@ -10,7 +10,7 @@ from netdox.app import LifecycleStage
 from netdox.plugins.aws.objs import (FORTNIGHT, AWSBillingGranularity,
                                      AWSBillingMetrics, AWSBillingReport,
                                      AWSTimePeriod, EBSSnapshot, EBSVolume,
-                                     EBSVolumeState, EC2Instance)
+                                     EBSVolumeState, EC2Instance, SecurityGroup)
 
 logger = logging.getLogger(__name__)
 logging.getLogger('botocore').setLevel(logging.WARNING)
@@ -19,6 +19,8 @@ EC2_INSTANCE_SERVICE_NAME = 'Amazon Elastic Compute Cloud - Compute'
 """Name of the EC2 instance service."""
 EBS_OUTPUT_DIR = os.path.join(utils.APPDIR, 'out', 'aws_ebs')
 """Directory to write EBSVolume documents to."""
+SECURITY_GROUP_OUTPUT_DIR = os.path.join(utils.APPDIR, 'out', 'aws_secgroup')
+"""Directory to write SecurityGroup documents to."""
 
 def init(_: Network) -> None:
     if not os.path.exists(utils.APPDIR+ 'plugins/aws/src'):
@@ -50,7 +52,8 @@ def runner(network: Network) -> None:
     _create_instances(network, _get_billing(AWSBillingGranularity.MONTHLY), volumes)
 
 
-#TODO find alternative to global var
+# TODO find alternative to global var
+global all_volumes
 all_volumes: set[EBSVolume] = set()
 
 def write(_: Network) -> None:
@@ -61,6 +64,17 @@ def write(_: Network) -> None:
             mode = 'w', encoding = 'utf-8'
         ) as stream:
             stream.write(volume.to_psml())
+
+    for group in _get_security_groups():
+        with open(f'{SECURITY_GROUP_OUTPUT_DIR}/{group.docid}.psml', mode = 'w', encoding = 'utf-8') as stream:
+            stream.write(group.to_psml())
+
+def _get_security_groups() -> list[SecurityGroup]:
+    groups = []
+    for item in boto3.client('ec2').describe_security_groups():
+        groups.append(SecurityGroup.from_resp(item))
+    return groups
+
 
 def _get_billing(granularity: AWSBillingGranularity) -> AWSBillingReport:
     """
@@ -192,6 +206,7 @@ def _create_instances(
                     'public_ips': [netInf['Association']['PublicIp']],
                     'domains': [netInf['Association']['PublicDnsName']]
                 } if 'Association' in netInf else {'public_ips': [], 'domains': []}
+                secGroups = [ group['GroupId'] for group in instance["GroupSet"] ]
 
                 try:
                     id = instance['InstanceId']
@@ -206,6 +221,7 @@ def _create_instances(
                         state = instance['State']['Name'],
                         billing = billing.get_metrics(id),
                         volumes = volumes[id],
+                        security = secGroups,
                         tags = instance['Tags'],
                         private_ip = netInf['PrivateIpAddress'],
                         **dns
@@ -228,4 +244,4 @@ __config__ = {
     'aws_access_key_id': '',
     'aws_secret_access_key': ''
 }
-__output__ = {'aws_ebs'}
+__output__ = {'aws_ebs', 'aws_secgroup'}

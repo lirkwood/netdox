@@ -1,7 +1,9 @@
 from __future__ import annotations
+import copy
 
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+import boto3
 from dateutil.tz import tzutc
 from enum import Enum
 from functools import lru_cache, total_ordering
@@ -13,7 +15,7 @@ from bs4 import BeautifulSoup
 
 from netdox import DefaultNode, Node, Network, utils
 from netdox.psml import Property, Section, PropertiesFragment, XRef
-from netdox.plugins.aws.templates import EBS_VOLUME_TEMPLATE
+from netdox.plugins.aws.templates import EBS_VOLUME_TEMPLATE, SECURITY_GROUP_TEMPLATE
 
 class EC2Instance(DefaultNode):
     """A single instance running on AWS EC2."""
@@ -35,6 +37,8 @@ class EC2Instance(DefaultNode):
     """Billing metrics associated with this instance for the current day."""
     volumes: dict[str, EBSVolume]
     """Mount points of volumes mapped to volume objects."""
+    security: list[str]
+    """IDs of security groups this instance is in."""
     tags: dict[str, str]
     """Dictionary of tags applied to this instance."""
 
@@ -61,6 +65,7 @@ class EC2Instance(DefaultNode):
             state: str,
             billing: AWSBillingMetrics,
             volumes: dict[str, EBSVolume],
+            security: list[str],
             tags: Iterable[dict],
             private_ip: str,
             public_ips: Iterable[str] = None,
@@ -89,6 +94,7 @@ class EC2Instance(DefaultNode):
         self.state = state
         self.billing = billing
         self.volumes = volumes
+        self.security = security
 
     @property
     def volumeBilling(self) -> AWSBillingMetrics:
@@ -153,6 +159,14 @@ class EC2Instance(DefaultNode):
         ]
 
     @property
+    def psmlSecurityGroups(self) -> PropertiesFragment:
+        return PropertiesFragment('security_groups', [
+                Property('security_group', XRef(docid = SecurityGroup.id_to_docid(id)), 'Security Group')
+                for id in self.security
+            ])
+
+
+    @property
     def psmlBody(self) -> list[Section]:
         volumeBilling = self.volumeBilling
         combinedBilling = self.billing + volumeBilling
@@ -160,7 +174,8 @@ class EC2Instance(DefaultNode):
             Section('body', fragments = [
                 self.psmlGeneral, 
                 self.psmlTags,
-            ] + self.psmlVolumes),
+                self.psmlSecurityGroups
+            ] + self.psmlVolumes + self),
             Section('billing', fragments = [
                 combinedBilling.to_psml('combined_billing', self.COMINED_BILLING_DESC),
                 self.billing.to_psml('instance_billing', self.INSTANCE_BILLING_DESC),
@@ -232,6 +247,98 @@ class EC2Instance(DefaultNode):
             domains = base.domains
         )
 
+## Security groups
+
+@dataclass
+class SecurityGroup:
+    group_id: str
+    group_name: str
+    description: str
+    tags: dict[str, str]
+    vpc_id: str
+    owner_id: str
+    ip_ingress: list[IpPermissions]
+    ip_egress: list[IpPermissions]
+
+    @staticmethod
+    def id_to_docid(id: str) -> str:
+        return f'_nd_aws_secgroup_{id}'
+
+    @property
+    def docid(self) -> str:
+        return SecurityGroup.id_to_docid(self.group_id)
+
+    @classmethod
+    def from_resp(cls, resp: dict) -> SecurityGroup:
+        return cls(
+            resp['GroupId'],
+            resp['GroupName'],
+            resp['Description'],
+            { tag['Key']: tag['Value'] for tag in resp['Tags'] },
+            resp['VpcId'],
+            resp['OwnerId'],
+            ip_ingress = [
+                IpPermissions(
+                    data['FromPort'],
+                    data['ToPort'],
+                    data['IpProtocol'],
+                    [range['CidrIp'] for range in data['IpRanges']]
+                )
+                for data in resp['IpPermissions']
+            ],
+            ip_egress = [
+                IpPermissions(
+                    data['FromPort'],
+                    data['ToPort'],
+                    data['IpProtocol'],
+                    [range['CidrIp'] for range in data['IpRanges']]
+                )
+                for data in resp['IpPermissionsEgress']
+            ]
+        )
+
+    def to_psml(self) -> str:
+        body = copy.copy(SECURITY_GROUP_TEMPLATE)
+        for field in re.findall(r'(#![a-zA-Z0-9_]+)', SECURITY_GROUP_TEMPLATE):
+            attr = getattr(self, field.replace('#!',''), None)
+            if attr:
+                if not isinstance(attr, str):
+                    try:
+                        attr = str(attr)
+                    except Exception:
+                        continue
+                body = re.sub(field, attr, body)
+            else:
+                body = re.sub(field, '—', body)
+
+        soup = BeautifulSoup(body, 'xml')
+
+        ingress = soup.find('section', id = 'ip_ingress')
+        for count, ip in enumerate(self.ip_ingress):
+            ingress.append(ip.to_psml(f'ingress_{count}').tag)
+
+        egress = soup.find('section', id = 'ip_egress')
+        for count, ip in enumerate(self.ip_egress):
+            egress.append(ip.to_psml(f'egress_{count}').tag)
+
+        return str(soup)
+
+@dataclass
+class IpPermissions:
+    src_port: int
+    dest_port: int
+    ip_proto: str
+    ip_ranges: list[str]
+
+    def to_psml(self, id: str) -> PropertiesFragment:
+        return PropertiesFragment(id, [
+            Property('src_port', str(self.src_port), 'Source Port'),
+            Property('dest_port', str(self.dest_port), 'Destination Port'),
+            Property('ip_proto', self.ip_proto, 'Protocol'),
+        ] + [
+            Property(f'ip_range_{count}', ip_range, 'IP Range')
+            for count, ip_range in enumerate(self.ip_ranges)
+        ])
 
 ## Volumes
 
