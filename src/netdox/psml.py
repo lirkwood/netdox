@@ -744,7 +744,7 @@ NODE_TEMPLATE = '''
 
         <section id="footer" />
 
-        <section id="notes" />
+        <section id="notes" overwrite="false" />
 
     </document>
 '''
