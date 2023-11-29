@@ -241,6 +241,7 @@ class EC2Instance(DefaultNode):
             state = general['state'],
             billing = metrics,
             volumes = cls._volumes_from_psml(psml),
+            security = [],
             tags = tags,
             private_ip = base.identity,
             public_ips = (base.ips - {base.identity}),
