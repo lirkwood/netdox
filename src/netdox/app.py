@@ -403,6 +403,8 @@ class App:
             utils.APPDIR, 'src', 'netdox-psml.zip')
         with ZipFile(outpath, mode = 'w') as zip:
             for file in self.output:
+                if file == 'hardware':
+                    continue
                 abspath = os.path.join(utils.OUTDIR, file)
                 if os.path.isdir(abspath):
                     for child in utils.path_list(abspath, utils.OUTDIR):
