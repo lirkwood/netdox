@@ -8,7 +8,7 @@ from dateutil.tz import tzutc
 from enum import Enum
 from functools import lru_cache, total_ordering
 from math import ceil
-from typing import Iterable, cast
+from typing import Iterable, Optional, cast
 import re
 
 from bs4 import BeautifulSoup
@@ -175,7 +175,7 @@ class EC2Instance(DefaultNode):
                 self.psmlGeneral, 
                 self.psmlTags,
                 self.psmlSecurityGroups
-            ] + self.psmlVolumes + self),
+            ] + self.psmlVolumes),
             Section('billing', fragments = [
                 combinedBilling.to_psml('combined_billing', self.COMINED_BILLING_DESC),
                 self.billing.to_psml('instance_billing', self.INSTANCE_BILLING_DESC),
@@ -275,23 +275,23 @@ class SecurityGroup:
             resp['GroupId'],
             resp['GroupName'],
             resp['Description'],
-            { tag['Key']: tag['Value'] for tag in resp['Tags'] },
+            { tag['Key']: tag['Value'] for tag in resp['Tags'] } if 'Tags' in resp else {},
             resp['VpcId'],
             resp['OwnerId'],
             ip_ingress = [
                 IpPermissions(
-                    data['FromPort'],
-                    data['ToPort'],
-                    data['IpProtocol'],
+                    data.get('FromPort', None),
+                    data.get('ToPort', None),
+                    data.get('IpProtocol', None),
                     [range['CidrIp'] for range in data['IpRanges']]
                 )
                 for data in resp['IpPermissions']
             ],
             ip_egress = [
                 IpPermissions(
-                    data['FromPort'],
-                    data['ToPort'],
-                    data['IpProtocol'],
+                    data.get('FromPort', None),
+                    data.get('ToPort', None),
+                    data.get('IpProtocol', None),
                     [range['CidrIp'] for range in data['IpRanges']]
                 )
                 for data in resp['IpPermissionsEgress']
@@ -326,16 +326,19 @@ class SecurityGroup:
 
 @dataclass
 class IpPermissions:
-    src_port: int
-    dest_port: int
-    ip_proto: str
+    src_port: Optional[int]
+    dest_port: Optional[int]
+    ip_proto: Optional[str]
     ip_ranges: list[str]
 
     def to_psml(self, id: str) -> PropertiesFragment:
+        src_port = str(self.src_port) if self.src_port is not None else "Any"
+        dest_port = str(self.dest_port) if self.dest_port is not None else "Any"
+        ip_proto = str(self.ip_proto) if self.ip_proto is not None else "Any"
         return PropertiesFragment(id, [
-            Property('src_port', str(self.src_port), 'Source Port'),
-            Property('dest_port', str(self.dest_port), 'Destination Port'),
-            Property('ip_proto', self.ip_proto, 'Protocol'),
+            Property('src_port', src_port, 'Source Port'),
+            Property('dest_port', dest_port, 'Destination Port'),
+            Property('ip_proto', ip_proto, 'Protocol'),
         ] + [
             Property(f'ip_range_{count}', ip_range, 'IP Range')
             for count, ip_range in enumerate(self.ip_ranges)

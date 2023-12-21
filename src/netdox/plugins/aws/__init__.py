@@ -31,6 +31,10 @@ def init(_: Network) -> None:
         rmtree(EBS_OUTPUT_DIR)
     os.mkdir(EBS_OUTPUT_DIR)
 
+    if os.path.exists(SECURITY_GROUP_OUTPUT_DIR):
+        rmtree(SECURITY_GROUP_OUTPUT_DIR)
+    os.mkdir(SECURITY_GROUP_OUTPUT_DIR)
+
     auth = utils.config('aws')
     # set up aws iam profile
     with open(utils.APPDIR+ 'plugins/aws/src/awsconfig', 'w') as stream:
@@ -71,10 +75,9 @@ def write(_: Network) -> None:
 
 def _get_security_groups() -> list[SecurityGroup]:
     groups = []
-    for item in boto3.client('ec2').describe_security_groups():
+    for item in boto3.client('ec2').describe_security_groups()['SecurityGroups']:
         groups.append(SecurityGroup.from_resp(item))
     return groups
-
 
 def _get_billing(granularity: AWSBillingGranularity) -> AWSBillingReport:
     """
@@ -206,7 +209,8 @@ def _create_instances(
                     'public_ips': [netInf['Association']['PublicIp']],
                     'domains': [netInf['Association']['PublicDnsName']]
                 } if 'Association' in netInf else {'public_ips': [], 'domains': []}
-                secGroups = [ group['GroupId'] for group in instance["GroupSet"] ]
+                secGroups = [ group['GroupId'] for group in netInf["Groups"] ]
+                # TODO add support for multiple interfaces
 
                 try:
                     id = instance['InstanceId']
