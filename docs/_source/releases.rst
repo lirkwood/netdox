@@ -3,6 +3,12 @@
 Releases
 ########
 
+.. _v1_8_4:
+v1.8.4
+======
++ Added AWS Security Group documents.
++ Set PSML attribute overwrite=false on Node document template.
+
 .. _v1_8_3:
 v1.8.3
 ======
