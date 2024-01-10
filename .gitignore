@@ -17,6 +17,7 @@ netdox.egg-info
 coverage.xml
 src/netdox/out
 src/netdox/logs
+tests/resources/test-config.json
 
 **/src/*
 !src/netdox/
@@ -32,3 +33,4 @@ src/netdox/plugins/screenshots/base/
 
 docs/_build/
 docs/_source/source/
+sonar-scan

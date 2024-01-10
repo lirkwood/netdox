@@ -13,6 +13,7 @@ from kubernetes import config
 from kubernetes.client import ApiClient
 from netdox import psml, utils
 from netdox import Network
+from netdox.app import LifecycleStage
 
 logging.getLogger('kubernetes').setLevel(logging.INFO)
 
@@ -40,7 +41,7 @@ from netdox.plugins.k8s.pub import genpub
 from netdox.plugins.k8s.refresh import runner
 
 
-def init() -> None:
+def init(_: Network) -> None:
     """
     Some initialisation for the plugin to work correctly
 
@@ -110,12 +111,15 @@ def domainapps(network: Network) -> None:
         )
 
 __stages__ = {
-    'nodes': runner,
-    'footers': domainapps,
-    'write': genpub
+    LifecycleStage.INIT: init,
+    LifecycleStage.NODES: runner,
+    LifecycleStage.FOOTERS: domainapps,
+    LifecycleStage.WRITE: genpub
 }
 
 __nodes__ = [App]
+
+__output__ = ['k8spub.psml']
 
 __config__ = {
     "cluster_name": {

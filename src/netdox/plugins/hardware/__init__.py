@@ -6,28 +6,21 @@ from __future__ import annotations
 import logging
 import os
 import re
-import shutil
-import time
-import zipfile
-from shutil import rmtree
 from traceback import print_exc
 from typing import Optional
 
-import requests
-from bs4 import BeautifulSoup, SoupStrainer, Tag
+from bs4 import BeautifulSoup, Tag
 
-from netdox import iptools, pageseeder, utils
+from netdox import iptools, utils
 from netdox import Network
+from netdox.app import LifecycleStage
 from netdox.nodes import Node
 from netdox.psml import Section
 
 logger = logging.getLogger(__name__)
 
-INFO_SECTION = SoupStrainer('section', id = 'info')
 URI_PATTERN: re.Pattern = re.compile(r'<uri\s+id="(?P<id>\d+)"')
-SRCDIR = os.path.join(utils.APPDIR, 'plugins', 'hardware', 'src')
-ZIP_PATH = os.path.join(SRCDIR, 'hardware.zip')
-
+DOCS_DIR = os.path.join(utils.APPDIR, 'src', 'remote', 'hardware')
 
 class HardwareNode(Node):
     """
@@ -39,6 +32,8 @@ class HardwareNode(Node):
     """The URI of the document this Node was created from."""
     filename: str
     """The filename to give this Node."""
+    title: str
+    """The document title for this Node."""
     type: str = 'hardware'
 
     def __init__(self, 
@@ -52,7 +47,8 @@ class HardwareNode(Node):
         self.filename = filename
         domains, ips = [], []
         name = None
-        for property in psml('property'):
+
+        for property in psml.find_all('property'):
             if property['name'] == 'domain':
                 domain = self._addrFromProperty(property)
                 if domain and utils.valid_domain(domain): 
@@ -63,8 +59,11 @@ class HardwareNode(Node):
                 if ip and iptools.valid_ip(ip): 
                     ips.append(ip)
 
-            elif property['name'] == 'name':
-                name = property['value']
+            elif property['name'] == 'name' and property.parent['id'] == 'header':
+                    name = property['value']
+            
+        if not name:
+            logger.warn(f'Hardware document {origin_doc} is missing name property.')
 
         super().__init__(
             network = network, 
@@ -74,7 +73,20 @@ class HardwareNode(Node):
             ips = ips
         )
 
-        self.psml = Section.from_tag(psml.section)
+        try:
+            title = psml.find('uri')['title']
+        except AttributeError:
+            title = None
+        self.title = title or self.name
+
+        try:
+            info_raw = psml.find('section', id = 'info').extract()
+            if not info_raw.has_attr('title'):
+                info_raw['title'] = 'Editable Content'
+            info = Section.from_tag(info_raw)
+        except AttributeError:
+            info = Section('info', 'Editable Content')
+        self.psml = info
 
     ## abstract properties
 
@@ -87,15 +99,6 @@ class HardwareNode(Node):
         return [self.psml]
 
     ## methods
-
-    def _consume_addr_property(self, property: Tag) -> None:
-        """
-        Parses a DNS name from the given property and adds it to this node.
-        Only stores the domain/ipv4 if it is a valid DNS name.
-
-        :param property: The property to parse a domain/ipv4 address from.
-        :type property: Tag
-        """
 
     def _addrFromProperty(self, property: Tag) -> Optional[str]:
         """
@@ -117,58 +120,25 @@ class HardwareNode(Node):
         ):
             return property.xref['urititle']
         return None
-
-
-global thread
-thread: Optional[Tag] = None
-def init() -> None:
-    global thread
-    if os.path.exists(SRCDIR):
-        rmtree(SRCDIR)
-    os.mkdir(SRCDIR)
-
-    thread = BeautifulSoup(
-        pageseeder.export({'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/website/hardware'}, True), 
-    features = 'xml').thread
-
-    while thread and thread['status'] != 'completed':
-        time.sleep(0.5)
-        thread = BeautifulSoup(pageseeder.get_thread_progress(thread['id']), features='xml').thread
-    if thread is None:
-        raise RuntimeError('Thread for hardware download never had status \'completed\'')
+    
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        soup.find('uri')['title'] = self.title
+        soup.find('fragment', id = 'title').find('heading', level = '1').string = self.title
+        return soup
 
 
 def runner(network: Network) -> None:
-    global thread
-    zip_location = getattr(thread, 'zip', None)
-    if not zip_location or not zip_location.string:
-        raise RuntimeError(
-            'Failed to retrieve exported file location from PageSeeder.')
-    
-    else:
-        ## Downloading and unzipping the archive exported in init
-        psconf = utils.config()["pageseeder"]
-        with requests.get(
-            f'https://{psconf["host"]}/ps/member-resource/{psconf["group"]}/{zip_location.string}',
-            headers = {'authorization': f'Bearer {pageseeder.token(psconf)}'},
-            stream = True
-        ) as zipResponse:
-            zipResponse.raise_for_status()
-            with open(SRCDIR + '/hardware.zip', 'wb') as stream:
-                for chunk in zipResponse.iter_content(8192):
-                    stream.write(chunk)
-                
-        zip = zipfile.ZipFile(ZIP_PATH)
-        zip.extractall(SRCDIR)
-        shutil.rmtree(SRCDIR + '/META-INF')
+    if not os.path.exists(DOCS_DIR):
+        raise RuntimeError('Hardware documents were not downloaded.')    
 
-    for file in utils.path_list(SRCDIR):
+    for file in utils.path_list(DOCS_DIR):
         filename = os.path.basename(file)
         try:
             if file.endswith('.psml'):
                 with open(utils.APPDIR+ file, 'r', encoding = 'utf-8') as stream: # type: ignore # ???
                     content = stream.read()
-                soup = BeautifulSoup(content, features = 'xml', parse_only = INFO_SECTION)
+                soup = BeautifulSoup(content, features = 'xml')
                 uri = re.search(URI_PATTERN, content)
                 assert uri is not None, 'Failed to parse URIID from hardware document '+ filename
 
@@ -188,6 +158,7 @@ def runner(network: Network) -> None:
             print_exc()
 
 __stages__ = {
-    'nodes': runner
+    LifecycleStage.NODES: runner
 }
 __nodes__ = [HardwareNode]
+# __output__ = {'hardware'}

@@ -3,7 +3,7 @@ from pysnmp.proto.api import v2c
 
 from netdox.containers import Network
 from .objs import SNMPExplorer
-from netdox.nodes import PlaceholderNode
+from netdox.nodes import DefaultNode, PlaceholderNode
 from netdox.psml import PropertiesFragment, Property
 
 logger = logging.getLogger(__name__)
@@ -24,9 +24,7 @@ def runner(network) -> None:
     resps = explorer.broadcast(reqMsg)
     for iface, varbinds in resps.items():
         ip, _ = iface
-        node = PlaceholderNode(network,
-            ip, ips = [ip]
-        )
+        node = DefaultNode(network, ip, ip)
         node.psmlFooter.insert(PropertiesFragment('snmp', [
             Property('oid', f'{oid} = {val}', 'SNMP OID')
             for oid, val in varbinds.items() if val

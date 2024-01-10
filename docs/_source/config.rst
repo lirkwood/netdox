@@ -3,20 +3,70 @@
 Configuring Netdox
 ##################
 
+.. _psconf:
+
+PageSeeder Configuration
+========================
+Netdox reads configuration values from a PageSeeder document of type ``netdox`` and docid ``_nd_config`` before every refresh.
+The template for this document is included in the source, and both the document type and document itself will be created on the PageSeeder server if they cannot be found.
+The document consists of three sections, described below.
+
+.. _labels:
+
+Document Label Attributes
+-------------------------
+Section ID: ``labels``
+
+Netdox allows you to leverage the batch application/removal of document labels to easily configure plugin-level attributes
+on a document-by-document basis. For each label on a document, Netdox will look up the label name in the PageSeeder config file and apply any attributes defined there to the object the document represents.
+
+Each fragment you create in the labels section can be used to configure the attributes of a single document label.
+Each property in the fragment is an attribute key/value pair.
+If multiple labels on the same document provide conflicting values for an attribute, 
+the value from the label that was defined first in the file will take precedence.
+
+Plugins tell Netdox which attributes they expect to be configured for a label.
+During a refresh, the template for the config file on PageSeeder will be updated, so that each new 'label' fragment created contains a property for each attribute requested by a plugin. 
+*Note*: There's no need to recreate your config file if you enabled or disable a plugin; a new config file will be uploaded with the correct structure, and all your old configuration values will be preserved.
+
+.. _organizations:
+
+Organization Labels
+-------------------
+Section ID: ``organizations``
+
+This section allows you to associate an 'Organization' with a DNS object or node using document labels.
+This is a simple way to provide another view on your network's domains, IPs, and nodes.
+Each fragment specifies the name of the document label, and an XRef to a document that describes that organization.
+The linked document may contain any content (or none if you desire), but each organization should have a unique document.
+
+Any documents bearing a label that has an organization associated with it will be marked as part of that organization.
+This will be extended to any documents which resolve to it, provided they do not already have an organization explicitly configured.
+
+.. _exclusions:
+
+Domain Exclusions
+-----------------
+Section ID: ``exclusions``
+
+This document also has a section titled 'Exclusions'. Domains in this section will be completely ignored by Netdox.
+
 .. _localconf:
 
 Local configuration
 ===================
 
+Netdox also reads more sensitive data from local files.
+
 Config location
 ---------------
-After initialising a configuration directory using ``netdox init <path>``, 
-a collection of templates for config files will be copied there for you to populate.
-Most of the configuration for Netdox lives in one file; It's template will be named ``config.json``.
+After initialising a configuration directory using ``netdox init <path>``, a collection of templates for config files will be copied there for you to populate.
+Most of the configuration for Netdox lives in one file; Its template will be named ``config.json``.
 It should, when populated, contain all the configuration values for connecting to your PageSeeder instance.
-In addition, this file should contain any values required by your enabled plugins. 
-Place them in an object in the *plugins* dictionary (with the plugin name in lower case as the key).
-Each plugin should document the JSON object it expects, usually in the ``README.md``.
+
+In addition, this template will contain the outline for configuring any installed plugins.
+These sections should be completed for any plugins you intend to enable.
+For more detail refer to the plugin README files, which will also be copied to the directory during initialisation.
 
 This file will be encrypted when you load it into Netdox, and the unencrypted original deleted automatically. 
 For more information about loading the config, use the CLI help (``netdox -h``, ``netdox config -h``).
@@ -42,27 +92,4 @@ Enabled Plugins
 
 Plugins are disabled by default and will not run automatically just because they're installed.
 In order to enable a plugin, add its name to the array in ``plugins.json``.
-
-
-.. _labels:
-
-Document Label Attributes
--------------------------
-
-Netdox allows you to leverage the batch application/removal of document labels to easily configure plugin-level attributes
-on a document-by-document basis. For each label on a document, Netdox will look up the label name in the PageSeeder config file 
-(file of type ``netdox`` with docid ``_nd_config``) and apply any attributes defined there to the object the document represents.
-
-To use the config, create a document matching the stipulations above.
-Each fragment you create in the labels section can be used to configure the attributes of a single document label.
-Each property in the fragment is an attribute key/value pair.
-If multiple labels on the same document provide conflicting values for an attribute, 
-the value from the label that was defined first in the file will take precedence.
-
-This document also has a section titled 'Exclusions'. Domains in this section will be completely ignored by Netdox.
-
-Plugins can register attributes using an iterable of strings named ``__attrs__``, defined at the module level.
-During a refresh, the template for the config file on PageSeeder will be updated, so that each new 'label' fragment created
-contains a property for each attribute registered by a plugin. 
-*Note*: There's no need to recreate your config file if the registered attributes have changed —
-a new config file will be uploaded with the correct structure, and all your old configuration will be preserved.
+Alternatively, if the array contains a single asterisk ("*"), all plugins will be enabled.

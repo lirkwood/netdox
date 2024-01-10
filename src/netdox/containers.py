@@ -2,12 +2,16 @@
 This module contains any container classes.
 """
 from __future__ import annotations
+import copy
 
 import logging
+import os
 import pickle
-from typing import Iterable, Iterator, Sequence, Type, Union
+from typing import Iterable, Iterator, Type, Union
 
-from netdox import base, dns, helpers, iptools, nodes
+from bs4 import BeautifulSoup
+
+from netdox import base, dns, helpers, iptools, nodes, psml
 from netdox.config import NetworkConfig
 from netdox.iptools import valid_ip
 from netdox.utils import APPDIR, Cryptor, valid_domain
@@ -120,13 +124,12 @@ class IPv4AddressSet(dns.DNSObjectContainer[dns.IPv4Address]):
 
     def fillSubnets(self) -> None:
         """
-        Iterates over each unique private subnet this set has IP addresses in, 
+        Iterates over each public 8-bit subnet this set has IP addresses in, 
         and generates IPv4Addresses for each IP in the subnet not already in the set.
         """
-        for subnet in self.subnets:
-            for ip in iptools.subn_iter(subnet):
-                self[ip]
-
+        for subnet in self.network.config.subnets:
+            for ipv4 in iptools.subn_iter(subnet):
+                self[ipv4]
 
 class NodeSet(base.NetworkObjectContainer[nodes.Node]):
     """
@@ -201,13 +204,16 @@ class Network:
     """A helper class to report network changes."""
     cache: set
     """A set of cached names. Used when resolving long record chains."""
+    counter: helpers.Counter
+    """Object used to count many facets of the network."""
 
     def __init__(self, 
             domains: DomainSet = None, 
             ips: IPv4AddressSet = None, 
             nodes: NodeSet = None,
             config: NetworkConfig = None,
-            labels: helpers.LabelDict = None
+            labels: helpers.LabelDict = None,
+            locations: dict[str, set[str]] = None
         ) -> None:
         """
         Instantiate a Network object.
@@ -220,6 +226,8 @@ class Network:
         :type nodes: NodeSet, optional
         :param config: A NetworkConfig object.
         :type config: dict, optional
+        :param locations: A dict mapping locations to a list of associated subnets.
+        :type locations: dict[str, str], optional
         """
 
         self.domains = domains or DomainSet(network = self)
@@ -229,9 +237,16 @@ class Network:
         self.config = config or NetworkConfig()
         self.labels = labels or helpers.LabelDict()
         
-        self.locator = helpers.Locator()
+        locations = locations or {}
+        for subnet, location in self.config.subnets.items():
+            if location not in locations:
+                locations[location] = set()
+            locations[location].add(subnet)
+        
+        self.locator = helpers.Locator(locations)
         self.report = helpers.Report()
         self.cache = set()
+        self.counter = helpers.Counter()
 
     def link(self, 
             origin: Union[str, dns.DNSObject], 
@@ -263,6 +278,58 @@ class Network:
             and (valid_ip(dest) or valid_domain(dest))
         ):
             origin.link(dest, source)
+            self.counter.inc_facet(helpers.CountedFacets.DNSLink)
+            
+    def dns_report(self) -> str:
+        """Generates a report on DNS records in the network."""
+        section = psml.Section('dns', 'Problematic DNS Records')
+        
+        count = 0
+        for domain in self.domains:
+            for link in domain.implied_links:
+                if (
+                    (link not in link.destination.links) & 
+                    (link.destination.type == dns.IPv4Address.type)
+                ):
+                    dest_name = link.destination.name
+                    str_link = f'{dest_name} -> {domain.name}'
+                    section.insert(psml.PropertiesFragment(f'domain_{count}', [
+                        psml.Property('link', str_link, 'Problematic Link'),
+                        psml.Property(
+                            'issue', 
+                            'IPv4 points at domain but domain does not point back.', 
+                            'Issue with Link'),
+                        psml.Property(
+                            'suggestion', 
+                            f'Create A record from {domain.name} to {dest_name}, or remove PTR, in {link.source}.',
+                            'Suggested Fix'
+                        )
+                    ]))
+                    count += 1
+            
+        count = 0
+        for ipv4 in self.ips:
+            for link in ipv4.implied_links:
+                if (
+                    (link not in link.destination.links) & 
+                    (link.destination.type == dns.Domain.type)
+                ):
+                    str_link = f'{link.destination.name} -> {ipv4.name}'
+                    section.insert(psml.PropertiesFragment(f'ipv4_{count}', [
+                        psml.Property('link', str_link, 'Problematic Link'),
+                        psml.Property(
+                            'issue', 
+                            'Domain points at IPv4 but IPv4 does not point back.', 
+                            'Issue with Link'),
+                        psml.Property(
+                            'suggestion', 
+                            f'Create PTR from {ipv4.name} to {link.destination.name} in {link.source}.',
+                            'Suggested Fix'
+                        )
+                    ]))
+                    count += 1
+        
+        return str(section)
 
     ## resolving refs
 
@@ -297,10 +364,10 @@ class Network:
             return False
         self.cache.add(startObj)
         
-        if target in startObj.records.names:
+        if target in startObj.links.names:
             return True
 
-        for dest in startObj.records.destinations:
+        for dest in startObj.links.destinations:
             if self._resolvesTo(dest, target):
                 return True
         
@@ -335,14 +402,33 @@ class Network:
         self.cache.clear()
         return self._resolvesTo(startObj, target)
 
+    def copy_notes(self, network: Network) -> None:
+        """
+        Replaces the notes in this network with those from the given network.
 
+        :param network: The network to import notes from.
+        :type network: Network
+        """
+        for domain in network.domains:
+            if domain.name in self.domains:
+                self.domains[domain.name].notes = psml.Fragment.from_tag(copy.copy(domain.notes.tag))
+
+        for ipv4 in network.ips:
+            if ipv4.name in self.ips:
+                self.ips[ipv4.name].notes = psml.Fragment.from_tag(copy.copy(ipv4.notes.tag))
+            
+        for node in network.nodes:
+            if node.identity in self.nodes:
+                self.nodes[node.identity].notes = psml.Fragment.from_tag(copy.copy(node.notes.tag))
+                
     ## Serialisation
 
     def dump(self, outpath: str = APPDIR + 'src/network.bin', encrypt = True) -> None:
         """
         Pickles the Network object and saves it to *path*, encrypted.
 
-        :param outpath: The path to save dump the network to, defaults to 'src/network.bin' within *APPDIR*.
+        :param outpath: The path to save dump the network to, 
+        defaults to 'src/network.bin' within *APPDIR*.
         :type outpath: str, optional
         :param encrypt: Whether or not to encrypt the dump, defaults to True
         :type encrypt: bool, optional
@@ -352,7 +438,81 @@ class Network:
             nw.write(Cryptor().encrypt(network) if encrypt else network)
 
     @classmethod
-    def fromDump(cls: Type[Network], inpath: str = APPDIR + 'src/network.bin', encrypted = True) -> Network:
+    def from_psml(
+        cls, dir: str, node_subclasses: Iterable[Type[nodes.Node]] = () # type: ignore
+    ) -> Network:
+        """
+        Instantiates a Network from its psml representation in the given dir.
+
+        :param dir: Aboslute path to the directory the network was serialised to.
+        :type dir: str
+        :param node_subclasses: A list of subclasses of Node to attempt to use to
+        deserialise Node instances. Defaults to ()
+        :type node_subclasses: Iterable[Type[nodes.Node]]
+        :return: The Network described by the psml.
+        :rtype: Network
+        """
+        with open(os.path.join(dir, 'config.psml'), 'r') as stream:
+            config = NetworkConfig.from_psml(stream.read())
+        net = cls(config = config)
+
+        try:
+            for domain_file in os.scandir(os.path.join(dir, 'domains')):
+                if not domain_file.path.endswith('.psml') or not domain_file.is_file():
+                    continue
+                try:
+                    with open(domain_file, 'r', encoding='utf-8') as stream:
+                        domain = dns.Domain.from_psml(net, 
+                            psml = BeautifulSoup(stream.read(), 'xml'))
+                    net.labels[domain.docid] = (
+                        domain.labels - set(domain.DEFAULT_LABELS))
+                except Exception as exc:
+                    logger.error(
+                        f'Failed to deserialise Domain object at "{domain_file.path}"')
+                    logger.exception(exc)
+        except FileNotFoundError:
+            logger.warning('No domains directory found in remote network.')
+
+        try:
+            for subnet in os.scandir(os.path.join(dir, 'ips')):
+                for ipv4_file in os.scandir(subnet):
+                    if not ipv4_file.path.endswith('.psml') or not ipv4_file.is_file():
+                        continue
+                    try:
+                        with open(ipv4_file, 'r', encoding='utf-8') as stream:
+                            ipv4 = dns.IPv4Address.from_psml(net, 
+                                psml = BeautifulSoup(stream.read(), 'xml'))
+                        net.labels[ipv4.docid] = (
+                            ipv4.labels - set(ipv4.DEFAULT_LABELS))
+                    except Exception as exc:
+                        logger.error(
+                            f'Failed to deserialise IPv4 object at "{ipv4_file.path}"')
+                        logger.exception(exc)        
+        except FileNotFoundError:
+            logger.warning('No ips directory found in remote network.')
+
+        try:
+            for node_file in os.scandir(os.path.join(dir, 'nodes')):
+                if not node_file.path.endswith('.psml') or not node_file.is_file():
+                    continue
+                try:
+                    with open(node_file, 'r', encoding='utf-8') as stream:
+                        node = nodes.Node.from_psml(net, subclass_types = node_subclasses,
+                            psml = BeautifulSoup(stream.read(), 'xml'))
+                    net.labels[node.docid] = node.labels - set(node.DEFAULT_LABELS)
+                except Exception as exc:
+                    logger.error(
+                        f'Failed to deserialise Node object at "{node_file.path}"')
+                    logger.exception(exc)
+        except FileNotFoundError:
+            logger.warning('No nodes directory found in remote network.')
+
+        return net
+
+    @classmethod
+    def from_dump(
+        cls, inpath: str = APPDIR + 'src/network.bin', encrypted = True
+    ) -> Network:
         """
         Instantiates a Network from a pickled dump.
 

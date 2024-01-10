@@ -4,6 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 testpaths = ['tests']
+log_cli = true
+log_cli_level = "ERROR"
 
 [tool.coverage.run]
 source = ['netdox']
@@ -11,7 +13,6 @@ omit = [
     '*/netdox/plugins/*.py',
     '*/netdox/cli.py',
     '*/netdox/refresh.py',
-    '*/netdox/serve.py',
     '*/netdox/pageseeder.py'
 ]
 
@@ -48,9 +49,6 @@ namespace_packages = true
 # Ignore all errors
 [[tool.mypy.overrides]]
 module = [
-    'netdox.iptools',
-    'netdox.plugins.k8s.webhooks',
-    'netdox.plugins.dnsmadeeasy.create',
-    'netdox.plugins.activedirectory.create'
+    'netdox.iptools'
 ]
 ignore_errors = true

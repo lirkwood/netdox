@@ -7,14 +7,15 @@ import logging
 import os
 import re
 from hashlib import sha256
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, Optional, Type
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from netdox import base, dns, iptools, utils
-from netdox.psml import (NODE_TEMPLATE, PropertiesFragment, Property, Section,
-                         XRef)
+from netdox.helpers import CountedFacets
+from netdox.psml import (NODE_TEMPLATE, Fragment, PropertiesFragment, Property,
+                         Section, XRef)
 
 if TYPE_CHECKING:
     from netdox import Network
@@ -63,7 +64,6 @@ class Node(base.NetworkObject):
         PageSeeder document, defaults to None
         :type labels: Iterable[str], optional
         """
-        self.identity = identity.lower()
         self._location = None
         super().__init__(network, name, identity, labels)
 
@@ -122,10 +122,22 @@ class Node(base.NetworkObject):
             self.network.nodes[self.identity] = self.merge(self.network.nodes[self.identity])
         else:
             self.network.nodes[self.identity] = self
+            self.network.counter.inc_facet(CountedFacets.Node)
 
         self.resolveDNS()
 
         return self
+
+    def merge(self, node: Node) -> Node: # type: ignore
+        if isinstance(node, PlaceholderNode):
+            return node.merge(self)
+        else:
+            super().merge(node)
+            self.domains |= node.domains
+            self.ips |= node.ips
+            return self
+
+    # serialisation
 
     def to_psml(self) -> BeautifulSoup:
         soup = super().to_psml()
@@ -161,11 +173,90 @@ class Node(base.NetworkObject):
 
         return soup
 
-    def merge(self, node: Node) -> Node: # type: ignore
-        super().merge(node)
-        self.domains |= node.domains
-        self.ips |= node.ips
-        return self
+    @classmethod
+    def _type_from_psml(cls, psml: BeautifulSoup) -> str:
+        """
+        Returns the Node type from the PSML representation of a Node.
+
+        :param psml: The PSML representation of a Node.
+        :type psml: BeautifulSoup
+        :return: A string containing the Node type of the object that was serialised to PSML.
+        :rtype: str
+        """
+        psml_type_prop = psml.find('property', title = 'Node Type')
+        if psml_type_prop is None: raise ValueError('Failed to find property with title "Node Type".')
+        return psml_type_prop['value']
+
+    @classmethod
+    def _from_psml(cls, network: Network, psml: BeautifulSoup) -> Node:
+        """
+        Does the actual instantiation of a Node from PSML.
+
+        :param network: The network to create the Node inside of.
+        :type network: Network
+        :param psml: The PSML to read from.
+        :type psml: BeautifulSoup
+        :return: The Node object that was serialised to PSML.
+        :rtype: Node
+        """
+        header = PropertiesFragment.from_tag(psml.find('properties-fragment', id = 'header')).to_dict()
+        label_tag = psml.find('labels')
+        labels = label_tag.string.split(',') if label_tag is not None else []
+        footer = psml.find('section', id = 'footer')
+
+        domains_xrefs = PropertiesFragment.from_tag(
+            psml.find('properties-fragment', id = 'domains')
+        ).to_dict().get('domain', ())
+
+        if not isinstance(domains_xrefs, Iterable):
+            domains_xrefs = (domains_xrefs,)
+        domains = [xref.tag['urititle'] for xref in domains_xrefs]
+
+        ips_xrefs = PropertiesFragment.from_tag(
+            psml.find('properties-fragment', id = 'ips')
+        ).to_dict().get('ipv4', ())
+
+        if not isinstance(ips_xrefs, Iterable):
+            ips_xrefs = (ips_xrefs,)
+        ips = [xref.tag['urititle'] for xref in ips_xrefs]
+
+        node = Node(network, header['name'], header['identity'], domains, ips, labels)
+
+        if footer is not None: node.psmlFooter = Section.from_tag(footer)
+
+        notes_section = psml.find('section', id='notes')
+        if notes_section:
+            notes_frag = notes_section.find('fragment', id='notes')
+            if notes_frag:
+                node.notes = Fragment.from_tag(notes_frag)
+
+        return node
+
+    @classmethod
+    def from_psml(cls, network: Network, psml: BeautifulSoup, subclass_types: Iterable[Type[Node]] = ()) -> Node:
+        """
+        Instantiates a Node from its psml representation.
+        Uses the types in *subclass_types* to recreate plugin-provided Node subclasses.
+
+        :param network: The network to create this Node inside of.
+        :type network: Network
+        :param psml: The PSML representation of a Node.
+        :type psml: BeautifulSoup
+        :param subclass_types: Some types that may have been the type of the object originally serialised.
+        Not necessary if you are instantiating directly with the correct subclass. Defaults to ()
+        :type subclass_types: Iterable[Type[Node]], optional
+        :return: A Node, or Node subclass if the correct type is present in *subclass_types*.
+        :rtype: Node
+        """
+        psml_type = cls._type_from_psml(psml)
+        type_map = {subcls.type: subcls for subcls in subclass_types
+            } | {cls.type: cls} | BUILTIN_NODES
+        if psml_type in type_map:
+            return type_map[psml_type]._from_psml(network, psml) # type: ignore #TODO investigate
+        else:
+            logger.error(f'Failed to find matching Node subclass for type {psml_type}.'
+                + ' Creating plain Node instead. Some data may be lost.')
+            return Node._from_psml(network, psml)
 
     ## properties
 
@@ -224,32 +315,32 @@ class Node(base.NetworkObject):
 
         if dnsobj.node: 
             if dnsobj.node.type == PlaceholderNode.type:
-                logger.debug(
-                    f'{self.name} consuming placeholder node from {dnsobj.name}')
                 dnsobj.node.merge(self)
+                return cache
+                
+            elif self.type == PlaceholderNode.type:
+                self.merge(dnsobj.node)
                 return cache
 
             elif isinstance(dnsobj.node, ProxiedNode):
-                assert dnsobj.node.proxy.node is not None, \
-                    'DEBUG: NodeProxy did not create placeholder node.'
-                if dnsobj.node.proxy.node.type == PlaceholderNode.type:
-                    logger.debug(
-                        f'Proxy from {dnsobj.name} to {dnsobj.node.proxy.backend.name}'
-                        + f' set to {self.name}')
+               if dnsobj.node.proxy.node.type == PlaceholderNode.type:
+                    dnsobj.node.proxy.node.merge(self)
                     dnsobj.node.proxy.node = self
-                
+               
             
             else:
                 return cache
         else:
             dnsobj.node = self
 
-        if isinstance(dnsobj, dns.Domain):
-            self.domains.add(dnsobj.name)
-        else:
+        if isinstance(dnsobj, dns.IPv4Address):
             self.ips.add(dnsobj.name)
+            for link in dnsobj.NAT:
+                cache |= self._walkBackrefs(link.destination, cache)
+        else:
+            self.domains.add(dnsobj.name)
         
-        for backref in dnsobj.backrefs.destinations:
+        for backref in dnsobj.implied_links.destinations:
             cache |= self._walkBackrefs(backref, cache)
 
         return cache
@@ -279,6 +370,12 @@ class ProxiedNode(Node):
             self.proxy = NodeProxy(self, proxy_node, 
                 {addr for addrset in (domains, ips) for addr in addrset})
 
+    def to_psml(self) -> BeautifulSoup:
+        soup = super().to_psml()
+        soup.find('properties-fragment', id = 'header').append(
+            Property('proxy', XRef(docid=self.proxy.node.docid), 'Proxy Node').tag)
+        return soup
+
     def _walkBackrefs(self, dnsobj: dns.DNSObject, cache: set[str] = None) -> set[str]:
         if not cache:
             cache = set()
@@ -293,22 +390,25 @@ class ProxiedNode(Node):
             if self.proxy.node and dnsobj.node is self.proxy.node:
                 dnsobj.node = self.proxy # type: ignore
 
-            elif self.proxy.node.type == PlaceholderNode.type:
-                logger.debug(
-                    f'Proxy from {dnsobj.name} to {self.name}'
-                    + f' set to {dnsobj.node.name}')
-                self.proxy.node = dnsobj.node
+            elif isinstance(self.proxy.node, PlaceholderNode):
+                if isinstance(dnsobj.node, ProxiedNode):
+                    proxy = dnsobj.node.proxy.node
+                else:
+                    proxy = dnsobj.node
+                    
+                self.proxy.node.merge(proxy)
+                self.proxy.node = proxy
                 dnsobj.node = self.proxy # type: ignore
 
-            else:
-                logger.debug( #TODO remove warning once properly tested
-                    'False address claim from ProxiedNode '+
-                    f'{self.identity} on {dnsobj.name}')
         else:
             dnsobj.node = self.proxy # type: ignore
         
-        for backref in dnsobj.backrefs.destinations:
+        for backref in dnsobj.implied_links.destinations:
             cache |= self._walkBackrefs(backref, cache)
+        
+        if isinstance(dnsobj, dns.IPv4Address):
+            for link in dnsobj.NAT:
+                cache |= self._walkBackrefs(link.destination, cache)
 
         return cache
 
@@ -431,10 +531,9 @@ class PlaceholderNode(Node):
         """
 
         hash = sha256(usedforsecurity = False)
-        hash.update(bytes(name, 'utf-8'))
+        hash.update(bytes(name.lower().strip(), 'utf-8'))
         hash.update(bytes(str(sorted(set(domains))), 'utf-8'))
         hash.update(bytes(str(sorted(set(ips))), 'utf-8'))
-
         super().__init__(
             network = network, 
             name = name, 
@@ -452,7 +551,9 @@ class PlaceholderNode(Node):
             node = self.network.ips[ip].node
             if node: nodes.add(node)
             
-        assert len(nodes) <= 1, 'Placeholder cannot be consumed by more than one node.'
+        if len(nodes) > 1:
+            raise RuntimeError('Placeholder cannot be consumed by more than one node. ' +
+                str([node.identity for node in nodes]))
         if nodes:
             self.network.nodes.addRef(nodes.pop(), self.identity)
 
@@ -467,19 +568,6 @@ class PlaceholderNode(Node):
         :rtype: Iterable[Tag]
         """
         return []
-
-    ## properties
-
-    @property
-    def aliases(self) -> set[str]:
-        """
-        Returns all the refs to this node in the containing NodeSet.
-        This is useful for guaranteeing this objects removal after consumption.
-
-        :return: A set of refs to this node.
-        :rtype: set[str]
-        """
-        return {ref for ref, node in self.network.nodes.nodes.items() if node is self}
 
     ## methods
 
@@ -500,6 +588,7 @@ class PlaceholderNode(Node):
         node.domains |= self.domains
         node.ips |= self.ips
         node.psmlFooter.extend(self.psmlFooter)
+        if str(node.notes) == self.DEFAULT_NOTES: node.notes = self.notes
 
         for domain in self.domains:
             if self.network.domains[domain].node is self:
@@ -509,7 +598,14 @@ class PlaceholderNode(Node):
             if self.network.ips[ip].node is self:
                 self.network.ips[ip].node = node
 
-        for alias in self.aliases:
-            self.network.nodes[alias] = node
-
+        for alias, alias_node in self.network.nodes.nodes.items():
+            if alias_node is self:
+                self.network.nodes[alias] = node
         return node
+
+BUILTIN_NODES = {
+    Node.type: Node, 
+    DefaultNode.type: DefaultNode,
+    ProxiedNode.type: ProxiedNode, 
+    PlaceholderNode.type: PlaceholderNode,
+}

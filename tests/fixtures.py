@@ -1,6 +1,7 @@
 from pytest import fixture
 from netdox import Network, utils, nodes, dns
 from netdox.config import NetworkConfig
+from netdox.app import PluginManager
 from lxml import etree
 
 @fixture
@@ -16,19 +17,28 @@ def attr_label_attrs() -> dict:
     return {'attr1': 'value1'}
 
 @fixture
-def org() -> str:
-    return 'organization_name'
+def eg_org() -> str:
+    return '94549'
 
 @fixture
-def org_label() -> str:
+def eg_org_label() -> str:
     return 'organization_label'
 
 @fixture
-def network_config(excluded_domain, attr_label, attr_label_attrs, org, org_label):
+def eg_subnet() -> str:
+    return '192.168.254.0/24'
+
+@fixture
+def eg_location() -> str:
+    return 'eg_location'
+
+@fixture
+def network_config(excluded_domain, attr_label, attr_label_attrs, eg_org, eg_org_label, eg_subnet, eg_location):
     return NetworkConfig(
         exclusions = [excluded_domain],
         labels = {attr_label: attr_label_attrs},
-        organizations = {org: set([org_label])}
+        organizations = {eg_org: set([eg_org_label])},
+        subnets = {eg_subnet: eg_location}
     )
 
 @fixture
@@ -57,3 +67,8 @@ def node(network: Network):
 @fixture
 def psml_schema():
     return etree.XMLSchema(file = utils.APPDIR+ 'src/psml.xsd')
+
+
+@fixture
+def plugin_mgr():
+    return PluginManager()

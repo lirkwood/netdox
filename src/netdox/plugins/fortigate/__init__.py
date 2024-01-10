@@ -6,6 +6,7 @@ import logging
 
 from netdox import Network
 from netdox import utils, iptools
+from netdox.app import LifecycleStage
 
 logging.getLogger('fortiosapi').setLevel(logging.INFO)
 
@@ -26,7 +27,9 @@ def runner(network: Network) -> None:
     for ip in nat:
         network.ips[ip].translate(nat[ip], 'fortigate')
 
-__stages__ = {'nat': runner}
+__stages__ = {
+    LifecycleStage.NAT: runner
+}
 __config__ = {
     'apitoken': '',
     'host': ''

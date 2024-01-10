@@ -3,13 +3,13 @@ This module contains some essential helper classes.
 """
 from __future__ import annotations
 from dataclasses import dataclass
+from enum import Enum
 
 import json
 import logging
-from datetime import datetime
-from collections import namedtuple
+import os
 from typing import Iterable, Iterator, Optional, no_type_check
-from functools import cache
+from importlib.metadata import version as pkg_version
 
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -29,14 +29,9 @@ class Locator:
     location_map: dict
     location_pivot: dict
 
-    def __init__(self) -> None:
-        try:
-            with open(utils.APPDIR+ 'cfg/locations.json', 'r') as stream:
-                self.location_map = json.load(stream)
-        except Exception:
-            self.location_map = {}
+    def __init__(self, locations: dict[str, set[str]]) -> None:
+        self.location_map = locations
         self.location_pivot = {}
-
         for location in self.location_map:
             for subnet in self.location_map[location]:
                 self.location_pivot[subnet] = location
@@ -97,6 +92,8 @@ class Report:
     logs: str
     """A string containing warning+ logs that occurred 
     while running the refresh for this report."""
+    DEFAULT_OUTPATH: str = os.path.join(utils.APPDIR, 'out', 'report.psml')
+    """Absolute path to the default serialisation location of this object."""
 
     def __init__(self) -> None:
         self.sections = []
@@ -127,8 +124,9 @@ class Report:
         :type path: str, optional
         """
         with open(utils.APPDIR+ 'src/templates/report.psml', 'r') as stream:
-            report = BeautifulSoup(stream.read(), 'xml')
-
+            str_report = stream.read().replace('#!version', f'v{pkg_version("netdox")}')
+            report = BeautifulSoup(str_report, 'xml')
+            
         logs = report.new_tag('preformat')
         logs.string = self.logs
         report.find('fragment', id = 'logs').append(logs)
@@ -136,8 +134,7 @@ class Report:
         for tag in self.sections:
             report.document.append(BeautifulSoup(tag, 'xml'))
 
-        path = path or utils.APPDIR+ 'out/report.psml'
-        with open(path, 'w') as stream:
+        with open(path or self.DEFAULT_OUTPATH, 'w') as stream:
             stream.write(str(report))
 
 
@@ -223,3 +220,74 @@ class Organization:
             raise ValueError('Failed to parse essential attribute from PSML.')
         else:
             return cls(*[str(attr) for attr in attrs])
+
+###################
+# Counting Helper #
+###################
+
+class CountedFacets(Enum):
+    Domain = 'domain'
+    IPv4 = 'ipv4'
+    Node = 'node'
+    DNSLink = 'dnslink'
+    NATLink = 'natlink'
+
+@dataclass(frozen = True)
+class Counter:
+    _counts: dict[CountedFacets, int]
+    """Maps facet to its counted occurences."""
+    DEFAULT_COUNTS = {facet: 0 for facet in CountedFacets}
+    """Default dict of counts."""
+
+    def __init__(self) -> None:
+        object.__setattr__(self, '_counts', dict(self.DEFAULT_COUNTS))
+
+    def inc_facet(self, facet: CountedFacets) -> int:
+        """
+        Increments the count of a facet.
+
+        :param facet: Facet to increment the count for.
+        :type facet: Any
+        :return: The new count for the facet.
+        :rtype: int
+        """
+        try:
+            count = self._counts[facet] + 1
+        except KeyError:
+            count = 1
+        finally:
+            self._counts[facet] = count
+            return count
+
+    def dec_facet(self, facet: CountedFacets) -> int:
+        """
+        Decrements the count of a facet.
+        If count is zero then the count will be unchanged.
+
+        :param facet: Facet to decrement the count for.
+        :type facet: Any
+        :return: The new count for the facet.
+        :rtype: int
+        """
+        try:
+            count = self._counts[facet] - 1
+            if count < 0: count = 0
+        except KeyError:
+            count = 0
+        finally:
+            self._counts[facet] = count
+            return count
+
+    @property
+    def counts(self) -> dict[CountedFacets, int]:
+        """Maps facets to their current counts."""
+        return self.DEFAULT_COUNTS | self._counts
+
+    def generate_report(self) -> psml.Section:
+        counts = self.counts
+        return psml.Section('counts', 'Counted Facets', [
+            psml.PropertiesFragment(f'{facet.value}_counts', [
+                psml.Property('facet', facet.name, 'Facet Name'),
+                psml.Property(facet.name, str(counts[facet]), 'Value')
+            ]) for facet in counts
+        ])

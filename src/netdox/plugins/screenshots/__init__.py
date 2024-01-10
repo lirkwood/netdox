@@ -12,6 +12,7 @@ import diffimg
 from bs4.element import Tag
 from netdox import pageseeder, utils
 from netdox import Domain, Network
+from netdox.app import LifecycleStage
 from netdox.psml import Fragment
 from pyppeteer import launch
 from pyppeteer.browser import Page
@@ -22,6 +23,7 @@ logging.getLogger('pyppeteer').setLevel(logging.WARNING)
 
 SCREENSHOT_ATTR = 'screenshot'
 __attrs__ = {SCREENSHOT_ATTR}
+__output__ = {'screenshots', 'screenshot_history', 'diffimg'}
 
 
 class ScreenshotManager:
@@ -226,6 +228,7 @@ class ScreenshotManager:
         Sentence any stale screenshots on PageSeeder.
         Also clears the sentence of any screenshots wrongfully marked as stale.
         """
+        # TODO remove this method
         for file in self.existingScreens:
             if file.replace('_','.')[:-4] not in self.domains:
                 info = json.loads(pageseeder.get_uri(self.urimap[file]))
@@ -243,7 +246,7 @@ class ScreenshotManager:
         if 'diffimg' in pageseeder.urimap():
             pageseeder.archive(pageseeder.urimap()['diffimg'])
 
-def init() -> None:
+def init(_: Network) -> None:
     if not os.path.exists(utils.APPDIR+ 'plugins/screenshots/base'):
         os.mkdir(utils.APPDIR+ 'plugins/screenshots/base')
     if not os.path.exists(utils.APPDIR+ 'out/screenshot_history'):
@@ -271,8 +274,7 @@ def runner(network: Network) -> None:
     mngr.sentenceStale()
 
 
-__stages__ = {'footers': runner}
-
-if __name__ == '__main__':
-    init()
-    runner(Network.fromDump())
+__stages__ = {
+    LifecycleStage.INIT: init,    
+    LifecycleStage.FOOTERS: runner
+}

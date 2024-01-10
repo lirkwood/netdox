@@ -2,15 +2,17 @@
 Used to read and modify DNS records stored in ActiveDirectory.
 """
 
+import logging
+
+from netdox.app import LifecycleStage
 from netdox.plugins.activedirectory.dns import fetchDNS
 from netdox.plugins.activedirectory.footers import addFooters
-import logging
 
 logging.getLogger('pypsrp').setLevel(logging.WARNING)
 
 __stages__ = {
-    'dns': fetchDNS,
-    'footers': addFooters,
+    LifecycleStage.DNS: fetchDNS,
+    LifecycleStage.FOOTERS: addFooters,
 }
 
 __config__ = {

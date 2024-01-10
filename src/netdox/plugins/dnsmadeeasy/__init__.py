@@ -5,12 +5,11 @@ import json
 import os
 
 from netdox import utils
+from netdox.app import LifecycleStage
+from netdox.containers import Network
 from netdox.plugins.dnsmadeeasy.fetch import fetch_dns, fetch_domains
 
-__stages__ = {'dns': fetch_dns}
-__config__ = {'api': '', 'secret': ''}
-
-def init() -> None:
+def init(_: Network) -> None:
 	zones = {}
 	for id, domain in fetch_domains():
 		zones[domain] = id
@@ -19,3 +18,9 @@ def init() -> None:
 		os.mkdir(utils.APPDIR+ 'plugins/dnsmadeeasy/src')
 	with open(utils.APPDIR+ 'plugins/dnsmadeeasy/src/zones.json', 'w') as stream:
 		stream.write(json.dumps(zones, indent=2))
+
+__stages__ = {
+	LifecycleStage.INIT: init, 
+	LifecycleStage.DNS: fetch_dns
+}
+__config__ = {'api': '', 'secret': ''}

@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import re
-from functools import cache, wraps
+from functools import lru_cache, wraps
 from traceback import format_exc
 from tldextract import extract
 from datetime import date, timedelta
@@ -25,12 +25,11 @@ logger = logging.getLogger(__name__)
 
 APPDIR = os.path.normpath(os.path.dirname(os.path.realpath(__file__))) + os.sep
 """Absolute path to the directory containing the running source code."""
+OUTDIR = os.path.join(APPDIR, 'out')
+"""Absolute path to the directory to be used for output."""
 CFGPATH = os.path.join(APPDIR, 'src', 'config.bin')
 """Absolute path to the encrypted application config file."""
 
-OUTDIRS = ('domains', 'ips', 'nodes')
-"""Tuple of directories documents will be written to. 
-Relative to the output directory / PageSeeder website context."""
 
 ## Regex patterns
 
@@ -94,7 +93,7 @@ def decrypt_file(inpath: str, outpath: str = None) -> str:
 # Config loaders #
 ##################
 
-@cache
+@lru_cache(maxsize = None)
 def config(plugin: str = None) -> dict:
     """
     Loads the encrypted config file if it exists.

@@ -21,6 +21,7 @@ TEMPLATE_ATTR = 'icinga_template'
 # Primitives #
 ##############
 # TODO add cert verification to primitive calls
+# TODO use enum for type param
 
 def fetch(icinga_host: str, type: str) -> requests.Response:
     """

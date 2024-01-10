@@ -1,35 +1,53 @@
 <document type="hardware" level="portable" xmlns:t="http://pageseeder.com/psml/template">
+    
+    <t:param name="name" title="Name" />
+    <t:param name="desc" title="Description" />
+    <t:param name="model" title="Model Number" />
+    <t:param name="serial" title="Serial Number" />
+    <t:param name="mac" title="MAC Address" />
+    <t:param name="os" title="Operating System and Version" />
+    <t:param name="manufacturer" title="Manufacturer" />
 
     <metadata>
         <properties>
-            <property name="template_version"     title="Template version"   value="1.1" />
+            <property name="template_version"     title="Template version"   value="1.2" />
         </properties>
     </metadata>
 
-    <section id="title">
+    <section id="title" lockstructure="true">
       <fragment id="title">
         <heading level="2">Hardware Node</heading>
         <heading level="1"><t:value name="ps.title"/></heading>
       </fragment>
    </section>
-
+    
+    <section id="header" lockstructure="true">
+        
+        <properties-fragment id="header">
+          <property name="name" title="Name" value="{$name}" />
+          <property name="identity" title="Identity" value="" />
+          <property name="type" title="Node Type" value="hardware" />
+          <property name="location" title="Location" value="" />
+          <property name="org" title="Organization" value="" />
+        </properties-fragment>
+          
+    </section>
+    
     <section id="info">
-
+    
         <properties-fragment id="info">
-            <property name="name" title="Name" value="" />
-            <property name="desc" title="Description" value="" />
-            <property name="model" title="Model Number" value="" />
-            <property name="serial" title="Serial Number" value="" />
-            <property name="ipv4" title="Private IP" value="" />
-            <property name="ipmi" title="IPMI" value="" />
-            <property name="mac" title="MAC Address" value="" />
-            <property name="os" title="Operating System and Version" value="" />
-            <property name="manufacturer" title="Manufacturer" value="" />
-            <property name="location" title="Location" value="" />
+            <property name="desc" title="Description" value="{$desc}" />
+            <property name="model" title="Model Number" value="{$model}" />
+            <property name="serial" title="Serial Number" value="{$serial}" />
+            <property name="ipv4" title="Private IP" datatype="xref" />
+            <property name="ipmi" title="IPMI" datatype="xref" />
+            <property name="mac" title="MAC Address" value="{$mac}" />
+            <property name="os" title="Operating System and Version" value="{$os}" />
+            <property name="manufacturer" title="Manufacturer" value="{$manufacturer}" />
         </properties-fragment>
 
         <fragment id="images" />
     
     </section>
-
+    
 </document>

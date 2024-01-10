@@ -11,10 +11,11 @@ import os
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from functools import cache, wraps
+from functools import lru_cache, wraps
 from inspect import signature
 from time import sleep
-from typing import Iterable
+from typing import Iterable, Optional
+from zipfile import ZipFile
 
 import requests
 from bs4 import BeautifulSoup
@@ -38,6 +39,7 @@ def refreshToken(credentials: dict) -> str:
     :return: An access token for use with the PageSeeder API
     :rtype: str
     """
+    #TODO move this off disk
     with open(utils.APPDIR+ 'src/pstoken.json', 'w') as stream:
         url = f'https://{credentials["host"]}/ps/oauth/token'
         refresh_header = {
@@ -47,14 +49,17 @@ def refreshToken(credentials: dict) -> str:
         }
 
         r = requests.post(url, params=refresh_header)
-        token = json.loads(r.text)['access_token']
-        issued = datetime.isoformat(datetime.now())
-        stream.write(json.dumps({
-            'token': token,
-            'issued': str(issued)
-        }, indent=2))
-
-    return token
+        try:
+            token = json.loads(r.text)['access_token']
+        except KeyError:
+            raise ValueError(f'Unexpected response when requesting token: {r.text}')
+        else:
+            issued = datetime.isoformat(datetime.now())
+            stream.write(json.dumps({
+                'token': token,
+                'issued': str(issued)
+            }, indent=2))
+            return token
 
 def token(credentials: dict) -> str:
     """
@@ -135,14 +140,14 @@ def uri_from_path(path: str) -> int:
         'filters': f'pstype:folder,psfilename:{filename},' +
                     f'psfolder:/ps/{group.replace("-","/")}{folder}'
     }))
-    if dirCheck['results']['result']:
+    if dirCheck['results']['totalResults'] > 0:
         for field in dirCheck['results']['result'][0]['fields']:
             if field['name'] == 'psid':
                 return int(field['value'])
 
     raise FileNotFoundError(f"Failed to find object at path: '{path}'")
 
-@cache
+@lru_cache(maxsize = None)
 def urimap(
         path: str = 'website', 
         type: str = 'folder', 
@@ -176,8 +181,9 @@ def urimap(
 # Sentencing #
 ##############
 
-def sentence_uri(uri: str) -> date:
+def sentence_uri(uri: str) -> date: # TODO remove this function
     """
+    DEPRECATED
     Adds two labels to the document on PageSeeder with the given URI,
     which indicates that the object has been sentenced and when.
     After 30 days of being sentenced the document will be archived.
@@ -193,7 +199,10 @@ def sentence_uri(uri: str) -> date:
     if 'stale' not in labels:
         labels.append(f'stale,expires-{plus_thirty}')
         patch_uri(uri, {'labels':','.join(labels)})
-        logger.info(f"File '{info['title']}' is stale and has been sentenced.")
+        
+        display_name = info['title'] if 'title' in info else f'URI:{uri}'
+        logger.info(f"File '{display_name}' is stale and has been sentenced.")
+        
         return plus_thirty
     else:
         for label in labels:
@@ -204,8 +213,22 @@ def sentence_uri(uri: str) -> date:
         patch_uri(uri, {'labels':','.join(labels)})
         return plus_thirty
 
-def clear_sentence(uri: str) -> None:
+def sentence_uris(uris: list[str], assignee: str) -> None:
+    """Sentences documents with URIs in the list to be archived, after approval."""
+    filter = ''
+    for uri in uris:
+        filter += f'psid:{uri},'
+        
+    batch_document_action('addworkflow', {
+        'filters': filter,
+        'action.assignedto': assignee,
+        'action.due': str(date.today() + timedelta(days = 30)),
+        'action.status': 'Initiated'
+    })
+
+def clear_sentence(uri: str) -> None: # TODO remove this function
     """
+    DEPRECATED
     Remove the sentence from the document with the given URI.
 
     :param uri: The URI of the document to clear the sentence of.
@@ -221,6 +244,31 @@ def clear_sentence(uri: str) -> None:
                 labels.remove(label)
         patch_uri(uri, {'labels':labels})
 
+def clear_sentences(uris: list[str]) -> None:
+    """Removes the sentences from documents with URIs in the list."""
+    logger.debug(f'Clearing sentences from {len(uris)} documents.')
+    filter = ''
+    for uri in uris:
+        filter += f'psid:{uri},'
+
+    batch_document_action('addworkflow', {
+        'filters': filter,
+        'action.assignedto': 'netdox website', #TODO get assignee from config
+        'action.due': '',
+        'action.status': 'Terminated'
+    })    
+
+
+def statusFromFile(file: dict[str, str]) -> Optional[str]:
+    """Returns the workflow status from the dict describing a file 
+    returned by pageseeder from a search, if it is assigned to the correct user."""
+    if (
+        'psstatus' in file and 'psassignedto' in file and
+        file['psassignedto'] == 'netdox website'
+    ):
+        # TODO get assignee from config file
+        return file['psstatus']
+    return None
 
 def sentenceStale(dir: str) -> dict[date, list[str]]:
     """
@@ -231,43 +279,53 @@ def sentenceStale(dir: str) -> dict[date, list[str]]:
     :return: A dict of date objects mapped to uris which expire on that date.
     :rtype: dict[date, list[str]]
     """
-    stale = defaultdict(list)
-    today = date.today()
+    stale: defaultdict[date, list[str]] = defaultdict(list)
     group_path = f"/ps/{utils.config()['pageseeder']['group'].replace('-','/')}"
+    member = json.loads(get_self())
     
     if dir in urimap():
-        local = utils.path_list(
-            os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)),
-            relative = utils.APPDIR + 'out'
-        )
-        remote = json.loads(get_uris(urimap()[dir], params={
-            'type': 'document',
-            'relationship': 'descendants'
-        }))
+        try:
+            local = utils.path_list(
+                os.path.normpath(os.path.join(utils.APPDIR, 'out', dir)),
+                relative = utils.APPDIR + 'out'
+            )
+        except FileNotFoundError:
+            logger.error(f'No such directory locally to detect stale items in: {dir}')
+            return {}
+        remote = search_parsed(params = {
+            'filters': f'pstype:document,psancestor:{group_path}/website/{dir}'
+        })
 
-        for file in remote["uris"]:
-            uri = file["id"]
-            labels = file['labels'] if 'labels' in file else []
-            commonpath = os.path.normpath(file["decodedpath"].split(f"{group_path}/website/")[-1])
+        sentence = []
+        clear = []
+        for file in remote:
+            uri = file["psid"]
+            status = statusFromFile(file)
+            commonpath = os.path.normpath(os.path.join(
+                file['psfolder'].split(f"{group_path}/website/", 1)[-1], file['psfilename']
+            ))
 
-            expiry = None
-            for label in labels:
-                match = re.fullmatch(utils.expiry_date_pattern, label)
-                if match:
-                    expiry = date.fromisoformat(match['date'])
-            
-            if commonpath in local and expiry is not None:
-                clear_sentence(uri)
+            # File no longer stale and is marked stale
+            if commonpath in local and status in ('Initiated', 'Approved'):
+                clear.append(uri)
 
             elif commonpath not in local:
-                if expiry and expiry <= today:
+                # File is stale and has been approved for archival
+                if status == 'Approved':
                     archive(uri)
-                    logger.info(f"Archiving document '{file['title']}' as it is >=30 days stale.")
-                elif expiry is not None:
-                    stale[expiry].append(uri)
-                else:
-                    stale[sentence_uri(uri)].append(uri)
+                    title = file['title'] if 'title' in file else f'(URI={file["id"]})'
+                    logger.info(f"Archiving document '{title}' as it has been approved.")
+
+                # File is stale and has no been marked stale yet
+                elif status is None:
+                    logger.debug(f'Sentencing new file: {file["psfilename"]}')
+                    sentence.append(uri)
                     
+        if len(clear) > 0:
+            clear_sentences(clear)
+        if len(sentence) > 0:
+            sentence_uris(sentence, member['id'])
+
     return stale
 
 def findStale(dirs: Iterable[str]) -> dict[date, set[str]]:
@@ -322,6 +380,76 @@ def loading_zone_upload(path, params={}, host='', group='', header={}):
     r = requests.put(url, headers=header, params=params, data=payload)
     return r.text
 
+@auth
+def member_resource(file: str, host='', group='', header='') -> requests.Response:
+    """
+    Returns a streamed response object containing a ZIP file found on PageSeeder.
+    """
+    url = f'https://{utils.config()["pageseeder"]["host"]}/ps/member-resource/{group}/{file}'
+    return requests.get(url, headers=header, stream=True)
+
+@auth
+def download_dir(path: str, outpath: str, timeout: int = 60000) -> str:
+    """
+    Downloads a directory from PageSeeder to the local machine.
+    Times out after *timeout* milliseconds.
+
+    :param path: Path on PageSeeder to download, relative to the group root.
+    :type path: str
+    :param outpath: Where to unzip the downloaded directory on the local machine.
+    :type outpath: str
+    :param timeout: Number of milliseconds to timeout after, defaults to 5000
+    :type timeout: int, optional
+    :return: The path to the downloaded directory
+    :rtype: str
+    """
+    _thread = export({
+        'path': f'/{utils.config()["pageseeder"]["group"].replace("-","/")}/{path}'
+    }, directory = True)
+    thread = BeautifulSoup(_thread, 'xml').thread
+    last_thread = thread
+    try:
+        while thread['status'] in ('initialised', 'inprogress'):
+            sleep(0.5)
+            last_thread = thread
+            thread = BeautifulSoup(get_thread_progress(thread['id']), 'xml').thread
+    except KeyError as err:
+        print(err)
+        raise AttributeError('Download thread never had status "completed".\n' + str(thread))
+    except TypeError:
+        assert thread is None, 'Strange fail state: TypeError when accessing thread like dict.'
+        raise AttributeError('Download thread never had status "completed" (thread is None).\n'
+            + str(last_thread))
+    
+    if thread['status'] == 'failed':
+        try:
+            message = thread.message.string
+        except Exception:
+            message = '[ERROR MSG NOT FOUND]'
+        finally:
+            raise RuntimeError(f'Failed to export directory at "{path}" from PageSeeder.'
+                + f' Message: "{message}"')
+
+    elif thread['status'] != 'completed':
+        logger.warning('Unknown thread final thread status while downloading '
+            + f'directory at "{path}" from PageSeeder: "{thread["status"]}"')
+
+    if os.path.exists(outpath) and not os.path.isdir(outpath):
+        raise FileExistsError('File object exists at output path, is not a directory.')
+    elif not os.path.exists(outpath):
+        os.mkdir(outpath)
+
+    zip_path = outpath + '.zip'
+    with member_resource(thread.zip.text) as zip:
+        zip.raise_for_status()
+        with open(zip_path, 'wb') as stream:
+            for chunk in zip.iter_content(8192):
+                stream.write(chunk)
+
+    ZipFile(zip_path).extractall(outpath)
+    os.remove(zip_path)
+                
+    return outpath
 
 ###########################
 # PageSeeder API Services #
@@ -334,6 +462,12 @@ def get_version(host, **kwargs):
     soup = BeautifulSoup(
         requests.get(f'https://{host}/ps/service/version', **kwargs).text, 'xml')
     return soup.find('version')['string']
+
+@auth
+def get_self(host = '', header={}):
+    """Returns details of the currently authenticated member."""
+    r = requests.get(host+'/self', headers=header)
+    return r.text
 
 @auth
 def get_uri(locator, params={}, forurl=False, host='', group='', header={}):
@@ -394,15 +528,6 @@ def export(params={}, directory = False, host='', member='', header={}):
     service = f'/members/~{member}/export' if directory else f'/members/~{member}/uris/{params["uri"]}/export'
     r = requests.get(host+service, headers=header, params=params)
     return r.text
-
-
-@auth
-def member_resource(zip, host='', group='', header='') -> requests.Response:
-    """
-    Returns a streamed response object containing a ZIP file found on PageSeeder.
-    """
-    service = f'/member-resource/~{group}/{zip}'
-    return requests.get(host+service, headers=header, stream=True)
 
 
 @auth
@@ -549,6 +674,32 @@ def search(params={}, host='', group='', header={}):
     r = requests.get(host+service, headers=header, params=params)
     return r.text
 
+@auth
+def search_parsed(params={}, host='', group='', header={}) -> list[dict[str, str]]:
+    """
+    Like search but parses each result into a map of its fields.
+    """
+    resp = json.loads(search(params=params, host=host, group=group, header=header))
+    try:
+        results: list[dict] = resp['results']['result']
+        if 'page' not in params:
+            current_page = int(resp['results']['page'])
+            while int(resp['results']['totalPages']) > current_page:
+                current_page += 1
+                resp = json.loads(search(params | {'page': current_page}, host=host, group=group, header=header))
+                results.extend(resp['results']['result'])
+        parsed_results = []
+        for result in results:
+            parsed_result = {}
+            for field in result['fields']:
+                parsed_result[field['name']] = field['value']
+            parsed_results.append(parsed_result)
+
+        return parsed_results
+                
+    except KeyError:
+        raise ValueError('Bad response from search; failed to parse results.')
+
 
 @auth
 def resolve_group_refs(params={}, host='', group='', member='', header={}):
@@ -588,7 +739,7 @@ def clear_loading_zone(params={}, host='', group='', member='', header={}):
 
 @auth
 def zip_upload(path, uploadpath, host='', group='', header={}):
-    loading_zone_upload(path, params={'file':'netdox-psml.zip'}, host='https://ps-netdox.allette.com.au', group=group, header=header)
+    loading_zone_upload(path, params={'file':'netdox-psml.zip'}, host=host, group=group, header=header)
     logger.info('File sent successfully.')
     thread = BeautifulSoup(unzip_loading_zone('netdox-psml.zip', params={'deleteoriginal':'true'}), features = 'xml').thread
     while thread and thread['status'] != 'completed':
@@ -607,6 +758,25 @@ def zip_upload(path, uploadpath, host='', group='', header={}):
         'overwrite-properties': 'true',
         'validate': 'false'
         })
+
+
+@auth
+def get_uri_history(uri='', params={}, host='', group='', header={}):
+    service = f'/groups/{group}/uris/{uri}/history'
+    r = requests.get(host+service, params=params, headers=header)
+    return r.text
+
+@auth
+def get_uris_history(params={}, host='', group='', header={}):
+    service = f'/groups/{group}/uris/history'
+    r = requests.get(host+service, params=params, headers=header)
+    return r.text
+
+@auth
+def batch_document_action(action, params={}, host='', group='', member='', header={}):
+    service = f'/members/{member}/groups/{group}/batch/uri/{action}/search'
+    r = requests.post(host+service, params=params, headers=header)
+    return r.text
 
 if __name__ == '__main__':
     urimap()

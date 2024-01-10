@@ -11,8 +11,7 @@ import warnings
 logger = logging.getLogger(__name__)
 
 def runner(network: Network):
-    # TODO change from ps to ps-licenses
-    urimap = pageseeder.urimap('website/ps', 'document')
+    urimap = pageseeder.urimap('website/ps-licenses', 'document')
     cache: set[str] = set()
     for uri in urimap.values():
         try:
@@ -127,11 +126,11 @@ def apply_licenses(
                 cache |= apply_licenses(dnsobj.network.find_dns(addr),
                     license_uri, license_type, pageseeder_ver, org_uri, cache)
 
-    for backref in dnsobj.backrefs.destinations:
+    for backref in dnsobj.implied_links.destinations:
         cache |= apply_licenses(
             backref, license_uri, license_type, pageseeder_ver, org_uri, cache)
 
-    for dest in dnsobj.records.destinations:
+    for dest in dnsobj.links.destinations:
         cache |= apply_licenses(
             dest, license_uri, license_type, pageseeder_ver, org_uri, cache)
 

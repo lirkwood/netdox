@@ -247,7 +247,7 @@ class MonitorManager:
         if ip_loc is not None: 
             return ip_loc
 
-        for alias in domain.records.CNAME.destinations:
+        for alias in domain.links.CNAME.destinations:
             if alias.name not in self._cache:
                 self._cache.add(alias.name)
                 # domain CNAMEs are always Domains

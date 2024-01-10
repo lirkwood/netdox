@@ -21,6 +21,14 @@
         </properties-fragment>
     </t:fragment>
 
+    <t:fragment type="txt_record" title="TXT Record">
+        <properties-fragment>
+            <property name="txt_name" title="Name" value=""/>
+            <property name="txt_value" title="Value" value=""/>
+            <property name="source" title="Source Plugin" value=""/>
+        </properties-fragment>
+    </t:fragment>
+
     <section id="title" lockstructure="true">
         <fragment id="title">
             <heading level="2">Domain name</heading>
@@ -39,6 +47,8 @@
     <section id="records" title="DNS Records" fragmenttype="a_record,cname_record" />
 
     <section id="implied_records" title="Implied DNS Records" lockstructure="true" />
+
+    <section id="txt_records" title="TXT Records" fragmenttype="txt_record" />
 
     <section id="footer" />
 

@@ -2,21 +2,24 @@
 This module contains the abstract base classes for most of the other classes in the objs package.
 """
 from __future__ import annotations
+import logging
 
 import os
 import re
+import copy
 from abc import ABC, ABCMeta, abstractmethod
-from functools import cache
+from functools import lru_cache
 from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type,
                     TypeVar, Union)
 
 from bs4 import BeautifulSoup
-from bs4.element import Tag
+from xml.sax.saxutils import escape
 from netdox import psml
 
 if TYPE_CHECKING:
-    from netdox import Network, helpers
-    from netdox.nodes import Node
+    from netdox import Network
+    
+logger = logging.getLogger(__name__)
 
 ###########
 # Objects #
@@ -58,6 +61,10 @@ class NetworkObject(metaclass=NetworkObjectMeta):
     """A set of labels to apply to this object's output document."""
     DEFAULT_LABELS = ['show-reversexrefs', 'netdox-default']
     """A set of labels to apply to this object upon instantiation."""
+    _notes: psml.Fragment
+    """A string of content that is editable on the remote server."""
+    DEFAULT_NOTES = '<fragment id="notes"><para>—</para></fragment>'
+    """String form of the default notes content."""
     type: str
     """A string unique to each subclass of NetworkObject."""
     TEMPLATE: str
@@ -67,7 +74,13 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
     ## dunder methods
 
-    def __init__(self, network: Network, name: str, identity: str, labels: Iterable[str] = None) -> None:
+    def __init__(self, 
+        network: Network, 
+        name: str, 
+        identity: str, 
+        labels: Iterable[str] = None, 
+        notes: psml.Fragment = None
+    ) -> None:
         """
         Sets the instances attributes to the values provided, and adds itself to *network*.
 
@@ -98,6 +111,8 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         self.labels = self.network.labels[self.docid]
         self.labels.update(self.DEFAULT_LABELS)
         if labels: self.labels |= set(labels)
+        self.notes = notes or psml.Fragment.from_tag(
+            BeautifulSoup(self.DEFAULT_NOTES, 'xml').fragment)
 
     def __str__(self) -> str:
         cls = self.__class__
@@ -151,6 +166,26 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         tokenized = self.name.split('.')
         return ['.'.join(tokenized[i + 1:]) for i in range(len(tokenized) - 1)]
+
+    @property
+    def notes(self) -> psml.Fragment:
+        """
+        The notes that have been written for this object, escaped for XML.
+
+        :return: A string that is safe as XML text.
+        :rtype: str
+        """
+        return self._notes
+
+    @notes.setter
+    def notes(self, val: psml.Fragment) -> None:
+        assert isinstance(val, psml.Fragment), f'Set notes to "{str(val)}"'
+        self._notes = val
+
+    @notes.deleter
+    def notes(self) -> None:
+        self._notes = psml.Fragment.from_tag(
+            BeautifulSoup(self.DEFAULT_NOTES, 'xml').fragment)
 
     @property
     @abstractmethod
@@ -217,7 +252,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
             raise AttributeError(
                 'Cannot serialise object with docid longer than 100 chars.')
             #TODO add creating dummy document with explanation if this exc is raised
-        body = self.TEMPLATE
+        body = copy.copy(self.TEMPLATE)
         for field in re.findall(r'(#![a-zA-Z0-9_]+)', self.TEMPLATE):
             attr = getattr(self, field.replace('#!',''), None)
             if attr:
@@ -233,6 +268,7 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         soup = BeautifulSoup(body, features = 'xml')
         soup.find('labels').string = ','.join(self.labels)
         soup.find('section', id = 'footer').replace_with(self.psmlFooter.tag)
+        soup.find('section', id = 'notes').append(self.notes.tag)
         
         if self.organization: 
             soup.find(attrs={'name':'org'}).append(psml.XRef(self.organization).tag)
@@ -243,13 +279,30 @@ class NetworkObject(metaclass=NetworkObjectMeta):
 
         return soup
 
+    @abstractmethod
+    def from_psml(self, network: Network, psml: BeautifulSoup):
+        """
+        Instantiates an object from its psml representation.
+
+        :param network: The network to create this object inside of.
+        :type network: Network
+        :param psml: The PSML object this object was serialised to initially.
+        :type psml: BeautifulSoup
+        """
+        ...
+
     def serialise(self) -> None:
         """
         Serialises this object to PSML and writes it to the outpath.
         """
         os.makedirs(os.path.dirname(self.outpath), exist_ok = True)
-        with open(self.outpath, 'w', encoding = 'utf-8') as stream:
-            stream.write(str(self.to_psml()))
+        try:
+            outsoup = self.to_psml()
+        except Exception as exc:
+            logger.error(f"NWObj {self.identity} failed to write to psml: {exc}")
+        else:
+            with open(self.outpath, 'w', encoding = 'utf-8') as stream:
+                stream.write(str(outsoup))
 
     def merge(self, object: NetworkObject) -> NetworkObject:
         """
@@ -260,9 +313,13 @@ class NetworkObject(metaclass=NetworkObjectMeta):
         """
         self.psmlFooter.extend(object.psmlFooter)
         self.labels |= object.labels
+
+        if str(self.notes) == self.DEFAULT_NOTES:
+            self.notes = psml.Fragment.from_tag(copy.copy(object.notes.tag))
+
         return self
 
-    @cache
+    @lru_cache(maxsize = None)
     def getAttr(self, attr: str) -> Union[str, None]: # TODO rename get_attr
         """
         Returns the value of *attr* for the first label on this object that it is configured on.

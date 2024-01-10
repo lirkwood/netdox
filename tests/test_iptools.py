@@ -264,3 +264,10 @@ def test_collapse_iplist():
 
     with raises(ValueError):
         iptools.collapse_iplist(iplist, output = 'invalid value')
+
+def test_ip_from_rdns_name():
+    """
+    Tests if ip_from_rdns_name correctly parses IP addresses from PTR record names.
+    """
+    assert iptools.ip_from_rdns_name('117.20.168.192.in-addr.arpa') == '192.168.20.117'
+    assert iptools.ip_from_rdns_name('3.2.1.0.in-addr.arpa') == '0.1.2.3'

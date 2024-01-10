@@ -84,6 +84,17 @@ class Section(PSMLElement):
     def __iter__(self) -> Iterator[PSMLFragment]:
         yield from self._frags.values()
 
+    def get(self, fragment_id: str) -> PSMLFragment:
+        """
+        Gets a fragment with the given id.
+
+        :param fragment_id: The ID of the fragment to return.
+        :type fragment_id: str
+        :return: The specified fragment object.
+        :rtype: PSMLFragment
+        """
+        return self._frags[fragment_id]
+
     def insert(self, fragment: PSMLFragment, index: int = None) -> None:
         """
         Inserts a new fragment at the specified index.
@@ -156,7 +167,7 @@ class PSMLFragment(PSMLElement):
         """
         return self.tag.attrs['id']
 
-    def insert(self, element: Tag, index: int = None) -> None:
+    def insert(self, element: PageElement, index: Optional[int] = None) -> None:
         """
         Inserts a Tag into the PSMLFragment at the given index (or the end),
         only if it is valid content.
@@ -215,6 +226,12 @@ class Fragment(PSMLFragment):
         if not tag.has_attr('id'):
             raise AttributeError('Fragment tag missing required attribute \'id\'')
         return cls(tag['id'], tag.contents, tag.attrs)
+    
+def image_fragment(id: str, path: str) -> Fragment:
+    """ Creates a fragment containing a image located at the given path."""
+    para = Tag(name = 'para', is_xml = True)
+    para.append(Tag(name = 'image', is_xml = True, attrs = {'src': path}))
+    return Fragment(id, [para])
 
 class PropertiesFragment(PSMLFragment):
     """
@@ -252,13 +269,17 @@ class PropertiesFragment(PSMLFragment):
 
     ## abstract methods
 
-    def insert(self, property: Property, index: int = None) -> None:
-        if index:
-            self.tag.insert(index, property.tag)
-            self.properties.insert(index, property)
-        else:
+    def insert(self, property: Property, index: Optional[int] = None) -> None:
+        if index is None:
             self.tag.append(property.tag)
             self.properties.append(property)
+        else:
+            self.tag.insert(index, property.tag)
+            self.properties.insert(index, property)
+
+    def extend(self, elements: Iterable[Property]) -> None:
+        for elem in elements:
+            self.insert(elem)
 
     @classmethod
     def from_tag(cls, fragment: Tag) -> PropertiesFragment:
@@ -268,6 +289,21 @@ class PropertiesFragment(PSMLFragment):
         return cls(fragment['id'], properties)
 
     ## methods 
+
+    def get(self, property_name: str) -> Optional[Property]:
+        """
+        Gets a property from its name.
+        None if no property with that name.
+
+        :param property_name: Name of the property to return.
+        :type property_name: str
+        :return: The property in this fragment with the given name, or None.
+        :rtype: Optional[Property]
+        """
+        for property in self.properties:
+            if property.name == property_name:
+                return property
+        return None
 
     def to_dict(self) -> dict:
         """
@@ -307,8 +343,37 @@ class PropertiesFragment(PSMLFragment):
                     'Could not instantiate a Property from a value of: '+ str(value))
         return pfrag
 
+class MediaFragment(PSMLFragment):
+
+    def __init__(self, 
+        id: str, 
+        attrs: Mapping[str, Any] = None, 
+        mediatype: str = None, 
+        content: PageElement = None
+    ) -> None:
+        attrs = dict(attrs) if attrs else {}
+        if mediatype is not None:
+            attrs['mediatype'] = mediatype
+            
+        self.tag = Tag(
+            name = 'media-fragment',
+            is_xml = True,
+            can_be_empty_element = True,
+            attrs = {'id': id} | attrs
+        )
+        
+        if content is not None:
+            self.insert(content)
+
+    @classmethod
+    def from_tag(cls, fragment: Tag) -> MediaFragment:
+        if len(fragment.contents) == 1:
+            return cls(fragment['id'], fragment.attrs, fragment.contents[0])
+        else:
+            return cls(fragment['id'], fragment.attrs)
+
 FRAGMENT_NAMES: dict[str, type[PSMLFragment]] = {
-    'fragment': Fragment, 'properties-fragment': PropertiesFragment 
+    'fragment': Fragment, 'properties-fragment': PropertiesFragment, 'media-fragment': MediaFragment
 }
 """Maps the tag name of fragment types to their respective classes."""
 
@@ -331,13 +396,20 @@ class Property(PSMLElement):
     """
     PSML Property element.
     """
-    value: Union[PSMLLink, Iterable[str], str]
+    name: str
+    """Name of this property."""
+    title: Optional[str]
+    """Title of this property"""
+    datatype: Optional[str]
+    """Datatype of this property. Defaults to string."""
+    value: Union[PSMLLink, Iterable[str], str, None]
     """Value of this property."""
 
     def __init__(self, 
         name: str,
-        value: Union[PSMLLink, Iterable[str], str],
-        title: str = None,
+        value: Union[PSMLLink, Iterable[str], str, None] = None,
+        title: Optional[str] = None,
+        datatype: Optional[str] = None,
         attrs: Mapping[str, Any] = {}
     ) -> None:
         """
@@ -351,6 +423,8 @@ class Property(PSMLElement):
         :type title: str
         """
         _attrs = {'name': name, 'title': title or name}
+        if datatype is not None and datatype != 'string':
+            _attrs['datatype'] = datatype
         
         self.tag = Tag(
             name = 'property', 
@@ -359,7 +433,10 @@ class Property(PSMLElement):
             attrs = _attrs | attrs
         )
         
+        self.name = name
+        self.title = title
         self.value = value
+        self.datatype = datatype
         if value:
             if isinstance(value, str):
                 self.tag.attrs['value'] = value
@@ -372,48 +449,55 @@ class Property(PSMLElement):
                     val_tag = Tag(name = 'value')
                     val_tag.string = str(val)
                     self.tag.append(val_tag)
-        else:
-            self.tag.attrs['value'] = ''
 
     @classmethod
     def from_tag(cls, property: Tag) -> Property:
-        title = property['title'] if 'title' in property.attrs else None
+        assert 'name' in property.attrs, 'Property missing name attribute.'
+        name = str(property['name'])
+        title = str(property['title']) if 'title' in property.attrs else None
+        
         if property.has_attr('value'):
             return cls(
-                property['name'], 
+                name,
                 property['value'], 
                 title, 
-                property.attrs
+                attrs = property.attrs
             )
         
-        elif property.children:
+        elif any(True for _ in property.children): # hack to check emptiness of iterator
             if property.has_attr('datatype') and property['datatype'] in PROPERTY_DATATYPES:
-                return cls(
-                    property['name'], 
-                    PROPERTY_DATATYPES[property['datatype']].from_tag(
-                        property.find(property['datatype'])
-                    ),
-                    title,
-                    property.attrs
-                )
+                child = property.find(property['datatype'])
+                if child is not None:
+                    return cls(
+                        name,
+                        PROPERTY_DATATYPES[property['datatype']].from_tag(child),
+                        title,
+                        str(property['datatype']),
+                        property.attrs
+                    )
+                else:
+                    return cls(
+                        name,
+                        None,
+                        title,
+                        str(property['datatype']),
+                        property.attrs
+                    )
+                
             elif property.has_attr('multiple'):
                 return cls(
-                    property['name'], 
+                    name,
                     [val.string for val in property('value')], 
                     title,
-                    property.attrs
+                    attrs = property.attrs
                 )
 
             else:
                 raise NotImplementedError(
                     'Failed to parse property from the following tag: '+ str(property))
 
-        elif property.has_attr('name'):
-            return cls(property['name'], '')
-
         else:
-            raise AttributeError(
-                'Cannot create Property from tag with no value, children, or name.')
+            return cls(name)
 
 
 class PSMLLink(PSMLElement):
@@ -544,13 +628,12 @@ DOMAIN_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="6.4" />
+                <property name="template_version"     title="Template version"   value="6.6" />
             </properties>
         </metadata>
 
         <section id="title" lockstructure="true">
             <fragment id="title">
-                <heading level="2">Domain name</heading>
                 <heading level="1">
                     <link href="https://#!name">#!name</link>
                 </heading>                    
@@ -571,7 +654,13 @@ DOMAIN_TEMPLATE = '''
 
         <section id="implied_records" title="Implied DNS Records" lockstructure="true" />
 
+        <section id="caa_records" title="CAA Records" fragmenttype="caa_record" />
+
+        <section id="txt_records" title="TXT Records" fragmenttype="txt_record" />
+        
         <section id="footer" />
+
+        <section id="notes" />
 
     </document>
 '''
@@ -587,13 +676,12 @@ IPV4ADDRESS_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="3.4" />
+                <property name="template_version"     title="Template version"   value="3.5" />
             </properties>
         </metadata>
 
         <section id="title" lockstructure="true">
             <fragment id="title">
-                <heading level="2">IP Address</heading>
                 <heading level="1">#!name</heading>
             </fragment>
         </section>
@@ -614,6 +702,8 @@ IPV4ADDRESS_TEMPLATE = '''
         
         <section id="footer" />
 
+        <section id="notes" />
+
     </document>
 '''
 
@@ -628,13 +718,12 @@ NODE_TEMPLATE = '''
 
         <metadata>
             <properties>
-                <property name="template_version"     title="Template version"   value="1.2" />
+                <property name="template_version"     title="Template version"   value="1.3" />
             </properties>
         </metadata>
 
         <section id="title">
             <fragment id="title">
-                <heading level="2">Node</heading>
                 <heading level="1">#!name</heading>                    
             </fragment>
         </section>
@@ -654,6 +743,8 @@ NODE_TEMPLATE = '''
         <section id="body" />
 
         <section id="footer" />
+
+        <section id="notes" overwrite="false" />
 
     </document>
 '''

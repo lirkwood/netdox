@@ -1,9 +1,11 @@
 """
 Plugin for adding certificate information to NetworkObjects.
 """
+import logging
+
+from netdox.app import LifecycleStage
 from netdox.containers import Network
 from netdox.plugins.certificates.footers import analyze
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,5 +22,5 @@ def _footers(network: Network):
                 logger.warning('Failed to parse SSL certificate from: '+ domain.name)
 
 __stages__ = {
-    'footers': _footers
+    LifecycleStage.FOOTERS: _footers
 }
