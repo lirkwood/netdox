@@ -1,7 +1,13 @@
-## Public Readme Addendum
-This is a public repo for netdox occasionally updated from the Allette gitlab. The internal documentation link below wont work, so I have added a copy of the documentation in HTML at `./docs/html/`.
+# Public Readme Addendum
+Netdox is a tool that reads info from various sources then generates [PageSeeder](https://pageseeder.com.au/) documents showing what servers are on your network, what websites they run, their IPs etc. all linked together.
 
-If you haven't already, familiarise yourself with [PageSeeder](https://pageseeder.com/), which this app is designed to work directly with.
+Sources we use at Allette include:
++ DNS providers
++ Kubernetes
++ XenOrchestra
++ AWS
+
+Netdox is developed on a private repository at Allette Systems. This is a public repo that I occasionally bring up to date. The internal documentation link below wont work, so I added a copy of the documentation in HTML at `./docs/html/`.
 
 ---
 # Netdox
